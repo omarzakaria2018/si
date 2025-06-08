@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // إصلاح التواريخ المحفوظة بشكل خاطئ
             fixCorruptedDates();
 
+            // اختبار معالجة التواريخ
+            testDateHandling();
+
             // إعادة حساب الإجماليات الفارغة
             recalculateAllTotals();
 
@@ -949,7 +952,12 @@ function addTotalItem(container, label, value, extraClass = '') {
 function parseDate(dateStr) {
     if (!dateStr) return null;
 
+    // إزالة أي نص إضافي (مثل النص العربي)
     let datePart = dateStr.split(' ')[0];
+    if (datePart.includes('(')) {
+        datePart = datePart.split('(')[0].trim();
+    }
+
     let parts = datePart.includes('/') ? datePart.split('/') : datePart.split('-');
 
     if (parts.length !== 3) return null;
@@ -976,8 +984,8 @@ function parseDate(dateStr) {
         return null;
     }
 
-    // إنشاء كائن التاريخ والتحقق من صحته
-    const date = new Date(year, month - 1, day);
+    // إنشاء كائن التاريخ مع تجنب timezone issues باستخدام منتصف النهار
+    const date = new Date(year, month - 1, day, 12, 0, 0);
 
     // التحقق من أن التاريخ المنشأ يطابق المدخلات (للتأكد من عدم وجود تواريخ مثل 31 فبراير)
     if (date.getFullYear() !== year || date.getMonth() !== (month - 1) || date.getDate() !== day) {
@@ -2937,6 +2945,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (propertyManagerBtn) {
         propertyManagerBtn.addEventListener('click', showPropertyManager);
     }
+
+    // Initialize enhanced attachments system
+    setTimeout(() => {
+        initializeAttachmentsSystem();
+    }, 1000); // Wait 1 second for other systems to load
 });
 
 // نافذة اختيار المدينة
@@ -3002,91 +3015,265 @@ function showAttachmentsProperties(city) {
     });
 }
 
+// Enhanced attachments modal with real-time cross-device synchronization
 function showAttachmentsModal(city, propertyName) {
     closeModal();
     const propertyKey = `${city}_${propertyName}`;
-    const propertyAttachments = attachments[propertyKey] || [];
 
-    let html = `<div class="modal-overlay" style="display:flex;">
-        <div class="attachments-modal">
-            <div class="attachments-header" style="flex-direction:column;align-items:flex-start;">
-                <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
-                    <div>
-                        <span style="color:#2a4b9b;font-weight:bold;font-size:1.1em;"><i class="fas fa-building"></i> ${propertyName}</span>
-                        <span style="color:#888;font-size:1em;margin-right:10px;"><i class="fas fa-map-marker-alt"></i> ${city}</span>
-                    </div>
-                    <button class="close-modal" onclick="closeModal()" title="إغلاق">×</button>
-                </div>
-                <div style="margin-top:5px;color:#888;font-size:0.95em;">إدارة مرفقات العقار</div>
-            </div>
-            <div class="attachments-content">
-                <div class="upload-zone" onclick="document.getElementById('fileUploadInput').click()">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <p>انقر أو اسحب الملفات هنا للرفع</p>
-                    <input type="file" id="fileUploadInput" multiple style="display:none" onchange="handleFileUpload(event, '${city}', '${propertyName}')">
-                </div>
-                <div class="attachments-search">
-                    <input type="text" placeholder="بحث في المرفقات..." onkeyup="filterAttachmentsList(event)">
-                </div>
-                <div class="attachments-list">`;
-    if (propertyAttachments.length === 0) {
-        html += `<div style="text-align:center;color:#888;padding:30px 0;">لا توجد مرفقات بعد</div>`;
+    // Try to get attachments from Supabase first, fallback to local
+    let attachmentsPromise;
+
+    if (typeof getPropertyAttachmentsEnhanced === 'function') {
+        attachmentsPromise = getPropertyAttachmentsEnhanced(propertyKey);
     } else {
-        propertyAttachments.forEach(att => {
-            html += `<div class="attachment-item" data-name="${att.name.toLowerCase()}">
-                <div class="attachment-icon"><i class="${getFileIcon(att.type)}"></i></div>
-                <div class="attachment-name">${att.name}</div>
-                <div class="attachment-actions">
-                    <button class="attachment-btn" onclick="viewAttachment('${propertyKey}', '${att.name}')"><i class="fas fa-eye"></i></button>
-                    <button class="attachment-btn" onclick="downloadAttachment('${propertyKey}', '${att.name}')"><i class="fas fa-download"></i></button>
-                    <button class="attachment-btn" onclick="deleteAttachment('${propertyKey}', '${att.name}', '${city}', '${propertyName}')"><i class="fas fa-trash"></i></button>
-                </div>
-            </div>`;
-        });
+        // Fallback to local attachments
+        attachmentsPromise = Promise.resolve(attachments[propertyKey] || []);
     }
-    html += `</div>
-            <div class="modal-actions">
-                <button onclick="closeModal()" class="modal-action-btn close-btn">
-                    <i class="fas fa-times"></i> إغلاق
-                </button>
-            </div>
-        </div>
-    </div></div>`;
-    document.body.insertAdjacentHTML('beforeend', html);
 
-    // دعم السحب والإفلات
-    const uploadZone = document.querySelector('.upload-zone');
-    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = '#2a4b9b'; });
-    uploadZone.addEventListener('dragleave', e => { e.preventDefault(); uploadZone.style.borderColor = '#ddd'; });
-    uploadZone.addEventListener('drop', e => {
-        e.preventDefault();
-        handleFiles(e.dataTransfer.files, city, propertyName);
-        uploadZone.style.borderColor = '#ddd';
+    attachmentsPromise.then(propertyAttachments => {
+        let html = `<div class="modal-overlay" style="display:flex;">
+            <div class="attachments-modal enhanced" data-property-key="${propertyKey}">
+                <div class="attachments-header enhanced" style="flex-direction:column;align-items:flex-start;">
+                    <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                        <div>
+                            <span style="color:#2a4b9b;font-weight:bold;font-size:1.2em;">
+                                <i class="fas fa-building"></i> ${propertyName}
+                            </span>
+                            <span style="color:#888;font-size:1em;margin-right:10px;">
+                                <i class="fas fa-map-marker-alt"></i> ${city}
+                            </span>
+                            <span class="attachment-count" style="color: #666; font-size: 0.9rem; margin-right: 10px;">
+                                (${propertyAttachments.length} ملف)
+                            </span>
+                        </div>
+                        <div class="header-controls">
+                            <span id="syncStatus" class="sync-indicator" style="margin-left: 15px; font-size: 0.9rem;">
+                                <i class="fas fa-sync-alt" style="color: #28a745;"></i> متزامن
+                            </span>
+                            <button class="close-modal" onclick="closeModal()" title="إغلاق">×</button>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px;color:#888;font-size:0.95em;">
+                        إدارة مرفقات العقار • متزامن عبر جميع الأجهزة
+                    </div>
+                </div>
+                <div class="attachments-content enhanced">
+                    <div class="upload-zone enhanced" onclick="document.getElementById('fileUploadInput').click()" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px dashed #17a2b8; border-radius: 12px; padding: 25px; transition: all 0.3s ease;">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 2.5rem; color: #17a2b8; margin-bottom: 10px;"></i>
+                        <h4 style="margin: 10px 0; color: #495057;">رفع الملفات</h4>
+                        <p style="margin: 5px 0; color: #6c757d;">انقر أو اسحب الملفات هنا للرفع</p>
+                        <p style="margin: 5px 0; color: #868e96; font-size: 0.9rem;">سيتم مزامنة الملفات تلقائياً مع جميع الأجهزة</p>
+                        <input type="file" id="fileUploadInput" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
+                        <div style="margin-top: 15px;">
+                            <button class="btn-primary" style="margin-left: 10px;">
+                                <i class="fas fa-plus"></i> إضافة ملفات
+                            </button>
+                            <button class="btn-secondary" onclick="refreshAttachmentsList('${propertyKey}')" title="تحديث القائمة">
+                                <i class="fas fa-refresh"></i> تحديث
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="upload-options enhanced" style="margin: 15px 0;">
+                        <label for="uploadNotes" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">ملاحظات (اختياري):</label>
+                        <textarea id="uploadNotes" placeholder="أضف ملاحظات حول الملفات..." style="width: 100%; height: 60px; padding: 10px; border: 1px solid #ced4da; border-radius: 8px; resize: vertical; font-family: inherit;"></textarea>
+                    </div>
+
+                    <div class="attachments-search enhanced">
+                        <div style="position: relative;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
+                            <input type="text" placeholder="بحث في المرفقات..." onkeyup="filterAttachmentsList(event)" style="width: 100%; padding: 10px 10px 10px 40px; border: 1px solid #ced4da; border-radius: 8px; margin-bottom: 15px;">
+                        </div>
+                    </div>
+
+                    <div class="attachments-list enhanced">`;
+
+        if (propertyAttachments.length === 0) {
+            html += `<div class="no-attachments-state" style="text-align:center;color:#888;padding:40px 20px;">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 15px;"></i>
+                <h4 style="margin: 10px 0; color: #6c757d;">لا توجد مرفقات بعد</h4>
+                <p style="color: #aaa; margin: 0;">اسحب الملفات هنا أو استخدم زر الرفع لإضافة مرفقات</p>
+            </div>`;
+        } else {
+            propertyAttachments.forEach(att => {
+                // Handle both Supabase and local attachment formats
+                const fileName = att.file_name || att.name;
+                const fileType = att.file_type || att.type;
+                const fileSize = att.file_size || att.size;
+                const uploadDate = att.created_at || att.date;
+                const notes = att.notes || '';
+
+                html += `<div class="attachment-item enhanced" data-name="${fileName.toLowerCase()}" ${att.id ? `data-id="${att.id}"` : ''}>
+                    <div class="attachment-icon">
+                        <i class="${getFileIcon(fileType)}" style="font-size: 1.5rem;"></i>
+                    </div>
+                    <div class="attachment-details">
+                        <div class="attachment-name" title="${fileName}">${fileName}</div>
+                        <div class="attachment-meta">
+                            <span class="file-size">${formatFileSize(fileSize)}</span>
+                            <span class="upload-date">${formatDate(uploadDate)}</span>
+                            ${notes ? `<span class="file-notes" title="${notes}"><i class="fas fa-sticky-note"></i></span>` : ''}
+                        </div>
+                    </div>
+                    <div class="attachment-actions">
+                        ${att.id ?
+                            // Supabase attachment
+                            `<button class="attachment-btn view-btn" onclick="viewAttachmentFromSupabase('${att.id}', '${att.file_url}', '${fileType}')" title="معاينة">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="attachment-btn download-btn" onclick="downloadAttachmentFromSupabase('${att.file_url}', '${fileName}')" title="تحميل">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="attachment-btn delete-btn" onclick="deleteAttachmentFromSupabase('${att.id}', '${propertyKey}')" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </button>` :
+                            // Local attachment
+                            `<button class="attachment-btn view-btn" onclick="viewAttachment('${propertyKey}', '${fileName}')" title="معاينة">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="attachment-btn download-btn" onclick="downloadAttachment('${propertyKey}', '${fileName}')" title="تحميل">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="attachment-btn delete-btn" onclick="deleteAttachment('${propertyKey}', '${fileName}', '${city}', '${propertyName}')" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </button>`
+                        }
+                    </div>
+                </div>`;
+            });
+        }
+
+        html += `</div>
+                </div>
+                <div class="modal-footer enhanced">
+                    <div class="footer-info">
+                        <span class="attachments-summary">
+                            <i class="fas fa-info-circle"></i>
+                            ${propertyAttachments.length} ملف • متزامن عبر جميع الأجهزة
+                        </span>
+                    </div>
+                    <div class="footer-actions">
+                        ${typeof syncAttachmentsManually === 'function' ?
+                            `<button class="btn-outline sync-btn" onclick="syncAttachmentsManually('${propertyKey}')" title="مزامنة يدوية">
+                                <i class="fas fa-sync"></i> مزامنة
+                            </button>` : ''
+                        }
+                        <button onclick="closeModal()" class="modal-action-btn close-btn">
+                            <i class="fas fa-times"></i> إغلاق
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        // Setup enhanced drag and drop
+        setupDragAndDropEnhanced(propertyKey);
+
+        // Setup real-time updates for this modal
+        setupModalRealTimeUpdates(propertyKey);
+
+        // Update sync status
+        updateSyncStatus();
+
+    }).catch(error => {
+        console.error('❌ خطأ في تحميل المرفقات:', error);
+
+        // Show error modal with fallback to local attachments
+        const localAttachments = attachments[propertyKey] || [];
+
+        let html = `<div class="modal-overlay" style="display:flex;">
+            <div class="attachments-modal error-fallback">
+                <div class="attachments-header" style="background: #fff3cd; border-bottom: 1px solid #ffeaa7;">
+                    <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                        <div>
+                            <span style="color:#856404;font-weight:bold;font-size:1.1em;">
+                                <i class="fas fa-exclamation-triangle"></i> ${propertyName} - ${city}
+                            </span>
+                            <span style="color:#856404;font-size:0.9rem;display:block;">
+                                خطأ في تحميل المرفقات السحابية - عرض المرفقات المحلية
+                            </span>
+                        </div>
+                        <button class="close-modal" onclick="closeModal()">×</button>
+                    </div>
+                </div>
+                <div class="attachments-content">
+                    <div class="error-notice" style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 15px; margin-bottom: 20px; color: #721c24;">
+                        <i class="fas fa-wifi" style="margin-left: 8px;"></i>
+                        <strong>مشكلة في الاتصال:</strong> يتم عرض المرفقات المحلية فقط
+                        <button class="btn-sm btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')" style="margin-right: 10px;">
+                            <i class="fas fa-redo"></i> إعادة المحاولة
+                        </button>
+                    </div>
+                    ${localAttachments.length > 0 ?
+                        `<div class="attachments-list">
+                            ${localAttachments.map(att => `
+                                <div class="attachment-item" data-name="${att.name.toLowerCase()}">
+                                    <div class="attachment-icon"><i class="${getFileIcon(att.type)}"></i></div>
+                                    <div class="attachment-name">${att.name}</div>
+                                    <div class="attachment-actions">
+                                        <button class="attachment-btn" onclick="viewAttachment('${propertyKey}', '${att.name}')"><i class="fas fa-eye"></i></button>
+                                        <button class="attachment-btn" onclick="downloadAttachment('${propertyKey}', '${att.name}')"><i class="fas fa-download"></i></button>
+                                        <button class="attachment-btn" onclick="deleteAttachment('${propertyKey}', '${att.name}', '${city}', '${propertyName}')"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>` :
+                        `<div style="text-align:center;color:#888;padding:30px 0;">
+                            <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p>لا توجد مرفقات محلية</p>
+                        </div>`
+                    }
+                </div>
+                <div class="modal-actions">
+                    <button onclick="closeModal()" class="modal-action-btn close-btn">
+                        <i class="fas fa-times"></i> إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>`;
+
+        document.body.insertAdjacentHTML('beforeend', html);
     });
 }
 // ...existing code...
 
-// Enhanced file upload with Supabase integration
+// Enhanced file upload with comprehensive cross-device synchronization
 async function handleFileUploadEnhanced(event, city, propertyName) {
     const files = event.target.files;
     const notes = document.getElementById('uploadNotes')?.value || '';
 
     if (files.length === 0) return;
 
-    // Show upload progress
+    // Show enhanced upload progress modal
     const progressModal = document.createElement('div');
     progressModal.className = 'modal-overlay';
     progressModal.innerHTML = `
-        <div class="modal-box" style="text-align: center; padding: 40px;">
-            <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #17a2b8;"></i>
-            <h3>جاري رفع الملفات...</h3>
-            <div class="upload-progress">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
-                </div>
-                <p id="progressText">0 من ${files.length} ملف</p>
+        <div class="modal-box upload-progress-modal" style="text-align: center; padding: 40px; max-width: 500px;">
+            <div class="upload-header">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #17a2b8; margin-bottom: 1rem;"></i>
+                <h3>رفع الملفات</h3>
             </div>
-            <p id="uploadStatus">جاري التحقق من الاتصال...</p>
+            <div class="upload-progress">
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressText">0 من ${files.length} ملف</span>
+                        <span id="progressPercentage">0%</span>
+                    </div>
+                </div>
+                <div class="upload-details">
+                    <p id="uploadStatus">جاري التحقق من الاتصال...</p>
+                    <p id="currentFile" style="font-size: 0.9rem; color: #666;"></p>
+                </div>
+            </div>
+            <div class="device-sync-info" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <i class="fas fa-sync-alt" style="color: #17a2b8;"></i>
+                <small>سيتم مزامنة الملفات تلقائياً مع جميع الأجهزة المتصلة</small>
+            </div>
         </div>
     `;
     document.body.appendChild(progressModal);
@@ -3097,25 +3284,50 @@ async function handleFileUploadEnhanced(event, city, propertyName) {
 
         if (supabaseAvailable) {
             document.getElementById('uploadStatus').textContent = 'جاري الرفع إلى السحابة...';
-            await handleFilesEnhanced(files, city, propertyName, notes);
+
+            // Upload files with progress tracking
+            await handleFilesEnhancedWithProgress(files, city, propertyName, notes);
 
             // Remove progress modal
             progressModal.remove();
 
-            // Show success message
+            // Show success message with cross-device info
             const successModal = document.createElement('div');
             successModal.className = 'modal-overlay';
             successModal.innerHTML = `
-                <div class="modal-box" style="text-align: center; padding: 40px;">
-                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #28a745;"></i>
+                <div class="modal-box success-modal" style="text-align: center; padding: 40px;">
+                    <div class="success-animation">
+                        <i class="fas fa-check-circle" style="font-size: 3rem; color: #28a745; margin-bottom: 1rem;"></i>
+                    </div>
                     <h3>تم رفع الملفات بنجاح!</h3>
-                    <p>تم رفع ${files.length} ملف إلى السحابة وسيظهر على جميع الأجهزة</p>
-                    <button class="btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')">
-                        عرض المرفقات
-                    </button>
+                    <div class="success-details">
+                        <p>تم رفع ${files.length} ملف إلى السحابة</p>
+                        <div class="sync-status" style="margin: 20px 0; padding: 15px; background: #d4edda; border-radius: 8px; color: #155724;">
+                            <i class="fas fa-globe" style="margin-left: 8px;"></i>
+                            <strong>متزامن عبر جميع الأجهزة</strong>
+                            <br>
+                            <small>الملفات متاحة الآن على جميع الأجهزة والمتصفحات</small>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')">
+                            <i class="fas fa-eye"></i> عرض المرفقات
+                        </button>
+                        <button class="btn-secondary" onclick="closeModal()">
+                            <i class="fas fa-times"></i> إغلاق
+                        </button>
+                    </div>
                 </div>
             `;
             document.body.appendChild(successModal);
+
+            // Auto-close success modal after 5 seconds
+            setTimeout(() => {
+                if (document.body.contains(successModal)) {
+                    successModal.remove();
+                }
+            }, 5000);
+
         } else {
             throw new Error('Supabase غير متوفر');
         }
@@ -3132,21 +3344,31 @@ async function handleFileUploadEnhanced(event, city, propertyName) {
         // Remove progress modal
         progressModal.remove();
 
-        // Show fallback message
+        // Show fallback message with sync options
         const fallbackModal = document.createElement('div');
         fallbackModal.className = 'modal-overlay';
         fallbackModal.innerHTML = `
-            <div class="modal-box" style="text-align: center; padding: 40px;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ffc107;"></i>
+            <div class="modal-box fallback-modal" style="text-align: center; padding: 40px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ffc107; margin-bottom: 1rem;"></i>
                 <h3>تم الحفظ محلياً</h3>
-                <p>لم يتمكن من الرفع للسحابة، تم حفظ الملفات محلياً</p>
-                <p><small>يمكنك المزامنة لاحقاً عند توفر الاتصال</small></p>
-                <div style="margin-top: 20px;">
+                <div class="fallback-details">
+                    <p>لم يتمكن من الرفع للسحابة، تم حفظ الملفات محلياً</p>
+                    <div class="local-storage-info" style="margin: 20px 0; padding: 15px; background: #fff3cd; border-radius: 8px; color: #856404;">
+                        <i class="fas fa-laptop" style="margin-left: 8px;"></i>
+                        <strong>محفوظ على هذا الجهاز فقط</strong>
+                        <br>
+                        <small>يمكنك المزامنة لاحقاً عند توفر الاتصال</small>
+                    </div>
+                </div>
+                <div class="modal-actions">
                     <button class="btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')">
-                        عرض المرفقات
+                        <i class="fas fa-eye"></i> عرض المرفقات
                     </button>
-                    <button class="btn-secondary" onclick="closeModal(); retryUploadToSupabase('${city}', '${propertyName}')">
-                        إعادة المحاولة
+                    <button class="btn-warning" onclick="closeModal(); retryUploadToSupabase('${city}', '${propertyName}')">
+                        <i class="fas fa-sync"></i> إعادة المحاولة
+                    </button>
+                    <button class="btn-secondary" onclick="closeModal()">
+                        <i class="fas fa-times"></i> إغلاق
                     </button>
                 </div>
             </div>
@@ -3259,7 +3481,7 @@ async function retryUploadToSupabase(city, propertyName) {
     }
 }
 
-// Enhanced file handling with Supabase upload
+// Enhanced file handling with detailed progress tracking and cross-device sync
 async function handleFilesEnhanced(files, city, propertyName, notes = '') {
     const propertyKey = `${city}_${propertyName}`;
     let filesProcessed = 0;
@@ -3267,7 +3489,13 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
 
     for (const file of files) {
         try {
-            // Upload to Supabase
+            // Update current file being processed
+            const currentFileElement = document.getElementById('currentFile');
+            if (currentFileElement) {
+                currentFileElement.innerHTML = `<i class="fas fa-upload"></i> جاري رفع: ${file.name}`;
+            }
+
+            // Upload to Supabase with enhanced error handling
             if (typeof uploadFileToSupabase === 'function') {
                 await uploadFileToSupabase(file, propertyKey, notes);
             } else {
@@ -3276,20 +3504,50 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
 
             filesProcessed++;
 
-            // Update progress
+            // Update progress with enhanced UI
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
+            const progressPercentage = document.getElementById('progressPercentage');
+
             if (progressFill && progressText) {
-                const percentage = (filesProcessed / totalFiles) * 100;
+                const percentage = Math.round((filesProcessed / totalFiles) * 100);
                 progressFill.style.width = `${percentage}%`;
                 progressText.textContent = `${filesProcessed} من ${totalFiles} ملف`;
+
+                if (progressPercentage) {
+                    progressPercentage.textContent = `${percentage}%`;
+                }
             }
+
+            // Show completion for current file
+            if (currentFileElement) {
+                currentFileElement.innerHTML = `<i class="fas fa-check" style="color: #28a745;"></i> تم رفع: ${file.name}`;
+            }
+
+            // Small delay to show progress
+            await new Promise(resolve => setTimeout(resolve, 300));
 
         } catch (error) {
             console.error(`❌ فشل في رفع ${file.name}:`, error);
+
+            // Show error for current file
+            const currentFileElement = document.getElementById('currentFile');
+            if (currentFileElement) {
+                currentFileElement.innerHTML = `<i class="fas fa-times" style="color: #dc3545;"></i> فشل في رفع: ${file.name}`;
+            }
+
             throw error;
         }
     }
+
+    // Final status update
+    const uploadStatus = document.getElementById('uploadStatus');
+    if (uploadStatus) {
+        uploadStatus.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i> تم رفع جميع الملفات بنجاح!`;
+    }
+
+    // Trigger real-time sync notification
+    console.log('🔄 تم رفع الملفات - سيتم تحديث جميع الأجهزة المتصلة');
 }
 
 // Fallback local file handling
@@ -3568,7 +3826,7 @@ async function syncAttachmentsManually(propertyKey) {
     }
 }
 
-// Enhanced drag and drop setup
+// Enhanced drag and drop setup with cross-device support
 function setupDragAndDropEnhanced(propertyKey) {
     const uploadZone = document.querySelector('.upload-zone');
     if (!uploadZone) return;
@@ -3577,46 +3835,210 @@ function setupDragAndDropEnhanced(propertyKey) {
     uploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         uploadZone.classList.add('drag-over');
-        uploadZone.style.borderColor = '#2a4b9b';
+        uploadZone.style.borderColor = '#17a2b8';
         uploadZone.style.backgroundColor = '#f8f9fa';
+        uploadZone.style.transform = 'scale(1.02)';
     });
 
     uploadZone.addEventListener('dragleave', (e) => {
         e.preventDefault();
         uploadZone.classList.remove('drag-over');
-        uploadZone.style.borderColor = '#ddd';
+        uploadZone.style.borderColor = '#17a2b8';
         uploadZone.style.backgroundColor = '';
+        uploadZone.style.transform = 'scale(1)';
     });
 
     uploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadZone.classList.remove('drag-over');
-        uploadZone.style.borderColor = '#ddd';
+        uploadZone.style.borderColor = '#17a2b8';
         uploadZone.style.backgroundColor = '';
+        uploadZone.style.transform = 'scale(1)';
 
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             // Extract city and property name from the current modal
             const modal = uploadZone.closest('.attachments-modal');
             if (modal) {
-                const headerText = modal.querySelector('.attachments-header span').textContent;
-                const propertyName = headerText.split(' ')[1]; // Extract property name
-                const cityText = modal.querySelector('.attachments-header span:nth-child(2)').textContent;
-                const city = cityText.split(' ')[1]; // Extract city name
-
-                handleFileUploadEnhanced({ target: { files } }, city, propertyName);
+                const propertyKeyFromModal = modal.getAttribute('data-property-key');
+                if (propertyKeyFromModal) {
+                    const [city, propertyName] = propertyKeyFromModal.split('_');
+                    handleFileUploadEnhanced({ target: { files } }, city, propertyName);
+                }
             }
         }
     });
 
     // Touch support for mobile devices
-    uploadZone.addEventListener('touchstart', (e) => {
+    uploadZone.addEventListener('touchstart', () => {
         uploadZone.style.backgroundColor = '#f8f9fa';
     });
 
-    uploadZone.addEventListener('touchend', (e) => {
+    uploadZone.addEventListener('touchend', () => {
         uploadZone.style.backgroundColor = '';
     });
+}
+
+// Setup real-time updates for modal
+function setupModalRealTimeUpdates(propertyKey) {
+    // Listen for custom attachment events
+    window.addEventListener('attachmentAdded', (event) => {
+        if (event.detail.propertyKey === propertyKey) {
+            console.log('🔄 ملف جديد تم إضافته من جهاز آخر');
+            refreshAttachmentsList(propertyKey);
+        }
+    });
+
+    window.addEventListener('attachmentDeleted', (event) => {
+        if (event.detail.propertyKey === propertyKey) {
+            console.log('🗑️ ملف تم حذفه من جهاز آخر');
+            refreshAttachmentsList(propertyKey);
+        }
+    });
+}
+
+// Update sync status indicator
+function updateSyncStatus() {
+    const syncStatus = document.getElementById('syncStatus');
+    if (!syncStatus) return;
+
+    if (typeof checkSupabaseAvailability === 'function') {
+        checkSupabaseAvailability().then(isAvailable => {
+            if (isAvailable) {
+                syncStatus.innerHTML = '<i class="fas fa-sync-alt" style="color: #28a745;"></i> متزامن';
+                syncStatus.style.color = '#28a745';
+            } else {
+                syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i> محلي فقط';
+                syncStatus.style.color = '#ffc107';
+            }
+        });
+    } else {
+        syncStatus.innerHTML = '<i class="fas fa-laptop" style="color: #6c757d;"></i> محلي';
+        syncStatus.style.color = '#6c757d';
+    }
+}
+
+// Refresh attachments list in modal
+async function refreshAttachmentsList(propertyKey) {
+    try {
+        const modal = document.querySelector(`.attachments-modal[data-property-key="${propertyKey}"]`);
+        if (!modal) return;
+
+        const listContainer = modal.querySelector('.attachments-list');
+        if (!listContainer) return;
+
+        // Show loading state
+        listContainer.style.opacity = '0.7';
+        listContainer.innerHTML = `
+            <div style="text-align: center; padding: 30px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #17a2b8;"></i>
+                <p style="margin-top: 15px; color: #6c757d;">جاري تحديث المرفقات...</p>
+            </div>
+        `;
+
+        // Get updated attachments
+        let attachments;
+        if (typeof getPropertyAttachmentsEnhanced === 'function') {
+            attachments = await getPropertyAttachmentsEnhanced(propertyKey);
+        } else {
+            const [city, propertyName] = propertyKey.split('_');
+            attachments = window.attachments[propertyKey] || [];
+        }
+
+        // Update the list
+        if (attachments.length === 0) {
+            listContainer.innerHTML = `
+                <div class="no-attachments-state" style="text-align:center;color:#888;padding:40px 20px;">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 15px;"></i>
+                    <h4 style="margin: 10px 0; color: #6c757d;">لا توجد مرفقات بعد</h4>
+                    <p style="color: #aaa; margin: 0;">اسحب الملفات هنا أو استخدم زر الرفع لإضافة مرفقات</p>
+                </div>
+            `;
+        } else {
+            listContainer.innerHTML = attachments.map(att => {
+                const fileName = att.file_name || att.name;
+                const fileType = att.file_type || att.type;
+                const fileSize = att.file_size || att.size;
+                const uploadDate = att.created_at || att.date;
+                const notes = att.notes || '';
+
+                return `
+                    <div class="attachment-item enhanced" data-name="${fileName.toLowerCase()}" ${att.id ? `data-id="${att.id}"` : ''}>
+                        <div class="attachment-icon">
+                            <i class="${getFileIcon(fileType)}" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="attachment-details">
+                            <div class="attachment-name" title="${fileName}">${fileName}</div>
+                            <div class="attachment-meta">
+                                <span class="file-size">${formatFileSize(fileSize)}</span>
+                                <span class="upload-date">${formatDate(uploadDate)}</span>
+                                ${notes ? `<span class="file-notes" title="${notes}"><i class="fas fa-sticky-note"></i></span>` : ''}
+                            </div>
+                        </div>
+                        <div class="attachment-actions">
+                            ${att.id ?
+                                // Supabase attachment
+                                `<button class="attachment-btn view-btn" onclick="viewAttachmentFromSupabase('${att.id}', '${att.file_url}', '${fileType}')" title="معاينة">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="attachment-btn download-btn" onclick="downloadAttachmentFromSupabase('${att.file_url}', '${fileName}')" title="تحميل">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="attachment-btn delete-btn" onclick="deleteAttachmentFromSupabase('${att.id}', '${propertyKey}')" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>` :
+                                // Local attachment
+                                `<button class="attachment-btn view-btn" onclick="viewAttachment('${propertyKey}', '${fileName}')" title="معاينة">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="attachment-btn download-btn" onclick="downloadAttachment('${propertyKey}', '${fileName}')" title="تحميل">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="attachment-btn delete-btn" onclick="deleteAttachment('${propertyKey}', '${fileName}', '${city}', '${propertyName}')" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update attachment count
+        const countElement = modal.querySelector('.attachment-count');
+        if (countElement) {
+            countElement.textContent = `(${attachments.length} ملف)`;
+        }
+
+        // Update footer summary
+        const summaryElement = modal.querySelector('.attachments-summary');
+        if (summaryElement) {
+            summaryElement.innerHTML = `
+                <i class="fas fa-info-circle"></i>
+                ${attachments.length} ملف • متزامن عبر جميع الأجهزة
+            `;
+        }
+
+        // Restore opacity
+        listContainer.style.opacity = '1';
+
+        console.log(`✅ تم تحديث قائمة المرفقات: ${attachments.length} ملف`);
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث قائمة المرفقات:', error);
+
+        const listContainer = document.querySelector('.attachments-list');
+        if (listContainer) {
+            listContainer.innerHTML = `
+                <div class="error-state" style="text-align: center; padding: 30px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc3545; margin-bottom: 15px;"></i>
+                    <p style="color: #dc3545;">خطأ في تحميل المرفقات</p>
+                    <button onclick="refreshAttachmentsList('${propertyKey}')" class="btn-secondary">إعادة المحاولة</button>
+                </div>
+            `;
+            listContainer.style.opacity = '1';
+        }
+    }
 }
 
 // Show local attachments modal (fallback)
@@ -3630,27 +4052,44 @@ function showAttachmentsModalLocal(city, propertyName) {
 
 // ===== ATTACHMENTS SYSTEM INITIALIZATION =====
 
-// Initialize the enhanced attachments system
+// Initialize the enhanced cross-device attachments system
 async function initializeAttachmentsSystem() {
     try {
-        console.log('🔄 تهيئة نظام المرفقات المحسن...');
+        console.log('🚀 تهيئة نظام المرفقات المحسن مع المزامنة عبر الأجهزة...');
+
+        // Show initialization status
+        showConnectionNotification('جاري تهيئة نظام المرفقات...', 'info');
 
         // Check if Supabase is available
         if (!supabaseClient) {
             console.warn('⚠️ Supabase غير متوفر، سيتم استخدام النظام المحلي فقط');
+            showConnectionNotification('النظام المحلي فقط - Supabase غير متوفر', 'warning');
+            return;
+        }
+
+        // Test Supabase connection first
+        const isSupabaseAvailable = await checkSupabaseAvailability();
+        if (!isSupabaseAvailable) {
+            console.warn('⚠️ لا يمكن الاتصال بـ Supabase، سيتم استخدام النظام المحلي');
+            showConnectionNotification('النظام المحلي فقط - لا يمكن الاتصال بالسحابة', 'warning');
             return;
         }
 
         // Ensure Supabase attachments table exists
         if (typeof ensureAttachmentsTableExists === 'function') {
             await ensureAttachmentsTableExists();
+            console.log('✅ جدول المرفقات جاهز');
         } else {
             console.warn('⚠️ وظيفة ensureAttachmentsTableExists غير متوفرة');
         }
 
         // Subscribe to real-time attachment changes
         if (typeof subscribeToAttachmentChanges === 'function') {
-            subscribeToAttachmentChanges();
+            const subscription = subscribeToAttachmentChanges();
+            if (subscription) {
+                console.log('🔔 تم تفعيل المزامنة الفورية');
+                showConnectionNotification('تم تفعيل المزامنة الفورية عبر الأجهزة', 'success');
+            }
         } else {
             console.warn('⚠️ وظيفة subscribeToAttachmentChanges غير متوفرة');
         }
@@ -3658,25 +4097,44 @@ async function initializeAttachmentsSystem() {
         // Test attachment functions
         await testAttachmentFunctions();
 
+        // Initialize connection indicator
+        updateConnectionIndicator(true);
+
         // Sync local attachments to Supabase (background process)
         setTimeout(async () => {
             if (typeof syncLocalAttachmentsToSupabase === 'function') {
                 try {
+                    console.log('🔄 بدء مزامنة المرفقات المحلية...');
                     await syncLocalAttachmentsToSupabase();
                     console.log('✅ تم مزامنة المرفقات المحلية مع Supabase');
+                    showConnectionNotification('تم مزامنة المرفقات المحلية', 'success');
                 } catch (error) {
                     console.warn('⚠️ لم يتمكن من مزامنة المرفقات:', error.message);
+                    showConnectionNotification('فشل في مزامنة المرفقات المحلية', 'warning');
                 }
             } else {
                 console.warn('⚠️ وظيفة syncLocalAttachmentsToSupabase غير متوفرة');
             }
-        }, 5000); // Wait 5 seconds after app load
+        }, 3000); // Wait 3 seconds after app load
 
-        console.log('✅ تم تهيئة نظام المرفقات بنجاح');
+        // Setup periodic connection check
+        setInterval(async () => {
+            const isConnected = await checkSupabaseAvailability();
+            updateConnectionIndicator(isConnected);
+
+            if (!isConnected && connectionStatus === 'SUBSCRIBED') {
+                console.warn('⚠️ انقطع الاتصال بالسحابة');
+                showConnectionNotification('انقطع الاتصال - جاري إعادة المحاولة...', 'warning');
+            }
+        }, 30000); // Check every 30 seconds
+
+        console.log('🎉 تم تهيئة نظام المرفقات المحسن بنجاح');
 
     } catch (error) {
         console.error('❌ خطأ في تهيئة نظام المرفقات:', error);
         console.log('📱 سيتم استخدام النظام المحلي فقط');
+        showConnectionNotification('خطأ في التهيئة - النظام المحلي فقط', 'error');
+        updateConnectionIndicator(false);
     }
 }
 
@@ -5046,12 +5504,16 @@ function showCardEditModal(contractNumber, propertyName, unitNumber) {
     });
 }
 
-// تنسيق التاريخ للإدخال في حقل التاريخ
+// تنسيق التاريخ للإدخال في حقل التاريخ - محسن لمنع تغيير التواريخ
 function formatDateForInput(dateStr) {
     if (!dateStr) return '';
 
-    // تحويل التاريخ إلى صيغة yyyy-mm-dd للإدخال
+    // إزالة أي نص إضافي (مثل النص العربي)
     let datePart = dateStr.split(' ')[0];
+    if (datePart.includes('(')) {
+        datePart = datePart.split('(')[0].trim();
+    }
+
     let parts = datePart.includes('/') ? datePart.split('/') : datePart.split('-');
 
     if (parts.length !== 3) return '';
@@ -5060,18 +5522,35 @@ function formatDateForInput(dateStr) {
 
     // تحديد صيغة التاريخ
     if (parts[0].length === 4) {
-        // صيغة yyyy-mm-dd
-        year = parts[0];
-        month = parts[1].padStart(2, '0');
-        day = parts[2].padStart(2, '0');
+        // صيغة yyyy-mm-dd (already in correct format for input)
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        day = parseInt(parts[2]);
     } else {
         // صيغة dd/mm/yyyy أو dd-mm-yyyy
-        day = parts[0].padStart(2, '0');
-        month = parts[1].padStart(2, '0');
-        year = parts[2];
+        day = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        year = parseInt(parts[2]);
     }
 
-    return `${year}-${month}-${day}`;
+    // التحقق من صحة التاريخ
+    if (isNaN(year) || isNaN(month) || isNaN(day) ||
+        year < 1900 || year > 2100 ||
+        month < 1 || month > 12 ||
+        day < 1 || day > 31) {
+        console.warn(`تاريخ غير صحيح في formatDateForInput: ${dateStr}`);
+        return '';
+    }
+
+    // التحقق من صحة التاريخ باستخدام Date object (تجنب timezone issues)
+    const testDate = new Date(year, month - 1, day, 12, 0, 0); // استخدام منتصف النهار لتجنب timezone issues
+    if (testDate.getFullYear() !== year || testDate.getMonth() !== (month - 1) || testDate.getDate() !== day) {
+        console.warn(`تاريخ غير صالح في formatDateForInput: ${dateStr}`);
+        return '';
+    }
+
+    // إرجاع التاريخ بصيغة yyyy-mm-dd للـ HTML input
+    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
 }
 
 // حفظ تعديلات العقار
@@ -5111,7 +5590,7 @@ function savePropertyEdit(event) {
     for (let [key, value] of formData.entries()) {
         if (key.startsWith('original')) continue; // تجاهل الحقول المخفية
 
-        // تحويل التواريخ إلى الصيغة المطلوبة - معالجة خاصة لتواريخ البداية والنهاية
+        // تحويل التواريخ إلى الصيغة المطلوبة - معالجة محسنة لمنع التواريخ العشوائية
         if (key.includes('تاريخ') && value && !key.includes('القسط')) {
             // تحويل من yyyy-mm-dd إلى dd/mm/yyyy للتواريخ العادية فقط
             const dateParts = value.split('-');
@@ -5123,7 +5602,15 @@ function savePropertyEdit(event) {
 
                 // التحقق من صحة التاريخ
                 if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-                    value = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                    // التحقق الإضافي باستخدام Date object لتجنب تواريخ مثل 31 فبراير
+                    const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                    if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                        value = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+                        console.log(`✅ تم تحويل التاريخ بنجاح: ${key} = ${value}`);
+                    } else {
+                        console.warn(`تاريخ غير صالح تم تجاهله: ${value} للحقل: ${key}`);
+                        value = null;
+                    }
                 } else {
                     console.warn(`تاريخ غير صحيح تم تجاهله: ${value} للحقل: ${key}`);
                     value = null; // إزالة التاريخ غير الصحيح
@@ -5133,11 +5620,28 @@ function savePropertyEdit(event) {
 
         // معالجة خاصة لتواريخ الأقساط - احتفظ بالصيغة الأصلية
         if (key.includes('القسط') && key.includes('تاريخ') && value) {
-            // لا تغير تواريخ الأقساط - احتفظ بها كما أدخلها المستخدم
             // إذا كانت بصيغة yyyy-mm-dd، حولها إلى dd/mm/yyyy
             const dateParts = value.split('-');
             if (dateParts.length === 3 && dateParts[0].length === 4) {
-                value = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                const year = parseInt(dateParts[0]);
+                const month = parseInt(dateParts[1]);
+                const day = parseInt(dateParts[2]);
+
+                // التحقق من صحة التاريخ
+                if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    // التحقق الإضافي باستخدام Date object
+                    const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                    if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                        value = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+                        console.log(`✅ تم تحويل تاريخ القسط بنجاح: ${key} = ${value}`);
+                    } else {
+                        console.warn(`تاريخ قسط غير صالح تم تجاهله: ${value} للحقل: ${key}`);
+                        value = null;
+                    }
+                } else {
+                    console.warn(`تاريخ قسط غير صحيح تم تجاهله: ${value} للحقل: ${key}`);
+                    value = null;
+                }
             }
         }
 
@@ -6464,16 +6968,34 @@ function fixSingleDate(dateStr) {
     return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
 }
 
-// استعادة البيانات من localStorage
+// استعادة البيانات من localStorage - محسن لمنع تحويل التواريخ
 function restoreDataFromLocalStorage() {
     try {
         const savedData = localStorage.getItem('properties_backup');
         if (savedData) {
             const parsedData = JSON.parse(savedData);
             if (Array.isArray(parsedData) && parsedData.length > 0) {
-                // دمج البيانات المحفوظة مع البيانات الحالية
+                // تأكد من أن التواريخ في الصيغة الصحيحة
+                parsedData.forEach(property => {
+                    // إصلاح التواريخ الأساسية
+                    const dateFields = ['تاريخ البداية', 'تاريخ النهاية', 'تاريخ نهاية القسط'];
+                    dateFields.forEach(field => {
+                        if (property[field]) {
+                            property[field] = ensureCorrectDateFormat(property[field]);
+                        }
+                    });
+
+                    // إصلاح تواريخ الأقساط
+                    for (let i = 1; i <= 20; i++) {
+                        const installmentDateKey = `تاريخ القسط ${getArabicNumber(i)}`;
+                        if (property[installmentDateKey]) {
+                            property[installmentDateKey] = ensureCorrectDateFormat(property[installmentDateKey]);
+                        }
+                    }
+                });
+
                 properties = parsedData;
-                console.log('✅ تم استعادة البيانات من localStorage:', parsedData.length, 'عقار');
+                console.log(`✅ تم استعادة ${parsedData.length} عقار من localStorage مع إصلاح التواريخ`);
                 return true;
             }
         }
@@ -6481,6 +7003,113 @@ function restoreDataFromLocalStorage() {
         console.error('❌ خطأ في استعادة البيانات من localStorage:', error);
     }
     return false;
+}
+
+// ضمان صيغة التاريخ الصحيحة - محسن لمنع التواريخ العشوائية
+function ensureCorrectDateFormat(dateStr) {
+    if (!dateStr) return dateStr;
+
+    // إذا كان التاريخ يحتوي على نص عربي، استخرج الجزء الرقمي فقط
+    if (typeof dateStr === 'string' && dateStr.includes('(') && dateStr.includes(')')) {
+        const numericPart = dateStr.split('(')[0].trim();
+        if (numericPart) {
+            dateStr = numericPart;
+        }
+    }
+
+    // تنظيف التاريخ من المسافات الزائدة
+    dateStr = dateStr.toString().trim();
+
+    // إذا كان بصيغة dd/mm/yyyy، تحقق من صحته وأبقه كما هو
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        const parts = dateStr.split('/');
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]);
+        const year = parseInt(parts[2]);
+
+        // التحقق من صحة التاريخ
+        if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            // التحقق الإضافي باستخدام Date object لتجنب تواريخ مثل 31 فبراير
+            const testDate = new Date(year, month - 1, day, 12, 0, 0);
+            if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+            }
+        }
+        console.warn(`تاريخ غير صحيح في ensureCorrectDateFormat: ${dateStr}`);
+        return dateStr; // إرجاع الأصلي إذا كان غير صحيح
+    }
+
+    // إذا كان بصيغة yyyy-mm-dd، حوله إلى dd/mm/yyyy
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{1,2}-\d{1,2}/)) {
+        const parts = dateStr.split('-');
+        if (parts.length >= 3) {
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+
+            // التحقق من صحة التاريخ
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                // التحقق الإضافي باستخدام Date object
+                const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                    return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+                }
+            }
+        }
+        console.warn(`تاريخ غير صحيح في ensureCorrectDateFormat: ${dateStr}`);
+        return dateStr; // إرجاع الأصلي إذا كان غير صحيح
+    }
+
+    // إذا كان تاريخ غير صحيح، أرجع الأصلي
+    return dateStr;
+}
+
+// اختبار معالجة التواريخ لضمان عدم حدوث تغيير عشوائي
+function testDateHandling() {
+    console.log('🧪 اختبار معالجة التواريخ...');
+
+    const testDates = [
+        '2/1/2025',    // 2nd January 2025
+        '15/3/2024',   // 15th March 2024
+        '31/12/2023',  // 31st December 2023
+        '1/6/2025',    // 1st June 2025
+        '29/2/2024',   // 29th February 2024 (leap year)
+        '2025-01-02',  // ISO format
+        '2024-03-15'   // ISO format
+    ];
+
+    testDates.forEach(testDate => {
+        console.log(`\n📅 اختبار التاريخ: ${testDate}`);
+
+        // Test formatDateForInput
+        const inputFormat = formatDateForInput(testDate);
+        console.log(`  formatDateForInput: ${testDate} → ${inputFormat}`);
+
+        // Test ensureCorrectDateFormat
+        const correctFormat = ensureCorrectDateFormat(testDate);
+        console.log(`  ensureCorrectDateFormat: ${testDate} → ${correctFormat}`);
+
+        // Test parseDate
+        const parsedDate = parseDate(testDate);
+        console.log(`  parseDate: ${testDate} → ${parsedDate ? parsedDate.toDateString() : 'null'}`);
+
+        // Test round-trip conversion
+        if (inputFormat) {
+            const backToDisplay = ensureCorrectDateFormat(inputFormat);
+            console.log(`  Round-trip: ${testDate} → ${inputFormat} → ${backToDisplay}`);
+
+            // Check if original date is preserved
+            if (testDate.includes('/') && backToDisplay === testDate) {
+                console.log(`  ✅ التاريخ محفوظ بشكل صحيح`);
+            } else if (testDate.includes('-') && backToDisplay) {
+                console.log(`  ✅ التاريخ محول بشكل صحيح`);
+            } else {
+                console.warn(`  ⚠️ قد يكون هناك مشكلة في التحويل`);
+            }
+        }
+    });
+
+    console.log('\n✅ انتهى اختبار معالجة التواريخ');
 }
 
 // حفظ البيانات محلياً

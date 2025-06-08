@@ -851,11 +851,30 @@ async function syncLocalAttachmentsToSupabase() {
     }
 }
 
-// Subscribe to real-time attachment changes
+// Enhanced real-time subscription for cross-device synchronization
+let attachmentSubscription = null;
+let connectionStatus = 'disconnected';
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 3; // Reduced from 5 to 3
+let isReconnecting = false;
+let lastConnectionTime = null;
+
+// Subscribe to real-time attachment changes with enhanced cross-device support
 function subscribeToAttachmentChanges() {
     try {
-        const subscription = supabaseClient
-            .channel('attachments_changes')
+        // Clean up existing subscription
+        if (attachmentSubscription) {
+            attachmentSubscription.unsubscribe();
+        }
+
+        attachmentSubscription = supabaseClient
+            .channel('attachments_realtime_sync', {
+                config: {
+                    presence: {
+                        key: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                    }
+                }
+            })
             .on('postgres_changes',
                 {
                     event: '*',
@@ -863,25 +882,256 @@ function subscribeToAttachmentChanges() {
                     table: 'attachments'
                 },
                 (payload) => {
-                    console.log('📎 تغيير في المرفقات:', payload);
-
-                    // Trigger UI update for affected property
-                    if (payload.new && payload.new.property_key) {
-                        updateAttachmentsUI(payload.new.property_key);
-                    } else if (payload.old && payload.old.property_key) {
-                        updateAttachmentsUI(payload.old.property_key);
-                    }
+                    console.log('📎 Real-time attachment change:', payload);
+                    handleAttachmentRealTimeChange(payload);
                 }
             )
-            .subscribe();
+            .on('presence', { event: 'sync' }, () => {
+                console.log('👥 Presence sync - other devices online');
+            })
+            .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+                console.log('🔗 New device connected:', key);
+                showConnectionNotification('جهاز جديد متصل', 'success');
+            })
+            .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                console.log('📱 Device disconnected:', key);
+            })
+            .subscribe((status) => {
+                connectionStatus = status;
+                handleConnectionStatusChange(status);
+            });
 
-        console.log('✅ تم تفعيل الاشتراك في تحديثات المرفقات');
-        return subscription;
+        console.log('✅ تم تفعيل الاشتراك المحسن في تحديثات المرفقات');
+        return attachmentSubscription;
 
     } catch (error) {
         console.error('❌ خطأ في الاشتراك في تحديثات المرفقات:', error);
+        scheduleReconnection();
         return null;
     }
+}
+
+// Handle real-time attachment changes with enhanced cross-device support
+function handleAttachmentRealTimeChange(payload) {
+    const { eventType, new: newRecord, old: oldRecord } = payload;
+
+    try {
+        switch (eventType) {
+            case 'INSERT':
+                console.log('📎 ملف جديد تم رفعه:', newRecord.file_name);
+                handleNewAttachment(newRecord);
+                break;
+
+            case 'UPDATE':
+                console.log('📝 تم تحديث ملف:', newRecord.file_name);
+                handleUpdatedAttachment(newRecord, oldRecord);
+                break;
+
+            case 'DELETE':
+                console.log('🗑️ تم حذف ملف:', oldRecord.file_name);
+                handleDeletedAttachment(oldRecord);
+                break;
+        }
+
+        // Update UI for affected property
+        const propertyKey = newRecord?.property_key || oldRecord?.property_key;
+        if (propertyKey) {
+            updateAttachmentsUI(propertyKey);
+            updateAttachmentBadges(propertyKey);
+            showAttachmentNotification(eventType, newRecord || oldRecord);
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في معالجة تغيير المرفقات:', error);
+    }
+}
+
+// Handle new attachment uploaded from another device
+function handleNewAttachment(attachment) {
+    // Update local cache if exists
+    const propertyKey = attachment.property_key;
+
+    // Show notification
+    showAttachmentNotification('INSERT', attachment);
+
+    // Update any open attachment modals
+    updateAttachmentsUI(propertyKey);
+
+    // Update attachment count badges
+    updateAttachmentBadges(propertyKey);
+
+    // Trigger custom event for other parts of the app
+    window.dispatchEvent(new CustomEvent('attachmentAdded', {
+        detail: { attachment, propertyKey }
+    }));
+}
+
+// Handle attachment update from another device
+function handleUpdatedAttachment(newAttachment, oldAttachment) {
+    const propertyKey = newAttachment.property_key;
+
+    // Update UI
+    updateAttachmentsUI(propertyKey);
+
+    // Show notification if significant change
+    if (newAttachment.file_name !== oldAttachment.file_name) {
+        showAttachmentNotification('UPDATE', newAttachment);
+    }
+}
+
+// Handle attachment deletion from another device
+function handleDeletedAttachment(attachment) {
+    const propertyKey = attachment.property_key;
+
+    // Show notification
+    showAttachmentNotification('DELETE', attachment);
+
+    // Update UI
+    updateAttachmentsUI(propertyKey);
+    updateAttachmentBadges(propertyKey);
+
+    // Trigger custom event
+    window.dispatchEvent(new CustomEvent('attachmentDeleted', {
+        detail: { attachment, propertyKey }
+    }));
+}
+
+// Handle connection status changes
+function handleConnectionStatusChange(status) {
+    connectionStatus = status;
+
+    switch (status) {
+        case 'SUBSCRIBED':
+            console.log('🔗 متصل بالخادم - المزامنة الفورية نشطة');
+            showConnectionNotification('متصل - المزامنة نشطة', 'success');
+            reconnectAttempts = 0;
+            updateConnectionIndicator(true);
+            break;
+
+        case 'CHANNEL_ERROR':
+        case 'TIMED_OUT':
+        case 'CLOSED':
+            console.warn('⚠️ انقطع الاتصال - محاولة إعادة الاتصال...');
+            showConnectionNotification('انقطع الاتصال - جاري إعادة المحاولة...', 'warning');
+            updateConnectionIndicator(false);
+            scheduleReconnection();
+            break;
+
+        default:
+            console.log('🔄 حالة الاتصال:', status);
+    }
+}
+
+// Schedule reconnection with exponential backoff
+function scheduleReconnection() {
+    if (reconnectAttempts >= maxReconnectAttempts) {
+        console.error('❌ فشل في إعادة الاتصال بعد عدة محاولات');
+        showConnectionNotification('فشل في الاتصال - يرجى تحديث الصفحة', 'error');
+        return;
+    }
+
+    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Max 30 seconds
+    reconnectAttempts++;
+
+    setTimeout(() => {
+        console.log(`🔄 محاولة إعادة الاتصال ${reconnectAttempts}/${maxReconnectAttempts}`);
+        subscribeToAttachmentChanges();
+    }, delay);
+}
+
+// Show connection status notification
+function showConnectionNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.connection-notification');
+    existingNotifications.forEach(n => n.remove());
+
+    const notification = document.createElement('div');
+    notification.className = `connection-notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'warning' ? 'fa-exclamation-triangle' : type === 'error' ? 'fa-times-circle' : 'fa-info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    // Add styles
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        background: ${type === 'success' ? '#28a745' : type === 'warning' ? '#ffc107' : type === 'error' ? '#dc3545' : '#17a2b8'};
+    `;
+
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+
+    // Auto remove after delay
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+    }, type === 'error' ? 10000 : 3000);
+}
+
+// Show attachment-specific notifications
+function showAttachmentNotification(eventType, attachment) {
+    const messages = {
+        'INSERT': `تم رفع ملف جديد: ${attachment.file_name}`,
+        'UPDATE': `تم تحديث الملف: ${attachment.file_name}`,
+        'DELETE': `تم حذف الملف: ${attachment.file_name}`
+    };
+
+    const message = messages[eventType] || `تغيير في الملف: ${attachment.file_name}`;
+
+    // Only show if not the current user's action
+    if (!isCurrentUserAction(attachment)) {
+        showConnectionNotification(message, 'info');
+    }
+}
+
+// Check if this is the current user's action (to avoid showing notifications for own actions)
+function isCurrentUserAction(attachment) {
+    // Simple check - if the attachment was created very recently (within last 2 seconds)
+    // it's likely from the current user
+    const now = new Date();
+    const createdAt = new Date(attachment.created_at);
+    return (now - createdAt) < 2000;
+}
+
+// Update connection indicator in UI
+function updateConnectionIndicator(isConnected) {
+    let indicator = document.getElementById('connectionIndicator');
+
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'connectionIndicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            z-index: 9999;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+        `;
+        document.body.appendChild(indicator);
+    }
+
+    indicator.style.backgroundColor = isConnected ? '#28a745' : '#dc3545';
+    indicator.title = isConnected ? 'متصل - المزامنة نشطة' : 'غير متصل';
 }
 
 // Update attachments UI when changes occur
@@ -889,46 +1139,245 @@ function updateAttachmentsUI(propertyKey) {
     // Check if attachment modal is open for this property
     const modal = document.querySelector('.modal-overlay .attachments-modal');
     if (modal) {
-        // Refresh the attachments list
-        const listContainer = modal.querySelector('.attachments-list');
-        if (listContainer) {
-            // Reload attachments for this property
-            refreshAttachmentsList(propertyKey);
+        // Check if this modal is for the affected property
+        const modalPropertyKey = modal.getAttribute('data-property-key');
+        if (modalPropertyKey === propertyKey) {
+            // Refresh the attachments list
+            const listContainer = modal.querySelector('.attachments-list');
+            if (listContainer) {
+                // Reload attachments for this property
+                refreshAttachmentsList(propertyKey);
+            }
         }
+    }
+
+    // Update any attachment count indicators in the main UI
+    updateAttachmentCountIndicators(propertyKey);
+}
+
+// Update attachment count indicators in main UI
+function updateAttachmentCountIndicators(propertyKey) {
+    // Update attachment badges/counts in property cards or lists
+    const propertyElements = document.querySelectorAll(`[data-property-key="${propertyKey}"]`);
+
+    propertyElements.forEach(async (element) => {
+        try {
+            const attachments = await getPropertyAttachmentsEnhanced(propertyKey);
+            const countElement = element.querySelector('.attachment-count');
+
+            if (countElement) {
+                countElement.textContent = attachments.length;
+                countElement.style.display = attachments.length > 0 ? 'inline' : 'none';
+            }
+        } catch (error) {
+            console.error('❌ خطأ في تحديث عداد المرفقات:', error);
+        }
+    });
+}
+
+// Update attachment badges for property
+async function updateAttachmentBadges(propertyKey) {
+    try {
+        const attachments = await getPropertyAttachmentsEnhanced(propertyKey);
+        const count = attachments.length;
+
+        // Update all attachment buttons for this property
+        const attachmentButtons = document.querySelectorAll(`[onclick*="${propertyKey}"][onclick*="showAttachmentsModal"]`);
+
+        attachmentButtons.forEach(button => {
+            let badge = button.querySelector('.attachment-badge');
+
+            if (count > 0) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'attachment-badge';
+                    badge.style.cssText = `
+                        position: absolute;
+                        top: -5px;
+                        right: -5px;
+                        background: #dc3545;
+                        color: white;
+                        border-radius: 50%;
+                        width: 18px;
+                        height: 18px;
+                        font-size: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                    `;
+                    button.style.position = 'relative';
+                    button.appendChild(badge);
+                }
+                badge.textContent = count;
+                badge.style.display = 'flex';
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث شارات المرفقات:', error);
     }
 }
 
-// Refresh attachments list in open modal
+// Enhanced refresh attachments list with real-time updates
 async function refreshAttachmentsList(propertyKey) {
     try {
         const attachments = await getPropertyAttachmentsEnhanced(propertyKey);
         const listContainer = document.querySelector('.attachments-list');
 
         if (listContainer && attachments) {
-            // Update the list content
+            // Show loading state
+            listContainer.style.opacity = '0.7';
+
+            // Update the list content with enhanced UI
             if (attachments.length === 0) {
-                listContainer.innerHTML = '<div style="text-align:center;color:#888;padding:30px 0;">لا توجد مرفقات بعد</div>';
-            } else {
-                listContainer.innerHTML = attachments.map(att => `
-                    <div class="attachment-item" data-name="${att.file_name.toLowerCase()}">
-                        <div class="attachment-icon"><i class="${getFileIcon(att.file_type)}"></i></div>
-                        <div class="attachment-name">${att.file_name}</div>
-                        <div class="attachment-actions">
-                            <button class="attachment-btn" onclick="viewAttachmentFromSupabase('${att.id}', '${att.file_url}', '${att.file_type}')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="attachment-btn" onclick="downloadAttachmentFromSupabase('${att.file_url}', '${att.file_name}')">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button class="attachment-btn delete-btn" onclick="deleteAttachmentFromSupabase('${att.id}', '${propertyKey}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+                listContainer.innerHTML = `
+                    <div class="no-attachments-state">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                        <p style="color: #888; margin: 0;">لا توجد مرفقات بعد</p>
+                        <p style="color: #aaa; font-size: 0.9rem; margin: 0.5rem 0 0 0;">اسحب الملفات هنا أو استخدم زر الرفع</p>
                     </div>
-                `).join('');
+                `;
+            } else {
+                listContainer.innerHTML = attachments.map(att => {
+                    const uploadDate = new Date(att.created_at).toLocaleDateString('ar-SA');
+                    const fileSize = formatFileSize(att.file_size);
+
+                    return `
+                        <div class="attachment-item enhanced" data-name="${att.file_name.toLowerCase()}" data-id="${att.id}">
+                            <div class="attachment-icon">
+                                <i class="${getFileIcon(att.file_type)}"></i>
+                            </div>
+                            <div class="attachment-details">
+                                <div class="attachment-name" title="${att.file_name}">${att.file_name}</div>
+                                <div class="attachment-meta">
+                                    <span class="file-size">${fileSize}</span>
+                                    <span class="upload-date">${uploadDate}</span>
+                                    ${att.notes ? `<span class="file-notes" title="${att.notes}"><i class="fas fa-sticky-note"></i></span>` : ''}
+                                </div>
+                            </div>
+                            <div class="attachment-actions">
+                                <button class="attachment-btn view-btn" onclick="viewAttachmentFromSupabase('${att.id}', '${att.file_url}', '${att.file_type}')" title="معاينة">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="attachment-btn download-btn" onclick="downloadAttachmentFromSupabase('${att.file_url}', '${att.file_name}')" title="تحميل">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="attachment-btn delete-btn" onclick="deleteAttachmentFromSupabase('${att.id}', '${propertyKey}')" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             }
+
+            // Restore opacity with animation
+            setTimeout(() => {
+                listContainer.style.opacity = '1';
+            }, 100);
+
+            // Update attachment count in modal header
+            updateModalAttachmentCount(attachments.length);
         }
     } catch (error) {
         console.error('❌ خطأ في تحديث قائمة المرفقات:', error);
+
+        // Show error state
+        if (listContainer) {
+            listContainer.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc3545; margin-bottom: 1rem;"></i>
+                    <p style="color: #dc3545;">خطأ في تحميل المرفقات</p>
+                    <button onclick="refreshAttachmentsList('${propertyKey}')" class="btn-secondary">إعادة المحاولة</button>
+                </div>
+            `;
+        }
+    }
+}
+
+// Update attachment count in modal header
+function updateModalAttachmentCount(count) {
+    const countElement = document.querySelector('.attachments-modal .modal-title .attachment-count');
+    if (countElement) {
+        countElement.textContent = `(${count})`;
+        countElement.style.display = count > 0 ? 'inline' : 'none';
+    }
+}
+
+// Format file size for display
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Enhanced delete attachment with real-time sync
+async function deleteAttachmentEnhanced(attachmentId, propertyKey) {
+    try {
+        if (!confirm('هل أنت متأكد من حذف هذا المرفق؟')) {
+            return false;
+        }
+
+        // Show loading state
+        const attachmentItem = document.querySelector(`[data-id="${attachmentId}"]`);
+        if (attachmentItem) {
+            attachmentItem.style.opacity = '0.5';
+            attachmentItem.style.pointerEvents = 'none';
+        }
+
+        // Get attachment details before deletion
+        const { data: attachment, error: fetchError } = await supabaseClient
+            .from('attachments')
+            .select('*')
+            .eq('id', attachmentId)
+            .single();
+
+        if (fetchError) {
+            throw fetchError;
+        }
+
+        // Delete from storage
+        if (attachment.storage_path) {
+            const { error: storageError } = await supabaseClient.storage
+                .from('attachments')
+                .remove([attachment.storage_path]);
+
+            if (storageError) {
+                console.warn('⚠️ خطأ في حذف الملف من التخزين:', storageError);
+            }
+        }
+
+        // Delete from database
+        const { error: dbError } = await supabaseClient
+            .from('attachments')
+            .delete()
+            .eq('id', attachmentId);
+
+        if (dbError) {
+            throw dbError;
+        }
+
+        console.log('✅ تم حذف المرفق بنجاح');
+
+        // The real-time subscription will handle UI updates
+        return true;
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف المرفق:', error);
+
+        // Restore item state on error
+        const attachmentItem = document.querySelector(`[data-id="${attachmentId}"]`);
+        if (attachmentItem) {
+            attachmentItem.style.opacity = '1';
+            attachmentItem.style.pointerEvents = 'auto';
+        }
+
+        alert('حدث خطأ في حذف المرفق. يرجى المحاولة مرة أخرى.');
+        return false;
     }
 }

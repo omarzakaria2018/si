@@ -160,7 +160,7 @@ function convertSupabaseToOriginalFormat(supabaseProperty) {
         'قيمة  الايجار ': supabaseProperty.rent_value,
         'المساحة': supabaseProperty.area,
         'تاريخ البداية': formatDateForDisplay(supabaseProperty.start_date),
-        'تاريخ النهاية': supabaseProperty.end_date,
+        'تاريخ النهاية': formatDateForDisplay(supabaseProperty.end_date),
         'الاجمالى': supabaseProperty.total_amount,
         'رقم حساب الكهرباء': supabaseProperty.electricity_account,
         'عدد الاقساط المتبقية': supabaseProperty.remaining_installments,
@@ -177,22 +177,112 @@ function convertSupabaseToOriginalFormat(supabaseProperty) {
     };
 }
 
-// Format date for display
+// Format date for display - Enhanced to prevent date decrement issues
 function formatDateForDisplay(dateStr) {
     if (!dateStr) return null;
-    
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr;
-    
-    // Format as YYYY-MM-DD HH:MM:SS for consistency
-    return date.toISOString().replace('T', ' ').substring(0, 19);
+
+    // Remove any Arabic text if present
+    if (typeof dateStr === 'string' && dateStr.includes('(') && dateStr.includes(')')) {
+        const numericPart = dateStr.split('(')[0].trim();
+        if (numericPart) {
+            dateStr = numericPart;
+        }
+    }
+
+    // Clean the date string
+    dateStr = dateStr.toString().trim();
+
+    // If the date is already in dd/mm/yyyy format, validate and keep it as is
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        const parts = dateStr.split('/');
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]);
+        const year = parseInt(parts[2]);
+
+        // Validate date
+        if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            // Additional validation using Date object to avoid dates like Feb 31
+            const testDate = new Date(year, month - 1, day, 12, 0, 0);
+            if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+            }
+        }
+        console.warn(`Invalid date in formatDateForDisplay: ${dateStr}`);
+        return dateStr; // Return original if invalid
+    }
+
+    // If the date is in yyyy-mm-dd format, convert to dd/mm/yyyy
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{1,2}-\d{1,2}/)) {
+        const parts = dateStr.split('-');
+        if (parts.length >= 3) {
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+
+            // Validate date
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                // Additional validation using Date object to avoid timezone issues
+                const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                    return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+                }
+            }
+        }
+        console.warn(`Invalid date conversion in formatDateForDisplay: ${dateStr}`);
+        return dateStr; // Return original if invalid
+    }
+
+    // Try to parse as Date object (last resort)
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+            console.warn(`Invalid date in formatDateForDisplay: ${dateStr}`);
+            return dateStr; // Return original if invalid
+        }
+
+        // Format as dd/mm/yyyy using UTC to avoid timezone issues
+        const day = date.getUTCDate();
+        const month = date.getUTCMonth() + 1;
+        const year = date.getUTCFullYear();
+
+        // Validate parsed date
+        if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+        }
+
+        console.warn(`Invalid parsed date in formatDateForDisplay: ${dateStr}`);
+        return dateStr; // Return original if invalid
+    } catch (error) {
+        console.warn(`Error parsing date in formatDateForDisplay: ${dateStr}`, error);
+        return dateStr; // Return original if error
+    }
 }
 
-// Load original JSON data as fallback
+// Load original JSON data as fallback - Fixed to preserve date formats
 async function loadOriginalJsonData() {
     try {
         const response = await fetch('data.json');
         const data = await response.json();
+
+        // Ensure dates are in correct format without conversion
+        data.forEach(property => {
+            // Fix date fields to ensure they're in dd/mm/yyyy format
+            const dateFields = ['تاريخ البداية', 'تاريخ النهاية', 'تاريخ نهاية القسط'];
+            dateFields.forEach(field => {
+                if (property[field]) {
+                    property[field] = ensureDateFormat(property[field]);
+                }
+            });
+
+            // Fix installment dates
+            for (let i = 1; i <= 20; i++) {
+                const installmentDateKey = `تاريخ القسط ${getArabicNumber(i)}`;
+                if (property[installmentDateKey]) {
+                    property[installmentDateKey] = ensureDateFormat(property[installmentDateKey]);
+                }
+            }
+        });
+
         properties = data;
         recalculateAllTotals();
         renderData();
@@ -200,6 +290,45 @@ async function loadOriginalJsonData() {
     } catch (error) {
         console.error('Error loading original JSON data:', error);
     }
+}
+
+// Ensure date is in dd/mm/yyyy format
+function ensureDateFormat(dateStr) {
+    if (!dateStr) return dateStr;
+
+    // If already in dd/mm/yyyy format, return as is
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        return dateStr;
+    }
+
+    // If in yyyy-mm-dd format, convert to dd/mm/yyyy
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{1,2}-\d{1,2}/)) {
+        const parts = dateStr.split('-');
+        if (parts.length >= 3) {
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+
+            // Validate date
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+            }
+        }
+    }
+
+    // Return original if can't convert
+    return dateStr;
+}
+
+// Helper function to get Arabic number names
+function getArabicNumber(num) {
+    const arabicNumbers = {
+        1: 'الأول', 2: 'الثاني', 3: 'الثالث', 4: 'الرابع', 5: 'الخامس',
+        6: 'السادس', 7: 'السابع', 8: 'الثامن', 9: 'التاسع', 10: 'العاشر',
+        11: 'الحادي عشر', 12: 'الثاني عشر', 13: 'الثالث عشر', 14: 'الرابع عشر', 15: 'الخامس عشر',
+        16: 'السادس عشر', 17: 'السابع عشر', 18: 'الثامن عشر', 19: 'التاسع عشر', 20: 'العشرون'
+    };
+    return arabicNumbers[num] || num.toString();
 }
 
 // Check if migration is needed
