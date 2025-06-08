@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize data loading (Supabase or JSON fallback)
     initializeDataLoading()
         .then(() => {
+            // إصلاح التواريخ المحفوظة بشكل خاطئ
+            fixCorruptedDates();
+
             // إعادة حساب الإجماليات الفارغة
             recalculateAllTotals();
 
@@ -42,6 +45,9 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 initializeHeaderButtons();
             }, 100);
+
+            // Initialize Supabase attachments system
+            initializeAttachmentsSystem();
         })
         .catch(error => {
             console.error('خطأ في تحميل البيانات:', error);
@@ -942,10 +948,14 @@ function addTotalItem(container, label, value, extraClass = '') {
 // حساب حالة العقار
 function parseDate(dateStr) {
     if (!dateStr) return null;
+
     let datePart = dateStr.split(' ')[0];
     let parts = datePart.includes('/') ? datePart.split('/') : datePart.split('-');
+
     if (parts.length !== 3) return null;
+
     let day, month, year;
+
     // إذا كان أول جزء 4 أرقام فهو السنة
     if (parts[0].length === 4) {
         year = Number(parts[0]);
@@ -956,7 +966,26 @@ function parseDate(dateStr) {
         month = Number(parts[1]);
         year = Number(parts[2]);
     }
-    return new Date(year, month - 1, day);
+
+    // التحقق من صحة التاريخ
+    if (isNaN(year) || isNaN(month) || isNaN(day) ||
+        year < 1900 || year > 2100 ||
+        month < 1 || month > 12 ||
+        day < 1 || day > 31) {
+        console.warn(`تاريخ غير صحيح في parseDate: ${dateStr}`);
+        return null;
+    }
+
+    // إنشاء كائن التاريخ والتحقق من صحته
+    const date = new Date(year, month - 1, day);
+
+    // التحقق من أن التاريخ المنشأ يطابق المدخلات (للتأكد من عدم وجود تواريخ مثل 31 فبراير)
+    if (date.getFullYear() !== year || date.getMonth() !== (month - 1) || date.getDate() !== day) {
+        console.warn(`تاريخ غير صالح في parseDate: ${dateStr}`);
+        return null;
+    }
+
+    return date;
 }
 
 function isSameDate(d1, d2) {
@@ -1661,32 +1690,51 @@ function getInstallmentMonthsAndYears() {
     });
 }
 
-// تنسيق التاريخ للهجة العربية
+// تنسيق التاريخ للهجة العربية - محسن لمنع التواريخ العشوائية
 function formatArabicDate(dateStr) {
     if (!dateStr) return '';
+
+    // حفظ التاريخ الأصلي
+    const originalDateStr = dateStr;
+
     // دعم صيغ: yyyy-mm-dd, dd/mm/yyyy, dd-mm-yyyy, yyyy/mm/dd, مع أو بدون وقت
     let datePart = dateStr.split(' ')[0];
     let parts = datePart.includes('/') ? datePart.split('/') : datePart.split('-');
-    if (parts.length !== 3) return dateStr;
+
+    if (parts.length !== 3) return originalDateStr;
+
     let day, month, year;
+
     // إذا كان أول جزء 4 أرقام فهو السنة
     if (parts[0].length === 4) {
-        year = parts[0];
-        month = parts[1];
-        day = parts[2];
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        day = parseInt(parts[2]);
     } else {
-        day = parts[0];
-        month = parts[1];
-        year = parts[2];
+        day = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        year = parseInt(parts[2]);
     }
-    // إزالة الصفر الزائد
-    month = parseInt(month, 10);
+
+    // التحقق من صحة التاريخ
+    if (isNaN(year) || isNaN(month) || isNaN(day) ||
+        year < 1900 || year > 2100 ||
+        month < 1 || month > 12 ||
+        day < 1 || day > 31) {
+        console.warn(`تاريخ غير صحيح في formatArabicDate: ${originalDateStr}`);
+        return originalDateStr; // إرجاع التاريخ الأصلي إذا كان غير صحيح
+    }
+
     const months = [
         '', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
         'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
     ];
+
+    // إنشاء التاريخ المنسق بصيغة dd/mm/yyyy
+    const formattedDate = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+
     // التاريخ الرقمي + (التاريخ النصي)
-    return `${datePart} (${parseInt(day,10)}/${months[month]}/${year})`;
+    return `${formattedDate} (${day}/${months[month]}/${year})`;
 }
 
 // عرض تفاصيل الأقساط
@@ -3018,41 +3066,272 @@ function showAttachmentsModal(city, propertyName) {
 }
 // ...existing code...
 
-// رفع الملفات
-function handleFileUpload(event, city, propertyName) {
-    handleFiles(event.target.files, city, propertyName);
+// Enhanced file upload with Supabase integration
+async function handleFileUploadEnhanced(event, city, propertyName) {
+    const files = event.target.files;
+    const notes = document.getElementById('uploadNotes')?.value || '';
+
+    if (files.length === 0) return;
+
+    // Show upload progress
+    const progressModal = document.createElement('div');
+    progressModal.className = 'modal-overlay';
+    progressModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px;">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #17a2b8;"></i>
+            <h3>جاري رفع الملفات...</h3>
+            <div class="upload-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                </div>
+                <p id="progressText">0 من ${files.length} ملف</p>
+            </div>
+            <p id="uploadStatus">جاري التحقق من الاتصال...</p>
+        </div>
+    `;
+    document.body.appendChild(progressModal);
+
+    try {
+        // Check if Supabase is available and working
+        const supabaseAvailable = await checkSupabaseAvailability();
+
+        if (supabaseAvailable) {
+            document.getElementById('uploadStatus').textContent = 'جاري الرفع إلى السحابة...';
+            await handleFilesEnhanced(files, city, propertyName, notes);
+
+            // Remove progress modal
+            progressModal.remove();
+
+            // Show success message
+            const successModal = document.createElement('div');
+            successModal.className = 'modal-overlay';
+            successModal.innerHTML = `
+                <div class="modal-box" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #28a745;"></i>
+                    <h3>تم رفع الملفات بنجاح!</h3>
+                    <p>تم رفع ${files.length} ملف إلى السحابة وسيظهر على جميع الأجهزة</p>
+                    <button class="btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')">
+                        عرض المرفقات
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(successModal);
+        } else {
+            throw new Error('Supabase غير متوفر');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في رفع الملفات:', error);
+
+        // Update status
+        document.getElementById('uploadStatus').textContent = 'جاري الحفظ محلياً...';
+
+        // Fallback to local upload
+        await handleFilesLocal(files, city, propertyName, notes);
+
+        // Remove progress modal
+        progressModal.remove();
+
+        // Show fallback message
+        const fallbackModal = document.createElement('div');
+        fallbackModal.className = 'modal-overlay';
+        fallbackModal.innerHTML = `
+            <div class="modal-box" style="text-align: center; padding: 40px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ffc107;"></i>
+                <h3>تم الحفظ محلياً</h3>
+                <p>لم يتمكن من الرفع للسحابة، تم حفظ الملفات محلياً</p>
+                <p><small>يمكنك المزامنة لاحقاً عند توفر الاتصال</small></p>
+                <div style="margin-top: 20px;">
+                    <button class="btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')">
+                        عرض المرفقات
+                    </button>
+                    <button class="btn-secondary" onclick="closeModal(); retryUploadToSupabase('${city}', '${propertyName}')">
+                        إعادة المحاولة
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(fallbackModal);
+    }
 }
-function handleFiles(files, city, propertyName) {
+
+// Check if Supabase is available and working
+async function checkSupabaseAvailability() {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase client غير متوفر');
+            return false;
+        }
+
+        // Test connection with a simple query
+        const { error } = await supabaseClient
+            .from('attachments')
+            .select('count', { count: 'exact', head: true });
+
+        if (error) {
+            console.warn('⚠️ جدول المرفقات غير متوفر:', error.message);
+            return false;
+        }
+
+        console.log('✅ Supabase متوفر ويعمل');
+        return true;
+
+    } catch (error) {
+        console.warn('⚠️ خطأ في التحقق من Supabase:', error.message);
+        return false;
+    }
+}
+
+// Retry upload to Supabase
+async function retryUploadToSupabase(city, propertyName) {
+    try {
+        const propertyKey = `${city}_${propertyName}`;
+
+        // Show retry modal
+        const retryModal = document.createElement('div');
+        retryModal.className = 'modal-overlay';
+        retryModal.innerHTML = `
+            <div class="modal-box" style="text-align: center; padding: 40px;">
+                <i class="fas fa-sync fa-spin" style="font-size: 2rem; color: #17a2b8;"></i>
+                <h3>جاري إعادة المحاولة...</h3>
+                <p>يتم رفع المرفقات المحلية إلى السحابة</p>
+            </div>
+        `;
+        document.body.appendChild(retryModal);
+
+        // Check if Supabase is available
+        const supabaseAvailable = await checkSupabaseAvailability();
+
+        if (supabaseAvailable && typeof syncLocalAttachmentsToSupabase === 'function') {
+            await syncLocalAttachmentsToSupabase();
+
+            // Remove retry modal
+            retryModal.remove();
+
+            // Show success message
+            const successModal = document.createElement('div');
+            successModal.className = 'modal-overlay';
+            successModal.innerHTML = `
+                <div class="modal-box" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #28a745;"></i>
+                    <h3>تمت المزامنة بنجاح!</h3>
+                    <p>تم رفع جميع المرفقات المحلية إلى السحابة</p>
+                    <button class="btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')">
+                        عرض المرفقات
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(successModal);
+
+        } else {
+            // Remove retry modal
+            retryModal.remove();
+
+            // Show error message
+            const errorModal = document.createElement('div');
+            errorModal.className = 'modal-overlay';
+            errorModal.innerHTML = `
+                <div class="modal-box" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc3545;"></i>
+                    <h3>فشل في المزامنة</h3>
+                    <p>لا يزال الاتصال بالسحابة غير متوفر</p>
+                    <button class="btn-secondary" onclick="closeModal()">إغلاق</button>
+                </div>
+            `;
+            document.body.appendChild(errorModal);
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في إعادة المحاولة:', error);
+
+        // Show error message
+        const errorModal = document.createElement('div');
+        errorModal.className = 'modal-overlay';
+        errorModal.innerHTML = `
+            <div class="modal-box" style="text-align: center; padding: 40px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc3545;"></i>
+                <h3>خطأ في المزامنة</h3>
+                <p>حدث خطأ أثناء محاولة المزامنة</p>
+                <button class="btn-secondary" onclick="closeModal()">إغلاق</button>
+            </div>
+        `;
+        document.body.appendChild(errorModal);
+    }
+}
+
+// Enhanced file handling with Supabase upload
+async function handleFilesEnhanced(files, city, propertyName, notes = '') {
+    const propertyKey = `${city}_${propertyName}`;
+    let filesProcessed = 0;
+    const totalFiles = files.length;
+
+    for (const file of files) {
+        try {
+            // Upload to Supabase
+            if (typeof uploadFileToSupabase === 'function') {
+                await uploadFileToSupabase(file, propertyKey, notes);
+            } else {
+                throw new Error('Supabase upload function not available');
+            }
+
+            filesProcessed++;
+
+            // Update progress
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            if (progressFill && progressText) {
+                const percentage = (filesProcessed / totalFiles) * 100;
+                progressFill.style.width = `${percentage}%`;
+                progressText.textContent = `${filesProcessed} من ${totalFiles} ملف`;
+            }
+
+        } catch (error) {
+            console.error(`❌ فشل في رفع ${file.name}:`, error);
+            throw error;
+        }
+    }
+}
+
+// Fallback local file handling
+async function handleFilesLocal(files, city, propertyName, notes = '') {
     const propertyKey = `${city}_${propertyName}`;
     if (!attachments[propertyKey]) attachments[propertyKey] = [];
 
     let filesProcessed = 0;
     const totalFiles = files.length;
 
-    Array.from(files).forEach(file => {
+    for (const file of files) {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            attachments[propertyKey].push({
-                name: file.name,
-                type: file.type,
-                data: e.target.result,
-                date: new Date().toISOString(),
-                size: file.size
-            });
 
-            filesProcessed++;
+        await new Promise((resolve) => {
+            reader.onload = function(e) {
+                attachments[propertyKey].push({
+                    name: file.name,
+                    type: file.type,
+                    data: e.target.result,
+                    date: new Date().toISOString(),
+                    size: file.size,
+                    notes: notes
+                });
 
-            // حفظ في التخزين المحلي
-            localStorage.setItem('propertyAttachments', JSON.stringify(attachments));
+                filesProcessed++;
+                resolve();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 
-            // إذا تم معالجة جميع الملفات، أعد تحميل النافذة مع رسالة نجاح
-            if (filesProcessed === totalFiles) {
-                alert(`تم رفع ${totalFiles} ملف بنجاح!`);
-                showAttachmentsModal(city, propertyName);
-            }
-        };
-        reader.readAsDataURL(file);
-    });
+    // Save to localStorage
+    localStorage.setItem('propertyAttachments', JSON.stringify(attachments));
+}
+
+// Legacy function for backward compatibility
+function handleFileUpload(event, city, propertyName) {
+    handleFileUploadEnhanced(event, city, propertyName);
+}
+
+function handleFiles(files, city, propertyName) {
+    handleFilesLocal(files, city, propertyName);
 }
 
 // بحث في المرفقات
@@ -3129,6 +3408,399 @@ function deleteAttachment(propertyKey, fileName, city, propertyName) {
     attachments[propertyKey] = (attachments[propertyKey] || []).filter(a => a.name !== fileName);
     localStorage.setItem('propertyAttachments', JSON.stringify(attachments));
     showAttachmentsModal(city, propertyName);
+}
+
+// ===== SUPABASE ATTACHMENT FUNCTIONS =====
+
+// View attachment from Supabase
+function viewAttachmentFromSupabase(attachmentId, fileUrl, fileType) {
+    if (fileType.startsWith('image/')) {
+        let html = `<div class="modal-overlay" style="display:flex;">
+            <div class="modal-box mobile-friendly" style="max-width:90vw;max-height:90vh;padding:10px;">
+                <button class="close-modal mobile-friendly" onclick="closeModal()">×</button>
+                <img src="${fileUrl}" style="max-width:100%;max-height:80vh;display:block;margin:0 auto;" alt="مرفق">
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+    } else if (fileType === 'application/pdf') {
+        let html = `<div class="modal-overlay" style="display:flex;">
+            <div class="modal-box mobile-friendly" style="max-width:90vw;max-height:90vh;padding:10px;">
+                <button class="close-modal mobile-friendly" onclick="closeModal()">×</button>
+                <iframe src="${fileUrl}" style="width:100%;height:80vh;border:none;" title="مرفق PDF"></iframe>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+    } else {
+        // For other file types, download directly
+        downloadAttachmentFromSupabase(fileUrl, 'attachment');
+    }
+}
+
+// Download attachment from Supabase
+function downloadAttachmentFromSupabase(fileUrl, fileName) {
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.download = fileName;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Delete attachment from Supabase
+async function deleteAttachmentFromSupabase(attachmentId, propertyKey) {
+    if (!confirm('هل أنت متأكد من حذف هذا المرفق؟ سيتم حذفه نهائياً من السحابة.')) return;
+
+    // Show loading
+    const loadingModal = document.createElement('div');
+    loadingModal.className = 'modal-overlay';
+    loadingModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #dc3545;"></i>
+            <p style="margin-top: 20px;">جاري حذف المرفق...</p>
+        </div>
+    `;
+    document.body.appendChild(loadingModal);
+
+    try {
+        if (typeof deleteAttachmentEnhanced === 'function') {
+            await deleteAttachmentEnhanced(attachmentId);
+
+            // Remove loading modal
+            loadingModal.remove();
+
+            // Show success message
+            const successModal = document.createElement('div');
+            successModal.className = 'modal-overlay';
+            successModal.innerHTML = `
+                <div class="modal-box" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #28a745;"></i>
+                    <h3>تم حذف المرفق بنجاح</h3>
+                    <button class="btn-primary" onclick="closeModal(); refreshAttachmentsList('${propertyKey}')">
+                        تحديث القائمة
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(successModal);
+
+        } else {
+            throw new Error('Delete function not available');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف المرفق:', error);
+
+        // Remove loading modal
+        loadingModal.remove();
+
+        // Show error message
+        const errorModal = document.createElement('div');
+        errorModal.className = 'modal-overlay';
+        errorModal.innerHTML = `
+            <div class="modal-box" style="text-align: center; padding: 40px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc3545;"></i>
+                <h3>خطأ في حذف المرفق</h3>
+                <p>حدث خطأ أثناء حذف المرفق من السحابة</p>
+                <button class="btn-secondary" onclick="closeModal()">إغلاق</button>
+            </div>
+        `;
+        document.body.appendChild(errorModal);
+    }
+}
+
+// Manual sync attachments
+async function syncAttachmentsManually(propertyKey) {
+    const syncModal = document.createElement('div');
+    syncModal.className = 'modal-overlay';
+    syncModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px;">
+            <i class="fas fa-sync fa-spin" style="font-size: 2rem; color: #17a2b8;"></i>
+            <h3>جاري المزامنة...</h3>
+            <p>يتم مزامنة المرفقات مع السحابة</p>
+        </div>
+    `;
+    document.body.appendChild(syncModal);
+
+    try {
+        if (typeof syncLocalAttachmentsToSupabase === 'function') {
+            await syncLocalAttachmentsToSupabase();
+
+            // Remove sync modal
+            syncModal.remove();
+
+            // Show success message
+            const successModal = document.createElement('div');
+            successModal.className = 'modal-overlay';
+            successModal.innerHTML = `
+                <div class="modal-box" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-check-circle" style="font-size: 2rem; color: #28a745;"></i>
+                    <h3>تمت المزامنة بنجاح</h3>
+                    <p>تم مزامنة جميع المرفقات مع السحابة</p>
+                    <button class="btn-primary" onclick="closeModal(); refreshAttachmentsList('${propertyKey}')">
+                        تحديث القائمة
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(successModal);
+
+        } else {
+            throw new Error('Sync function not available');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في المزامنة:', error);
+
+        // Remove sync modal
+        syncModal.remove();
+
+        // Show error message
+        const errorModal = document.createElement('div');
+        errorModal.className = 'modal-overlay';
+        errorModal.innerHTML = `
+            <div class="modal-box" style="text-align: center; padding: 40px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc3545;"></i>
+                <h3>خطأ في المزامنة</h3>
+                <p>حدث خطأ أثناء مزامنة المرفقات</p>
+                <button class="btn-secondary" onclick="closeModal()">إغلاق</button>
+            </div>
+        `;
+        document.body.appendChild(errorModal);
+    }
+}
+
+// Enhanced drag and drop setup
+function setupDragAndDropEnhanced(propertyKey) {
+    const uploadZone = document.querySelector('.upload-zone');
+    if (!uploadZone) return;
+
+    // Enhanced mobile-friendly drag and drop
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+        uploadZone.style.borderColor = '#2a4b9b';
+        uploadZone.style.backgroundColor = '#f8f9fa';
+    });
+
+    uploadZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        uploadZone.style.borderColor = '#ddd';
+        uploadZone.style.backgroundColor = '';
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        uploadZone.style.borderColor = '#ddd';
+        uploadZone.style.backgroundColor = '';
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            // Extract city and property name from the current modal
+            const modal = uploadZone.closest('.attachments-modal');
+            if (modal) {
+                const headerText = modal.querySelector('.attachments-header span').textContent;
+                const propertyName = headerText.split(' ')[1]; // Extract property name
+                const cityText = modal.querySelector('.attachments-header span:nth-child(2)').textContent;
+                const city = cityText.split(' ')[1]; // Extract city name
+
+                handleFileUploadEnhanced({ target: { files } }, city, propertyName);
+            }
+        }
+    });
+
+    // Touch support for mobile devices
+    uploadZone.addEventListener('touchstart', (e) => {
+        uploadZone.style.backgroundColor = '#f8f9fa';
+    });
+
+    uploadZone.addEventListener('touchend', (e) => {
+        uploadZone.style.backgroundColor = '';
+    });
+}
+
+// Show local attachments modal (fallback)
+function showAttachmentsModalLocal(city, propertyName) {
+    const propertyKey = `${city}_${propertyName}`;
+    const propertyAttachments = attachments[propertyKey] || [];
+
+    // Use the original function logic but with local data only
+    showAttachmentsModal(city, propertyName);
+}
+
+// ===== ATTACHMENTS SYSTEM INITIALIZATION =====
+
+// Initialize the enhanced attachments system
+async function initializeAttachmentsSystem() {
+    try {
+        console.log('🔄 تهيئة نظام المرفقات المحسن...');
+
+        // Check if Supabase is available
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متوفر، سيتم استخدام النظام المحلي فقط');
+            return;
+        }
+
+        // Ensure Supabase attachments table exists
+        if (typeof ensureAttachmentsTableExists === 'function') {
+            await ensureAttachmentsTableExists();
+        } else {
+            console.warn('⚠️ وظيفة ensureAttachmentsTableExists غير متوفرة');
+        }
+
+        // Subscribe to real-time attachment changes
+        if (typeof subscribeToAttachmentChanges === 'function') {
+            subscribeToAttachmentChanges();
+        } else {
+            console.warn('⚠️ وظيفة subscribeToAttachmentChanges غير متوفرة');
+        }
+
+        // Test attachment functions
+        await testAttachmentFunctions();
+
+        // Sync local attachments to Supabase (background process)
+        setTimeout(async () => {
+            if (typeof syncLocalAttachmentsToSupabase === 'function') {
+                try {
+                    await syncLocalAttachmentsToSupabase();
+                    console.log('✅ تم مزامنة المرفقات المحلية مع Supabase');
+                } catch (error) {
+                    console.warn('⚠️ لم يتمكن من مزامنة المرفقات:', error.message);
+                }
+            } else {
+                console.warn('⚠️ وظيفة syncLocalAttachmentsToSupabase غير متوفرة');
+            }
+        }, 5000); // Wait 5 seconds after app load
+
+        console.log('✅ تم تهيئة نظام المرفقات بنجاح');
+
+    } catch (error) {
+        console.error('❌ خطأ في تهيئة نظام المرفقات:', error);
+        console.log('📱 سيتم استخدام النظام المحلي فقط');
+    }
+}
+
+// Test attachment functions availability
+async function testAttachmentFunctions() {
+    try {
+        console.log('🧪 اختبار وظائف المرفقات...');
+
+        const functions = [
+            'ensureAttachmentsTableExists',
+            'uploadFileToSupabase',
+            'getPropertyAttachmentsEnhanced',
+            'deleteAttachmentEnhanced',
+            'syncLocalAttachmentsToSupabase',
+            'subscribeToAttachmentChanges'
+        ];
+
+        const availableFunctions = [];
+        const missingFunctions = [];
+
+        functions.forEach(funcName => {
+            if (typeof window[funcName] === 'function') {
+                availableFunctions.push(funcName);
+            } else {
+                missingFunctions.push(funcName);
+            }
+        });
+
+        console.log('✅ وظائف متوفرة:', availableFunctions);
+        if (missingFunctions.length > 0) {
+            console.warn('⚠️ وظائف مفقودة:', missingFunctions);
+        }
+
+        // Test Supabase connection for attachments
+        if (supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('attachments')
+                    .select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    console.warn('⚠️ جدول المرفقات غير موجود أو غير متاح:', error.message);
+                } else {
+                    console.log('✅ جدول المرفقات متاح');
+                }
+            } catch (error) {
+                console.warn('⚠️ خطأ في اختبار جدول المرفقات:', error.message);
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في اختبار وظائف المرفقات:', error);
+    }
+}
+
+// Format date for display
+function formatDate(dateString) {
+    if (!dateString) return 'غير محدد';
+
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ar-SA', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch (error) {
+        return 'تاريخ غير صحيح';
+    }
+}
+
+// Enhanced file icon function
+function getFileIcon(type) {
+    if (!type) return 'fas fa-file';
+
+    if (type.startsWith('image/')) return 'fas fa-image';
+    if (type === 'application/pdf') return 'fas fa-file-pdf';
+    if (type.includes('word') || type.includes('document')) return 'fas fa-file-word';
+    if (type.includes('excel') || type.includes('spreadsheet')) return 'fas fa-file-excel';
+    if (type.includes('powerpoint') || type.includes('presentation')) return 'fas fa-file-powerpoint';
+    if (type.startsWith('video/')) return 'fas fa-file-video';
+    if (type.startsWith('audio/')) return 'fas fa-file-audio';
+    if (type.startsWith('text/') || type === 'text/plain') return 'fas fa-file-alt';
+    if (type.includes('zip') || type.includes('rar') || type.includes('archive')) return 'fas fa-file-archive';
+
+    return 'fas fa-file';
+}
+
+// Enhanced file size formatting
+function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '0 بايت';
+
+    const k = 1024;
+    const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت', 'تيرابايت'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    if (i >= sizes.length) return 'ملف كبير جداً';
+
+    const size = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+    return `${size} ${sizes[i]}`;
+}
+
+// Check if device is mobile
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           window.innerWidth <= 768;
+}
+
+// Show toast notification
+function showToast(message, type = 'info', duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = `message-toast ${type}`;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    // Auto remove after duration
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, duration);
+
+    return toast;
 }
 
 // ==================== نظام إدارة العقارات ====================
@@ -4439,12 +5111,23 @@ function savePropertyEdit(event) {
     for (let [key, value] of formData.entries()) {
         if (key.startsWith('original')) continue; // تجاهل الحقول المخفية
 
-        // تحويل التواريخ إلى الصيغة المطلوبة (لكن احتفظ بتواريخ الأقساط كما هي)
+        // تحويل التواريخ إلى الصيغة المطلوبة - معالجة خاصة لتواريخ البداية والنهاية
         if (key.includes('تاريخ') && value && !key.includes('القسط')) {
             // تحويل من yyyy-mm-dd إلى dd/mm/yyyy للتواريخ العادية فقط
             const dateParts = value.split('-');
             if (dateParts.length === 3 && dateParts[0].length === 4) {
-                value = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                // تأكد من أن التاريخ صحيح قبل التحويل
+                const year = parseInt(dateParts[0]);
+                const month = parseInt(dateParts[1]);
+                const day = parseInt(dateParts[2]);
+
+                // التحقق من صحة التاريخ
+                if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    value = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                } else {
+                    console.warn(`تاريخ غير صحيح تم تجاهله: ${value} للحقل: ${key}`);
+                    value = null; // إزالة التاريخ غير الصحيح
+                }
             }
         }
 
@@ -5666,6 +6349,119 @@ function addNewCityToSystem() {
     alert(`تم إضافة مدينة "${cityName}" بنجاح!\nيمكنك الآن إضافة عقارات في هذه المدينة.`);
 
     console.log(`✅ تم إضافة المدينة: ${cityName}`);
+}
+
+// إصلاح التواريخ المحفوظة بشكل خاطئ
+function fixCorruptedDates() {
+    try {
+        console.log('🔧 فحص وإصلاح التواريخ المحفوظة...');
+
+        let fixedCount = 0;
+        const dateFields = ['تاريخ البداية', 'تاريخ النهاية', 'تاريخ نهاية القسط'];
+
+        properties.forEach((property, index) => {
+            dateFields.forEach(field => {
+                if (property[field]) {
+                    const originalDate = property[field];
+                    const fixedDate = fixSingleDate(originalDate);
+
+                    if (fixedDate !== originalDate) {
+                        console.log(`🔧 إصلاح تاريخ ${field} للعقار ${property['اسم العقار'] || index}: ${originalDate} → ${fixedDate}`);
+                        property[field] = fixedDate;
+                        fixedCount++;
+                    }
+                }
+            });
+
+            // إصلاح تواريخ الأقساط
+            for (let i = 1; i <= 20; i++) {
+                const installmentDateKey = `تاريخ القسط ${getArabicNumber(i)}`;
+                if (property[installmentDateKey]) {
+                    const originalDate = property[installmentDateKey];
+                    const fixedDate = fixSingleDate(originalDate);
+
+                    if (fixedDate !== originalDate) {
+                        console.log(`🔧 إصلاح ${installmentDateKey} للعقار ${property['اسم العقار'] || index}: ${originalDate} → ${fixedDate}`);
+                        property[installmentDateKey] = fixedDate;
+                        fixedCount++;
+                    }
+                }
+            }
+        });
+
+        if (fixedCount > 0) {
+            console.log(`✅ تم إصلاح ${fixedCount} تاريخ محفوظ بشكل خاطئ`);
+
+            // حفظ البيانات المصححة
+            saveDataLocally();
+
+            // حفظ في Supabase إذا كان متوفراً
+            if (typeof saveAllPropertiesToSupabase === 'function') {
+                saveAllPropertiesToSupabase();
+            }
+        } else {
+            console.log('✅ جميع التواريخ صحيحة');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في إصلاح التواريخ:', error);
+    }
+}
+
+// إصلاح تاريخ واحد
+function fixSingleDate(dateStr) {
+    if (!dateStr) return dateStr;
+
+    // إذا كان التاريخ يحتوي على نص عربي، استخرج الجزء الرقمي فقط
+    if (dateStr.includes('(') && dateStr.includes(')')) {
+        const numericPart = dateStr.split('(')[0].trim();
+        if (numericPart) {
+            dateStr = numericPart;
+        }
+    }
+
+    // تنظيف التاريخ من المسافات الزائدة
+    dateStr = dateStr.trim();
+
+    // فحص صيغة التاريخ
+    let datePart = dateStr.split(' ')[0];
+    let parts = datePart.includes('/') ? datePart.split('/') : datePart.split('-');
+
+    if (parts.length !== 3) return dateStr;
+
+    let day, month, year;
+
+    // تحديد صيغة التاريخ
+    if (parts[0].length === 4) {
+        // yyyy-mm-dd أو yyyy/mm/dd
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        day = parseInt(parts[2]);
+    } else {
+        // dd/mm/yyyy أو dd-mm-yyyy
+        day = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        year = parseInt(parts[2]);
+    }
+
+    // التحقق من صحة التاريخ
+    if (isNaN(year) || isNaN(month) || isNaN(day) ||
+        year < 1900 || year > 2100 ||
+        month < 1 || month > 12 ||
+        day < 1 || day > 31) {
+        console.warn(`تاريخ غير صحيح: ${dateStr}`);
+        return dateStr; // إرجاع التاريخ الأصلي إذا كان غير صحيح
+    }
+
+    // التحقق من صحة التاريخ باستخدام Date object
+    const testDate = new Date(year, month - 1, day);
+    if (testDate.getFullYear() !== year || testDate.getMonth() !== (month - 1) || testDate.getDate() !== day) {
+        console.warn(`تاريخ غير صالح: ${dateStr}`);
+        return dateStr;
+    }
+
+    // إرجاع التاريخ بصيغة dd/mm/yyyy
+    return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
 }
 
 // استعادة البيانات من localStorage

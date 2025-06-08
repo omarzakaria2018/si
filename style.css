@@ -5319,3 +5319,408 @@ td .remaining-installments {
         transform: translateX(0);
     }
 }
+
+/* ===== ENHANCED MOBILE ATTACHMENTS STYLES ===== */
+
+/* Mobile-optimized attachments modal */
+.attachments-modal.mobile-optimized {
+    width: 95%;
+    max-width: 100%;
+    margin: 10px;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+/* Mobile-friendly elements */
+.mobile-friendly {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Enhanced upload zone for mobile */
+.upload-zone.mobile-friendly {
+    padding: 30px 20px;
+    border: 3px dashed #ddd;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-zone.mobile-friendly:hover,
+.upload-zone.mobile-friendly.drag-over {
+    border-color: #2a4b9b;
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(42, 75, 155, 0.15);
+}
+
+.upload-zone.mobile-friendly i {
+    font-size: 2.5rem;
+    color: #17a2b8;
+    margin-bottom: 15px;
+}
+
+.upload-zone.mobile-friendly p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    margin: 10px 0;
+}
+
+.upload-zone.mobile-friendly small {
+    font-size: 0.9rem;
+    color: #6c757d;
+    line-height: 1.4;
+}
+
+/* Mobile-friendly attachment items */
+.attachment-item.mobile-friendly {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background: #fff;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.attachment-item.mobile-friendly:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-color: #17a2b8;
+}
+
+.attachment-icon.mobile-friendly {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    border-radius: 12px;
+    margin-left: 15px;
+    flex-shrink: 0;
+}
+
+.attachment-icon.mobile-friendly i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.attachment-info.mobile-friendly {
+    flex: 1;
+    min-width: 0;
+}
+
+.attachment-info.mobile-friendly .attachment-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #212529;
+    margin-bottom: 5px;
+    word-break: break-word;
+}
+
+.attachment-info.mobile-friendly .attachment-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.attachment-info.mobile-friendly .cloud-indicator {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.attachment-info.mobile-friendly .local-indicator {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.attachment-actions.mobile-friendly {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Mobile-friendly buttons */
+.mobile-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.attachment-btn.mobile-btn {
+    background: #17a2b8;
+    color: white;
+    min-width: 40px;
+    padding: 10px;
+}
+
+.attachment-btn.mobile-btn:hover {
+    background: #138496;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+}
+
+.attachment-btn.delete-btn.mobile-btn {
+    background: #dc3545;
+}
+
+.attachment-btn.delete-btn.mobile-btn:hover {
+    background: #c82333;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+/* Mobile-friendly search and inputs */
+.attachments-search.mobile-friendly {
+    position: relative;
+    margin: 20px 0;
+}
+
+.attachments-search.mobile-friendly input {
+    width: 100%;
+    padding: 15px 50px 15px 20px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 1rem;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.attachments-search.mobile-friendly input:focus {
+    outline: none;
+    border-color: #17a2b8;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
+}
+
+.attachments-search.mobile-friendly i {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+/* Mobile-friendly textarea */
+textarea.mobile-friendly {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+textarea.mobile-friendly:focus {
+    outline: none;
+    border-color: #17a2b8;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.1);
+}
+
+/* Mobile-friendly modal footer */
+.modal-footer.mobile-friendly {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+    margin-top: 20px;
+}
+
+/* Mobile-friendly close button */
+.close-modal.mobile-friendly {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(0,0,0,0.1);
+    border-radius: 50%;
+    font-size: 1.2rem;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.close-modal.mobile-friendly:hover {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    transform: scale(1.1);
+}
+
+/* Progress bar for uploads */
+.upload-progress {
+    margin: 20px 0;
+    width: 100%;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #17a2b8, #20c997);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Sync indicator */
+.sync-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem;
+    color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+/* Mobile responsive breakpoints for attachments */
+@media (max-width: 768px) {
+    .attachments-modal {
+        width: 98%;
+        margin: 5px;
+        padding: 10px;
+        max-height: 95vh;
+    }
+
+    .attachments-modal.mobile-optimized {
+        padding: 10px;
+    }
+
+    .attachments-header.mobile-friendly {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .upload-zone.mobile-friendly {
+        padding: 20px 15px;
+        min-height: 100px;
+    }
+
+    .upload-zone.mobile-friendly i {
+        font-size: 2rem;
+    }
+
+    .upload-zone.mobile-friendly p {
+        font-size: 1rem;
+    }
+
+    .attachment-item.mobile-friendly {
+        padding: 12px;
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+
+    .attachment-icon.mobile-friendly {
+        margin: 0 auto 10px auto;
+    }
+
+    .attachment-info.mobile-friendly {
+        text-align: center;
+    }
+
+    .attachment-actions.mobile-friendly {
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .attachment-btn.mobile-btn {
+        min-width: 50px;
+        padding: 12px;
+    }
+
+    .modal-footer.mobile-friendly {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .mobile-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .attachments-modal {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        max-height: 100vh;
+    }
+
+    .upload-zone.mobile-friendly {
+        padding: 15px 10px;
+        min-height: 80px;
+    }
+
+    .attachment-item.mobile-friendly {
+        padding: 10px;
+    }
+
+    .attachment-icon.mobile-friendly {
+        width: 40px;
+        height: 40px;
+    }
+
+    .attachment-icon.mobile-friendly i {
+        font-size: 1.2rem;
+    }
+
+    .attachment-info.mobile-friendly .attachment-name {
+        font-size: 0.9rem;
+    }
+
+    .attachment-info.mobile-friendly .attachment-meta {
+        font-size: 0.8rem;
+    }
+
+    .attachment-btn.mobile-btn {
+        min-width: 40px;
+        padding: 8px;
+    }
+}
