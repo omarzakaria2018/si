@@ -2912,6 +2912,14 @@ function exportToExcel() {
 
 // تحميل المرفقات من localStorage عند بدء التطبيق
 document.addEventListener('DOMContentLoaded', function() {
+    // Enable debug mode by adding ?debug=true to URL
+    const urlParams = new URLSearchParams(window.location.search);
+    window.debugMode = urlParams.get('debug') === 'true';
+
+    if (window.debugMode) {
+        console.log('🐛 وضع التصحيح مفعل');
+    }
+
     const savedAttachments = localStorage.getItem('propertyAttachments');
     if (savedAttachments) {
         attachments = JSON.parse(savedAttachments);
@@ -2949,7 +2957,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize enhanced attachments system
     setTimeout(() => {
         initializeAttachmentsSystem();
-    }, 1000); // Wait 1 second for other systems to load
+    }, 2000); // Wait 2 seconds for other systems to load
 });
 
 // نافذة اختيار المدينة
@@ -4053,34 +4061,57 @@ function showAttachmentsModalLocal(city, propertyName) {
 // ===== ATTACHMENTS SYSTEM INITIALIZATION =====
 
 // Initialize the enhanced cross-device attachments system
-async function initializeAttachmentsSystem() {
-    try {
-        console.log('🚀 تهيئة نظام المرفقات المحسن مع المزامنة عبر الأجهزة...');
+let isSystemInitialized = false;
+let initializationPromise = null;
 
-        // Show initialization status
-        showConnectionNotification('جاري تهيئة نظام المرفقات...', 'info');
+async function initializeAttachmentsSystem() {
+    // Prevent multiple initializations
+    if (isSystemInitialized) {
+        console.log('✅ نظام المرفقات مهيأ بالفعل');
+        return;
+    }
+
+    if (initializationPromise) {
+        return initializationPromise;
+    }
+
+    initializationPromise = performInitialization();
+    return initializationPromise;
+}
+
+async function performInitialization() {
+    try {
+        if (window.debugMode) {
+            console.log('🚀 تهيئة نظام المرفقات المحسن...');
+        }
 
         // Check if Supabase is available
         if (!supabaseClient) {
             console.warn('⚠️ Supabase غير متوفر، سيتم استخدام النظام المحلي فقط');
-            showConnectionNotification('النظام المحلي فقط - Supabase غير متوفر', 'warning');
+            if (window.debugMode) {
+                showConnectionNotification('النظام المحلي فقط', 'warning');
+            }
+            isSystemInitialized = true;
             return;
         }
 
         // Test Supabase connection first
         const isSupabaseAvailable = await checkSupabaseAvailability();
         if (!isSupabaseAvailable) {
-            console.warn('⚠️ لا يمكن الاتصال بـ Supabase، سيتم استخدام النظام المحلي');
-            showConnectionNotification('النظام المحلي فقط - لا يمكن الاتصال بالسحابة', 'warning');
+            console.warn('⚠️ لا يمكن الاتصال بـ Supabase');
+            if (window.debugMode) {
+                showConnectionNotification('لا يمكن الاتصال بالسحابة', 'warning');
+            }
+            isSystemInitialized = true;
             return;
         }
 
         // Ensure Supabase attachments table exists
         if (typeof ensureAttachmentsTableExists === 'function') {
             await ensureAttachmentsTableExists();
-            console.log('✅ جدول المرفقات جاهز');
-        } else {
-            console.warn('⚠️ وظيفة ensureAttachmentsTableExists غير متوفرة');
+            if (window.debugMode) {
+                console.log('✅ جدول المرفقات جاهز');
+            }
         }
 
         // Subscribe to real-time attachment changes
@@ -4088,14 +4119,14 @@ async function initializeAttachmentsSystem() {
             const subscription = subscribeToAttachmentChanges();
             if (subscription) {
                 console.log('🔔 تم تفعيل المزامنة الفورية');
-                showConnectionNotification('تم تفعيل المزامنة الفورية عبر الأجهزة', 'success');
+                showConnectionNotification('المزامنة الفورية نشطة', 'success');
             }
-        } else {
-            console.warn('⚠️ وظيفة subscribeToAttachmentChanges غير متوفرة');
         }
 
-        // Test attachment functions
-        await testAttachmentFunctions();
+        // Test attachment functions (only in debug mode)
+        if (window.debugMode) {
+            await testAttachmentFunctions();
+        }
 
         // Initialize connection indicator
         updateConnectionIndicator(true);
@@ -4104,37 +4135,38 @@ async function initializeAttachmentsSystem() {
         setTimeout(async () => {
             if (typeof syncLocalAttachmentsToSupabase === 'function') {
                 try {
-                    console.log('🔄 بدء مزامنة المرفقات المحلية...');
+                    if (window.debugMode) {
+                        console.log('🔄 بدء مزامنة المرفقات المحلية...');
+                    }
                     await syncLocalAttachmentsToSupabase();
-                    console.log('✅ تم مزامنة المرفقات المحلية مع Supabase');
-                    showConnectionNotification('تم مزامنة المرفقات المحلية', 'success');
+                    if (window.debugMode) {
+                        console.log('✅ تم مزامنة المرفقات المحلية');
+                        showConnectionNotification('تم مزامنة المرفقات المحلية', 'success');
+                    }
                 } catch (error) {
-                    console.warn('⚠️ لم يتمكن من مزامنة المرفقات:', error.message);
-                    showConnectionNotification('فشل في مزامنة المرفقات المحلية', 'warning');
+                    if (window.debugMode) {
+                        console.warn('⚠️ فشل في مزامنة المرفقات:', error.message);
+                    }
                 }
-            } else {
-                console.warn('⚠️ وظيفة syncLocalAttachmentsToSupabase غير متوفرة');
             }
-        }, 3000); // Wait 3 seconds after app load
+        }, 5000); // Wait 5 seconds after app load
 
-        // Setup periodic connection check
+        // Setup periodic connection check (less frequent)
         setInterval(async () => {
             const isConnected = await checkSupabaseAvailability();
             updateConnectionIndicator(isConnected);
+        }, 60000); // Check every 60 seconds instead of 30
 
-            if (!isConnected && connectionStatus === 'SUBSCRIBED') {
-                console.warn('⚠️ انقطع الاتصال بالسحابة');
-                showConnectionNotification('انقطع الاتصال - جاري إعادة المحاولة...', 'warning');
-            }
-        }, 30000); // Check every 30 seconds
-
-        console.log('🎉 تم تهيئة نظام المرفقات المحسن بنجاح');
+        console.log('🎉 تم تهيئة نظام المرفقات بنجاح');
+        isSystemInitialized = true;
 
     } catch (error) {
         console.error('❌ خطأ في تهيئة نظام المرفقات:', error);
-        console.log('📱 سيتم استخدام النظام المحلي فقط');
-        showConnectionNotification('خطأ في التهيئة - النظام المحلي فقط', 'error');
+        if (window.debugMode) {
+            showConnectionNotification('خطأ في التهيئة', 'error');
+        }
         updateConnectionIndicator(false);
+        isSystemInitialized = true;
     }
 }
 

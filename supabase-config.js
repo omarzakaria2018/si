@@ -861,14 +861,27 @@ let lastConnectionTime = null;
 
 // Subscribe to real-time attachment changes with enhanced cross-device support
 function subscribeToAttachmentChanges() {
+    // Prevent multiple simultaneous subscription attempts
+    if (isReconnecting) {
+        console.log('⏳ محاولة اتصال جارية بالفعل...');
+        return null;
+    }
+
     try {
+        isReconnecting = true;
+
         // Clean up existing subscription
         if (attachmentSubscription) {
+            console.log('🔄 إغلاق الاتصال السابق...');
             attachmentSubscription.unsubscribe();
+            attachmentSubscription = null;
         }
 
+        // Create unique channel name to avoid conflicts
+        const channelName = `attachments_sync_${Date.now()}`;
+
         attachmentSubscription = supabaseClient
-            .channel('attachments_realtime_sync', {
+            .channel(channelName, {
                 config: {
                     presence: {
                         key: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -882,32 +895,42 @@ function subscribeToAttachmentChanges() {
                     table: 'attachments'
                 },
                 (payload) => {
-                    console.log('📎 Real-time attachment change:', payload);
+                    console.log('📎 تحديث مرفق:', payload.eventType);
                     handleAttachmentRealTimeChange(payload);
                 }
             )
             .on('presence', { event: 'sync' }, () => {
-                console.log('👥 Presence sync - other devices online');
+                // Reduce console noise - only log if debug mode
+                if (window.debugMode) {
+                    console.log('👥 مزامنة الحضور');
+                }
             })
-            .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-                console.log('🔗 New device connected:', key);
-                showConnectionNotification('جهاز جديد متصل', 'success');
+            .on('presence', { event: 'join' }, ({ key }) => {
+                if (window.debugMode) {
+                    console.log('🔗 جهاز جديد:', key);
+                }
+                showConnectionNotification('جهاز جديد متصل', 'info');
             })
-            .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-                console.log('📱 Device disconnected:', key);
+            .on('presence', { event: 'leave' }, ({ key }) => {
+                if (window.debugMode) {
+                    console.log('📱 جهاز منقطع:', key);
+                }
             })
             .subscribe((status) => {
                 connectionStatus = status;
                 handleConnectionStatusChange(status);
             });
 
-        console.log('✅ تم تفعيل الاشتراك المحسن في تحديثات المرفقات');
+        lastConnectionTime = Date.now();
+        console.log('✅ تم تفعيل المزامنة الفورية');
         return attachmentSubscription;
 
     } catch (error) {
-        console.error('❌ خطأ في الاشتراك في تحديثات المرفقات:', error);
+        console.error('❌ خطأ في الاشتراك:', error);
         scheduleReconnection();
         return null;
+    } finally {
+        isReconnecting = false;
     }
 }
 
@@ -998,44 +1021,84 @@ function handleDeletedAttachment(attachment) {
 
 // Handle connection status changes
 function handleConnectionStatusChange(status) {
+    const previousStatus = connectionStatus;
     connectionStatus = status;
+
+    // Only process if status actually changed
+    if (previousStatus === status) {
+        return;
+    }
 
     switch (status) {
         case 'SUBSCRIBED':
-            console.log('🔗 متصل بالخادم - المزامنة الفورية نشطة');
-            showConnectionNotification('متصل - المزامنة نشطة', 'success');
+            console.log('🔗 متصل - المزامنة نشطة');
+            if (previousStatus !== 'SUBSCRIBED') {
+                showConnectionNotification('تم الاتصال بنجاح', 'success');
+            }
             reconnectAttempts = 0;
+            isReconnecting = false;
             updateConnectionIndicator(true);
             break;
 
         case 'CHANNEL_ERROR':
         case 'TIMED_OUT':
         case 'CLOSED':
-            console.warn('⚠️ انقطع الاتصال - محاولة إعادة الاتصال...');
-            showConnectionNotification('انقطع الاتصال - جاري إعادة المحاولة...', 'warning');
+            if (previousStatus === 'SUBSCRIBED') {
+                console.warn('⚠️ انقطع الاتصال');
+                showConnectionNotification('انقطع الاتصال', 'warning');
+            }
             updateConnectionIndicator(false);
-            scheduleReconnection();
+
+            // Only schedule reconnection if not already reconnecting
+            if (!isReconnecting && reconnectAttempts < maxReconnectAttempts) {
+                scheduleReconnection();
+            }
+            break;
+
+        case 'CONNECTING':
+            if (window.debugMode) {
+                console.log('🔄 جاري الاتصال...');
+            }
             break;
 
         default:
-            console.log('🔄 حالة الاتصال:', status);
+            if (window.debugMode) {
+                console.log('🔄 حالة الاتصال:', status);
+            }
     }
 }
 
 // Schedule reconnection with exponential backoff
 function scheduleReconnection() {
+    if (isReconnecting) {
+        return; // Already reconnecting
+    }
+
     if (reconnectAttempts >= maxReconnectAttempts) {
         console.error('❌ فشل في إعادة الاتصال بعد عدة محاولات');
         showConnectionNotification('فشل في الاتصال - يرجى تحديث الصفحة', 'error');
+        isReconnecting = false;
         return;
     }
 
-    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Max 30 seconds
+    // Prevent too frequent reconnection attempts
+    const timeSinceLastConnection = Date.now() - (lastConnectionTime || 0);
+    if (timeSinceLastConnection < 5000) { // Wait at least 5 seconds
+        setTimeout(() => scheduleReconnection(), 5000 - timeSinceLastConnection);
+        return;
+    }
+
+    const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts), 15000); // Max 15 seconds
     reconnectAttempts++;
 
+    if (window.debugMode) {
+        console.log(`🔄 محاولة إعادة الاتصال ${reconnectAttempts}/${maxReconnectAttempts} خلال ${delay}ms`);
+    }
+
     setTimeout(() => {
-        console.log(`🔄 محاولة إعادة الاتصال ${reconnectAttempts}/${maxReconnectAttempts}`);
-        subscribeToAttachmentChanges();
+        if (!isReconnecting) { // Double check
+            subscribeToAttachmentChanges();
+        }
     }, delay);
 }
 
