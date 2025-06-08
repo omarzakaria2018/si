@@ -3494,6 +3494,8 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
     const propertyKey = `${city}_${propertyName}`;
     let filesProcessed = 0;
     const totalFiles = files.length;
+    let cloudUploads = 0;
+    let localUploads = 0;
 
     for (const file of files) {
         try {
@@ -3503,14 +3505,24 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
                 currentFileElement.innerHTML = `<i class="fas fa-upload"></i> جاري رفع: ${file.name}`;
             }
 
-            // Try Supabase upload first
+            // Always try Supabase upload first for cross-device sync
             let uploadSuccess = false;
 
-            if (typeof uploadFileToSupabase === 'function') {
+            if (typeof uploadFileToSupabase === 'function' && supabaseClient) {
                 try {
-                    await uploadFileToSupabase(file, propertyKey, notes);
-                    uploadSuccess = true;
-                    console.log(`☁️ تم رفع ${file.name} إلى السحابة`);
+                    console.log(`☁️ رفع ${file.name} إلى السحابة...`);
+                    const result = await uploadFileToSupabase(file, propertyKey, notes);
+
+                    if (result) {
+                        uploadSuccess = true;
+                        cloudUploads++;
+                        console.log(`✅ تم رفع ${file.name} إلى السحابة بنجاح`);
+
+                        // Trigger real-time update event
+                        window.dispatchEvent(new CustomEvent('attachmentAdded', {
+                            detail: { propertyKey, attachment: result }
+                        }));
+                    }
                 } catch (supabaseError) {
                     console.warn(`⚠️ فشل رفع ${file.name} للسحابة:`, supabaseError);
                     // Will fallback to local storage
@@ -3521,6 +3533,7 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
             if (!uploadSuccess) {
                 console.log(`💾 حفظ ${file.name} محلياً كنسخة احتياطية`);
                 await handleFileLocal(file, propertyKey, notes);
+                localUploads++;
             }
 
             filesProcessed++;
@@ -3565,14 +3578,24 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
         }
     }
 
-    // Final status update
+    // Final status update with sync info
     const uploadStatus = document.getElementById('uploadStatus');
     if (uploadStatus) {
-        uploadStatus.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i> تم رفع جميع الملفات بنجاح!`;
+        const syncInfo = cloudUploads > 0 ?
+            `<i class="fas fa-sync-alt" style="color: #17a2b8;"></i> ${cloudUploads} ملف متزامن عبر الأجهزة` :
+            `<i class="fas fa-laptop" style="color: #ffc107;"></i> ${localUploads} ملف محفوظ محلياً`;
+
+        uploadStatus.innerHTML = `
+            <i class="fas fa-check-circle" style="color: #28a745;"></i> تم رفع جميع الملفات بنجاح!
+            <br><small>${syncInfo}</small>
+        `;
     }
 
     // Trigger real-time sync notification
-    console.log('🔄 تم رفع الملفات - سيتم تحديث جميع الأجهزة المتصلة');
+    if (cloudUploads > 0) {
+        console.log(`🔄 تم رفع ${cloudUploads} ملف للسحابة - سيتم تحديث جميع الأجهزة المتصلة`);
+        showConnectionNotification(`تم مزامنة ${cloudUploads} ملف عبر الأجهزة`, 'success');
+    }
 }
 
 // Handle single file upload to local storage
@@ -4011,22 +4034,38 @@ async function refreshAttachmentsList(propertyKey) {
             </div>
         `;
 
-        // Get updated attachments
-        let attachments;
-        if (typeof getPropertyAttachmentsEnhanced === 'function') {
-            attachments = await getPropertyAttachmentsEnhanced(propertyKey);
-        } else {
-            const [city, propertyName] = propertyKey.split('_');
-            attachments = window.attachments[propertyKey] || [];
+        // Get updated attachments - prioritize Supabase
+        let attachments = [];
+        let isFromCloud = false;
+
+        // Try Supabase first
+        if (typeof getPropertyAttachmentsEnhanced === 'function' && supabaseClient) {
+            try {
+                attachments = await getPropertyAttachmentsEnhanced(propertyKey);
+                isFromCloud = true;
+                console.log(`☁️ تم جلب ${attachments.length} مرفق من السحابة`);
+            } catch (error) {
+                console.warn('⚠️ فشل في جلب المرفقات من السحابة:', error);
+            }
         }
 
-        // Update the list
+        // Fallback to local storage
+        if (!isFromCloud || attachments.length === 0) {
+            attachments = window.attachments?.[propertyKey] || [];
+            console.log(`💾 تم جلب ${attachments.length} مرفق محلي`);
+        }
+
+        // Update the list with sync status indicator
         if (attachments.length === 0) {
             listContainer.innerHTML = `
                 <div class="no-attachments-state" style="text-align:center;color:#888;padding:40px 20px;">
                     <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 15px;"></i>
                     <h4 style="margin: 10px 0; color: #6c757d;">لا توجد مرفقات بعد</h4>
                     <p style="color: #aaa; margin: 0;">اسحب الملفات هنا أو استخدم زر الرفع لإضافة مرفقات</p>
+                    ${isFromCloud ?
+                        '<p style="color: #17a2b8; margin-top: 10px;"><i class="fas fa-sync-alt"></i> متزامن مع السحابة</p>' :
+                        '<p style="color: #ffc107; margin-top: 10px;"><i class="fas fa-laptop"></i> محلي فقط</p>'
+                    }
                 </div>
             `;
         } else {
@@ -4036,11 +4075,16 @@ async function refreshAttachmentsList(propertyKey) {
                 const fileSize = att.file_size || att.size;
                 const uploadDate = att.created_at || att.date;
                 const notes = att.notes || '';
+                const isCloudFile = !!att.id; // Has Supabase ID
 
                 return `
                     <div class="attachment-item enhanced" data-name="${fileName.toLowerCase()}" ${att.id ? `data-id="${att.id}"` : ''}>
                         <div class="attachment-icon">
                             <i class="${getFileIcon(fileType)}" style="font-size: 1.5rem;"></i>
+                            ${isCloudFile ?
+                                '<i class="fas fa-cloud" style="position: absolute; top: -5px; right: -5px; font-size: 0.8rem; color: #17a2b8;" title="متزامن مع السحابة"></i>' :
+                                '<i class="fas fa-laptop" style="position: absolute; top: -5px; right: -5px; font-size: 0.8rem; color: #ffc107;" title="محلي فقط"></i>'
+                            }
                         </div>
                         <div class="attachment-details">
                             <div class="attachment-name" title="${fileName}">${fileName}</div>
@@ -4048,10 +4092,14 @@ async function refreshAttachmentsList(propertyKey) {
                                 <span class="file-size">${formatFileSize(fileSize)}</span>
                                 <span class="upload-date">${formatDate(uploadDate)}</span>
                                 ${notes ? `<span class="file-notes" title="${notes}"><i class="fas fa-sticky-note"></i></span>` : ''}
+                                ${isCloudFile ?
+                                    '<span class="sync-status" style="color: #17a2b8;" title="متزامن عبر الأجهزة"><i class="fas fa-sync-alt"></i></span>' :
+                                    '<span class="sync-status" style="color: #ffc107;" title="محلي فقط"><i class="fas fa-laptop"></i></span>'
+                                }
                             </div>
                         </div>
                         <div class="attachment-actions">
-                            ${att.id ?
+                            ${isCloudFile ?
                                 // Supabase attachment
                                 `<button class="attachment-btn view-btn" onclick="viewAttachmentFromSupabase('${att.id}', '${att.file_url}', '${fileType}')" title="معاينة">
                                     <i class="fas fa-eye"></i>
@@ -4059,7 +4107,7 @@ async function refreshAttachmentsList(propertyKey) {
                                 <button class="attachment-btn download-btn" onclick="downloadAttachmentFromSupabase('${att.file_url}', '${fileName}')" title="تحميل">
                                     <i class="fas fa-download"></i>
                                 </button>
-                                <button class="attachment-btn delete-btn" onclick="deleteAttachmentFromSupabase('${att.id}', '${propertyKey}')" title="حذف">
+                                <button class="attachment-btn delete-btn" onclick="deleteAttachmentFromSupabase('${att.id}', '${propertyKey}')" title="حذف من جميع الأجهزة">
                                     <i class="fas fa-trash"></i>
                                 </button>` :
                                 // Local attachment
@@ -4069,8 +4117,11 @@ async function refreshAttachmentsList(propertyKey) {
                                 <button class="attachment-btn download-btn" onclick="downloadAttachment('${propertyKey}', '${fileName}')" title="تحميل">
                                     <i class="fas fa-download"></i>
                                 </button>
-                                <button class="attachment-btn delete-btn" onclick="deleteAttachment('${propertyKey}', '${fileName}', '${city}', '${propertyName}')" title="حذف">
+                                <button class="attachment-btn delete-btn" onclick="deleteAttachment('${propertyKey}', '${fileName}')" title="حذف محلي">
                                     <i class="fas fa-trash"></i>
+                                </button>
+                                <button class="attachment-btn sync-btn" onclick="syncLocalAttachment('${propertyKey}', '${fileName}')" title="مزامنة مع السحابة">
+                                    <i class="fas fa-cloud-upload-alt"></i>
                                 </button>`
                             }
                         </div>
@@ -4085,13 +4136,24 @@ async function refreshAttachmentsList(propertyKey) {
             countElement.textContent = `(${attachments.length} ملف)`;
         }
 
-        // Update footer summary
+        // Update footer summary with sync status
         const summaryElement = modal.querySelector('.attachments-summary');
         if (summaryElement) {
-            summaryElement.innerHTML = `
-                <i class="fas fa-info-circle"></i>
-                ${attachments.length} ملف • متزامن عبر جميع الأجهزة
-            `;
+            const cloudFiles = attachments.filter(att => att.id).length;
+            const localFiles = attachments.length - cloudFiles;
+
+            let summaryText = `<i class="fas fa-info-circle"></i> ${attachments.length} ملف`;
+
+            if (isFromCloud && cloudFiles > 0) {
+                summaryText += ` • <i class="fas fa-sync-alt" style="color: #17a2b8;"></i> ${cloudFiles} متزامن عبر الأجهزة`;
+                if (localFiles > 0) {
+                    summaryText += ` • <i class="fas fa-laptop" style="color: #ffc107;"></i> ${localFiles} محلي`;
+                }
+            } else if (localFiles > 0) {
+                summaryText += ` • <i class="fas fa-laptop" style="color: #ffc107;"></i> محفوظ محلياً فقط`;
+            }
+
+            summaryElement.innerHTML = summaryText;
         }
 
         // Restore opacity
@@ -4114,6 +4176,99 @@ async function refreshAttachmentsList(propertyKey) {
             listContainer.style.opacity = '1';
         }
     }
+}
+
+// Sync local attachment to cloud
+async function syncLocalAttachment(propertyKey, fileName) {
+    try {
+        console.log(`🔄 مزامنة ملف محلي: ${fileName}`);
+
+        // Get local attachment
+        const localAttachments = window.attachments?.[propertyKey] || [];
+        const attachment = localAttachments.find(att => att.name === fileName);
+
+        if (!attachment) {
+            throw new Error('الملف المحلي غير موجود');
+        }
+
+        // Convert base64 to file
+        const response = await fetch(attachment.data);
+        const blob = await response.blob();
+        const file = new File([blob], attachment.name, { type: attachment.type });
+
+        // Upload to Supabase
+        if (typeof uploadFileToSupabase === 'function') {
+            const result = await uploadFileToSupabase(file, propertyKey, attachment.notes || '');
+
+            if (result) {
+                console.log(`✅ تم مزامنة ${fileName} مع السحابة`);
+                showConnectionNotification(`تم مزامنة ${fileName} مع السحابة`, 'success');
+
+                // Remove from local storage
+                const updatedLocal = localAttachments.filter(att => att.name !== fileName);
+                window.attachments[propertyKey] = updatedLocal;
+                localStorage.setItem('propertyAttachments', JSON.stringify(window.attachments));
+
+                // Refresh the list
+                refreshAttachmentsList(propertyKey);
+
+                return true;
+            }
+        }
+
+        throw new Error('فشل في رفع الملف للسحابة');
+
+    } catch (error) {
+        console.error(`❌ خطأ في مزامنة ${fileName}:`, error);
+        showConnectionNotification(`فشل في مزامنة ${fileName}`, 'error');
+        return false;
+    }
+}
+
+// Setup real-time sync for attachments
+function setupAttachmentRealTimeSync() {
+    if (typeof subscribeToAttachmentChanges === 'function') {
+        try {
+            const subscription = subscribeToAttachmentChanges();
+
+            if (subscription) {
+                console.log('🔔 تم تفعيل المزامنة الفورية للمرفقات');
+
+                // Listen for attachment changes
+                window.addEventListener('attachmentAdded', (event) => {
+                    const { propertyKey } = event.detail;
+                    console.log(`📎 ملف جديد تم إضافته: ${propertyKey}`);
+
+                    // Refresh any open attachment modals for this property
+                    const modal = document.querySelector(`.attachments-modal[data-property-key="${propertyKey}"]`);
+                    if (modal) {
+                        refreshAttachmentsList(propertyKey);
+                    }
+
+                    showConnectionNotification('تم إضافة ملف جديد من جهاز آخر', 'info');
+                });
+
+                window.addEventListener('attachmentDeleted', (event) => {
+                    const { propertyKey } = event.detail;
+                    console.log(`🗑️ ملف تم حذفه: ${propertyKey}`);
+
+                    // Refresh any open attachment modals for this property
+                    const modal = document.querySelector(`.attachments-modal[data-property-key="${propertyKey}"]`);
+                    if (modal) {
+                        refreshAttachmentsList(propertyKey);
+                    }
+
+                    showConnectionNotification('تم حذف ملف من جهاز آخر', 'info');
+                });
+
+                return subscription;
+            }
+        } catch (error) {
+            console.error('❌ خطأ في تفعيل المزامنة الفورية:', error);
+        }
+    }
+
+    return null;
 }
 
 // Show local attachments modal (fallback)
@@ -4197,6 +4352,9 @@ async function performInitialization() {
                 showConnectionNotification('المزامنة الفورية نشطة', 'success');
             }
         }
+
+        // Setup attachment real-time sync
+        setupAttachmentRealTimeSync();
 
         // Test attachment functions (only in debug mode)
         if (window.debugMode) {
