@@ -1,0 +1,47 @@
+[build]
+  publish = "."
+  command = "echo 'No build step required for static site'"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Include all necessary files
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = false
+  minify = false
+
+[build.processing.js]
+  bundle = false
+  minify = false
+
+[build.processing.html]
+  pretty_urls = false
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self' https://ynevtgtyjwqasshyfzws.supabase.co https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self' https://ynevtgtyjwqasshyfzws.supabase.co wss://ynevtgtyjwqasshyfzws.supabase.co;"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://ynevtgtyjwqasshyfzws.supabase.co/rest/v1/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "python -m http.server 8000"
+  port = 8000
+  publish = "."

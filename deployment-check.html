@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فحص النشر - Deployment Check</title>
+    <style>
+        body {
+            font-family: 'Tajawal', Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            direction: rtl;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .check-item.success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .check-item.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .check-item.warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        .icon {
+            margin-left: 10px;
+            font-size: 18px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn.success {
+            background: #28a745;
+        }
+        .btn.danger {
+            background: #dc3545;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .status-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .status-card.online {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .status-card.offline {
+            border-color: #dc3545;
+            background: #fff8f8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 فحص حالة النشر - Deployment Status Check</h1>
+        
+        <div class="status-grid">
+            <div class="status-card" id="mainSiteCard">
+                <h3>الموقع الرئيسي</h3>
+                <div id="mainSiteStatus">جاري الفحص...</div>
+            </div>
+            <div class="status-card" id="supabaseCard">
+                <h3>قاعدة البيانات</h3>
+                <div id="supabaseStatus">جاري الفحص...</div>
+            </div>
+            <div class="status-card" id="filesCard">
+                <h3>الملفات</h3>
+                <div id="filesStatus">جاري الفحص...</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="btn" onclick="runAllChecks()">🔄 تشغيل جميع الفحوصات</button>
+            <button class="btn success" onclick="openMainSite()">🌐 فتح الموقع الرئيسي</button>
+            <button class="btn danger" onclick="clearLog()">🗑️ مسح السجل</button>
+        </div>
+
+        <h2>📋 نتائج الفحص:</h2>
+        <div id="checkResults"></div>
+
+        <h2>📝 سجل العمليات:</h2>
+        <div class="log" id="logOutput"></div>
+
+        <h2>🛠️ أدوات سريعة:</h2>
+        <div style="text-align: center;">
+            <button class="btn" onclick="checkFiles()">فحص الملفات</button>
+            <button class="btn" onclick="checkSupabase()">فحص Supabase</button>
+            <button class="btn" onclick="testDataPersistence()">اختبار حفظ البيانات</button>
+            <button class="btn" onclick="testFileUpload()">اختبار رفع الملفات</button>
+        </div>
+    </div>
+
+    <script>
+        let logOutput = '';
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            const logMessage = `[${timestamp}] ${prefix} ${message}\n`;
+            logOutput += logMessage;
+            document.getElementById('logOutput').textContent = logOutput;
+            console.log(message);
+        }
+
+        function clearLog() {
+            logOutput = '';
+            document.getElementById('logOutput').textContent = '';
+        }
+
+        function addCheckResult(title, status, message) {
+            const resultsDiv = document.getElementById('checkResults');
+            const checkItem = document.createElement('div');
+            checkItem.className = `check-item ${status}`;
+            
+            const icon = status === 'success' ? '✅' : status === 'error' ? '❌' : '⚠️';
+            checkItem.innerHTML = `
+                <span class="icon">${icon}</span>
+                <div>
+                    <strong>${title}</strong><br>
+                    <small>${message}</small>
+                </div>
+            `;
+            
+            resultsDiv.appendChild(checkItem);
+        }
+
+        function clearResults() {
+            document.getElementById('checkResults').innerHTML = '';
+        }
+
+        async function checkFiles() {
+            log('بدء فحص الملفات المطلوبة...');
+            
+            const requiredFiles = [
+                'index.html',
+                'style.css', 
+                'script.js',
+                'supabase-config.js',
+                'data-migration.js',
+                'debug-helper.js',
+                'data.json',
+                'netlify.toml'
+            ];
+
+            let allFilesExist = true;
+            
+            for (const file of requiredFiles) {
+                try {
+                    const response = await fetch(file, { method: 'HEAD' });
+                    if (response.ok) {
+                        log(`✅ الملف موجود: ${file}`, 'success');
+                    } else {
+                        log(`❌ الملف مفقود: ${file}`, 'error');
+                        allFilesExist = false;
+                    }
+                } catch (error) {
+                    log(`❌ خطأ في فحص الملف ${file}: ${error.message}`, 'error');
+                    allFilesExist = false;
+                }
+            }
+
+            const status = allFilesExist ? 'success' : 'error';
+            const message = allFilesExist ? 'جميع الملفات المطلوبة موجودة' : 'بعض الملفات مفقودة';
+            addCheckResult('فحص الملفات', status, message);
+            
+            document.getElementById('filesCard').className = `status-card ${allFilesExist ? 'online' : 'offline'}`;
+            document.getElementById('filesStatus').textContent = message;
+        }
+
+        async function checkSupabase() {
+            log('بدء فحص اتصال Supabase...');
+            
+            try {
+                // Check if Supabase library is loaded
+                if (typeof supabase === 'undefined') {
+                    throw new Error('مكتبة Supabase غير محملة');
+                }
+
+                // Try to create client
+                const SUPABASE_URL = 'https://ynevtgtyjwqasshyfzws.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluZXZ0Z3R5andxYXNzaHlmendzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNjU0MDksImV4cCI6MjA2NDc0MTQwOX0.Y852fG3bUKzc60Zj5x6pPL_BzXxOrxU6Z4MAsEbeYsc';
+                
+                const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                // Test connection
+                const { data, error } = await client
+                    .from('properties')
+                    .select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    throw new Error(`خطأ في الاتصال: ${error.message}`);
+                }
+
+                log('✅ اتصال Supabase ناجح', 'success');
+                addCheckResult('اتصال Supabase', 'success', 'الاتصال بقاعدة البيانات يعمل بشكل صحيح');
+                
+                document.getElementById('supabaseCard').className = 'status-card online';
+                document.getElementById('supabaseStatus').textContent = 'متصل';
+                
+            } catch (error) {
+                log(`❌ فشل اتصال Supabase: ${error.message}`, 'error');
+                addCheckResult('اتصال Supabase', 'error', error.message);
+                
+                document.getElementById('supabaseCard').className = 'status-card offline';
+                document.getElementById('supabaseStatus').textContent = 'غير متصل';
+            }
+        }
+
+        async function testDataPersistence() {
+            log('بدء اختبار حفظ البيانات...');
+            // This would require the main application to be loaded
+            log('⚠️ يتطلب تحميل التطبيق الرئيسي لاختبار حفظ البيانات', 'warning');
+            addCheckResult('اختبار حفظ البيانات', 'warning', 'يتطلب فتح التطبيق الرئيسي');
+        }
+
+        async function testFileUpload() {
+            log('بدء اختبار رفع الملفات...');
+            // This would require the main application to be loaded
+            log('⚠️ يتطلب تحميل التطبيق الرئيسي لاختبار رفع الملفات', 'warning');
+            addCheckResult('اختبار رفع الملفات', 'warning', 'يتطلب فتح التطبيق الرئيسي');
+        }
+
+        async function runAllChecks() {
+            log('🚀 بدء تشغيل جميع الفحوصات...');
+            clearResults();
+            
+            // Check main site
+            try {
+                const response = await fetch('index.html');
+                if (response.ok) {
+                    document.getElementById('mainSiteCard').className = 'status-card online';
+                    document.getElementById('mainSiteStatus').textContent = 'يعمل';
+                    addCheckResult('الموقع الرئيسي', 'success', 'الموقع يعمل بشكل صحيح');
+                } else {
+                    throw new Error('فشل في تحميل الصفحة الرئيسية');
+                }
+            } catch (error) {
+                document.getElementById('mainSiteCard').className = 'status-card offline';
+                document.getElementById('mainSiteStatus').textContent = 'لا يعمل';
+                addCheckResult('الموقع الرئيسي', 'error', error.message);
+            }
+
+            await checkFiles();
+            await checkSupabase();
+            
+            log('✅ انتهاء جميع الفحوصات', 'success');
+        }
+
+        function openMainSite() {
+            window.open('index.html', '_blank');
+        }
+
+        // Load Supabase library
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        document.head.appendChild(script);
+
+        // Auto-run checks when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runAllChecks, 1000);
+        });
+    </script>
+</body>
+</html>

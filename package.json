@@ -1,0 +1,46 @@
+{
+  "name": "alsenidi-real-estate-management",
+  "version": "2.0.0",
+  "description": "نظام إدارة العقارات - شركة السنيدي العقارية مع قاعدة بيانات سحابية",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000",
+    "build": "echo 'No build step required for static site'",
+    "deploy": "netlify deploy --prod",
+    "migrate": "node -e \"console.log('Open the application and click the migration button to transfer data to Supabase')\""
+  },
+  "keywords": [
+    "real-estate",
+    "property-management",
+    "arabic",
+    "supabase",
+    "netlify",
+    "javascript",
+    "rtl"
+  ],
+  "author": "عمر زكريا",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/alsenidi-real-estate.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/alsenidi-real-estate/issues"
+  },
+  "homepage": "https://alsenidi-real-estate.netlify.app",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

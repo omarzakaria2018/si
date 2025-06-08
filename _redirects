@@ -1,0 +1,6 @@
+# Netlify redirects file
+# API redirects for Supabase
+/api/* https://ynevtgtyjwqasshyfzws.supabase.co/rest/v1/:splat 200
+
+# Fallback for SPA (only for routes that don't exist as files)
+/* /index.html 200
