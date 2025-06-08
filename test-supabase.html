@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام Supabase - المرفقات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .test-header {
+            background: linear-gradient(135deg, #2a4b9b 0%, #1e3a8a 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .test-header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .test-content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-right: 4px solid #2a4b9b;
+        }
+
+        .section-title {
+            color: #2a4b9b;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-result {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2a4b9b 0%, #1e3a8a 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(42, 75, 155, 0.3);
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .status-connected {
+            background: #28a745;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+        }
+
+        .status-disconnected {
+            background: #dc3545;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+        }
+
+        .status-loading {
+            background: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: #2a4b9b;
+            background: #f8f9fa;
+        }
+
+        .file-upload.dragover {
+            border-color: #2a4b9b;
+            background: #e8f2ff;
+        }
+
+        .console-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        @media (max-width: 768px) {
+            .test-container {
+                margin: 10px;
+                border-radius: 12px;
+            }
+            
+            .test-header {
+                padding: 20px;
+            }
+            
+            .test-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .test-content {
+                padding: 20px;
+            }
+            
+            .test-section {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-vial"></i> اختبار نظام Supabase</h1>
+            <p>اختبار شامل لنظام المزامنة والمرفقات</p>
+            <div class="status-indicator" id="connectionStatus"></div>
+        </div>
+
+        <div class="test-content">
+            <!-- اختبار الاتصال -->
+            <div class="test-section">
+                <div class="section-title">
+                    <i class="fas fa-plug"></i>
+                    اختبار الاتصال بـ Supabase
+                </div>
+                <button class="btn" onclick="testConnection()">اختبار الاتصال</button>
+                <button class="btn" onclick="testDatabase()">اختبار قاعدة البيانات</button>
+                <button class="btn" onclick="testStorage()">اختبار التخزين</button>
+                <div id="connectionResults"></div>
+            </div>
+
+            <!-- اختبار جدول المرفقات -->
+            <div class="test-section">
+                <div class="section-title">
+                    <i class="fas fa-database"></i>
+                    اختبار جدول المرفقات
+                </div>
+                <button class="btn" onclick="createAttachmentsTable()">إنشاء الجدول</button>
+                <button class="btn" onclick="testTableOperations()">اختبار العمليات</button>
+                <button class="btn" onclick="viewTableStructure()">عرض هيكل الجدول</button>
+                <div id="tableResults"></div>
+            </div>
+
+            <!-- اختبار رفع الملفات -->
+            <div class="test-section">
+                <div class="section-title">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    اختبار رفع الملفات
+                </div>
+                <div class="file-upload" onclick="document.getElementById('testFile').click()">
+                    <i class="fas fa-upload" style="font-size: 2rem; color: #2a4b9b; margin-bottom: 10px;"></i>
+                    <p>انقر لاختيار ملف أو اسحب الملف هنا</p>
+                    <input type="file" id="testFile" style="display: none;" onchange="testFileUpload(event)">
+                </div>
+                <div class="progress-bar" id="uploadProgress" style="display: none;">
+                    <div class="progress-fill" id="uploadProgressFill"></div>
+                </div>
+                <div id="uploadResults"></div>
+            </div>
+
+            <!-- اختبار المزامنة الفورية -->
+            <div class="test-section">
+                <div class="section-title">
+                    <i class="fas fa-sync-alt"></i>
+                    اختبار المزامنة الفورية
+                </div>
+                <button class="btn" onclick="testRealTimeSync()">تفعيل المزامنة</button>
+                <button class="btn" onclick="simulateChange()">محاكاة تغيير</button>
+                <button class="btn" onclick="stopRealTimeSync()">إيقاف المزامنة</button>
+                <div id="syncResults"></div>
+            </div>
+
+            <!-- عرض المرفقات -->
+            <div class="test-section">
+                <div class="section-title">
+                    <i class="fas fa-list"></i>
+                    عرض المرفقات المحفوظة
+                </div>
+                <button class="btn" onclick="loadAllAttachments()">تحميل جميع المرفقات</button>
+                <button class="btn" onclick="clearAllAttachments()">مسح جميع المرفقات</button>
+                <div id="attachmentsList"></div>
+            </div>
+
+            <!-- سجل العمليات -->
+            <div class="test-section">
+                <div class="section-title">
+                    <i class="fas fa-terminal"></i>
+                    سجل العمليات
+                </div>
+                <button class="btn" onclick="clearConsole()">مسح السجل</button>
+                <button class="btn" onclick="exportLog()">تصدير السجل</button>
+                <div class="console-output" id="consoleOutput"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تحميل مكتبات Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        // متغيرات عامة
+        let testResults = [];
+        let realTimeSubscription = null;
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 بدء اختبار نظام Supabase...', 'info');
+            updateConnectionStatus('loading');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                if (initialized) {
+                    updateConnectionStatus('connected');
+                    log('✅ تم تهيئة Supabase بنجاح', 'success');
+                } else {
+                    updateConnectionStatus('disconnected');
+                    log('❌ فشل في تهيئة Supabase', 'error');
+                }
+            } else {
+                updateConnectionStatus('disconnected');
+                log('❌ ملف supabase-config.js غير محمل', 'error');
+            }
+
+            // إعداد drag and drop
+            setupDragAndDrop();
+        });
+
+        // تحديث مؤشر حالة الاتصال
+        function updateConnectionStatus(status) {
+            const indicator = document.getElementById('connectionStatus');
+            indicator.className = `status-indicator status-${status}`;
+        }
+
+        // إضافة رسالة للسجل
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const consoleOutput = document.getElementById('consoleOutput');
+            const logEntry = `[${timestamp}] ${message}\n`;
+            
+            consoleOutput.textContent += logEntry;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            testResults.push({ timestamp, message, type });
+        }
+
+        // اختبار الاتصال
+        async function testConnection() {
+            log('🔄 اختبار الاتصال بـ Supabase...', 'info');
+            
+            try {
+                if (!supabaseClient) {
+                    throw new Error('Supabase client غير مهيأ');
+                }
+
+                // اختبار بسيط للاتصال
+                const { data, error } = await supabaseClient
+                    .from('attachments')
+                    .select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    log(`⚠️ تحذير: ${error.message}`, 'warning');
+                    showResult('connectionResults', 'warning', 'الاتصال يعمل لكن جدول المرفقات غير موجود');
+                } else {
+                    log('✅ الاتصال يعمل بشكل مثالي', 'success');
+                    showResult('connectionResults', 'success', 'تم الاتصال بنجاح وجدول المرفقات موجود');
+                    updateConnectionStatus('connected');
+                }
+            } catch (error) {
+                log(`❌ خطأ في الاتصال: ${error.message}`, 'error');
+                showResult('connectionResults', 'error', `فشل الاتصال: ${error.message}`);
+                updateConnectionStatus('disconnected');
+            }
+        }
+
+        // عرض نتيجة الاختبار
+        function showResult(containerId, type, message) {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        // مسح السجل
+        function clearConsole() {
+            document.getElementById('consoleOutput').textContent = '';
+            testResults = [];
+            log('🧹 تم مسح السجل', 'info');
+        }
+
+        // إعداد drag and drop
+        function setupDragAndDrop() {
+            const uploadArea = document.querySelector('.file-upload');
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    testFileUpload({ target: { files } });
+                }
+            });
+        }
+
+        // اختبار قاعدة البيانات
+        async function testDatabase() {
+            log('🔄 اختبار قاعدة البيانات...', 'info');
+
+            try {
+                // اختبار إنشاء سجل تجريبي
+                const testData = {
+                    property_key: 'test_property_' + Date.now(),
+                    file_name: 'test_file.txt',
+                    file_type: 'text/plain',
+                    file_size: 1024,
+                    file_url: 'https://example.com/test.txt',
+                    storage_path: 'test/test.txt',
+                    notes: 'ملف تجريبي للاختبار'
+                };
+
+                const { data, error } = await supabaseClient
+                    .from('attachments')
+                    .insert([testData])
+                    .select();
+
+                if (error) {
+                    throw error;
+                }
+
+                log('✅ تم إنشاء سجل تجريبي بنجاح', 'success');
+
+                // حذف السجل التجريبي
+                await supabaseClient
+                    .from('attachments')
+                    .delete()
+                    .eq('id', data[0].id);
+
+                log('✅ تم حذف السجل التجريبي', 'success');
+                showResult('connectionResults', 'success', 'قاعدة البيانات تعمل بشكل مثالي');
+
+            } catch (error) {
+                log(`❌ خطأ في قاعدة البيانات: ${error.message}`, 'error');
+                showResult('connectionResults', 'error', `خطأ في قاعدة البيانات: ${error.message}`);
+            }
+        }
+
+        // اختبار التخزين
+        async function testStorage() {
+            log('🔄 اختبار نظام التخزين...', 'info');
+
+            try {
+                // إنشاء ملف تجريبي
+                const testContent = 'هذا ملف تجريبي للاختبار';
+                const testFile = new Blob([testContent], { type: 'text/plain' });
+                const fileName = `test/test_${Date.now()}.txt`;
+
+                // رفع الملف
+                const { data, error } = await supabaseClient.storage
+                    .from('attachments')
+                    .upload(fileName, testFile);
+
+                if (error) {
+                    throw error;
+                }
+
+                log('✅ تم رفع الملف التجريبي بنجاح', 'success');
+
+                // الحصول على الرابط العام
+                const { data: urlData } = supabaseClient.storage
+                    .from('attachments')
+                    .getPublicUrl(fileName);
+
+                log(`🔗 رابط الملف: ${urlData.publicUrl}`, 'info');
+
+                // حذف الملف التجريبي
+                await supabaseClient.storage
+                    .from('attachments')
+                    .remove([fileName]);
+
+                log('✅ تم حذف الملف التجريبي', 'success');
+                showResult('connectionResults', 'success', 'نظام التخزين يعمل بشكل مثالي');
+
+            } catch (error) {
+                log(`❌ خطأ في نظام التخزين: ${error.message}`, 'error');
+                showResult('connectionResults', 'error', `خطأ في التخزين: ${error.message}`);
+            }
+        }
+
+        // إنشاء جدول المرفقات
+        async function createAttachmentsTable() {
+            log('🔄 محاولة إنشاء جدول المرفقات...', 'info');
+
+            if (typeof ensureAttachmentsTableExists === 'function') {
+                try {
+                    await ensureAttachmentsTableExists();
+                    log('✅ تم التحقق من جدول المرفقات', 'success');
+                    showResult('tableResults', 'success', 'جدول المرفقات جاهز');
+                } catch (error) {
+                    log(`❌ خطأ في إنشاء الجدول: ${error.message}`, 'error');
+                    showResult('tableResults', 'error', `خطأ: ${error.message}`);
+                }
+            } else {
+                log('⚠️ وظيفة إنشاء الجدول غير متوفرة', 'warning');
+                showResult('tableResults', 'warning', 'يرجى تنفيذ SQL يدوياً في Supabase Dashboard');
+            }
+        }
+
+        // اختبار رفع ملف
+        async function testFileUpload(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            const file = files[0];
+            log(`📤 بدء رفع الملف: ${file.name}`, 'info');
+
+            // إظهار شريط التقدم
+            const progressBar = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('uploadProgressFill');
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+
+            try {
+                // محاكاة تقدم الرفع
+                for (let i = 0; i <= 100; i += 10) {
+                    progressFill.style.width = i + '%';
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // رفع الملف باستخدام وظيفة النظام
+                if (typeof uploadFileToSupabase === 'function') {
+                    const result = await uploadFileToSupabase(file, 'test_property', 'ملف تجريبي');
+
+                    if (result) {
+                        log(`✅ تم رفع الملف بنجاح: ${file.name}`, 'success');
+                        showResult('uploadResults', 'success', `تم رفع ${file.name} بنجاح`);
+                    } else {
+                        throw new Error('فشل في رفع الملف');
+                    }
+                } else {
+                    throw new Error('وظيفة الرفع غير متوفرة');
+                }
+
+            } catch (error) {
+                log(`❌ خطأ في رفع الملف: ${error.message}`, 'error');
+                showResult('uploadResults', 'error', `خطأ: ${error.message}`);
+            } finally {
+                // إخفاء شريط التقدم
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                }, 1000);
+            }
+        }
+
+        // تفعيل المزامنة الفورية
+        function testRealTimeSync() {
+            log('🔄 تفعيل المزامنة الفورية...', 'info');
+
+            if (typeof subscribeToAttachmentChanges === 'function') {
+                realTimeSubscription = subscribeToAttachmentChanges();
+
+                if (realTimeSubscription) {
+                    log('✅ تم تفعيل المزامنة الفورية', 'success');
+                    showResult('syncResults', 'success', 'المزامنة الفورية نشطة');
+                } else {
+                    log('❌ فشل في تفعيل المزامنة', 'error');
+                    showResult('syncResults', 'error', 'فشل في تفعيل المزامنة');
+                }
+            } else {
+                log('⚠️ وظيفة المزامنة غير متوفرة', 'warning');
+                showResult('syncResults', 'warning', 'وظيفة المزامنة غير متوفرة');
+            }
+        }
+
+        // تحميل جميع المرفقات
+        async function loadAllAttachments() {
+            log('🔄 تحميل جميع المرفقات...', 'info');
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('attachments')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    throw error;
+                }
+
+                const listContainer = document.getElementById('attachmentsList');
+
+                if (data.length === 0) {
+                    listContainer.innerHTML = '<div class="test-result info">لا توجد مرفقات</div>';
+                } else {
+                    let html = '<div class="test-result success">تم العثور على ' + data.length + ' مرفق:</div>';
+
+                    data.forEach(attachment => {
+                        html += `
+                            <div class="test-result info">
+                                📎 ${attachment.file_name} (${attachment.property_key})
+                                <br>📅 ${new Date(attachment.created_at).toLocaleString('ar-SA')}
+                            </div>
+                        `;
+                    });
+
+                    listContainer.innerHTML = html;
+                }
+
+                log(`✅ تم تحميل ${data.length} مرفق`, 'success');
+
+            } catch (error) {
+                log(`❌ خطأ في تحميل المرفقات: ${error.message}`, 'error');
+                showResult('attachmentsList', 'error', `خطأ: ${error.message}`);
+            }
+        }
+
+        // تصدير السجل
+        function exportLog() {
+            const logContent = testResults.map(entry =>
+                `[${entry.timestamp}] ${entry.type.toUpperCase()}: ${entry.message}`
+            ).join('\n');
+
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `supabase-test-log-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            log('📄 تم تصدير السجل', 'info');
+        }
+
+        log('📋 صفحة الاختبار جاهزة', 'info');
+    </script>
+</body>
+</html>

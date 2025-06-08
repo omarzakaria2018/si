@@ -3503,11 +3503,24 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
                 currentFileElement.innerHTML = `<i class="fas fa-upload"></i> جاري رفع: ${file.name}`;
             }
 
-            // Upload to Supabase with enhanced error handling
+            // Try Supabase upload first
+            let uploadSuccess = false;
+
             if (typeof uploadFileToSupabase === 'function') {
-                await uploadFileToSupabase(file, propertyKey, notes);
-            } else {
-                throw new Error('Supabase upload function not available');
+                try {
+                    await uploadFileToSupabase(file, propertyKey, notes);
+                    uploadSuccess = true;
+                    console.log(`☁️ تم رفع ${file.name} إلى السحابة`);
+                } catch (supabaseError) {
+                    console.warn(`⚠️ فشل رفع ${file.name} للسحابة:`, supabaseError);
+                    // Will fallback to local storage
+                }
+            }
+
+            // Fallback to local storage if Supabase fails
+            if (!uploadSuccess) {
+                console.log(`💾 حفظ ${file.name} محلياً كنسخة احتياطية`);
+                await handleFileLocal(file, propertyKey, notes);
             }
 
             filesProcessed++;
@@ -3529,7 +3542,11 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
 
             // Show completion for current file
             if (currentFileElement) {
-                currentFileElement.innerHTML = `<i class="fas fa-check" style="color: #28a745;"></i> تم رفع: ${file.name}`;
+                const icon = uploadSuccess ?
+                    `<i class="fas fa-cloud-upload-alt" style="color: #28a745;"></i>` :
+                    `<i class="fas fa-save" style="color: #ffc107;"></i>`;
+                const location = uploadSuccess ? 'السحابة' : 'محلياً';
+                currentFileElement.innerHTML = `${icon} تم حفظ ${file.name} ${location}`;
             }
 
             // Small delay to show progress
@@ -3556,6 +3573,56 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
 
     // Trigger real-time sync notification
     console.log('🔄 تم رفع الملفات - سيتم تحديث جميع الأجهزة المتصلة');
+}
+
+// Handle single file upload to local storage
+async function handleFileLocal(file, propertyKey, notes = '') {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            try {
+                const attachment = {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: e.target.result,
+                    date: new Date().toISOString(),
+                    notes: notes
+                };
+
+                // Get existing attachments
+                const existingAttachments = JSON.parse(localStorage.getItem('propertyAttachments') || '{}');
+
+                // Initialize property attachments if not exists
+                if (!existingAttachments[propertyKey]) {
+                    existingAttachments[propertyKey] = [];
+                }
+
+                // Add new attachment
+                existingAttachments[propertyKey].push(attachment);
+
+                // Save to localStorage
+                localStorage.setItem('propertyAttachments', JSON.stringify(existingAttachments));
+
+                // Update global attachments variable
+                if (typeof window.attachments !== 'undefined') {
+                    window.attachments = existingAttachments;
+                }
+
+                resolve(attachment);
+
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        reader.onerror = function() {
+            reject(new Error('فشل في قراءة الملف'));
+        };
+
+        reader.readAsDataURL(file);
+    });
 }
 
 // Fallback local file handling
@@ -4111,6 +4178,14 @@ async function performInitialization() {
             await ensureAttachmentsTableExists();
             if (window.debugMode) {
                 console.log('✅ جدول المرفقات جاهز');
+            }
+        }
+
+        // Ensure storage bucket exists
+        if (typeof ensureStorageBucketExists === 'function') {
+            await ensureStorageBucketExists();
+            if (window.debugMode) {
+                console.log('✅ مجلد التخزين جاهز');
             }
         }
 

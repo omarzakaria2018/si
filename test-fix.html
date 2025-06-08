@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح المشكلة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 اختبار إصلاح مشكلة عمود notes</h1>
+        
+        <div class="test-section info">
+            <h3>📋 حالة النظام</h3>
+            <p>تم إصلاح المشكلة التالية:</p>
+            <ul>
+                <li>✅ إضافة عمود <code>notes</code> المفقود</li>
+                <li>✅ تحديث نوع بيانات <code>file_size</code> إلى BIGINT</li>
+                <li>✅ إضافة الفهارس المطلوبة</li>
+                <li>✅ إنشاء triggers التلقائية</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبارات النظام</h3>
+            <button onclick="testConnection()">اختبار الاتصال</button>
+            <button onclick="testTableStructure()">فحص هيكل الجدول</button>
+            <button onclick="testInsert()">اختبار الإدراج</button>
+            <button onclick="testFileUpload()">اختبار رفع ملف</button>
+            <button onclick="clearLog()">مسح السجل</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 سجل الاختبارات</h3>
+            <div id="log" class="log"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📤 اختبار رفع ملف</h3>
+            <input type="file" id="fileInput" accept="image/*,application/pdf">
+            <button onclick="uploadTestFile()">رفع الملف</button>
+            <div id="uploadResult"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        // تهيئة النظام
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 بدء اختبار النظام المُصلح...');
+            
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                if (initialized) {
+                    log('✅ تم تهيئة Supabase بنجاح');
+                } else {
+                    log('❌ فشل في تهيئة Supabase', 'error');
+                }
+            } else {
+                log('❌ وظيفة initSupabase غير موجودة', 'error');
+            }
+        });
+
+        // اختبار الاتصال
+        async function testConnection() {
+            log('🔄 اختبار الاتصال...');
+            
+            try {
+                if (!supabaseClient) {
+                    throw new Error('Supabase client غير مهيأ');
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('attachments')
+                    .select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    throw error;
+                }
+
+                log('✅ الاتصال يعمل بشكل مثالي');
+                return true;
+            } catch (error) {
+                log(`❌ خطأ في الاتصال: ${error.message}`);
+                return false;
+            }
+        }
+
+        // فحص هيكل الجدول
+        async function testTableStructure() {
+            log('🔍 فحص هيكل جدول attachments...');
+            
+            try {
+                // اختبار وجود جميع الأعمدة المطلوبة
+                const testData = {
+                    property_key: 'test_structure',
+                    file_name: 'test.txt',
+                    file_type: 'text/plain',
+                    file_size: 1024,
+                    file_url: 'https://example.com/test.txt',
+                    storage_path: 'test/test.txt',
+                    notes: 'اختبار عمود notes'
+                };
+
+                const { data, error } = await supabaseClient
+                    .from('attachments')
+                    .insert([testData])
+                    .select();
+
+                if (error) {
+                    throw error;
+                }
+
+                log('✅ جميع الأعمدة موجودة وتعمل بشكل صحيح');
+                
+                // حذف السجل التجريبي
+                await supabaseClient
+                    .from('attachments')
+                    .delete()
+                    .eq('id', data[0].id);
+
+                log('✅ تم حذف السجل التجريبي');
+                return true;
+
+            } catch (error) {
+                log(`❌ خطأ في هيكل الجدول: ${error.message}`);
+                return false;
+            }
+        }
+
+        // اختبار الإدراج
+        async function testInsert() {
+            log('📝 اختبار إدراج بيانات...');
+            
+            try {
+                const testData = {
+                    property_key: 'الرياض_وحدة_اختبار',
+                    file_name: 'صورة_اختبار.jpg',
+                    file_type: 'image/jpeg',
+                    file_size: 2048000,
+                    file_url: 'https://example.com/test.jpg',
+                    storage_path: 'test/test.jpg',
+                    notes: 'هذا ملف تجريبي للاختبار مع النص العربي'
+                };
+
+                const { data, error } = await supabaseClient
+                    .from('attachments')
+                    .insert([testData])
+                    .select();
+
+                if (error) {
+                    throw error;
+                }
+
+                log('✅ تم إدراج البيانات بنجاح');
+                log(`📄 ID: ${data[0].id}`);
+                log(`📝 الملاحظات: ${data[0].notes}`);
+
+                // حذف السجل التجريبي
+                await supabaseClient
+                    .from('attachments')
+                    .delete()
+                    .eq('id', data[0].id);
+
+                log('✅ تم حذف السجل التجريبي');
+                return true;
+
+            } catch (error) {
+                log(`❌ خطأ في الإدراج: ${error.message}`);
+                return false;
+            }
+        }
+
+        // اختبار رفع ملف
+        async function testFileUpload() {
+            log('📤 اختبار وظيفة رفع الملفات...');
+            
+            try {
+                if (typeof uploadFileToSupabase !== 'function') {
+                    throw new Error('وظيفة uploadFileToSupabase غير موجودة');
+                }
+
+                // إنشاء ملف تجريبي
+                const testContent = 'هذا ملف تجريبي للاختبار\nتاريخ الإنشاء: ' + new Date().toISOString();
+                const testBlob = new Blob([testContent], { type: 'text/plain' });
+                const testFile = new File([testBlob], 'اختبار.txt', { type: 'text/plain' });
+
+                log('📁 إنشاء ملف تجريبي...');
+                
+                const result = await uploadFileToSupabase(testFile, 'test_property', 'ملف تجريبي للاختبار');
+
+                if (result) {
+                    log('✅ تم رفع الملف بنجاح');
+                    log(`📄 اسم الملف: ${result.file_name}`);
+                    log(`📝 الملاحظات: ${result.notes}`);
+                    log(`🔗 الرابط: ${result.file_url}`);
+
+                    // حذف الملف التجريبي
+                    if (typeof deleteAttachmentEnhanced === 'function') {
+                        await deleteAttachmentEnhanced(result.id);
+                        log('✅ تم حذف الملف التجريبي');
+                    }
+
+                    return true;
+                } else {
+                    throw new Error('فشل في رفع الملف');
+                }
+
+            } catch (error) {
+                log(`❌ خطأ في رفع الملف: ${error.message}`);
+                return false;
+            }
+        }
+
+        // رفع ملف من المستخدم
+        async function uploadTestFile() {
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('uploadResult');
+            
+            if (!fileInput.files.length) {
+                resultDiv.innerHTML = '<div class="error">يرجى اختيار ملف أولاً</div>';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            log(`📤 رفع ملف المستخدم: ${file.name}`);
+            
+            try {
+                resultDiv.innerHTML = '<div class="info">جاري الرفع...</div>';
+                
+                const result = await uploadFileToSupabase(file, 'user_test', 'ملف مرفوع من المستخدم');
+                
+                if (result) {
+                    log('✅ تم رفع ملف المستخدم بنجاح');
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>تم الرفع بنجاح!</h4>
+                            <p><strong>اسم الملف:</strong> ${result.file_name}</p>
+                            <p><strong>الحجم:</strong> ${(result.file_size / 1024).toFixed(2)} KB</p>
+                            <p><strong>النوع:</strong> ${result.file_type}</p>
+                            <p><strong>الملاحظات:</strong> ${result.notes}</p>
+                            <p><strong>الرابط:</strong> <a href="${result.file_url}" target="_blank">عرض الملف</a></p>
+                        </div>
+                    `;
+                } else {
+                    throw new Error('فشل في رفع الملف');
+                }
+                
+            } catch (error) {
+                log(`❌ خطأ في رفع ملف المستخدم: ${error.message}`);
+                resultDiv.innerHTML = `<div class="error">خطأ: ${error.message}</div>`;
+            }
+        }
+
+        // تشغيل جميع الاختبارات تلقائياً
+        setTimeout(async () => {
+            log('🔄 تشغيل جميع الاختبارات...');
+            
+            const tests = [
+                { name: 'الاتصال', func: testConnection },
+                { name: 'هيكل الجدول', func: testTableStructure },
+                { name: 'الإدراج', func: testInsert },
+                { name: 'رفع الملفات', func: testFileUpload }
+            ];
+
+            let passedTests = 0;
+            
+            for (const test of tests) {
+                const result = await test.func();
+                if (result) passedTests++;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            log(`🎉 انتهت الاختبارات: ${passedTests}/${tests.length} نجح`);
+            
+            if (passedTests === tests.length) {
+                log('✅ جميع الاختبارات نجحت! النظام جاهز للاستخدام');
+            } else {
+                log('⚠️ بعض الاختبارات فشلت، يرجى مراجعة الأخطاء');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

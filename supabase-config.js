@@ -264,7 +264,7 @@ async function uploadFile(file, propertyKey) {
             file_size: file.size,
             file_url: urlData.publicUrl,
             storage_path: fileName,
-            uploaded_by: 'system'
+            notes: notes || null
         };
 
         const { data: attachmentRecord, error: dbError } = await supabaseClient
@@ -1379,6 +1379,171 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// Create attachments table if it doesn't exist
+async function ensureAttachmentsTableExists() {
+    try {
+        console.log('🔄 التحقق من جدول المرفقات...');
+
+        // Test if table exists by trying to select from it
+        const { data, error } = await supabaseClient
+            .from('attachments')
+            .select('id')
+            .limit(1);
+
+        if (error && error.code === 'PGRST116') {
+            // Table doesn't exist, create it
+            console.log('📋 إنشاء جدول المرفقات...');
+
+            const { error: createError } = await supabaseClient.rpc('create_attachments_table');
+
+            if (createError) {
+                console.error('❌ خطأ في إنشاء جدول المرفقات:', createError);
+                throw createError;
+            }
+
+            console.log('✅ تم إنشاء جدول المرفقات بنجاح');
+        } else if (error) {
+            throw error;
+        } else {
+            console.log('✅ جدول المرفقات موجود');
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error('❌ خطأ في التحقق من جدول المرفقات:', error);
+
+        // Try alternative method - create table using SQL
+        try {
+            const createTableSQL = `
+                CREATE TABLE IF NOT EXISTS attachments (
+                    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+                    property_key TEXT NOT NULL,
+                    file_name TEXT NOT NULL,
+                    file_type TEXT NOT NULL,
+                    file_size BIGINT NOT NULL,
+                    file_url TEXT NOT NULL,
+                    storage_path TEXT NOT NULL,
+                    notes TEXT,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                );
+
+                -- Create index for faster queries
+                CREATE INDEX IF NOT EXISTS idx_attachments_property_key ON attachments(property_key);
+
+                -- Enable RLS (Row Level Security)
+                ALTER TABLE attachments ENABLE ROW LEVEL SECURITY;
+
+                -- Create policy to allow all operations (you can restrict this later)
+                CREATE POLICY IF NOT EXISTS "Allow all operations on attachments" ON attachments
+                FOR ALL USING (true) WITH CHECK (true);
+            `;
+
+            const { error: sqlError } = await supabaseClient.rpc('exec_sql', { sql: createTableSQL });
+
+            if (sqlError) {
+                console.warn('⚠️ لم يتمكن من إنشاء الجدول تلقائياً:', sqlError);
+                return false;
+            }
+
+            console.log('✅ تم إنشاء جدول المرفقات باستخدام SQL');
+            return true;
+
+        } catch (sqlError) {
+            console.error('❌ فشل في إنشاء الجدول:', sqlError);
+            return false;
+        }
+    }
+}
+
+// Upload file to Supabase storage and database
+async function uploadFileToSupabase(file, propertyKey, notes = '') {
+    try {
+        console.log(`📤 رفع ملف: ${file.name}`);
+
+        // Generate unique file name
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${propertyKey}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+        // Upload to Supabase storage
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from('attachments')
+            .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) {
+            throw uploadError;
+        }
+
+        // Get public URL
+        const { data: urlData } = supabaseClient.storage
+            .from('attachments')
+            .getPublicUrl(fileName);
+
+        if (!urlData.publicUrl) {
+            throw new Error('فشل في الحصول على رابط الملف');
+        }
+
+        // Save to database
+        const { data: dbData, error: dbError } = await supabaseClient
+            .from('attachments')
+            .insert({
+                property_key: propertyKey,
+                file_name: file.name,
+                file_type: file.type,
+                file_size: file.size,
+                file_url: urlData.publicUrl,
+                storage_path: fileName,
+                notes: notes
+            })
+            .select()
+            .single();
+
+        if (dbError) {
+            // If database insert fails, clean up the uploaded file
+            await supabaseClient.storage
+                .from('attachments')
+                .remove([fileName]);
+            throw dbError;
+        }
+
+        console.log(`✅ تم رفع الملف بنجاح: ${file.name}`);
+        return dbData;
+
+    } catch (error) {
+        console.error(`❌ خطأ في رفع الملف ${file.name}:`, error);
+        throw error;
+    }
+}
+
+// Get property attachments from Supabase
+async function getPropertyAttachmentsEnhanced(propertyKey) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('attachments')
+            .select('*')
+            .eq('property_key', propertyKey)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            throw error;
+        }
+
+        return data || [];
+
+    } catch (error) {
+        console.error('❌ خطأ في جلب المرفقات:', error);
+
+        // Fallback to local attachments
+        const localAttachments = window.attachments?.[propertyKey] || [];
+        console.log('📱 استخدام المرفقات المحلية:', localAttachments.length);
+        return localAttachments;
+    }
+}
+
 // Enhanced delete attachment with real-time sync
 async function deleteAttachmentEnhanced(attachmentId, propertyKey) {
     try {
@@ -1441,6 +1606,107 @@ async function deleteAttachmentEnhanced(attachmentId, propertyKey) {
         }
 
         alert('حدث خطأ في حذف المرفق. يرجى المحاولة مرة أخرى.');
+        return false;
+    }
+}
+
+// Sync local attachments to Supabase
+async function syncLocalAttachmentsToSupabase() {
+    try {
+        console.log('🔄 بدء مزامنة المرفقات المحلية مع Supabase...');
+
+        const localAttachments = JSON.parse(localStorage.getItem('propertyAttachments') || '{}');
+        let syncedCount = 0;
+        let errorCount = 0;
+
+        for (const [propertyKey, attachmentsList] of Object.entries(localAttachments)) {
+            if (!Array.isArray(attachmentsList)) continue;
+
+            for (const attachment of attachmentsList) {
+                try {
+                    // Check if this attachment already exists in Supabase
+                    const { data: existingAttachments } = await supabaseClient
+                        .from('attachments')
+                        .select('id')
+                        .eq('property_key', propertyKey)
+                        .eq('file_name', attachment.name)
+                        .eq('file_size', attachment.size);
+
+                    if (existingAttachments && existingAttachments.length > 0) {
+                        console.log(`⏭️ تخطي الملف الموجود: ${attachment.name}`);
+                        continue;
+                    }
+
+                    // Convert base64 data to file
+                    const response = await fetch(attachment.data);
+                    const blob = await response.blob();
+                    const file = new File([blob], attachment.name, { type: attachment.type });
+
+                    // Upload to Supabase
+                    await uploadFileToSupabase(file, propertyKey, attachment.notes || '');
+                    syncedCount++;
+
+                    console.log(`✅ تم مزامنة: ${attachment.name}`);
+
+                } catch (error) {
+                    console.error(`❌ فشل في مزامنة ${attachment.name}:`, error);
+                    errorCount++;
+                }
+            }
+        }
+
+        console.log(`🎉 انتهت المزامنة: ${syncedCount} ملف تم مزامنته، ${errorCount} خطأ`);
+
+        // Clear local storage after successful sync (optional)
+        if (syncedCount > 0 && errorCount === 0) {
+            const shouldClear = confirm(`تم مزامنة ${syncedCount} ملف بنجاح. هل تريد حذف النسخ المحلية؟`);
+            if (shouldClear) {
+                localStorage.removeItem('propertyAttachments');
+                console.log('🗑️ تم حذف المرفقات المحلية بعد المزامنة');
+            }
+        }
+
+        return { syncedCount, errorCount };
+
+    } catch (error) {
+        console.error('❌ خطأ في مزامنة المرفقات المحلية:', error);
+        throw error;
+    }
+}
+
+// Create storage bucket if it doesn't exist
+async function ensureStorageBucketExists() {
+    try {
+        // Check if bucket exists
+        const { data: buckets, error: listError } = await supabaseClient.storage.listBuckets();
+
+        if (listError) {
+            throw listError;
+        }
+
+        const attachmentsBucket = buckets.find(bucket => bucket.name === 'attachments');
+
+        if (!attachmentsBucket) {
+            // Create bucket
+            const { data, error: createError } = await supabaseClient.storage.createBucket('attachments', {
+                public: true,
+                allowedMimeTypes: ['image/*', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/*', 'video/*', 'audio/*'],
+                fileSizeLimit: 50 * 1024 * 1024 // 50MB
+            });
+
+            if (createError) {
+                throw createError;
+            }
+
+            console.log('✅ تم إنشاء مجلد التخزين للمرفقات');
+        } else {
+            console.log('✅ مجلد التخزين موجود');
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error('❌ خطأ في إنشاء مجلد التخزين:', error);
         return false;
     }
 }
