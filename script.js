@@ -5607,6 +5607,14 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                     </div>
                 </div>
             </div>
+
+            <!-- زر الإغلاق في الأسفل -->
+            <div class="modal-footer-actions">
+                <button class="close-modal-btn" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                    إغلاق النافذة
+                </button>
+            </div>
         </div>
     </div>`;
 
@@ -5625,6 +5633,11 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
 
             // Render attachments
             listContainer.innerHTML = renderCardAttachmentsList(cardKey, cardAttachments);
+
+            // إضافة سكرول للأعلى لإظهار المرفقات
+            setTimeout(() => {
+                scrollToAttachments();
+            }, 300);
 
             console.log('✅ تم عرض المرفقات في النافذة');
         } else {
@@ -5680,6 +5693,32 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
             closeModal();
         }
     });
+}
+
+// دالة السكرول للأعلى لإظهار المرفقات
+function scrollToAttachments() {
+    try {
+        // البحث عن قسم المرفقات
+        const attachmentsSection = document.querySelector('.attachments-main-section');
+        const attachmentsList = document.querySelector('.compact-list');
+
+        if (attachmentsSection) {
+            // سكرول النافذة للأعلى لإظهار المرفقات
+            attachmentsSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+
+            // سكرول قائمة المرفقات للأعلى
+            if (attachmentsList) {
+                attachmentsList.scrollTop = 0;
+            }
+
+            console.log('📜 تم السكرول لإظهار المرفقات');
+        }
+    } catch (error) {
+        console.error('❌ خطأ في السكرول:', error);
+    }
 }
 
 // عرض قائمة مرفقات البطاقة
