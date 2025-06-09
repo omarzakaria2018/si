@@ -5539,42 +5539,70 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
     }
 
     let html = `
-    <div class="modal-overlay" style="display:flex;">
-        <div class="modal-box attachments-modal">
-            <button class="close-modal" onclick="closeModal()">×</button>
-            <div class="attachments-modal-header">
-                <h2><i class="fas fa-paperclip"></i> مرفقات البطاقة</h2>
-                <div class="card-info">
-                    <p><strong>العقار:</strong> ${propertyName}</p>
-                    <p><strong>المدينة:</strong> ${city}</p>
-                    ${contractNumber ? `<p><strong>رقم العقد:</strong> ${contractNumber}</p>` : ''}
-                    ${unitNumber ? `<p><strong>رقم الوحدة:</strong> ${unitNumber}</p>` : ''}
-                </div>
-            </div>
-            <div class="attachments-modal-content">
-                <div class="upload-section">
-                    <h3><i class="fas fa-cloud-upload-alt"></i> رفع مرفقات جديدة</h3>
-                    <div class="upload-area" id="cardUploadArea_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">
-                        <div class="upload-dropzone" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>اسحب الملفات هنا أو انقر للاختيار</p>
-                            <small>يدعم جميع أنواع الملفات</small>
-                        </div>
-                        <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
+    <div class="modal-overlay enhanced-modal-overlay" style="display:flex;">
+        <div class="modal-box attachments-modal enhanced-attachments-modal">
+            <!-- زر الإغلاق المحسن -->
+            <button class="close-modal enhanced-close-btn" onclick="closeModal()" title="إغلاق النافذة">
+                <i class="fas fa-times"></i>
+            </button>
 
-                        <div class="upload-notes">
-                            <label for="cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">ملاحظات على المرفقات:</label>
-                            <textarea id="cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" placeholder="أضف ملاحظات أو تفاصيل حول المرفقات..." rows="3"></textarea>
-                        </div>
+            <!-- رأس النافذة المحسن -->
+            <div class="attachments-modal-header enhanced-header">
+                <div class="header-content">
+                    <h2><i class="fas fa-paperclip"></i> مرفقات البطاقة</h2>
+                    <div class="card-info">
+                        <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
+                        <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
+                        ${contractNumber ? `<span class="info-item"><i class="fas fa-file-contract"></i> عقد: ${contractNumber}</span>` : ''}
+                        ${unitNumber ? `<span class="info-item"><i class="fas fa-home"></i> وحدة: ${unitNumber}</span>` : ''}
                     </div>
                 </div>
+            </div>
 
-                <div class="attachments-list-section">
-                    <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
-                    <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list">
-                        <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
-                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p>جاري تحميل المرفقات...</p>
+            <!-- محتوى النافذة بالتخطيط الجديد -->
+            <div class="attachments-modal-content enhanced-content">
+                <div class="content-layout-new">
+                    <!-- الجانب الأيسر: منطقة الرفع والملاحظات -->
+                    <div class="upload-notes-sidebar">
+                        <!-- منطقة الرفع -->
+                        <div class="upload-section compact-upload">
+                            <div class="upload-area enhanced-upload" id="cardUploadArea_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">
+                                <div class="upload-dropzone" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>اسحب الملفات هنا أو انقر للاختيار</p>
+                                    <small>يدعم جميع أنواع الملفات</small>
+                                </div>
+                                <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
+                            </div>
+                        </div>
+
+                        <!-- قسم الملاحظات -->
+                        <div class="notes-section-compact">
+                            <div class="notes-container-compact">
+                                <h4><i class="fas fa-sticky-note"></i> ملاحظات</h4>
+                                <textarea
+                                    id="cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                                    class="notes-textarea-compact"
+                                    placeholder="أضف ملاحظات..."
+                                    rows="3"
+                                ></textarea>
+                                <div class="notes-info-compact">
+                                    <small><i class="fas fa-info-circle"></i> ستُحفظ مع المرفقات الجديدة</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الجانب الأيمن: قائمة المرفقات (العرض الكامل) -->
+                    <div class="attachments-main-section">
+                        <div class="attachments-header">
+                            <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
+                        </div>
+                        <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list">
+                            <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                <p>جاري تحميل المرفقات...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -5677,34 +5705,35 @@ function renderCardAttachmentsList(cardKey, attachments = null) {
         const storageTitle = isLocal ? 'محفوظ محلياً' : 'محفوظ في السحابة';
 
         return `
-        <div class="attachment-item" data-name="${fileName}">
-            <div class="attachment-info">
-                <div class="file-icon">${fileIcon}</div>
-                <div class="file-details">
-                    <h4>
-                        ${fileName}
-                        <span class="storage-indicator" title="${storageTitle}" style="margin-right: 8px; font-size: 0.8rem;">${storageIcon}</span>
-                    </h4>
-                    <p class="file-meta">الحجم: ${fileSize} | تاريخ الرفع: ${uploadDate}</p>
-                    ${(file.notes || file.description) ? `<p class="file-notes"><i class="fas fa-sticky-note"></i> ${file.notes || file.description}</p>` : ''}
+        <div class="attachment-item compact-item" data-name="${fileName}">
+            <div class="file-icon-compact">${fileIcon}</div>
+            <div class="file-info-compact">
+                <div class="file-name-compact" title="${fileName}">
+                    ${fileName}
+                    <span class="storage-indicator-compact" title="${storageTitle}">${storageIcon}</span>
+                </div>
+                <div class="file-meta-compact">
+                    <span class="file-size-compact">${fileSize}</span>
+                    <span class="file-date-compact">${uploadDate}</span>
+                    ${(file.notes || file.description) ? `<span class="file-notes-compact" title="${file.notes || file.description}"><i class="fas fa-sticky-note"></i></span>` : ''}
                 </div>
             </div>
-            <div class="attachment-actions">
+            <div class="attachment-actions-compact">
                 ${isLocal ?
-                    `<button onclick="downloadCardAttachment('${cardKey}', '${fileName}')" class="btn-download">
-                        <i class="fas fa-download"></i> تحميل
+                    `<button onclick="downloadCardAttachment('${cardKey}', '${fileName}')" class="btn-compact btn-download" title="تحميل">
+                        <i class="fas fa-download"></i>
                     </button>
-                    <button onclick="deleteCardAttachment('${cardKey}', '${fileName}')" class="btn-delete">
-                        <i class="fas fa-trash"></i> حذف
+                    <button onclick="deleteCardAttachment('${cardKey}', '${fileName}')" class="btn-compact btn-delete" title="حذف">
+                        <i class="fas fa-trash"></i>
                     </button>` :
-                    `<button onclick="window.open('${file.file_url}', '_blank')" class="btn-view">
-                        <i class="fas fa-eye"></i> عرض
+                    `<button onclick="window.open('${file.file_url}', '_blank')" class="btn-compact btn-view" title="عرض">
+                        <i class="fas fa-eye"></i>
                     </button>
-                    <button onclick="downloadAttachmentFromSupabase('${file.file_url}', '${fileName}')" class="btn-download">
-                        <i class="fas fa-download"></i> تحميل
+                    <button onclick="downloadAttachmentFromSupabase('${file.file_url}', '${fileName}')" class="btn-compact btn-download" title="تحميل">
+                        <i class="fas fa-download"></i>
                     </button>
-                    <button onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" class="btn-delete">
-                        <i class="fas fa-trash"></i> حذف
+                    <button onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" class="btn-compact btn-delete" title="حذف">
+                        <i class="fas fa-trash"></i>
                     </button>`
                 }
             </div>

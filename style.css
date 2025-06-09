@@ -924,6 +924,1502 @@ tr:hover {
     border-left-color: #28a745 !important;
 }
 
+/* ===== ENHANCED ATTACHMENTS MODAL DESIGN ===== */
+
+/* تحسين النافذة الأساسية */
+.enhanced-modal-overlay {
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.6);
+    animation: fadeInBackdrop 0.3s ease-out;
+}
+
+@keyframes fadeInBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.enhanced-attachments-modal {
+    max-width: 1200px;
+    width: 95%;
+    max-height: 90vh;
+    border-radius: 20px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    animation: modalSlideInEnhanced 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+@keyframes modalSlideInEnhanced {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* زر الإغلاق المحسن */
+.enhanced-close-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10;
+    box-shadow: 0 4px 15px rgba(238, 90, 82, 0.4);
+}
+
+.enhanced-close-btn:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 6px 25px rgba(238, 90, 82, 0.6);
+    background: linear-gradient(135deg, #ff5252, #d32f2f);
+}
+
+.enhanced-close-btn:active {
+    transform: scale(0.95) rotate(90deg);
+}
+
+/* رأس النافذة المحسن */
+.enhanced-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.enhanced-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.enhanced-header .header-content {
+    position: relative;
+    z-index: 2;
+}
+
+.enhanced-header h2 {
+    margin: 0 0 15px 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.enhanced-header h2 i {
+    margin-left: 12px;
+    color: #ffd700;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.card-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.info-item {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 8px 15px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.info-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.info-item i {
+    margin-left: 8px;
+    opacity: 0.9;
+}
+
+/* التخطيط الجديد للمحتوى */
+.enhanced-content {
+    padding: 0;
+    overflow: hidden;
+}
+
+.content-layout-new {
+    display: flex;
+    height: calc(90vh - 120px);
+    min-height: 500px;
+    gap: 20px;
+    padding: 20px;
+}
+
+/* الجانب الأيسر: منطقة الرفع والملاحظات */
+.upload-notes-sidebar {
+    flex: 0 0 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* الجانب الأيمن: قائمة المرفقات (العرض الكامل) */
+.attachments-main-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* منطقة الرفع المصغرة (75% أصغر) */
+.compact-upload {
+    margin-bottom: 15px;
+}
+
+.enhanced-upload {
+    background: white;
+    border-radius: 10px;
+    border: 2px dashed #cbd5e0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.enhanced-upload::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(103, 126, 234, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.enhanced-upload:hover::before {
+    left: 100%;
+}
+
+.enhanced-upload:hover {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+}
+
+.enhanced-upload .upload-dropzone {
+    padding: 12px 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.enhanced-upload .upload-dropzone i {
+    font-size: 1.2rem;
+    color: #667eea;
+    margin-bottom: 6px;
+    transition: all 0.3s ease;
+}
+
+.enhanced-upload:hover .upload-dropzone i {
+    transform: scale(1.1);
+    color: #5a67d8;
+}
+
+.enhanced-upload .upload-dropzone p {
+    margin: 4px 0 2px 0;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+
+.enhanced-upload .upload-dropzone small {
+    color: #718096;
+    font-size: 0.7rem;
+    display: block;
+    margin-top: 2px;
+}
+
+/* أنماط الملاحظات المدمجة */
+.notes-section-compact {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.notes-section-compact:hover {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.notes-container-compact {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.notes-container-compact h4 {
+    margin: 0 0 10px 0;
+    color: #4a5568;
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.notes-container-compact h4 i {
+    margin-left: 6px;
+    color: #667eea;
+    font-size: 0.9rem;
+}
+
+.notes-textarea-compact {
+    flex: 1;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    resize: vertical;
+    min-height: 80px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.notes-textarea-compact:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: #fafbfc;
+}
+
+.notes-textarea-compact::placeholder {
+    color: #a0aec0;
+    font-style: italic;
+}
+
+.notes-info-compact {
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+}
+
+.notes-info-compact small {
+    color: #4a5568;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+}
+
+.notes-info-compact i {
+    margin-left: 4px;
+    color: #667eea;
+    font-size: 0.7rem;
+}
+
+/* أنماط رأس المرفقات */
+.attachments-header {
+    padding: 20px 25px 15px 25px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.attachments-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+
+.attachments-header h3 i {
+    margin-left: 10px;
+    font-size: 1.3rem;
+}
+
+/* قائمة المرفقات المدمجة */
+.compact-list {
+    background: transparent;
+    padding: 20px 25px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 300px;
+}
+
+.compact-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.compact-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.compact-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #cbd5e0, #a0aec0);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.compact-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #a0aec0, #718096);
+}
+
+/* أنماط عناصر المرفقات المدمجة */
+.compact-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    gap: 12px;
+    min-height: 60px;
+}
+
+.compact-item:hover {
+    background: #f8f9fa;
+    border-color: #667eea;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.file-icon-compact {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    font-size: 1.2rem;
+}
+
+.file-info-compact {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.file-name-compact {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.storage-indicator-compact {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.file-meta-compact {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+.file-size-compact,
+.file-date-compact {
+    white-space: nowrap;
+}
+
+.file-notes-compact {
+    color: #667eea;
+    cursor: help;
+}
+
+.attachment-actions-compact {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.btn-compact {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.btn-compact.btn-view {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+}
+
+.btn-compact.btn-view:hover {
+    background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+    transform: scale(1.05);
+}
+
+.btn-compact.btn-download {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+}
+
+.btn-compact.btn-download:hover {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    transform: scale(1.05);
+}
+
+.btn-compact.btn-delete {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    color: white;
+}
+
+.btn-compact.btn-delete:hover {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    transform: scale(1.05);
+}
+
+/* قائمة المرفقات المكبرة والمحسنة */
+.attachments-list-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.attachments-list-section h3 {
+    margin: 0 0 15px 0;
+    color: #4a5568;
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.attachments-list-section h3 i {
+    margin-left: 10px;
+    color: #667eea;
+    font-size: 1.3rem;
+}
+
+.enhanced-list {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    flex: 1;
+    overflow-y: auto;
+    min-height: 300px;
+    max-height: none;
+}
+
+.enhanced-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.enhanced-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 5px;
+}
+
+.enhanced-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #cbd5e0, #a0aec0);
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.enhanced-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #a0aec0, #718096);
+}
+
+/* حاوية الملاحظات */
+.notes-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.notes-container h4 {
+    margin: 0 0 15px 0;
+    color: #4a5568;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.notes-container h4 i {
+    margin-left: 8px;
+    color: #667eea;
+}
+
+.notes-textarea {
+    flex: 1;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 15px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    resize: vertical;
+    min-height: 120px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.notes-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: #fafbfc;
+}
+
+.notes-textarea::placeholder {
+    color: #a0aec0;
+    font-style: italic;
+}
+
+.notes-info {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.notes-info small {
+    color: #4a5568;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+}
+
+.notes-info i {
+    margin-left: 6px;
+    color: #667eea;
+}
+
+/* ===== RESPONSIVE DESIGN FOR ENHANCED MODAL ===== */
+
+/* الشاشات المتوسطة (768px - 1024px) */
+@media (max-width: 1024px) {
+    .enhanced-attachments-modal {
+        max-width: 95%;
+        width: 95%;
+    }
+
+    .content-layout {
+        height: calc(85vh - 120px);
+    }
+
+    .attachments-section {
+        flex: 0 0 65%;
+        padding: 20px;
+    }
+
+    .notes-section {
+        flex: 0 0 20%;
+        padding: 20px 15px;
+    }
+
+    .enhanced-header h2 {
+        font-size: 1.6rem;
+    }
+
+    .info-item {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
+}
+
+/* الشاشات الصغيرة (768px وأقل) */
+@media (max-width: 768px) {
+    .enhanced-attachments-modal {
+        max-width: 98%;
+        width: 98%;
+        max-height: 95vh;
+        border-radius: 15px;
+        margin: 2.5vh auto;
+    }
+
+    .enhanced-close-btn {
+        top: 15px;
+        left: 15px;
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+
+    .enhanced-header {
+        padding: 20px 25px;
+    }
+
+    .enhanced-header h2 {
+        font-size: 1.4rem;
+        margin-bottom: 12px;
+    }
+
+    .card-info {
+        gap: 10px;
+    }
+
+    .info-item {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+
+    /* تخطيط عمودي للجوال - التخطيط الجديد */
+    .content-layout-new {
+        flex-direction: column;
+        height: auto;
+        max-height: calc(95vh - 140px);
+        gap: 15px;
+        padding: 15px;
+    }
+
+    /* الجانب الأيسر يصبح في الأعلى */
+    .upload-notes-sidebar {
+        flex: 0 0 auto;
+        width: 100%;
+        gap: 12px;
+    }
+
+    /* الجانب الأيمن يصبح في الأسفل */
+    .attachments-main-section {
+        flex: 1;
+        min-height: 300px;
+        max-height: 50vh;
+    }
+
+    /* تحديث أنماط منطقة الرفع للجوال */
+    .compact-upload {
+        margin-bottom: 0;
+    }
+
+    /* تحديث أنماط الملاحظات للجوال */
+    .notes-section-compact {
+        margin-top: 0;
+    }
+
+    .notes-container-compact {
+        padding: 12px;
+    }
+
+    .notes-textarea-compact {
+        min-height: 60px;
+        font-size: 0.8rem;
+        padding: 10px;
+    }
+
+    /* تحديث رأس المرفقات للجوال */
+    .attachments-header {
+        padding: 15px 20px 12px 20px;
+    }
+
+    .attachments-header h3 {
+        font-size: 1.1rem;
+    }
+
+    /* تحديث قائمة المرفقات للجوال */
+    .compact-list {
+        padding: 15px 20px;
+        min-height: 200px;
+    }
+
+    /* تحديث العناصر المدمجة للجوال */
+    .compact-item {
+        padding: 10px 12px;
+        margin-bottom: 6px;
+        min-height: 50px;
+        gap: 10px;
+    }
+
+    .file-icon-compact {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+
+    .file-name-compact {
+        font-size: 0.85rem;
+    }
+
+    .file-meta-compact {
+        font-size: 0.7rem;
+        gap: 8px;
+    }
+
+    .btn-compact {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+
+    .attachment-actions-compact {
+        gap: 4px;
+    }
+
+    /* تخطيط عمودي للجوال - التخطيط القديم (للتوافق) */
+    .content-layout {
+        flex-direction: column;
+        height: auto;
+        max-height: calc(95vh - 140px);
+    }
+
+    .attachments-section {
+        flex: 1;
+        padding: 20px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .notes-section {
+        flex: 0 0 auto;
+        padding: 15px 20px;
+        border-left: none;
+        border-top: 1px solid #dee2e6;
+        min-height: 180px;
+    }
+
+    .enhanced-upload .upload-dropzone {
+        padding: 10px 12px;
+    }
+
+    .enhanced-upload .upload-dropzone i {
+        font-size: 1rem;
+        margin-bottom: 4px;
+    }
+
+    .enhanced-upload .upload-dropzone p {
+        font-size: 0.8rem;
+        margin: 3px 0 1px 0;
+    }
+
+    .enhanced-upload .upload-dropzone small {
+        font-size: 0.65rem;
+    }
+
+    .enhanced-list {
+        padding: 15px;
+        min-height: 250px;
+    }
+
+    .enhanced-list .attachment-item {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 15px;
+        min-height: auto;
+    }
+
+    .enhanced-list .attachment-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .enhanced-list .file-icon {
+        font-size: 2rem;
+        min-width: 50px;
+        height: 50px;
+    }
+
+    .enhanced-list .file-details h4 {
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .enhanced-list .file-meta {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        font-size: 0.8rem;
+    }
+
+    .enhanced-list .attachment-actions {
+        flex-direction: row;
+        justify-content: center;
+        gap: 8px;
+        min-width: auto;
+    }
+
+    .enhanced-list .attachment-actions button {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+        flex: 1;
+        min-width: 70px;
+    }
+
+    .notes-textarea {
+        min-height: 100px;
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+}
+
+/* الشاشات الصغيرة جداً (480px وأقل) */
+@media (max-width: 480px) {
+    .enhanced-attachments-modal {
+        width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .enhanced-close-btn {
+        top: 10px;
+        left: 10px;
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    .enhanced-header {
+        padding: 15px 20px;
+    }
+
+    .enhanced-header h2 {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+
+    .card-info {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .info-item {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        text-align: center;
+    }
+
+    /* تحديث التخطيط الجديد للشاشات الصغيرة جداً */
+    .content-layout-new {
+        gap: 12px;
+        padding: 12px;
+        max-height: calc(100vh - 120px);
+    }
+
+    .upload-notes-sidebar {
+        gap: 10px;
+    }
+
+    .attachments-main-section {
+        min-height: 250px;
+        max-height: 45vh;
+    }
+
+    /* تحديث منطقة الرفع */
+    .upload-dropzone {
+        padding: 12px 10px;
+        margin: 10px;
+    }
+
+    .upload-dropzone i {
+        font-size: 1.2rem;
+        margin-bottom: 6px;
+    }
+
+    .upload-dropzone p {
+        font-size: 0.8rem;
+        margin: 4px 0 2px 0;
+    }
+
+    .upload-dropzone small {
+        font-size: 0.7rem;
+    }
+
+    /* تحديث الملاحظات */
+    .notes-container-compact {
+        padding: 10px;
+    }
+
+    .notes-container-compact h4 {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .notes-textarea-compact {
+        min-height: 50px;
+        font-size: 0.75rem;
+        padding: 8px;
+    }
+
+    .notes-info-compact {
+        padding: 6px;
+        margin-top: 6px;
+    }
+
+    .notes-info-compact small {
+        font-size: 0.7rem;
+    }
+
+    /* تحديث رأس المرفقات */
+    .attachments-header {
+        padding: 12px 15px 10px 15px;
+    }
+
+    .attachments-header h3 {
+        font-size: 1rem;
+    }
+
+    /* تحديث قائمة المرفقات */
+    .compact-list {
+        padding: 12px 15px;
+        min-height: 180px;
+    }
+
+    /* تحديث العناصر المدمجة للشاشات الصغيرة جداً */
+    .compact-item {
+        padding: 8px 10px;
+        margin-bottom: 5px;
+        min-height: 45px;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .file-icon-compact {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+
+    .file-info-compact {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .file-name-compact {
+        font-size: 0.8rem;
+    }
+
+    .file-meta-compact {
+        font-size: 0.65rem;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .btn-compact {
+        width: 26px;
+        height: 26px;
+        font-size: 0.7rem;
+    }
+
+    .attachment-actions-compact {
+        gap: 3px;
+        flex: 0 0 auto;
+    }
+
+    /* التخطيط القديم للتوافق */
+    .attachments-section {
+        padding: 15px;
+        max-height: 55vh;
+    }
+
+    .notes-section {
+        padding: 12px 15px;
+        min-height: 150px;
+    }
+
+    .enhanced-upload .upload-dropzone {
+        padding: 8px 10px;
+    }
+
+    .enhanced-upload .upload-dropzone i {
+        font-size: 0.9rem;
+        margin-bottom: 3px;
+    }
+
+    .enhanced-upload .upload-dropzone p {
+        font-size: 0.75rem;
+        margin: 2px 0 1px 0;
+    }
+
+    .enhanced-upload .upload-dropzone small {
+        font-size: 0.6rem;
+    }
+
+    .enhanced-list {
+        padding: 12px;
+        min-height: 200px;
+    }
+
+    .enhanced-list .attachment-item {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    .enhanced-list .file-icon {
+        font-size: 1.5rem;
+        min-width: 40px;
+        height: 40px;
+    }
+
+    .enhanced-list .file-details h4 {
+        font-size: 0.9rem;
+    }
+
+    .enhanced-list .file-meta {
+        font-size: 0.7rem;
+        gap: 8px;
+    }
+
+    .enhanced-list .file-notes {
+        font-size: 0.75rem;
+        padding: 6px 8px;
+    }
+
+    .enhanced-list .attachment-actions button {
+        padding: 6px 8px;
+        font-size: 0.7rem;
+        min-width: 60px;
+    }
+
+    .notes-container h4 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+
+    .notes-textarea {
+        min-height: 80px;
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+
+    .notes-info {
+        padding: 8px;
+        margin-top: 8px;
+    }
+
+    .notes-info small {
+        font-size: 0.8rem;
+    }
+}
+
+/* ===== ENHANCED INTERACTIONS & ANIMATIONS ===== */
+
+/* تأثيرات السحب والإفلات */
+.enhanced-upload.drag-over {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    transform: scale(1.02);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.25);
+}
+
+.enhanced-upload.drag-over .upload-dropzone {
+    color: #667eea;
+}
+
+.enhanced-upload.drag-over .upload-dropzone i {
+    transform: scale(1.2) rotate(10deg);
+    color: #5a67d8;
+}
+
+/* تحسين عناصر المرفقات - عرض كل ملف في صف */
+.enhanced-list .attachment-item {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    padding: 18px 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 80px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.enhanced-list .attachment-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.08), transparent);
+    transition: left 0.6s ease;
+}
+
+.enhanced-list .attachment-item:hover::before {
+    left: 100%;
+}
+
+.enhanced-list .attachment-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+    border-color: #667eea;
+    background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);
+}
+
+/* تخطيط محتوى الملف */
+.enhanced-list .attachment-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 15px;
+}
+
+.enhanced-list .file-icon {
+    font-size: 2.5rem;
+    min-width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.enhanced-list .file-icon::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: rotate(45deg);
+    transition: all 0.6s ease;
+}
+
+.enhanced-list .attachment-item:hover .file-icon::before {
+    animation: shimmer 1.5s ease-in-out;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+.enhanced-list .file-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.enhanced-list .file-details h4 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.enhanced-list .storage-indicator {
+    font-size: 1rem;
+    padding: 2px 6px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.enhanced-list .file-meta {
+    margin: 0 0 6px 0;
+    font-size: 0.9rem;
+    color: #718096;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.enhanced-list .file-notes {
+    margin: 8px 0 0 0;
+    font-size: 0.85rem;
+    color: #4a5568;
+    background: rgba(102, 126, 234, 0.05);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.enhanced-list .file-notes i {
+    margin-left: 6px;
+    color: #667eea;
+}
+
+/* تحسين أزرار الإجراءات */
+.enhanced-list .attachment-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 120px;
+    align-items: stretch;
+}
+
+.enhanced-list .attachment-actions button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.enhanced-list .attachment-actions button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.enhanced-list .attachment-actions button:hover::before {
+    left: 100%;
+}
+
+.enhanced-list .btn-view {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.enhanced-list .btn-view:hover {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.enhanced-list .btn-download {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+    border: 1px solid rgba(72, 187, 120, 0.3);
+}
+
+.enhanced-list .btn-download:hover {
+    background: linear-gradient(135deg, #38a169, #2f855a);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.5);
+}
+
+.enhanced-list .btn-delete {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+    color: white;
+    border: 1px solid rgba(245, 101, 101, 0.3);
+}
+
+.enhanced-list .btn-delete:hover {
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(245, 101, 101, 0.5);
+}
+
+.enhanced-list .attachment-actions button:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* تحسين مؤشرات التحميل */
+.loading-attachments {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #718096;
+}
+
+.loading-attachments i {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    color: #667eea;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.loading-attachments p {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* تحسين رسائل الخطأ */
+.error-loading-attachments {
+    text-align: center;
+    padding: 30px 20px;
+    color: #e53e3e;
+    background: linear-gradient(135deg, #fed7d7, #feb2b2);
+    border-radius: 12px;
+    border: 1px solid #fc8181;
+}
+
+.error-loading-attachments i {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    color: #e53e3e;
+}
+
+.error-loading-attachments button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #e53e3e, #c53030);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.error-loading-attachments button:hover {
+    background: linear-gradient(135deg, #c53030, #9c2626);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(197, 48, 48, 0.4);
+}
+
+/* تحسين التمرير */
+.attachments-section::-webkit-scrollbar {
+    width: 10px;
+}
+
+.attachments-section::-webkit-scrollbar-track {
+    background: #f7fafc;
+    border-radius: 5px;
+}
+
+.attachments-section::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #cbd5e0, #a0aec0);
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.attachments-section::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #a0aec0, #718096);
+}
+
+/* تحسين التركيز للوصولية */
+.enhanced-attachments-modal *:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* رسالة عدم وجود مرفقات */
+.enhanced-list .no-attachments {
+    text-align: center;
+    padding: 60px 20px;
+    color: #718096;
+    font-size: 1.1rem;
+    font-weight: 500;
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-radius: 15px;
+    border: 2px dashed #cbd5e0;
+    position: relative;
+    overflow: hidden;
+}
+
+.enhanced-list .no-attachments::before {
+    content: '📎';
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+.enhanced-list .no-attachments::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(113, 128, 150, 0.1), transparent);
+    animation: shimmerEmpty 4s ease-in-out infinite;
+}
+
+@keyframes shimmerEmpty {
+    0% { left: -100%; }
+    50% { left: 100%; }
+    100% { left: -100%; }
+}
+
+/* تحسين الطباعة */
+@media print {
+    .enhanced-modal-overlay {
+        display: none !important;
+    }
+}
+
 .card-footer {
   padding: 1rem;
   background-color: #f9f9f9;
@@ -1075,7 +2571,7 @@ footer {
     border: none;
     font-size: 2.5rem;
     cursor: pointer;
-    color: #ee3bcc;
+    color: #d9d1d8;
     transition: color 0.2s;
     padding: 15px;
     margin: -15px;
@@ -1091,7 +2587,7 @@ footer {
 
 /* تحسين تنسيق النوافذ المنبثقة */
 .modal-box h3 {
-  color: var(--primary-color);
+  color: #eaebef;
   text-align: center;
   margin-bottom: 20px;
   font-size: 1.5rem;
