@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تشخيص مزامنة مرفقات البطاقات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .sync-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .status-card {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid;
+        }
+        .status-working { background: #d4edda; border-color: #28a745; }
+        .status-broken { background: #f8d7da; border-color: #dc3545; }
+        .status-unknown { background: #e2e3e5; border-color: #6c757d; }
+        .real-time-test {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .test-step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .step-number {
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            font-weight: bold;
+        }
+        .event-monitor {
+            background: #f1f3f4;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .event-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            border-left: 4px solid;
+        }
+        .event-success { background: #d4edda; border-color: #28a745; }
+        .event-error { background: #f8d7da; border-color: #dc3545; }
+        .event-info { background: #d1ecf1; border-color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 تشخيص مزامنة مرفقات البطاقات</h1>
+        
+        <div class="test-section info">
+            <h3>🎯 الهدف</h3>
+            <p><strong>المشكلة:</strong> مرفقات البطاقات ترفع بنجاح لكن لا تظهر في الأجهزة الأخرى</p>
+            <p><strong>التشخيص:</strong> فحص المزامنة الفورية خطوة بخطوة</p>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 حالة المزامنة</h3>
+            <div class="sync-status" id="syncStatus">
+                <div class="status-card status-unknown">
+                    <h4>🔗 اتصال Supabase</h4>
+                    <div id="supabaseStatus">جاري الفحص...</div>
+                </div>
+                <div class="status-card status-unknown">
+                    <h4>📡 اشتراك real-time</h4>
+                    <div id="subscriptionStatus">جاري الفحص...</div>
+                </div>
+                <div class="status-card status-unknown">
+                    <h4>🎯 معالج الأحداث</h4>
+                    <div id="handlerStatus">جاري الفحص...</div>
+                </div>
+                <div class="status-card status-unknown">
+                    <h4>🔄 تحديث الواجهة</h4>
+                    <div id="uiUpdateStatus">جاري الفحص...</div>
+                </div>
+            </div>
+            <button onclick="checkSyncStatus()">فحص حالة المزامنة</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبار المزامنة الفورية</h3>
+            <div class="real-time-test">
+                <div class="test-step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>تفعيل مراقبة الأحداث</strong>
+                        <button onclick="startEventMonitoring()">بدء المراقبة</button>
+                        <button onclick="stopEventMonitoring()">إيقاف المراقبة</button>
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>محاكاة حدث من جهاز آخر</strong>
+                        <button onclick="simulateRemoteEvent()">محاكاة حدث</button>
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>رفع ملف حقيقي</strong>
+                        <input type="file" id="realTestFile" style="display: none;" onchange="uploadRealFile(event)">
+                        <button onclick="document.getElementById('realTestFile').click()">رفع ملف</button>
+                    </div>
+                </div>
+                
+                <div class="test-step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>فتح متصفح ثاني</strong>
+                        <button onclick="openSecondBrowser()">فتح متصفح ثاني</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📡 مراقب الأحداث</h3>
+            <div id="eventMonitor" class="event-monitor">
+                <div class="event-item event-info">
+                    <strong>مراقب الأحداث جاهز</strong><br>
+                    <small>سيتم عرض جميع الأحداث هنا</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 أدوات التشخيص</h3>
+            <button onclick="testSubscriptionManually()">اختبار الاشتراك يدوياً</button>
+            <button onclick="testEventHandlers()">اختبار معالجات الأحداث</button>
+            <button onclick="testUIUpdate()">اختبار تحديث الواجهة</button>
+            <button onclick="compareWithPropertySync()">مقارنة مع مرفقات العقارات</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 سجل التشخيص</h3>
+            <button onclick="clearLog()">مسح السجل</button>
+            <button onclick="exportDiagnosisLog()">تصدير السجل</button>
+            <div id="testLog" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        let eventMonitoring = false;
+        let eventsReceived = [];
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').textContent = '';
+            log('🧹 تم مسح السجل');
+        }
+
+        function addEventToMonitor(type, message, details = '') {
+            const monitor = document.getElementById('eventMonitor');
+            const eventItem = document.createElement('div');
+            eventItem.className = `event-item event-${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            eventItem.innerHTML = `
+                <strong>[${timestamp}] ${message}</strong><br>
+                ${details ? `<small>${details}</small>` : ''}
+            `;
+            
+            monitor.insertBefore(eventItem, monitor.firstChild);
+            
+            // Keep only last 20 events
+            while (monitor.children.length > 20) {
+                monitor.removeChild(monitor.lastChild);
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 بدء تشخيص مزامنة مرفقات البطاقات...');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                log('Supabase تهيئة:', initialized ? 'نجح' : 'فشل');
+            }
+            
+            // فحص حالة المزامنة
+            setTimeout(checkSyncStatus, 1000);
+            
+            // بدء مراقبة الأحداث تلقائياً
+            setTimeout(startEventMonitoring, 2000);
+        });
+
+        async function checkSyncStatus() {
+            log('🔍 فحص حالة المزامنة...');
+            
+            // فحص اتصال Supabase
+            const supabaseCard = document.getElementById('supabaseStatus');
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('card_attachments')
+                        .select('count', { count: 'exact', head: true });
+                    
+                    if (!error) {
+                        supabaseCard.innerHTML = '✅ متصل';
+                        supabaseCard.parentElement.className = 'status-card status-working';
+                        log('✅ اتصال Supabase يعمل', 'success');
+                    } else {
+                        throw error;
+                    }
+                } catch (error) {
+                    supabaseCard.innerHTML = '❌ خطأ في الاتصال';
+                    supabaseCard.parentElement.className = 'status-card status-broken';
+                    log(`❌ خطأ في اتصال Supabase: ${error.message}`, 'error');
+                }
+            } else {
+                supabaseCard.innerHTML = '❌ غير متوفر';
+                supabaseCard.parentElement.className = 'status-card status-broken';
+                log('❌ Supabase غير متوفر', 'error');
+            }
+            
+            // فحص اشتراك real-time
+            const subscriptionCard = document.getElementById('subscriptionStatus');
+            if (typeof subscribeToCardAttachmentChanges === 'function') {
+                subscriptionCard.innerHTML = '✅ الوظيفة متوفرة';
+                subscriptionCard.parentElement.className = 'status-card status-working';
+                log('✅ وظيفة الاشتراك متوفرة', 'success');
+            } else {
+                subscriptionCard.innerHTML = '❌ الوظيفة مفقودة';
+                subscriptionCard.parentElement.className = 'status-card status-broken';
+                log('❌ وظيفة subscribeToCardAttachmentChanges مفقودة', 'error');
+            }
+            
+            // فحص معالج الأحداث
+            const handlerCard = document.getElementById('handlerStatus');
+            if (typeof handleCardAttachmentRealTimeChange === 'function') {
+                handlerCard.innerHTML = '✅ المعالج متوفر';
+                handlerCard.parentElement.className = 'status-card status-working';
+                log('✅ معالج الأحداث متوفر', 'success');
+            } else {
+                handlerCard.innerHTML = '❌ المعالج مفقود';
+                handlerCard.parentElement.className = 'status-card status-broken';
+                log('❌ معالج handleCardAttachmentRealTimeChange مفقود', 'error');
+            }
+            
+            // فحص تحديث الواجهة
+            const uiCard = document.getElementById('uiUpdateStatus');
+            if (typeof updateCardAttachmentsUI === 'function') {
+                uiCard.innerHTML = '✅ التحديث متوفر';
+                uiCard.parentElement.className = 'status-card status-working';
+                log('✅ وظيفة تحديث الواجهة متوفرة', 'success');
+            } else {
+                uiCard.innerHTML = '❌ التحديث مفقود';
+                uiCard.parentElement.className = 'status-card status-broken';
+                log('❌ وظيفة updateCardAttachmentsUI مفقودة', 'error');
+            }
+        }
+
+        function startEventMonitoring() {
+            if (eventMonitoring) return;
+            
+            eventMonitoring = true;
+            log('👁️ بدء مراقبة الأحداث...');
+            addEventToMonitor('info', 'بدء مراقبة الأحداث', 'سيتم عرض جميع أحداث مرفقات البطاقات هنا');
+            
+            // مراقبة أحداث مرفقات البطاقات
+            window.addEventListener('cardAttachmentAdded', handleCardAttachmentEvent);
+            window.addEventListener('cardAttachmentDeleted', handleCardAttachmentEvent);
+            window.addEventListener('cardAttachmentsUIUpdated', handleUIUpdateEvent);
+            
+            log('✅ تم تفعيل مراقبة الأحداث', 'success');
+        }
+
+        function stopEventMonitoring() {
+            if (!eventMonitoring) return;
+            
+            eventMonitoring = false;
+            
+            window.removeEventListener('cardAttachmentAdded', handleCardAttachmentEvent);
+            window.removeEventListener('cardAttachmentDeleted', handleCardAttachmentEvent);
+            window.removeEventListener('cardAttachmentsUIUpdated', handleUIUpdateEvent);
+            
+            log('⏹️ تم إيقاف مراقبة الأحداث');
+            addEventToMonitor('info', 'تم إيقاف مراقبة الأحداث');
+        }
+
+        function handleCardAttachmentEvent(event) {
+            eventsReceived.push({
+                type: event.type,
+                detail: event.detail,
+                timestamp: new Date().toISOString()
+            });
+            
+            const fileName = event.detail.attachment?.file_name || 'غير محدد';
+            const cardKey = event.detail.cardKey || 'غير محدد';
+            
+            addEventToMonitor('success', `حدث مرفق بطاقة: ${event.type}`, 
+                `الملف: ${fileName} | البطاقة: ${cardKey}`);
+            
+            log(`📡 تم استقبال حدث: ${event.type} - ${fileName}`, 'success');
+        }
+
+        function handleUIUpdateEvent(event) {
+            const cardKey = event.detail.cardKey || 'غير محدد';
+            addEventToMonitor('info', 'تحديث واجهة مرفقات البطاقة', `البطاقة: ${cardKey}`);
+            log(`🔄 تم تحديث واجهة البطاقة: ${cardKey}`, 'info');
+        }
+
+        function simulateRemoteEvent() {
+            log('🎭 محاكاة حدث من جهاز آخر...');
+            
+            const mockAttachment = {
+                id: 'mock_' + Date.now(),
+                file_name: 'ملف_محاكاة_' + Date.now() + '.txt',
+                file_type: 'text/plain',
+                file_size: 1024,
+                created_at: new Date().toISOString()
+            };
+            
+            const mockCardKey = 'test_simulation_' + Date.now();
+            
+            // إطلاق حدث مخصص
+            window.dispatchEvent(new CustomEvent('cardAttachmentAdded', {
+                detail: { 
+                    cardKey: mockCardKey,
+                    attachment: mockAttachment
+                }
+            }));
+            
+            log(`✅ تم محاكاة حدث إضافة مرفق: ${mockAttachment.file_name}`, 'success');
+        }
+
+        async function uploadRealFile(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            const file = files[0];
+            const cardKey = 'test_real_sync_' + Date.now();
+            
+            log(`📤 رفع ملف حقيقي: ${file.name} للبطاقة: ${cardKey}`);
+            addEventToMonitor('info', 'بدء رفع ملف حقيقي', `الملف: ${file.name} | البطاقة: ${cardKey}`);
+            
+            try {
+                if (typeof uploadCardFileToSupabase === 'function') {
+                    const result = await uploadCardFileToSupabase(file, cardKey, 'ملف اختبار المزامنة الحقيقية');
+                    
+                    if (result) {
+                        log(`✅ تم رفع الملف بنجاح: ${file.name}`, 'success');
+                        addEventToMonitor('success', 'تم رفع الملف بنجاح', 
+                            `الملف: ${file.name} | تحقق من ظهوره في متصفح آخر`);
+                    } else {
+                        throw new Error('لم يتم إرجاع بيانات الملف');
+                    }
+                } else {
+                    throw new Error('وظيفة uploadCardFileToSupabase غير متوفرة');
+                }
+            } catch (error) {
+                log(`❌ خطأ في رفع الملف: ${error.message}`, 'error');
+                addEventToMonitor('error', 'فشل في رفع الملف', error.message);
+            }
+        }
+
+        function openSecondBrowser() {
+            const url = window.location.href;
+            window.open(url, '_blank');
+            log('🌐 تم فتح متصفح ثاني للاختبار');
+            addEventToMonitor('info', 'تم فتح متصفح ثاني', 'راقب الأحداث في كلا المتصفحين');
+        }
+
+        function testSubscriptionManually() {
+            log('🔧 اختبار الاشتراك يدوياً...');
+            
+            if (typeof subscribeToCardAttachmentChanges === 'function') {
+                try {
+                    const subscription = subscribeToCardAttachmentChanges();
+                    
+                    if (subscription) {
+                        log('✅ تم إنشاء الاشتراك بنجاح', 'success');
+                        addEventToMonitor('success', 'تم إنشاء اشتراك real-time', 'الاشتراك نشط ويستمع للتغييرات');
+                    } else {
+                        log('❌ فشل في إنشاء الاشتراك', 'error');
+                        addEventToMonitor('error', 'فشل في إنشاء الاشتراك');
+                    }
+                } catch (error) {
+                    log(`❌ خطأ في الاشتراك: ${error.message}`, 'error');
+                    addEventToMonitor('error', 'خطأ في الاشتراك', error.message);
+                }
+            } else {
+                log('❌ وظيفة الاشتراك غير متوفرة', 'error');
+                addEventToMonitor('error', 'وظيفة الاشتراك غير متوفرة');
+            }
+        }
+
+        function testEventHandlers() {
+            log('🔧 اختبار معالجات الأحداث...');
+            
+            const handlers = [
+                'handleCardAttachmentRealTimeChange',
+                'handleNewCardAttachment',
+                'handleDeletedCardAttachment',
+                'updateCardAttachmentsUI',
+                'showCardAttachmentNotification'
+            ];
+            
+            let workingHandlers = 0;
+            handlers.forEach(handler => {
+                const exists = typeof window[handler] === 'function';
+                log(`${exists ? '✅' : '❌'} ${handler}: ${exists ? 'متوفر' : 'مفقود'}`, exists ? 'success' : 'error');
+                if (exists) workingHandlers++;
+            });
+            
+            const percentage = Math.round((workingHandlers / handlers.length) * 100);
+            log(`📊 معالجات الأحداث: ${workingHandlers}/${handlers.length} (${percentage}%)`, percentage === 100 ? 'success' : 'warning');
+            
+            addEventToMonitor(percentage === 100 ? 'success' : 'error', 
+                'فحص معالجات الأحداث', `${workingHandlers}/${handlers.length} معالج يعمل`);
+        }
+
+        function testUIUpdate() {
+            log('🔧 اختبار تحديث الواجهة...');
+            
+            const testCardKey = 'test_ui_update_' + Date.now();
+            
+            if (typeof updateCardAttachmentsUI === 'function') {
+                try {
+                    updateCardAttachmentsUI(testCardKey);
+                    log('✅ تم استدعاء وظيفة تحديث الواجهة', 'success');
+                    addEventToMonitor('success', 'اختبار تحديث الواجهة', `تم استدعاء updateCardAttachmentsUI للبطاقة: ${testCardKey}`);
+                } catch (error) {
+                    log(`❌ خطأ في تحديث الواجهة: ${error.message}`, 'error');
+                    addEventToMonitor('error', 'خطأ في تحديث الواجهة', error.message);
+                }
+            } else {
+                log('❌ وظيفة تحديث الواجهة غير متوفرة', 'error');
+                addEventToMonitor('error', 'وظيفة تحديث الواجهة غير متوفرة');
+            }
+        }
+
+        function compareWithPropertySync() {
+            log('🔄 مقارنة مع مزامنة مرفقات العقارات...');
+            
+            const propertyFunctions = [
+                'subscribeToAttachmentChanges',
+                'handleAttachmentRealTimeChange',
+                'updateAttachmentsUI'
+            ];
+            
+            const cardFunctions = [
+                'subscribeToCardAttachmentChanges',
+                'handleCardAttachmentRealTimeChange',
+                'updateCardAttachmentsUI'
+            ];
+            
+            let propertyWorking = 0;
+            let cardWorking = 0;
+            
+            propertyFunctions.forEach(func => {
+                const exists = typeof window[func] === 'function';
+                if (exists) propertyWorking++;
+                log(`🏠 ${func}: ${exists ? '✅' : '❌'}`, exists ? 'success' : 'error');
+            });
+            
+            cardFunctions.forEach(func => {
+                const exists = typeof window[func] === 'function';
+                if (exists) cardWorking++;
+                log(`🏷️ ${func}: ${exists ? '✅' : '❌'}`, exists ? 'success' : 'error');
+            });
+            
+            log(`📊 مقارنة: العقارات ${propertyWorking}/${propertyFunctions.length} | البطاقات ${cardWorking}/${cardFunctions.length}`, 'info');
+            
+            addEventToMonitor('info', 'مقارنة مع مرفقات العقارات', 
+                `العقارات: ${propertyWorking}/${propertyFunctions.length} | البطاقات: ${cardWorking}/${cardFunctions.length}`);
+        }
+
+        function exportDiagnosisLog() {
+            log('📄 تصدير سجل التشخيص...');
+            
+            const diagnosis = {
+                timestamp: new Date().toISOString(),
+                testType: 'Card Attachments Sync Diagnosis',
+                eventsReceived: eventsReceived,
+                logContent: document.getElementById('testLog').textContent,
+                userAgent: navigator.userAgent,
+                url: window.location.href
+            };
+            
+            const blob = new Blob([JSON.stringify(diagnosis, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `card-sync-diagnosis-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            log('✅ تم تصدير سجل التشخيص', 'success');
+        }
+    </script>
+</body>
+</html>

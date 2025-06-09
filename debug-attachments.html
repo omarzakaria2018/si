@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تشخيص مشكلة المرفقات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .property-test {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .property-test.has-attachments {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .property-test.no-attachments {
+            border-color: #ffc107;
+            background: #fffbf0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 تشخيص مشكلة المرفقات</h1>
+        
+        <div class="section info">
+            <h3>📋 معلومات النظام</h3>
+            <div id="systemInfo"></div>
+            <button onclick="checkSystemStatus()">فحص حالة النظام</button>
+        </div>
+
+        <div class="section">
+            <h3>🔗 اختبار الاتصال</h3>
+            <button onclick="testSupabaseConnection()">اختبار Supabase</button>
+            <button onclick="testAttachmentsTable()">اختبار جدول المرفقات</button>
+            <button onclick="testStorageBucket()">اختبار التخزين</button>
+            <div id="connectionResults"></div>
+        </div>
+
+        <div class="section">
+            <h3>📁 فحص المرفقات الموجودة</h3>
+            <button onclick="checkAllAttachments()">فحص جميع المرفقات</button>
+            <button onclick="checkLocalAttachments()">فحص المرفقات المحلية</button>
+            <button onclick="checkCloudAttachments()">فحص مرفقات السحابة</button>
+            <div id="attachmentsResults"></div>
+        </div>
+
+        <div class="section">
+            <h3>🏠 اختبار مرفقات العقارات</h3>
+            <button onclick="testPropertyAttachments()">اختبار مرفقات العقارات</button>
+            <div id="propertyResults"></div>
+        </div>
+
+        <div class="section">
+            <h3>🧪 اختبار الوظائف</h3>
+            <button onclick="testFunctions()">اختبار جميع الوظائف</button>
+            <button onclick="uploadTestFile()">رفع ملف تجريبي</button>
+            <input type="file" id="testFileInput" style="display: none;" onchange="handleTestUpload(event)">
+            <div id="functionsResults"></div>
+        </div>
+
+        <div class="section">
+            <h3>📝 سجل التشخيص</h3>
+            <button onclick="clearLog()">مسح السجل</button>
+            <button onclick="exportDiagnostics()">تصدير التشخيص</button>
+            <div id="diagnosticLog" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        let diagnosticData = [];
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('diagnosticLog');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            diagnosticData.push({ timestamp, type, message });
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function showResult(containerId, type, message) {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            container.appendChild(resultDiv);
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 بدء تشخيص نظام المرفقات...');
+            checkSystemStatus();
+        });
+
+        function checkSystemStatus() {
+            log('🔍 فحص حالة النظام...');
+            
+            const systemInfo = document.getElementById('systemInfo');
+            let html = '<ul>';
+            
+            // فحص مكتبة Supabase
+            if (typeof supabase !== 'undefined') {
+                html += '<li>✅ مكتبة Supabase محملة</li>';
+                log('✅ مكتبة Supabase محملة', 'success');
+            } else {
+                html += '<li>❌ مكتبة Supabase غير محملة</li>';
+                log('❌ مكتبة Supabase غير محملة', 'error');
+            }
+            
+            // فحص متغيرات التكوين
+            if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
+                html += '<li>✅ متغيرات التكوين موجودة</li>';
+                html += `<li>🌐 URL: ${SUPABASE_URL}</li>`;
+                log('✅ متغيرات التكوين موجودة', 'success');
+            } else {
+                html += '<li>❌ متغيرات التكوين مفقودة</li>';
+                log('❌ متغيرات التكوين مفقودة', 'error');
+            }
+            
+            // فحص عميل Supabase
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                html += '<li>✅ عميل Supabase مهيأ</li>';
+                log('✅ عميل Supabase مهيأ', 'success');
+            } else {
+                html += '<li>❌ عميل Supabase غير مهيأ</li>';
+                log('❌ عميل Supabase غير مهيأ', 'error');
+            }
+            
+            // فحص الوظائف المطلوبة
+            const requiredFunctions = [
+                'uploadFileToSupabase',
+                'getPropertyAttachmentsEnhanced',
+                'deleteAttachmentEnhanced',
+                'showAttachmentsModal'
+            ];
+            
+            let functionsCount = 0;
+            requiredFunctions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    functionsCount++;
+                    html += `<li>✅ ${funcName}</li>`;
+                } else {
+                    html += `<li>❌ ${funcName}</li>`;
+                    log(`❌ وظيفة ${funcName} مفقودة`, 'error');
+                }
+            });
+            
+            html += `<li>📊 الوظائف: ${functionsCount}/${requiredFunctions.length}</li>`;
+            html += '</ul>';
+            
+            systemInfo.innerHTML = html;
+            log(`📊 فحص النظام مكتمل: ${functionsCount}/${requiredFunctions.length} وظيفة متوفرة`);
+        }
+
+        async function testSupabaseConnection() {
+            log('🔄 اختبار اتصال Supabase...');
+            
+            try {
+                if (!supabaseClient) {
+                    throw new Error('عميل Supabase غير مهيأ');
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('attachments')
+                    .select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    throw error;
+                }
+
+                log('✅ اتصال Supabase يعمل', 'success');
+                showResult('connectionResults', 'success', 'اتصال Supabase يعمل بشكل مثالي');
+                return true;
+            } catch (error) {
+                log(`❌ خطأ في اتصال Supabase: ${error.message}`, 'error');
+                showResult('connectionResults', 'error', `خطأ: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testAttachmentsTable() {
+            log('🔄 اختبار جدول المرفقات...');
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('attachments')
+                    .select('*')
+                    .limit(5);
+
+                if (error) {
+                    throw error;
+                }
+
+                log(`✅ جدول المرفقات يعمل - ${data.length} سجل موجود`, 'success');
+                showResult('connectionResults', 'success', `جدول المرفقات يحتوي على ${data.length} سجل`);
+                
+                if (data.length > 0) {
+                    log(`📄 أول سجل: ${data[0].file_name} (${data[0].property_key})`, 'info');
+                }
+                
+                return data;
+            } catch (error) {
+                log(`❌ خطأ في جدول المرفقات: ${error.message}`, 'error');
+                showResult('connectionResults', 'error', `خطأ في الجدول: ${error.message}`);
+                return null;
+            }
+        }
+
+        async function checkAllAttachments() {
+            log('🔍 فحص جميع المرفقات...');
+            
+            try {
+                // فحص مرفقات السحابة
+                const { data: cloudAttachments, error } = await supabaseClient
+                    .from('attachments')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    throw error;
+                }
+
+                // فحص المرفقات المحلية
+                const localAttachments = JSON.parse(localStorage.getItem('propertyAttachments') || '{}');
+                
+                let html = '<h4>📊 ملخص المرفقات:</h4>';
+                html += `<p>☁️ مرفقات السحابة: ${cloudAttachments.length}</p>`;
+                
+                let localCount = 0;
+                Object.values(localAttachments).forEach(attachments => {
+                    if (Array.isArray(attachments)) {
+                        localCount += attachments.length;
+                    }
+                });
+                html += `<p>💾 مرفقات محلية: ${localCount}</p>`;
+                
+                // تجميع حسب العقار
+                const propertyGroups = {};
+                
+                // إضافة مرفقات السحابة
+                cloudAttachments.forEach(att => {
+                    if (!propertyGroups[att.property_key]) {
+                        propertyGroups[att.property_key] = { cloud: [], local: [] };
+                    }
+                    propertyGroups[att.property_key].cloud.push(att);
+                });
+                
+                // إضافة المرفقات المحلية
+                Object.entries(localAttachments).forEach(([propertyKey, attachments]) => {
+                    if (!propertyGroups[propertyKey]) {
+                        propertyGroups[propertyKey] = { cloud: [], local: [] };
+                    }
+                    propertyGroups[propertyKey].local = attachments || [];
+                });
+                
+                html += '<h4>📁 مرفقات حسب العقار:</h4>';
+                
+                if (Object.keys(propertyGroups).length === 0) {
+                    html += '<p style="color: #ffc107;">⚠️ لا توجد مرفقات</p>';
+                } else {
+                    Object.entries(propertyGroups).forEach(([propertyKey, data]) => {
+                        const totalFiles = data.cloud.length + data.local.length;
+                        const hasFiles = totalFiles > 0;
+                        
+                        html += `
+                            <div class="property-test ${hasFiles ? 'has-attachments' : 'no-attachments'}">
+                                <strong>${propertyKey}</strong><br>
+                                ☁️ السحابة: ${data.cloud.length} ملف<br>
+                                💾 محلي: ${data.local.length} ملف<br>
+                                📊 المجموع: ${totalFiles} ملف
+                            </div>
+                        `;
+                    });
+                }
+                
+                document.getElementById('attachmentsResults').innerHTML = html;
+                
+                log(`✅ فحص المرفقات مكتمل: ${cloudAttachments.length} سحابة، ${localCount} محلي`, 'success');
+                
+            } catch (error) {
+                log(`❌ خطأ في فحص المرفقات: ${error.message}`, 'error');
+                showResult('attachmentsResults', 'error', `خطأ: ${error.message}`);
+            }
+        }
+
+        async function testPropertyAttachments() {
+            log('🏠 اختبار مرفقات العقارات...');
+            
+            try {
+                // جلب قائمة العقارات
+                let properties = [];
+                
+                if (typeof window.properties !== 'undefined' && Array.isArray(window.properties)) {
+                    properties = window.properties;
+                } else {
+                    log('⚠️ قائمة العقارات غير متوفرة', 'warning');
+                }
+                
+                let html = '<h4>🏠 اختبار مرفقات العقارات:</h4>';
+                
+                if (properties.length === 0) {
+                    html += '<p style="color: #ffc107;">⚠️ لا توجد عقارات للاختبار</p>';
+                } else {
+                    for (let i = 0; i < Math.min(5, properties.length); i++) {
+                        const property = properties[i];
+                        const city = property['المدينة'] || 'غير محدد';
+                        const unitNumber = property['رقم  الوحدة '] || 'غير محدد';
+                        const propertyKey = `${city}_${unitNumber}`;
+                        
+                        // اختبار جلب المرفقات
+                        let attachments = [];
+                        try {
+                            if (typeof getPropertyAttachmentsEnhanced === 'function') {
+                                attachments = await getPropertyAttachmentsEnhanced(propertyKey);
+                            }
+                        } catch (error) {
+                            log(`❌ خطأ في جلب مرفقات ${propertyKey}: ${error.message}`, 'error');
+                        }
+                        
+                        const hasAttachments = attachments.length > 0;
+                        
+                        html += `
+                            <div class="property-test ${hasAttachments ? 'has-attachments' : 'no-attachments'}">
+                                <strong>${city} - ${unitNumber}</strong><br>
+                                🔑 المفتاح: ${propertyKey}<br>
+                                📎 المرفقات: ${attachments.length} ملف<br>
+                                <button onclick="testShowModal('${city}', '${unitNumber}')">اختبار عرض المرفقات</button>
+                            </div>
+                        `;
+                    }
+                }
+                
+                document.getElementById('propertyResults').innerHTML = html;
+                log(`✅ تم اختبار ${Math.min(5, properties.length)} عقار`, 'success');
+                
+            } catch (error) {
+                log(`❌ خطأ في اختبار مرفقات العقارات: ${error.message}`, 'error');
+                showResult('propertyResults', 'error', `خطأ: ${error.message}`);
+            }
+        }
+
+        function testShowModal(city, propertyName) {
+            log(`🔄 اختبار عرض مرفقات ${city} - ${propertyName}...`);
+            
+            try {
+                if (typeof showAttachmentsModal === 'function') {
+                    showAttachmentsModal(city, propertyName);
+                    log('✅ تم فتح نافذة المرفقات', 'success');
+                } else {
+                    throw new Error('وظيفة showAttachmentsModal غير متوفرة');
+                }
+            } catch (error) {
+                log(`❌ خطأ في عرض المرفقات: ${error.message}`, 'error');
+            }
+        }
+
+        function uploadTestFile() {
+            document.getElementById('testFileInput').click();
+        }
+
+        async function handleTestUpload(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            const file = files[0];
+            log(`📤 رفع ملف تجريبي: ${file.name}`);
+            
+            try {
+                if (typeof uploadFileToSupabase === 'function') {
+                    const result = await uploadFileToSupabase(file, 'تشخيص_اختبار', 'ملف تجريبي للتشخيص');
+                    
+                    if (result) {
+                        log(`✅ تم رفع ${file.name} بنجاح`, 'success');
+                        showResult('functionsResults', 'success', `تم رفع ${file.name} بنجاح`);
+                    } else {
+                        throw new Error('فشل في رفع الملف');
+                    }
+                } else {
+                    throw new Error('وظيفة uploadFileToSupabase غير متوفرة');
+                }
+            } catch (error) {
+                log(`❌ خطأ في رفع الملف: ${error.message}`, 'error');
+                showResult('functionsResults', 'error', `خطأ: ${error.message}`);
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('diagnosticLog').textContent = '';
+            diagnosticData = [];
+            log('🧹 تم مسح السجل');
+        }
+
+        function exportDiagnostics() {
+            const diagnosticText = diagnosticData.map(entry => 
+                `[${entry.timestamp}] ${entry.type.toUpperCase()}: ${entry.message}`
+            ).join('\n');
+            
+            const blob = new Blob([diagnosticText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `attachments-diagnostic-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            log('📄 تم تصدير تقرير التشخيص');
+        }
+
+        // تشغيل تشخيص أولي
+        setTimeout(() => {
+            testSupabaseConnection();
+            setTimeout(() => {
+                testAttachmentsTable();
+                setTimeout(() => {
+                    checkAllAttachments();
+                }, 1000);
+            }, 1000);
+        }, 2000);
+    </script>
+</body>
+</html>

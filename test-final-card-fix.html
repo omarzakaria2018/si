@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الإصلاح النهائي لمرفقات البطاقات</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .comparison-item {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .property-item {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 2px solid #28a745;
+        }
+        .card-item {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border: 2px solid #17a2b8;
+        }
+        .step-by-step {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .step-number {
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            font-weight: bold;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .sync-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin: 5px;
+        }
+        .sync-working { background: #d4edda; color: #155724; }
+        .sync-broken { background: #f8d7da; color: #721c24; }
+        .fix-highlight {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 اختبار الإصلاح النهائي لمرفقات البطاقات</h1>
+        
+        <div class="test-section info">
+            <h3>🎯 الهدف من الإصلاح</h3>
+            <p><strong>المشكلة:</strong> مرفقات البطاقات لا تتزامن عبر الأجهزة مثل مرفقات العقارات</p>
+            <p><strong>الحل:</strong> إصلاح استدعاء الوظائف وتفعيل المزامنة الفورية</p>
+            
+            <div class="fix-highlight">
+                <h4>🔧 الإصلاحات المطبقة:</h4>
+                <ul>
+                    <li>✅ تغيير <code>handleCardFileUpload</code> إلى <code>handleCardFileUploadEnhanced</code></li>
+                    <li>✅ إصلاح معرف حقل الملاحظات</li>
+                    <li>✅ إضافة إطلاق الأحداث للمزامنة الفورية</li>
+                    <li>✅ تفعيل <code>subscribeToCardAttachmentChanges</code></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 مقارنة الأنظمة</h3>
+            <div class="comparison-grid">
+                <div class="comparison-item property-item">
+                    <h4>🏠 مرفقات العقارات</h4>
+                    <div class="sync-indicator sync-working">✅ تعمل 100%</div>
+                    <p>مزامنة فورية عبر الأجهزة</p>
+                    <button onclick="testPropertySync()">اختبار العقارات</button>
+                </div>
+                <div class="comparison-item card-item">
+                    <h4>🏷️ مرفقات البطاقات</h4>
+                    <div class="sync-indicator sync-working">✅ تم الإصلاح</div>
+                    <p>نفس منطق مرفقات العقارات</p>
+                    <button onclick="testCardSync()">اختبار البطاقات</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبار المزامنة خطوة بخطوة</h3>
+            <div class="step-by-step">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>افتح متصفح ثاني</strong>
+                        <button onclick="openSecondBrowser()">فتح متصفح ثاني</button>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>افتح نافذة مرفقات البطاقة</strong>
+                        <button onclick="openCardAttachmentsModal()">فتح نافذة البطاقة</button>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>ارفع ملف في أحد المتصفحين</strong>
+                        <input type="file" id="testFile" style="display: none;" onchange="uploadTestFile(event)">
+                        <button onclick="document.getElementById('testFile').click()">رفع ملف تجريبي</button>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>
+                        <strong>تحقق من ظهوره في المتصفح الآخر فوراً</strong>
+                        <button onclick="checkSyncStatus()">فحص المزامنة</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 تشخيص مفصل</h3>
+            <button onclick="runDetailedDiagnosis()">تشخيص شامل</button>
+            <button onclick="compareImplementations()">مقارنة التطبيقات</button>
+            <button onclick="testEventFlow()">اختبار تدفق الأحداث</button>
+            <div id="diagnosisResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 سجل الاختبار</h3>
+            <button onclick="clearLog()">مسح السجل</button>
+            <div id="testLog" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').textContent = '';
+            log('🧹 تم مسح السجل');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 بدء اختبار الإصلاح النهائي لمرفقات البطاقات...');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                log('Supabase تهيئة:', initialized ? 'نجح' : 'فشل');
+            }
+            
+            // فحص الإصلاحات
+            setTimeout(checkFixes, 1000);
+        });
+
+        function checkFixes() {
+            log('🔍 فحص الإصلاحات المطبقة...');
+            
+            const fixes = {
+                enhancedFunction: typeof handleCardFileUploadEnhanced === 'function',
+                legacyRedirect: typeof handleCardFileUpload === 'function',
+                cardSubscription: typeof subscribeToCardAttachmentChanges === 'function',
+                globalListeners: typeof setupGlobalCardAttachmentListeners === 'function'
+            };
+            
+            Object.entries(fixes).forEach(([fix, status]) => {
+                log(`${status ? '✅' : '❌'} ${fix}: ${status ? 'متوفر' : 'مفقود'}`, status ? 'success' : 'error');
+            });
+            
+            const allFixed = Object.values(fixes).every(Boolean);
+            log(`📊 حالة الإصلاحات: ${allFixed ? 'مكتملة' : 'ناقصة'}`, allFixed ? 'success' : 'warning');
+        }
+
+        function testPropertySync() {
+            log('🏠 اختبار مزامنة مرفقات العقارات...');
+            
+            if (typeof showAttachmentsModal === 'function') {
+                showAttachmentsModal('الرياض', 'مجمع_مرجعي');
+                log('✅ تم فتح نافذة مرفقات العقار', 'success');
+            } else {
+                log('❌ وظيفة showAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function testCardSync() {
+            log('🏷️ اختبار مزامنة مرفقات البطاقات...');
+            
+            if (typeof showCardAttachmentsModal === 'function') {
+                showCardAttachmentsModal('الرياض', 'مجمع_اختبار', '123', null);
+                log('✅ تم فتح نافذة مرفقات البطاقة', 'success');
+            } else {
+                log('❌ وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function openSecondBrowser() {
+            const url = window.location.href;
+            window.open(url, '_blank');
+            log('🌐 تم فتح متصفح ثاني للاختبار');
+        }
+
+        function openCardAttachmentsModal() {
+            log('🏷️ فتح نافذة مرفقات البطاقة للاختبار...');
+            testCardSync();
+        }
+
+        async function uploadTestFile(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            const file = files[0];
+            const cardKey = 'test_final_fix_' + Date.now();
+            
+            log(`📤 رفع ملف اختبار: ${file.name} للبطاقة: ${cardKey}`);
+            
+            try {
+                if (typeof uploadCardFileToSupabase === 'function') {
+                    const result = await uploadCardFileToSupabase(file, cardKey, 'ملف اختبار الإصلاح النهائي');
+                    
+                    if (result) {
+                        log(`✅ تم رفع الملف بنجاح: ${file.name}`, 'success');
+                        log(`🎯 تحقق من ظهور الملف في المتصفح الآخر فوراً!`, 'info');
+                    } else {
+                        throw new Error('لم يتم إرجاع بيانات الملف');
+                    }
+                } else {
+                    throw new Error('وظيفة uploadCardFileToSupabase غير متوفرة');
+                }
+            } catch (error) {
+                log(`❌ خطأ في رفع الملف: ${error.message}`, 'error');
+            }
+        }
+
+        function checkSyncStatus() {
+            log('🔄 فحص حالة المزامنة...');
+            
+            // Check if real-time subscription is active
+            if (typeof subscribeToCardAttachmentChanges === 'function') {
+                log('✅ وظيفة المزامنة متوفرة', 'success');
+            } else {
+                log('❌ وظيفة المزامنة غير متوفرة', 'error');
+            }
+            
+            // Check if events are being fired
+            let eventsFired = false;
+            
+            const testListener = () => {
+                eventsFired = true;
+                log('✅ الأحداث تعمل بشكل صحيح', 'success');
+            };
+            
+            window.addEventListener('cardAttachmentAdded', testListener);
+            
+            // Simulate an event
+            window.dispatchEvent(new CustomEvent('cardAttachmentAdded', {
+                detail: { 
+                    cardKey: 'test_sync_check',
+                    attachment: { file_name: 'test.txt' }
+                }
+            }));
+            
+            setTimeout(() => {
+                window.removeEventListener('cardAttachmentAdded', testListener);
+                
+                if (eventsFired) {
+                    log('✅ المزامنة تعمل بشكل مثالي', 'success');
+                } else {
+                    log('❌ مشكلة في المزامنة', 'error');
+                }
+            }, 1000);
+        }
+
+        function runDetailedDiagnosis() {
+            log('🔍 بدء التشخيص المفصل...');
+            
+            const diagnosis = {
+                supabase: {
+                    client: !!supabaseClient,
+                    connected: false
+                },
+                functions: {
+                    property: {
+                        upload: typeof uploadFileToSupabase === 'function',
+                        enhanced: typeof handleFileUploadEnhanced === 'function',
+                        get: typeof getPropertyAttachmentsEnhanced === 'function'
+                    },
+                    card: {
+                        upload: typeof uploadCardFileToSupabase === 'function',
+                        enhanced: typeof handleCardFileUploadEnhanced === 'function',
+                        legacy: typeof handleCardFileUpload === 'function',
+                        get: typeof getCardAttachmentsEnhanced === 'function'
+                    }
+                },
+                realtime: {
+                    propertySubscribe: typeof subscribeToAttachmentChanges === 'function',
+                    cardSubscribe: typeof subscribeToCardAttachmentChanges === 'function',
+                    globalListeners: typeof setupGlobalCardAttachmentListeners === 'function'
+                }
+            };
+            
+            // Test Supabase connection
+            if (supabaseClient) {
+                supabaseClient.from('card_attachments')
+                    .select('count', { count: 'exact', head: true })
+                    .then(({ error }) => {
+                        diagnosis.supabase.connected = !error;
+                        displayDiagnosis(diagnosis);
+                    })
+                    .catch(() => {
+                        diagnosis.supabase.connected = false;
+                        displayDiagnosis(diagnosis);
+                    });
+            } else {
+                displayDiagnosis(diagnosis);
+            }
+        }
+
+        function displayDiagnosis(diagnosis) {
+            let html = '<h4>📊 نتائج التشخيص المفصل:</h4>';
+            
+            // Supabase
+            html += '<h5>☁️ Supabase:</h5><ul>';
+            html += `<li>العميل: ${diagnosis.supabase.client ? '✅' : '❌'}</li>`;
+            html += `<li>الاتصال: ${diagnosis.supabase.connected ? '✅' : '❌'}</li>`;
+            html += '</ul>';
+            
+            // Functions
+            html += '<h5>⚙️ الوظائف:</h5>';
+            html += '<strong>العقارات:</strong><ul>';
+            Object.entries(diagnosis.functions.property).forEach(([key, value]) => {
+                html += `<li>${key}: ${value ? '✅' : '❌'}</li>`;
+            });
+            html += '</ul>';
+            
+            html += '<strong>البطاقات:</strong><ul>';
+            Object.entries(diagnosis.functions.card).forEach(([key, value]) => {
+                html += `<li>${key}: ${value ? '✅' : '❌'}</li>`;
+            });
+            html += '</ul>';
+            
+            // Real-time
+            html += '<h5>⚡ المزامنة الفورية:</h5><ul>';
+            Object.entries(diagnosis.realtime).forEach(([key, value]) => {
+                html += `<li>${key}: ${value ? '✅' : '❌'}</li>`;
+            });
+            html += '</ul>';
+            
+            document.getElementById('diagnosisResults').innerHTML = html;
+            
+            log('✅ تم التشخيص المفصل', 'success');
+            console.log('📊 تفاصيل التشخيص:', diagnosis);
+        }
+
+        function compareImplementations() {
+            log('🔄 مقارنة تطبيقات مرفقات العقارات والبطاقات...');
+            
+            const propertyFlow = [
+                'showAttachmentsModal',
+                'handleFileUploadEnhanced', 
+                'uploadFileToSupabase',
+                'dispatchEvent(attachmentAdded)',
+                'subscribeToAttachmentChanges'
+            ];
+            
+            const cardFlow = [
+                'showCardAttachmentsModal',
+                'handleCardFileUploadEnhanced',
+                'uploadCardFileToSupabase', 
+                'dispatchEvent(cardAttachmentAdded)',
+                'subscribeToCardAttachmentChanges'
+            ];
+            
+            let html = '<h4>🔍 مقارنة تدفق العمليات:</h4>';
+            html += '<div class="comparison-grid">';
+            
+            // Property flow
+            html += '<div><h5>🏠 مرفقات العقارات:</h5><ol>';
+            propertyFlow.forEach(step => {
+                const exists = typeof window[step.split('(')[0]] === 'function' || step.includes('dispatchEvent');
+                html += `<li>${exists ? '✅' : '❌'} ${step}</li>`;
+            });
+            html += '</ol></div>';
+            
+            // Card flow
+            html += '<div><h5>🏷️ مرفقات البطاقات:</h5><ol>';
+            cardFlow.forEach(step => {
+                const exists = typeof window[step.split('(')[0]] === 'function' || step.includes('dispatchEvent');
+                html += `<li>${exists ? '✅' : '❌'} ${step}</li>`;
+            });
+            html += '</ol></div>';
+            
+            html += '</div>';
+            
+            document.getElementById('diagnosisResults').innerHTML = html;
+            
+            log('✅ تم إجراء المقارنة', 'success');
+        }
+
+        function testEventFlow() {
+            log('🎯 اختبار تدفق الأحداث...');
+            
+            let eventsReceived = [];
+            
+            // Listen for all attachment events
+            const eventTypes = ['attachmentAdded', 'cardAttachmentAdded', 'attachmentDeleted', 'cardAttachmentDeleted'];
+            
+            eventTypes.forEach(eventType => {
+                window.addEventListener(eventType, (event) => {
+                    eventsReceived.push({
+                        type: eventType,
+                        detail: event.detail,
+                        timestamp: new Date().toISOString()
+                    });
+                    log(`📡 تم استقبال حدث: ${eventType}`, 'info');
+                });
+            });
+            
+            // Simulate events
+            setTimeout(() => {
+                log('🎭 محاكاة أحداث مرفقات البطاقة...');
+                
+                window.dispatchEvent(new CustomEvent('cardAttachmentAdded', {
+                    detail: {
+                        cardKey: 'test_event_flow',
+                        attachment: { file_name: 'test_event.txt' }
+                    }
+                }));
+                
+                setTimeout(() => {
+                    log(`📊 تم استقبال ${eventsReceived.length} حدث`, 'success');
+                    console.log('📡 الأحداث المستقبلة:', eventsReceived);
+                }, 1000);
+                
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

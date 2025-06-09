@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إصلاح المرفقات المخفية</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .fix-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+        }
+        button:hover { background: #c82333; }
+        .fix-btn { background: #28a745; }
+        .fix-btn:hover { background: #218838; }
+        .test-btn { background: #007bff; }
+        .test-btn:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .urgent-fix {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .hidden-elements {
+            background: #f1f3f4;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .element-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            border-left: 4px solid;
+            font-family: monospace;
+        }
+        .element-hidden { background: #f8d7da; border-color: #dc3545; }
+        .element-visible { background: #d4edda; border-color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 إصلاح المرفقات المخفية</h1>
+        
+        <div class="urgent-fix">
+            <h2>⚡ إصلاح فوري</h2>
+            <p><strong>المشكلة:</strong> المرفقات محفوظة لكن مخفية في الواجهة</p>
+            <button class="fix-btn" onclick="emergencyFix()">🔧 إصلاح فوري</button>
+            <button class="test-btn" onclick="openCardModal()">🏷️ فتح نافذة البطاقة</button>
+        </div>
+
+        <div class="fix-section">
+            <h3>🔍 تشخيص العناصر المخفية</h3>
+            <button onclick="findHiddenElements()">البحث عن العناصر المخفية</button>
+            <button onclick="showAllHiddenElements()">إظهار جميع العناصر المخفية</button>
+            <div id="hiddenElementsList" class="hidden-elements">
+                <div class="element-item element-hidden">
+                    <strong>لم يتم البحث بعد</strong><br>
+                    <small>انقر على "البحث عن العناصر المخفية"</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="fix-section">
+            <h3>🎯 إصلاحات محددة</h3>
+            <button onclick="fixCardAttachmentsList()">إصلاح قائمة مرفقات البطاقة</button>
+            <button onclick="fixAttachmentsModal()">إصلاح نافذة المرفقات</button>
+            <button onclick="forceRefreshAttachments()">إجبار تحديث المرفقات</button>
+            <button onclick="resetAttachmentsCSS()">إعادة تعيين CSS</button>
+        </div>
+
+        <div class="fix-section">
+            <h3>🧪 اختبار الإصلاح</h3>
+            <button class="test-btn" onclick="testAttachmentsVisibility()">اختبار الرؤية</button>
+            <button class="test-btn" onclick="testCardAttachments()">اختبار مرفقات البطاقة</button>
+            <div id="testResults"></div>
+        </div>
+
+        <div class="fix-section">
+            <h3>📝 سجل الإصلاح</h3>
+            <button onclick="clearLog()">مسح السجل</button>
+            <div id="fixLog" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('fixLog');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('fixLog').textContent = '';
+            log('🧹 تم مسح السجل');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚨 بدء إصلاح المرفقات المخفية...');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                log('Supabase تهيئة:', initialized ? 'نجح' : 'فشل');
+            }
+            
+            // البحث عن العناصر المخفية تلقائياً
+            setTimeout(findHiddenElements, 1000);
+        });
+
+        function emergencyFix() {
+            log('🚨 بدء الإصلاح الفوري للمرفقات المخفية...');
+            
+            let fixedCount = 0;
+            
+            // 1. إظهار جميع العناصر المخفية
+            const allElements = document.querySelectorAll('*');
+            allElements.forEach(el => {
+                if (el.style.display === 'none' && 
+                    (el.id.includes('attachment') || el.className.includes('attachment'))) {
+                    el.style.display = 'block';
+                    fixedCount++;
+                    log(`🔧 تم إظهار عنصر: ${el.tagName}#${el.id}.${el.className}`);
+                }
+                
+                if (el.style.visibility === 'hidden' && 
+                    (el.id.includes('attachment') || el.className.includes('attachment'))) {
+                    el.style.visibility = 'visible';
+                    fixedCount++;
+                    log(`🔧 تم إظهار عنصر مخفي: ${el.tagName}#${el.id}.${el.className}`);
+                }
+            });
+            
+            // 2. إصلاح CSS العام
+            const style = document.createElement('style');
+            style.textContent = `
+                .attachment-item,
+                .card-attachments-list,
+                .attachments-list,
+                [id*="cardAttachments"],
+                [class*="attachment"] {
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                }
+            `;
+            document.head.appendChild(style);
+            log('🎨 تم إضافة CSS إصلاحي');
+            
+            // 3. إجبار تحديث جميع قوائم المرفقات
+            if (typeof refreshCardAttachmentsList === 'function') {
+                const cardKeys = ['test_card', 'الرياض_مجمع_تجريبي', 'جدة_فيلا_تجارية'];
+                cardKeys.forEach(cardKey => {
+                    try {
+                        refreshCardAttachmentsList(cardKey);
+                        log(`🔄 تم تحديث مرفقات البطاقة: ${cardKey}`);
+                    } catch (error) {
+                        log(`❌ خطأ في تحديث ${cardKey}: ${error.message}`, 'error');
+                    }
+                });
+            }
+            
+            log(`✅ تم الإصلاح الفوري: ${fixedCount} عنصر تم إصلاحه`, 'success');
+            
+            // 4. اختبار النتيجة
+            setTimeout(testAttachmentsVisibility, 1000);
+        }
+
+        function findHiddenElements() {
+            log('🔍 البحث عن العناصر المخفية...');
+            
+            const allElements = document.querySelectorAll('*');
+            const hiddenElements = [];
+            
+            allElements.forEach(el => {
+                const isHidden = (
+                    el.style.display === 'none' ||
+                    el.style.visibility === 'hidden' ||
+                    el.style.opacity === '0'
+                );
+                
+                const isAttachmentRelated = (
+                    el.id.includes('attachment') ||
+                    el.className.includes('attachment') ||
+                    el.id.includes('cardAttachments') ||
+                    el.className.includes('card-attachments')
+                );
+                
+                if (isHidden && isAttachmentRelated) {
+                    hiddenElements.push({
+                        element: el,
+                        reason: el.style.display === 'none' ? 'display: none' :
+                               el.style.visibility === 'hidden' ? 'visibility: hidden' :
+                               'opacity: 0'
+                    });
+                }
+            });
+            
+            let html = '';
+            if (hiddenElements.length === 0) {
+                html = `
+                    <div class="element-item element-visible">
+                        <strong>✅ لا توجد عناصر مخفية</strong><br>
+                        <small>جميع عناصر المرفقات مرئية</small>
+                    </div>
+                `;
+            } else {
+                hiddenElements.forEach(item => {
+                    html += `
+                        <div class="element-item element-hidden">
+                            <strong>${item.element.tagName}#${item.element.id}.${item.element.className}</strong><br>
+                            <small>السبب: ${item.reason}</small>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('hiddenElementsList').innerHTML = html;
+            log(`📊 تم العثور على ${hiddenElements.length} عنصر مخفي`, hiddenElements.length > 0 ? 'warning' : 'success');
+        }
+
+        function showAllHiddenElements() {
+            log('👁️ إظهار جميع العناصر المخفية...');
+            
+            const allElements = document.querySelectorAll('*');
+            let shownCount = 0;
+            
+            allElements.forEach(el => {
+                const isAttachmentRelated = (
+                    el.id.includes('attachment') ||
+                    el.className.includes('attachment') ||
+                    el.id.includes('cardAttachments') ||
+                    el.className.includes('card-attachments')
+                );
+                
+                if (isAttachmentRelated) {
+                    if (el.style.display === 'none') {
+                        el.style.display = 'block';
+                        shownCount++;
+                    }
+                    if (el.style.visibility === 'hidden') {
+                        el.style.visibility = 'visible';
+                        shownCount++;
+                    }
+                    if (el.style.opacity === '0') {
+                        el.style.opacity = '1';
+                        shownCount++;
+                    }
+                }
+            });
+            
+            log(`✅ تم إظهار ${shownCount} عنصر`, 'success');
+            
+            // إعادة فحص العناصر
+            setTimeout(findHiddenElements, 500);
+        }
+
+        function openCardModal() {
+            log('🏷️ فتح نافذة مرفقات البطاقة...');
+            
+            if (typeof showCardAttachmentsModal === 'function') {
+                showCardAttachmentsModal('الرياض', 'مجمع_إصلاح_المخفية', '123', null);
+                log('✅ تم فتح نافذة مرفقات البطاقة', 'success');
+                
+                // تطبيق الإصلاح بعد فتح النافذة
+                setTimeout(emergencyFix, 1000);
+            } else {
+                log('❌ وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function fixCardAttachmentsList() {
+            log('🔧 إصلاح قائمة مرفقات البطاقة...');
+            
+            const possibleSelectors = [
+                '.card-attachments-list',
+                '.attachments-list',
+                '#cardAttachmentsList',
+                '[id*="cardAttachmentsList"]'
+            ];
+            
+            let fixedCount = 0;
+            possibleSelectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                elements.forEach(el => {
+                    el.style.display = 'block';
+                    el.style.visibility = 'visible';
+                    el.style.opacity = '1';
+                    fixedCount++;
+                    log(`🔧 تم إصلاح: ${selector}`);
+                });
+            });
+            
+            log(`✅ تم إصلاح ${fixedCount} قائمة مرفقات`, 'success');
+        }
+
+        function fixAttachmentsModal() {
+            log('🔧 إصلاح نافذة المرفقات...');
+            
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.visibility = 'visible';
+                modal.style.opacity = '1';
+                
+                // إصلاح جميع العناصر داخل النافذة
+                const modalElements = modal.querySelectorAll('*');
+                modalElements.forEach(el => {
+                    if (el.style.display === 'none') {
+                        el.style.display = 'block';
+                    }
+                    if (el.style.visibility === 'hidden') {
+                        el.style.visibility = 'visible';
+                    }
+                });
+                
+                log('✅ تم إصلاح نافذة المرفقات', 'success');
+            } else {
+                log('⚠️ لم يتم العثور على نافذة مفتوحة', 'warning');
+            }
+        }
+
+        async function forceRefreshAttachments() {
+            log('🔄 إجبار تحديث المرفقات...');
+            
+            const cardKeys = [
+                'الرياض_مجمع_إصلاح_المخفية_123',
+                'test_card',
+                'الرياض_مجمع_تجريبي'
+            ];
+            
+            for (const cardKey of cardKeys) {
+                try {
+                    if (typeof refreshCardAttachmentsList === 'function') {
+                        await refreshCardAttachmentsList(cardKey);
+                        log(`✅ تم تحديث: ${cardKey}`);
+                    }
+                    
+                    if (typeof getCardAttachmentsEnhanced === 'function') {
+                        const attachments = await getCardAttachmentsEnhanced(cardKey);
+                        log(`📎 ${cardKey}: ${attachments.length} مرفق`);
+                    }
+                } catch (error) {
+                    log(`❌ خطأ في ${cardKey}: ${error.message}`, 'error');
+                }
+            }
+            
+            log('✅ تم إجبار تحديث جميع المرفقات', 'success');
+        }
+
+        function resetAttachmentsCSS() {
+            log('🎨 إعادة تعيين CSS المرفقات...');
+            
+            // إزالة أي CSS مخفي
+            const style = document.createElement('style');
+            style.textContent = `
+                .attachment-item,
+                .card-attachments-list,
+                .attachments-list,
+                .card-attachments-modal,
+                .modal-overlay,
+                [id*="attachment"],
+                [class*="attachment"] {
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    position: relative !important;
+                    left: auto !important;
+                    top: auto !important;
+                    width: auto !important;
+                    height: auto !important;
+                }
+                
+                .modal-overlay {
+                    display: flex !important;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            log('✅ تم إعادة تعيين CSS المرفقات', 'success');
+        }
+
+        async function testAttachmentsVisibility() {
+            log('🧪 اختبار رؤية المرفقات...');
+            
+            const testResults = {
+                visible: 0,
+                hidden: 0,
+                total: 0
+            };
+            
+            const attachmentElements = document.querySelectorAll('[id*="attachment"], [class*="attachment"]');
+            
+            attachmentElements.forEach(el => {
+                testResults.total++;
+                
+                const isVisible = (
+                    el.style.display !== 'none' &&
+                    el.style.visibility !== 'hidden' &&
+                    el.style.opacity !== '0' &&
+                    el.offsetWidth > 0 &&
+                    el.offsetHeight > 0
+                );
+                
+                if (isVisible) {
+                    testResults.visible++;
+                } else {
+                    testResults.hidden++;
+                }
+            });
+            
+            const resultHtml = `
+                <div class="${testResults.hidden === 0 ? 'success' : 'warning'}">
+                    <h4>📊 نتائج اختبار الرؤية</h4>
+                    <p><strong>العناصر المرئية:</strong> ${testResults.visible}</p>
+                    <p><strong>العناصر المخفية:</strong> ${testResults.hidden}</p>
+                    <p><strong>إجمالي العناصر:</strong> ${testResults.total}</p>
+                    <p><strong>النتيجة:</strong> ${testResults.hidden === 0 ? '✅ جميع العناصر مرئية' : '⚠️ توجد عناصر مخفية'}</p>
+                </div>
+            `;
+            
+            document.getElementById('testResults').innerHTML = resultHtml;
+            
+            log(`📊 نتائج الاختبار: ${testResults.visible} مرئي، ${testResults.hidden} مخفي`, 
+                testResults.hidden === 0 ? 'success' : 'warning');
+        }
+
+        async function testCardAttachments() {
+            log('🏷️ اختبار مرفقات البطاقة...');
+            
+            const testCardKey = 'الرياض_مجمع_إصلاح_المخفية_123';
+            
+            try {
+                if (typeof getCardAttachmentsEnhanced === 'function') {
+                    const attachments = await getCardAttachmentsEnhanced(testCardKey);
+                    
+                    const resultHtml = `
+                        <div class="info">
+                            <h4>🏷️ نتائج اختبار مرفقات البطاقة</h4>
+                            <p><strong>البطاقة:</strong> ${testCardKey}</p>
+                            <p><strong>عدد المرفقات:</strong> ${attachments.length}</p>
+                            ${attachments.length > 0 ? 
+                                `<p><strong>المرفقات:</strong></p>
+                                <ul>${attachments.map(att => `<li>${att.file_name} (${att.file_size} bytes)</li>`).join('')}</ul>` :
+                                '<p><strong>لا توجد مرفقات</strong></p>'
+                            }
+                        </div>
+                    `;
+                    
+                    document.getElementById('testResults').innerHTML = resultHtml;
+                    
+                    log(`📎 تم العثور على ${attachments.length} مرفق للبطاقة`, 'success');
+                } else {
+                    throw new Error('وظيفة getCardAttachmentsEnhanced غير متوفرة');
+                }
+            } catch (error) {
+                log(`❌ خطأ في اختبار مرفقات البطاقة: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

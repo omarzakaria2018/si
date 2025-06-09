@@ -1460,62 +1460,215 @@ async function ensureAttachmentsTableExists() {
 // Upload file to Supabase storage and database
 async function uploadFileToSupabase(file, propertyKey, notes = '') {
     try {
-        console.log(`📤 رفع ملف: ${file.name}`);
+        console.log(`📤 رفع ملف: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
 
-        // Generate unique file name
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${propertyKey}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+        // Validate file
+        if (!file || file.size === 0) {
+            throw new Error('الملف فارغ أو غير صالح');
+        }
 
-        // Upload to Supabase storage
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage
-            .from('attachments')
-            .upload(fileName, file, {
-                cacheControl: '3600',
-                upsert: false
+        if (file.size > 50 * 1024 * 1024) { // 50MB limit
+            throw new Error('حجم الملف كبير جداً (الحد الأقصى 50MB)');
+        }
+
+        // Convert Arabic text to safe English path
+        function createSafePath(text) {
+            // Arabic to English transliteration map
+            const arabicToEnglish = {
+                'الرياض': 'riyadh',
+                'جدة': 'jeddah',
+                'الدمام': 'dammam',
+                'مكة': 'makkah',
+                'المدينة': 'madinah',
+                'الطائف': 'taif',
+                'تبوك': 'tabuk',
+                'أبها': 'abha',
+                'الخبر': 'khobar',
+                'القطيف': 'qatif',
+                'حائل': 'hail',
+                'الجبيل': 'jubail',
+                'ينبع': 'yanbu',
+                'الخرج': 'kharj',
+                'الأحساء': 'ahsa',
+                'نجران': 'najran',
+                'جازان': 'jazan',
+                'عرعر': 'arar',
+                'سكاكا': 'sakaka',
+                'الباحة': 'baha',
+                'وحدة': 'unit',
+                'مجمع': 'complex',
+                'فيلا': 'villa',
+                'شقة': 'apartment',
+                'مكتب': 'office',
+                'محل': 'shop',
+                'مستودع': 'warehouse',
+                'أرض': 'land',
+                'عمارة': 'building',
+                'اختبار': 'test',
+                'بسيط': 'simple'
+            };
+
+            let result = text.toLowerCase();
+
+            // Replace known Arabic words
+            Object.entries(arabicToEnglish).forEach(([arabic, english]) => {
+                result = result.replace(new RegExp(arabic, 'g'), english);
             });
 
-        if (uploadError) {
-            throw uploadError;
+            // Remove remaining Arabic characters
+            result = result.replace(/[\u0600-\u06FF]/g, '');
+
+            // Replace spaces and special characters with underscore
+            result = result.replace(/[^a-zA-Z0-9]/g, '_');
+
+            // Clean up multiple underscores
+            result = result.replace(/_{2,}/g, '_');
+
+            // Remove leading/trailing underscores
+            result = result.replace(/^_|_$/g, '');
+
+            // Ensure we have something
+            return result || 'item';
         }
+
+        const cleanPropertyKey = createSafePath(propertyKey);
+
+        // Clean file name - keep extension but make path safe
+        const originalName = file.name;
+        const fileExt = originalName.split('.').pop() || 'bin';
+
+        // Generate unique file name with timestamp (English only)
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substr(2, 9);
+        const fileName = `${cleanPropertyKey}/${timestamp}_${randomId}.${fileExt}`;
+
+        console.log(`📁 مسار الملف: ${fileName}`);
+
+        // Upload to Supabase storage with retry logic
+        let uploadData, uploadError;
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        while (retryCount < maxRetries) {
+            try {
+                const uploadResult = await supabaseClient.storage
+                    .from('attachments')
+                    .upload(fileName, file, {
+                        cacheControl: '3600',
+                        upsert: false,
+                        contentType: file.type || 'application/octet-stream'
+                    });
+
+                uploadData = uploadResult.data;
+                uploadError = uploadResult.error;
+
+                if (!uploadError) {
+                    break; // Success, exit retry loop
+                }
+
+                console.warn(`⚠️ محاولة ${retryCount + 1} فشلت:`, uploadError);
+                retryCount++;
+
+                if (retryCount < maxRetries) {
+                    // Wait before retry
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                }
+
+            } catch (error) {
+                uploadError = error;
+                retryCount++;
+                console.warn(`⚠️ خطأ في المحاولة ${retryCount}:`, error);
+
+                if (retryCount < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                }
+            }
+        }
+
+        if (uploadError) {
+            console.error('❌ فشل رفع الملف بعد عدة محاولات:', uploadError);
+            throw new Error(`فشل في رفع الملف: ${uploadError.message || uploadError}`);
+        }
+
+        console.log('✅ تم رفع الملف للتخزين بنجاح');
 
         // Get public URL
         const { data: urlData } = supabaseClient.storage
             .from('attachments')
             .getPublicUrl(fileName);
 
-        if (!urlData.publicUrl) {
+        if (!urlData?.publicUrl) {
             throw new Error('فشل في الحصول على رابط الملف');
         }
 
+        console.log(`🔗 رابط الملف: ${urlData.publicUrl}`);
+
         // Save to database
+        const attachmentData = {
+            property_key: propertyKey,
+            file_name: file.name,
+            file_type: file.type || 'application/octet-stream',
+            file_size: file.size,
+            file_url: urlData.publicUrl,
+            storage_path: fileName,
+            notes: notes || null
+        };
+
         const { data: dbData, error: dbError } = await supabaseClient
             .from('attachments')
-            .insert({
-                property_key: propertyKey,
-                file_name: file.name,
-                file_type: file.type,
-                file_size: file.size,
-                file_url: urlData.publicUrl,
-                storage_path: fileName,
-                notes: notes
-            })
+            .insert(attachmentData)
             .select()
             .single();
 
         if (dbError) {
-            // If database insert fails, clean up the uploaded file
-            await supabaseClient.storage
-                .from('attachments')
-                .remove([fileName]);
-            throw dbError;
+            console.error('❌ خطأ في حفظ بيانات الملف:', dbError);
+
+            // Clean up uploaded file if database insert fails
+            try {
+                await supabaseClient.storage
+                    .from('attachments')
+                    .remove([fileName]);
+                console.log('🗑️ تم حذف الملف من التخزين بعد فشل قاعدة البيانات');
+            } catch (cleanupError) {
+                console.warn('⚠️ فشل في تنظيف الملف:', cleanupError);
+            }
+
+            throw new Error(`فشل في حفظ بيانات الملف: ${dbError.message}`);
         }
 
         console.log(`✅ تم رفع الملف بنجاح: ${file.name}`);
+        console.log('📊 بيانات الملف:', dbData);
+
         return dbData;
 
     } catch (error) {
         console.error(`❌ خطأ في رفع الملف ${file.name}:`, error);
-        throw error;
+
+        // Re-throw with more specific error message
+        const errorMessage = error.message || error.toString();
+
+        if (errorMessage.includes('row-level security') || errorMessage.includes('RLS')) {
+            throw new Error('مشكلة في صلاحيات قاعدة البيانات - تحقق من سياسات RLS');
+        } else if (errorMessage.includes('storage') || errorMessage.includes('bucket')) {
+            throw new Error('مشكلة في تخزين الملف - تحقق من إعدادات Storage');
+        } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+            throw new Error('مشكلة في الاتصال بالإنترنت');
+        } else if (errorMessage.includes('413') || errorMessage.includes('too large')) {
+            throw new Error('حجم الملف كبير جداً');
+        } else if (errorMessage.includes('400')) {
+            throw new Error('طلب غير صحيح - تحقق من بيانات الملف');
+        } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
+            throw new Error('غير مصرح - تحقق من مفاتيح API');
+        } else if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
+            throw new Error('ممنوع - تحقق من الصلاحيات');
+        } else if (errorMessage.includes('404')) {
+            throw new Error('المورد غير موجود - تحقق من اسم الجدول/Bucket');
+        } else if (errorMessage.includes('500')) {
+            throw new Error('خطأ في الخادم - حاول مرة أخرى لاحقاً');
+        } else {
+            // Include original error for debugging
+            throw new Error(`خطأ غير متوقع: ${errorMessage}`);
+        }
     }
 }
 
@@ -1708,5 +1861,497 @@ async function ensureStorageBucketExists() {
     } catch (error) {
         console.error('❌ خطأ في إنشاء مجلد التخزين:', error);
         return false;
+    }
+}
+
+// ===== CARD ATTACHMENTS ENHANCED FUNCTIONS =====
+
+// Upload file to Supabase for card attachments
+async function uploadCardFileToSupabase(file, cardKey, notes = '') {
+    try {
+        console.log(`📤 رفع ملف البطاقة: ${file.name} للبطاقة: ${cardKey}`);
+
+        // Validate file
+        if (!file || file.size === 0) {
+            throw new Error('الملف فارغ أو غير صالح');
+        }
+
+        if (file.size > 50 * 1024 * 1024) { // 50MB limit
+            throw new Error('حجم الملف كبير جداً (الحد الأقصى 50MB)');
+        }
+
+        // Convert Arabic text to safe English path
+        function createSafeCardPath(text) {
+            const arabicToEnglish = {
+                'الرياض': 'riyadh', 'جدة': 'jeddah', 'الدمام': 'dammam',
+                'مكة': 'makkah', 'المدينة': 'madinah', 'الطائف': 'taif',
+                'تبوك': 'tabuk', 'أبها': 'abha', 'الخبر': 'khobar',
+                'القطيف': 'qatif', 'حائل': 'hail', 'الجبيل': 'jubail',
+                'ينبع': 'yanbu', 'الخرج': 'kharj', 'الأحساء': 'ahsa',
+                'نجران': 'najran', 'جازان': 'jazan', 'عرعر': 'arar',
+                'سكاكا': 'sakaka', 'الباحة': 'baha', 'وحدة': 'unit',
+                'مجمع': 'complex', 'فيلا': 'villa', 'شقة': 'apartment',
+                'مكتب': 'office', 'محل': 'shop', 'مستودع': 'warehouse',
+                'أرض': 'land', 'عمارة': 'building', 'عقد': 'contract',
+                'بطاقة': 'card', 'عام': 'general'
+            };
+
+            let result = text.toLowerCase();
+
+            // Replace known Arabic words
+            Object.entries(arabicToEnglish).forEach(([arabic, english]) => {
+                result = result.replace(new RegExp(arabic, 'g'), english);
+            });
+
+            // Remove remaining Arabic characters and clean up
+            result = result.replace(/[\u0600-\u06FF]/g, '')
+                          .replace(/[^a-zA-Z0-9]/g, '_')
+                          .replace(/_{2,}/g, '_')
+                          .replace(/^_|_$/g, '');
+
+            return result || 'card';
+        }
+
+        const cleanCardKey = createSafeCardPath(cardKey);
+        const originalName = file.name;
+        const fileExt = originalName.split('.').pop() || 'bin';
+
+        // Generate unique file name with timestamp
+        const timestamp = Date.now();
+        const randomId = Math.random().toString(36).substring(2, 9);
+        const fileName = `cards/${cleanCardKey}/${timestamp}_${randomId}.${fileExt}`;
+
+        console.log(`📁 مسار ملف البطاقة: ${fileName}`);
+
+        // Upload to Supabase storage
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from('attachments')
+            .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: file.type || 'application/octet-stream'
+            });
+
+        if (uploadError) {
+            console.error('❌ فشل رفع ملف البطاقة:', uploadError);
+            throw new Error(`فشل في رفع الملف: ${uploadError.message || uploadError}`);
+        }
+
+        console.log('✅ تم رفع ملف البطاقة للتخزين بنجاح');
+
+        // Get public URL
+        const { data: urlData } = supabaseClient.storage
+            .from('attachments')
+            .getPublicUrl(fileName);
+
+        if (!urlData?.publicUrl) {
+            throw new Error('فشل في الحصول على رابط الملف');
+        }
+
+        console.log(`🔗 رابط ملف البطاقة: ${urlData.publicUrl}`);
+
+        // Save to card_attachments table
+        const attachmentData = {
+            card_key: cardKey,
+            file_name: file.name,
+            file_type: file.type || 'application/octet-stream',
+            file_size: file.size,
+            file_url: urlData.publicUrl,
+            storage_path: fileName,
+            notes: notes || null
+        };
+
+        console.log('💾 إدراج في قاعدة البيانات:', attachmentData);
+
+        const { data: dbData, error: dbError } = await supabaseClient
+            .from('card_attachments')
+            .insert(attachmentData)
+            .select()
+            .single();
+
+        console.log('📊 نتيجة الإدراج:', { dbData, dbError });
+
+        if (dbError) {
+            console.error('❌ خطأ في حفظ بيانات ملف البطاقة:', dbError);
+
+            // Clean up uploaded file if database insert fails
+            try {
+                await supabaseClient.storage
+                    .from('attachments')
+                    .remove([fileName]);
+                console.log('🗑️ تم حذف ملف البطاقة من التخزين بعد فشل قاعدة البيانات');
+            } catch (cleanupError) {
+                console.warn('⚠️ فشل في تنظيف ملف البطاقة:', cleanupError);
+            }
+
+            throw new Error(`فشل في حفظ بيانات الملف: ${dbError.message}`);
+        }
+
+        console.log(`✅ تم رفع ملف البطاقة بنجاح: ${file.name}`);
+        console.log('📊 بيانات ملف البطاقة:', dbData);
+
+        return dbData;
+
+    } catch (error) {
+        console.error(`❌ خطأ في رفع ملف البطاقة ${file.name}:`, error);
+        throw error;
+    }
+}
+
+// Get card attachments from Supabase
+async function getCardAttachmentsEnhanced(cardKey) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('card_attachments')
+            .select('*')
+            .eq('card_key', cardKey)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching card attachments:', error);
+            return [];
+        }
+
+        return data || [];
+    } catch (error) {
+        console.error('Error in getCardAttachmentsEnhanced:', error);
+        return [];
+    }
+}
+
+// Delete card attachment from Supabase
+async function deleteCardAttachmentEnhanced(attachmentId) {
+    try {
+        if (!confirm('هل أنت متأكد من حذف هذا المرفق؟')) {
+            return false;
+        }
+
+        console.log(`🗑️ حذف مرفق البطاقة: ${attachmentId}`);
+
+        // Get attachment details before deletion
+        const { data: attachment, error: fetchError } = await supabaseClient
+            .from('card_attachments')
+            .select('*')
+            .eq('id', attachmentId)
+            .single();
+
+        if (fetchError) {
+            throw fetchError;
+        }
+
+        // Delete from storage
+        if (attachment.storage_path) {
+            const { error: storageError } = await supabaseClient.storage
+                .from('attachments')
+                .remove([attachment.storage_path]);
+
+            if (storageError) {
+                console.warn('⚠️ خطأ في حذف ملف البطاقة من التخزين:', storageError);
+            }
+        }
+
+        // Delete from database
+        const { error: dbError } = await supabaseClient
+            .from('card_attachments')
+            .delete()
+            .eq('id', attachmentId);
+
+        if (dbError) {
+            throw dbError;
+        }
+
+        console.log('✅ تم حذف مرفق البطاقة بنجاح');
+        return true;
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف مرفق البطاقة:', error);
+        alert(`خطأ في حذف المرفق: ${error.message}`);
+        return false;
+    }
+}
+
+// Subscribe to card attachments real-time changes
+function subscribeToCardAttachmentChanges() {
+    try {
+        console.log('🔄 بدء الاشتراك في مرفقات البطاقات...');
+
+        const cardAttachmentSubscription = supabaseClient
+            .channel('card_attachments_sync')
+            .on('postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'card_attachments'
+                },
+                (payload) => {
+                    console.log('📎 تحديث مرفق البطاقة:', payload);
+                    console.log('🔍 تفاصيل الحدث:', {
+                        eventType: payload.eventType,
+                        table: payload.table,
+                        schema: payload.schema,
+                        new: payload.new,
+                        old: payload.old
+                    });
+                    handleCardAttachmentRealTimeChange(payload);
+                }
+            )
+            .subscribe((status) => {
+                console.log('📡 حالة اشتراك مرفقات البطاقات:', status);
+                if (status === 'SUBSCRIBED') {
+                    console.log('✅ تم تفعيل المزامنة الفورية لمرفقات البطاقات بنجاح');
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error('❌ خطأ في قناة مرفقات البطاقات');
+                } else if (status === 'TIMED_OUT') {
+                    console.error('⏰ انتهت مهلة اشتراك مرفقات البطاقات');
+                } else if (status === 'CLOSED') {
+                    console.warn('⚠️ تم إغلاق اشتراك مرفقات البطاقات');
+                }
+            });
+
+        console.log('🎯 تم إنشاء اشتراك مرفقات البطاقات');
+        return cardAttachmentSubscription;
+
+    } catch (error) {
+        console.error('❌ خطأ في الاشتراك في مرفقات البطاقات:', error);
+        return null;
+    }
+}
+
+// Handle real-time card attachment changes
+function handleCardAttachmentRealTimeChange(payload) {
+    const { eventType, new: newRecord, old: oldRecord } = payload;
+
+    try {
+        switch (eventType) {
+            case 'INSERT':
+                console.log('📎 ملف بطاقة جديد تم رفعه:', newRecord.file_name);
+                handleNewCardAttachment(newRecord);
+                break;
+
+            case 'UPDATE':
+                console.log('📝 تم تحديث ملف البطاقة:', newRecord.file_name);
+                handleUpdatedCardAttachment(newRecord, oldRecord);
+                break;
+
+            case 'DELETE':
+                console.log('🗑️ تم حذف ملف البطاقة:', oldRecord.file_name);
+                handleDeletedCardAttachment(oldRecord);
+                break;
+        }
+
+        // Update UI for affected card
+        const cardKey = newRecord?.card_key || oldRecord?.card_key;
+        if (cardKey) {
+            updateCardAttachmentsUI(cardKey);
+            showCardAttachmentNotification(eventType, newRecord || oldRecord);
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في معالجة تغيير مرفقات البطاقة:', error);
+    }
+}
+
+// Handle new card attachment
+function handleNewCardAttachment(attachment) {
+    const cardKey = attachment.card_key;
+
+    // Show notification
+    showCardAttachmentNotification('INSERT', attachment);
+
+    // Update any open card attachment modals
+    updateCardAttachmentsUI(cardKey);
+
+    // Trigger custom event
+    window.dispatchEvent(new CustomEvent('cardAttachmentAdded', {
+        detail: { attachment, cardKey }
+    }));
+}
+
+// Handle card attachment update
+function handleUpdatedCardAttachment(newAttachment, oldAttachment) {
+    const cardKey = newAttachment.card_key;
+    updateCardAttachmentsUI(cardKey);
+
+    if (newAttachment.file_name !== oldAttachment.file_name) {
+        showCardAttachmentNotification('UPDATE', newAttachment);
+    }
+}
+
+// Handle card attachment deletion
+function handleDeletedCardAttachment(attachment) {
+    const cardKey = attachment.card_key;
+
+    showCardAttachmentNotification('DELETE', attachment);
+    updateCardAttachmentsUI(cardKey);
+
+    window.dispatchEvent(new CustomEvent('cardAttachmentDeleted', {
+        detail: { attachment, cardKey }
+    }));
+}
+
+// Show card attachment notifications
+function showCardAttachmentNotification(eventType, attachment) {
+    const messages = {
+        'INSERT': `تم رفع ملف جديد للبطاقة: ${attachment.file_name}`,
+        'UPDATE': `تم تحديث ملف البطاقة: ${attachment.file_name}`,
+        'DELETE': `تم حذف ملف البطاقة: ${attachment.file_name}`
+    };
+
+    const message = messages[eventType] || `تغيير في ملف البطاقة: ${attachment.file_name}`;
+
+    // Only show if not the current user's action
+    if (!isCurrentUserAction(attachment)) {
+        showConnectionNotification(message, 'info');
+    }
+}
+
+// Update card attachments UI
+function updateCardAttachmentsUI(cardKey) {
+    try {
+        console.log(`🔄 تحديث واجهة مرفقات البطاقة: ${cardKey}`);
+
+        // Update any open card attachment modals
+        const openModal = document.querySelector(`.card-attachments-modal[data-card-key="${cardKey}"]`);
+        if (openModal) {
+            console.log('📱 تحديث النافذة المفتوحة');
+            if (typeof refreshCardAttachmentsList === 'function') {
+                refreshCardAttachmentsList(cardKey);
+            }
+        }
+
+        // Also check for modal without specific data attribute
+        const generalModal = document.querySelector('.modal-overlay .card-attachments-modal');
+        if (generalModal) {
+            const modalCardKey = generalModal.getAttribute('data-card-key');
+            if (modalCardKey === cardKey) {
+                console.log('📱 تحديث النافذة العامة');
+                if (typeof refreshCardAttachmentsList === 'function') {
+                    refreshCardAttachmentsList(cardKey);
+                }
+            }
+        }
+
+        // Update attachment count badges in property cards
+        const propertyCards = document.querySelectorAll('.property-card');
+        propertyCards.forEach(card => {
+            const cardKeyAttr = card.getAttribute('data-card-key');
+            if (cardKeyAttr === cardKey) {
+                console.log('🏷️ تحديث عداد المرفقات في البطاقة');
+                if (typeof updateCardAttachmentCount === 'function') {
+                    updateCardAttachmentCount(card, cardKey);
+                }
+            }
+        });
+
+        // Update any attachment lists in the main interface
+        const attachmentLists = document.querySelectorAll(`[id*="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}"]`);
+        attachmentLists.forEach(list => {
+            console.log('📋 تحديث قائمة المرفقات');
+            if (typeof refreshCardAttachmentsList === 'function') {
+                refreshCardAttachmentsList(cardKey);
+            }
+        });
+
+        // Trigger global update event
+        window.dispatchEvent(new CustomEvent('cardAttachmentsUIUpdated', {
+            detail: { cardKey }
+        }));
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث واجهة مرفقات البطاقة:', error);
+    }
+}
+
+// Refresh card attachments list
+async function refreshCardAttachmentsList(cardKey) {
+    try {
+        console.log(`🔄 تحديث قائمة مرفقات البطاقة: ${cardKey}`);
+
+        const attachments = await getCardAttachmentsEnhanced(cardKey);
+        console.log(`📎 تم جلب ${attachments.length} مرفق للبطاقة`);
+
+        // Try multiple selectors to find the list container
+        const possibleSelectors = [
+            '.card-attachments-list',
+            `#cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`,
+            '.attachments-list',
+            '.card-attachments-container .attachments-list'
+        ];
+
+        let listContainer = null;
+        for (const selector of possibleSelectors) {
+            listContainer = document.querySelector(selector);
+            if (listContainer) {
+                console.log(`✅ تم العثور على الحاوية: ${selector}`);
+                break;
+            }
+        }
+
+        if (listContainer && attachments) {
+            // Make sure the container is visible
+            listContainer.style.display = 'block';
+            listContainer.style.visibility = 'visible';
+            listContainer.style.opacity = '0.7';
+
+            if (attachments.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="no-attachments-state">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                        <p style="color: #888; margin: 0;">لا توجد مرفقات للبطاقة بعد</p>
+                        <p style="color: #aaa; font-size: 0.9rem; margin: 0.5rem 0 0 0;">اسحب الملفات هنا أو استخدم زر الرفع</p>
+                    </div>
+                `;
+            } else {
+                listContainer.innerHTML = attachments.map(att => {
+                    const uploadDate = new Date(att.created_at).toLocaleDateString('ar-SA');
+                    const fileSize = formatFileSize(att.file_size);
+
+                    return `
+                        <div class="attachment-item enhanced" data-name="${att.file_name.toLowerCase()}" data-id="${att.id}">
+                            <div class="attachment-icon">
+                                <i class="${getFileIcon(att.file_type)}"></i>
+                            </div>
+                            <div class="attachment-details">
+                                <div class="attachment-name" title="${att.file_name}">${att.file_name}</div>
+                                <div class="attachment-meta">
+                                    <span class="file-size">${fileSize}</span>
+                                    <span class="upload-date">${uploadDate}</span>
+                                    ${att.notes ? `<span class="file-notes" title="${att.notes}"><i class="fas fa-sticky-note"></i></span>` : ''}
+                                </div>
+                            </div>
+                            <div class="attachment-actions">
+                                <button class="attachment-btn view-btn" onclick="viewAttachmentFromSupabase('${att.id}', '${att.file_url}', '${att.file_type}')" title="معاينة">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="attachment-btn download-btn" onclick="downloadAttachmentFromSupabase('${att.file_url}', '${att.file_name}')" title="تحميل">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="attachment-btn delete-btn" onclick="deleteCardAttachmentFromSupabase('${att.id}', '${cardKey}')" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            setTimeout(() => {
+                listContainer.style.opacity = '1';
+            }, 100);
+        } else {
+            console.warn('⚠️ لم يتم العثور على حاوية قائمة المرفقات');
+            console.log('🔍 العناصر الموجودة في الصفحة:');
+            console.log('- .card-attachments-list:', document.querySelector('.card-attachments-list'));
+            console.log(`- #cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}:`, document.querySelector(`#cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`));
+            console.log('- .attachments-list:', document.querySelector('.attachments-list'));
+
+            // Try to update using the script.js function
+            if (typeof refreshCardAttachmentsList === 'function' && window.refreshCardAttachmentsList !== refreshCardAttachmentsList) {
+                console.log('🔄 محاولة استخدام وظيفة script.js...');
+                window.refreshCardAttachmentsList(cardKey);
+            }
+        }
+    } catch (error) {
+        console.error('❌ خطأ في تحديث قائمة مرفقات البطاقة:', error);
     }
 }

@@ -938,6 +938,35 @@ function renderMobileTotals(data) {
     addTotalItem(container, 'ضريبة التجاري', `<i class="fas fa-receipt" style="color:#e46e6d;"></i> ${vat.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'vat-stat');
     addTotalItem(container, 'إجمالي تجاري بعد الضريبة', `<i class="fas fa-coins" style="color:#05940e;"></i> ${afterTaxCommercial.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'after-taxonly-stat');
     addTotalItem(container, 'إجمالي سكني', `<i class="fas fa-home" style="color:#f59e42;"></i> ${totalResidential.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'residential-stat');
+
+    // 🆕 إضافة تفاصيل الصك للإحصائيات في الجوال فقط
+    // رقم الصك ومساحة الصك والسجل العيني من البيانات المعروضة
+    const uniqueContractsList = {};
+    data.forEach(property => {
+        if (property['رقم العقد'] && property['اسم العقار']) {
+            const key = `${property['رقم العقد']}_${property['اسم العقار']}`;
+            if (!uniqueContractsList[key]) uniqueContractsList[key] = property;
+        }
+    });
+    const uniqueList = Object.values(uniqueContractsList);
+
+    // إضافة رقم الصك إذا وُجد في البيانات المعروضة
+    const firstDeedNumber = uniqueList.find(p => p['رقم الصك'] && p['رقم الصك'].toString().trim() !== '');
+    if (firstDeedNumber && firstDeedNumber['رقم الصك']) {
+        addTotalItem(container, 'رقم الصك', `<i class="fas fa-file-contract" style="color:#dc3545;"></i> ${firstDeedNumber['رقم الصك']}`, 'deed-number-stat mobile-deed-info');
+    }
+
+    // إضافة مساحة الصك إذا وُجدت في البيانات المعروضة
+    const firstDeedArea = uniqueList.find(p => p['مساحةالصك'] && !isNaN(parseFloat(p['مساحةالصك'])));
+    if (firstDeedArea && firstDeedArea['مساحةالصك']) {
+        addTotalItem(container, 'مساحة الصك', `<i class="fas fa-ruler-combined" style="color:#fd7e14;"></i> ${parseFloat(firstDeedArea['مساحةالصك']).toLocaleString()} م²`, 'deed-area-stat mobile-deed-info');
+    }
+
+    // إضافة السجل العيني إذا وُجد في البيانات المعروضة
+    const firstSijil = uniqueList.find(p => p['السجل العيني '] && p['السجل العيني '].toString().trim() !== '');
+    if (firstSijil && firstSijil['السجل العيني ']) {
+        addTotalItem(container, 'السجل العيني', `<i class="fas fa-clipboard-list" style="color:#28a745;"></i> ${firstSijil['السجل العيني '].toString().trim()}`, 'registry-stat mobile-deed-info');
+    }
 }
 
 // إضافة عنصر إحصائي
@@ -2912,12 +2941,22 @@ function exportToExcel() {
 
 // تحميل المرفقات من localStorage عند بدء التطبيق
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 بدء تهيئة نظام المرفقات...');
+
     // Enable debug mode by adding ?debug=true to URL
     const urlParams = new URLSearchParams(window.location.search);
     window.debugMode = urlParams.get('debug') === 'true';
 
     if (window.debugMode) {
         console.log('🐛 وضع التصحيح مفعل');
+    }
+
+    // تهيئة Supabase أولاً
+    if (typeof initSupabase === 'function') {
+        const supabaseInitialized = initSupabase();
+        console.log('Supabase تهيئة:', supabaseInitialized ? 'نجح' : 'فشل');
+    } else {
+        console.warn('⚠️ وظيفة initSupabase غير متوفرة');
     }
 
     const savedAttachments = localStorage.getItem('propertyAttachments');
@@ -2957,8 +2996,97 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize enhanced attachments system
     setTimeout(() => {
         initializeAttachmentsSystem();
+
+        // Initialize card attachments real-time sync
+        if (typeof subscribeToCardAttachmentChanges === 'function') {
+            console.log('🔄 تفعيل المزامنة الفورية لمرفقات البطاقات...');
+            const cardSubscription = subscribeToCardAttachmentChanges();
+            if (cardSubscription) {
+                console.log('✅ تم تفعيل المزامنة الفورية لمرفقات البطاقات');
+
+                // Test the subscription after a short delay
+                setTimeout(() => {
+                    console.log('🧪 اختبار الاشتراك...');
+                    console.log('📡 حالة الاشتراك:', cardSubscription.state);
+                }, 3000);
+            } else {
+                console.warn('⚠️ فشل في تفعيل المزامنة الفورية لمرفقات البطاقات');
+            }
+        } else {
+            console.warn('⚠️ وظيفة subscribeToCardAttachmentChanges غير متوفرة');
+        }
+
+        // Setup global card attachment event listeners
+        setupGlobalCardAttachmentListeners();
+
     }, 2000); // Wait 2 seconds for other systems to load
 });
+
+// Setup global card attachment event listeners
+function setupGlobalCardAttachmentListeners() {
+    // Listen for card attachment events globally
+    window.addEventListener('cardAttachmentAdded', (event) => {
+        console.log(`🌐 حدث عالمي: تم إضافة مرفق للبطاقة ${event.detail.cardKey}`);
+
+        // Update any open card modals
+        const openCardModal = document.querySelector('.card-attachments-modal[data-card-key="' + event.detail.cardKey + '"]');
+        if (openCardModal) {
+            refreshCardAttachmentsList(event.detail.cardKey);
+        }
+
+        // Update card counters in any open lists
+        updateCardAttachmentCounters(event.detail.cardKey);
+    });
+
+    window.addEventListener('cardAttachmentDeleted', (event) => {
+        console.log(`🌐 حدث عالمي: تم حذف مرفق من البطاقة ${event.detail.cardKey}`);
+
+        // Update any open card modals
+        const openCardModal = document.querySelector('.card-attachments-modal[data-card-key="' + event.detail.cardKey + '"]');
+        if (openCardModal) {
+            refreshCardAttachmentsList(event.detail.cardKey);
+        }
+
+        // Update card counters in any open lists
+        updateCardAttachmentCounters(event.detail.cardKey);
+    });
+
+    console.log('✅ تم تهيئة معالجات الأحداث العامة لمرفقات البطاقات');
+}
+
+// Update card attachment counters in UI
+function updateCardAttachmentCounters(cardKey) {
+    // Update attachment count badges in property cards
+    const propertyCards = document.querySelectorAll('.property-card');
+    propertyCards.forEach(card => {
+        const cardKeyAttr = card.getAttribute('data-card-key');
+        if (cardKeyAttr === cardKey) {
+            // Update attachment count
+            updateCardAttachmentCount(card, cardKey);
+        }
+    });
+}
+
+// Helper function to update card attachment count
+async function updateCardAttachmentCount(cardElement, cardKey) {
+    try {
+        let count = 0;
+
+        if (typeof getCardAttachmentsEnhanced === 'function') {
+            const attachments = await getCardAttachmentsEnhanced(cardKey);
+            count = attachments.length;
+        }
+
+        // Update count badge
+        const countBadge = cardElement.querySelector('.attachment-count');
+        if (countBadge) {
+            countBadge.textContent = `${count} مرفق`;
+        }
+
+    } catch (error) {
+        console.warn(`⚠️ خطأ في تحديث عداد مرفقات البطاقة ${cardKey}:`, error);
+    }
+}
 
 // نافذة اختيار المدينة
 function showAttachmentsManager() {
@@ -3029,16 +3157,32 @@ function showAttachmentsModal(city, propertyName) {
     const propertyKey = `${city}_${propertyName}`;
 
     // Try to get attachments from Supabase first, fallback to local
-    let attachmentsPromise;
+    async function loadAttachments() {
+        let propertyAttachments = [];
+        let isFromCloud = false;
 
-    if (typeof getPropertyAttachmentsEnhanced === 'function') {
-        attachmentsPromise = getPropertyAttachmentsEnhanced(propertyKey);
-    } else {
-        // Fallback to local attachments
-        attachmentsPromise = Promise.resolve(attachments[propertyKey] || []);
+        // Try Supabase first
+        if (typeof getPropertyAttachmentsEnhanced === 'function' && supabaseClient) {
+            try {
+                console.log(`☁️ جلب مرفقات ${propertyKey} من السحابة...`);
+                propertyAttachments = await getPropertyAttachmentsEnhanced(propertyKey);
+                isFromCloud = true;
+                console.log(`✅ تم جلب ${propertyAttachments.length} مرفق من السحابة`);
+            } catch (error) {
+                console.warn('⚠️ فشل في جلب المرفقات من السحابة:', error);
+            }
+        }
+
+        // Fallback to local attachments if no cloud data
+        if (!isFromCloud || propertyAttachments.length === 0) {
+            propertyAttachments = window.attachments?.[propertyKey] || [];
+            console.log(`💾 تم جلب ${propertyAttachments.length} مرفق محلي`);
+        }
+
+        return { propertyAttachments, isFromCloud };
     }
 
-    attachmentsPromise.then(propertyAttachments => {
+    loadAttachments().then(({ propertyAttachments, isFromCloud }) => {
         let html = `<div class="modal-overlay" style="display:flex;">
             <div class="attachments-modal enhanced" data-property-key="${propertyKey}">
                 <div class="attachments-header enhanced" style="flex-direction:column;align-items:flex-start;">
@@ -5354,8 +5498,10 @@ function loadUnitsResults() {
 
 // ==================== وظائف المرفقات والتحرير للبطاقات ====================
 
-// عرض نافذة المرفقات من البطاقة (منفصلة عن مرفقات العقار)
+// Enhanced card attachments modal with real-time cross-device synchronization
 function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber) {
+    closeModal();
+
     // إنشاء مفتاح فريد للبطاقة
     let cardKey;
     if (contractNumber) {
@@ -5364,6 +5510,32 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
         cardKey = `${city}_${propertyName}_unit_${unitNumber}`;
     } else {
         cardKey = `${city}_${propertyName}_general`;
+    }
+
+    // Try to get attachments from Supabase first, fallback to local
+    async function loadCardAttachments() {
+        let cardAttachments = [];
+        let isFromCloud = false;
+
+        // Try Supabase first
+        if (typeof getCardAttachmentsEnhanced === 'function' && supabaseClient) {
+            try {
+                console.log(`☁️ جلب مرفقات البطاقة ${cardKey} من السحابة...`);
+                cardAttachments = await getCardAttachmentsEnhanced(cardKey);
+                isFromCloud = true;
+                console.log(`✅ تم جلب ${cardAttachments.length} مرفق من السحابة`);
+            } catch (error) {
+                console.warn('⚠️ فشل في جلب مرفقات البطاقة من السحابة:', error);
+            }
+        }
+
+        // Fallback to local attachments if no cloud data
+        if (!isFromCloud || cardAttachments.length === 0) {
+            cardAttachments = window.cardAttachments?.[cardKey] || [];
+            console.log(`💾 تم جلب ${cardAttachments.length} مرفق محلي للبطاقة`);
+        }
+
+        return { cardAttachments, isFromCloud };
     }
 
     let html = `
@@ -5388,7 +5560,7 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                             <p>اسحب الملفات هنا أو انقر للاختيار</p>
                             <small>يدعم جميع أنواع الملفات</small>
                         </div>
-                        <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUpload(event, '${cardKey}')">
+                        <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
 
                         <div class="upload-notes">
                             <label for="cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">ملاحظات على المرفقات:</label>
@@ -5400,7 +5572,10 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                 <div class="attachments-list-section">
                     <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
                     <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list">
-                        ${renderCardAttachmentsList(cardKey)}
+                        <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p>جاري تحميل المرفقات...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -5409,8 +5584,67 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
 
     document.body.insertAdjacentHTML('beforeend', html);
 
+    // 🎯 تحميل المرفقات بعد إنشاء النافذة
+    loadCardAttachments().then(({ cardAttachments, isFromCloud }) => {
+        console.log(`📎 تم تحميل ${cardAttachments.length} مرفق للبطاقة ${cardKey} (${isFromCloud ? 'من السحابة' : 'محلي'})`);
+
+        const listContainer = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (listContainer) {
+            // Force visibility
+            listContainer.style.display = 'block';
+            listContainer.style.visibility = 'visible';
+            listContainer.style.opacity = '1';
+
+            // Render attachments
+            listContainer.innerHTML = renderCardAttachmentsList(cardKey, cardAttachments);
+
+            console.log('✅ تم عرض المرفقات في النافذة');
+        } else {
+            console.error('❌ لم يتم العثور على حاوية قائمة المرفقات');
+        }
+    }).catch(error => {
+        console.error('❌ خطأ في تحميل مرفقات البطاقة:', error);
+
+        const listContainer = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (listContainer) {
+            listContainer.innerHTML = `
+                <div class="error-loading-attachments" style="text-align: center; padding: 20px; color: #dc3545;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>خطأ في تحميل المرفقات</p>
+                    <button onclick="refreshCardAttachmentsList('${cardKey}')" class="btn-primary" style="margin-top: 10px;">
+                        <i class="fas fa-refresh"></i> إعادة المحاولة
+                    </button>
+                </div>
+            `;
+        }
+    });
+
     // إضافة أحداث السحب والإفلات
     setupCardDragAndDrop(cardKey);
+
+    // 🔧 إضافة CSS إصلاحي لضمان إظهار المرفقات
+    const fixStyle = document.createElement('style');
+    fixStyle.textContent = `
+        .attachments-list,
+        .card-attachments-list,
+        .attachment-item,
+        [id*="cardAttachmentsList"] {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .attachment-item {
+            display: flex !important;
+        }
+
+        .loading-attachments,
+        .error-loading-attachments {
+            display: block !important;
+            visibility: visible !important;
+        }
+    `;
+    document.head.appendChild(fixStyle);
 
     // إضافة حدث إغلاق للمودال
     document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
@@ -5421,86 +5655,342 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
 }
 
 // عرض قائمة مرفقات البطاقة
-function renderCardAttachmentsList(cardKey) {
-    const cardFiles = cardAttachments[cardKey] || [];
+function renderCardAttachmentsList(cardKey, attachments = null) {
+    // Use provided attachments or fallback to local storage
+    const cardFiles = attachments || cardAttachments[cardKey] || [];
 
     if (cardFiles.length === 0) {
         return '<p class="no-attachments">لا توجد مرفقات لهذه البطاقة</p>';
     }
 
     return cardFiles.map(file => {
-        const fileIcon = getFileIcon(file.name);
-        const fileSize = formatFileSize(file.size);
-        const uploadDate = new Date(file.uploadDate).toLocaleDateString('ar-SA');
+        // Handle both local and cloud file formats
+        const fileName = file.file_name || file.name;
+        const fileSize = formatFileSize(file.file_size || file.size);
+        const fileType = file.file_type || file.type;
+        const uploadDate = new Date(file.created_at || file.uploadDate).toLocaleDateString('ar-SA');
+        const fileIcon = getFileIcon(fileName);
+
+        // Determine if file is local or cloud-based
+        const isLocal = file.isLocal || !file.id || file.id.toString().startsWith('local_');
+        const storageIcon = isLocal ? '💾' : '☁️';
+        const storageTitle = isLocal ? 'محفوظ محلياً' : 'محفوظ في السحابة';
 
         return `
-        <div class="attachment-item">
+        <div class="attachment-item" data-name="${fileName}">
             <div class="attachment-info">
                 <div class="file-icon">${fileIcon}</div>
                 <div class="file-details">
-                    <h4>${file.name}</h4>
+                    <h4>
+                        ${fileName}
+                        <span class="storage-indicator" title="${storageTitle}" style="margin-right: 8px; font-size: 0.8rem;">${storageIcon}</span>
+                    </h4>
                     <p class="file-meta">الحجم: ${fileSize} | تاريخ الرفع: ${uploadDate}</p>
-                    ${file.notes ? `<p class="file-notes"><i class="fas fa-sticky-note"></i> ${file.notes}</p>` : ''}
+                    ${(file.notes || file.description) ? `<p class="file-notes"><i class="fas fa-sticky-note"></i> ${file.notes || file.description}</p>` : ''}
                 </div>
             </div>
             <div class="attachment-actions">
-                <button onclick="downloadCardAttachment('${cardKey}', '${file.name}')" class="btn-download">
-                    <i class="fas fa-download"></i> تحميل
-                </button>
-                <button onclick="deleteCardAttachment('${cardKey}', '${file.name}')" class="btn-delete">
-                    <i class="fas fa-trash"></i> حذف
-                </button>
+                ${isLocal ?
+                    `<button onclick="downloadCardAttachment('${cardKey}', '${fileName}')" class="btn-download">
+                        <i class="fas fa-download"></i> تحميل
+                    </button>
+                    <button onclick="deleteCardAttachment('${cardKey}', '${fileName}')" class="btn-delete">
+                        <i class="fas fa-trash"></i> حذف
+                    </button>` :
+                    `<button onclick="window.open('${file.file_url}', '_blank')" class="btn-view">
+                        <i class="fas fa-eye"></i> عرض
+                    </button>
+                    <button onclick="downloadAttachmentFromSupabase('${file.file_url}', '${fileName}')" class="btn-download">
+                        <i class="fas fa-download"></i> تحميل
+                    </button>
+                    <button onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" class="btn-delete">
+                        <i class="fas fa-trash"></i> حذف
+                    </button>`
+                }
             </div>
         </div>
         `;
     }).join('');
 }
 
-// معالجة رفع ملفات البطاقة
+// معالجة رفع ملفات البطاقة (Legacy - redirects to enhanced version)
 function handleCardFileUpload(event, cardKey) {
-    const files = Array.from(event.target.files);
-    const notesTextarea = document.getElementById(`cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
-    const notes = notesTextarea ? notesTextarea.value.trim() : '';
+    console.log('🔄 تحويل من الوظيفة القديمة إلى المحسنة...');
+
+    // Redirect to enhanced version for consistency and real-time sync
+    handleCardFileUploadEnhanced(event, cardKey);
+}
+
+// Enhanced card file upload with Supabase integration
+async function handleCardFileUploadEnhanced(event, cardKey) {
+    const files = event.target.files;
+
+    // Get notes from the correct element ID
+    const notesElement = document.getElementById(`cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`) ||
+                        document.getElementById('cardUploadNotes');
+    const notes = notesElement?.value || '';
 
     if (files.length === 0) return;
 
-    files.forEach(file => {
+    // Show enhanced upload progress modal
+    const progressModal = document.createElement('div');
+    progressModal.className = 'modal-overlay';
+    progressModal.innerHTML = `
+        <div class="modal-box upload-progress-modal" style="text-align: center; padding: 40px; max-width: 500px;">
+            <div class="upload-header">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #17a2b8; margin-bottom: 1rem;"></i>
+                <h3>رفع مرفقات البطاقة</h3>
+            </div>
+            <div class="upload-progress">
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="cardProgressFill" style="width: 0%;"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="cardProgressText">0 من ${files.length} ملف</span>
+                        <span id="cardProgressPercentage">0%</span>
+                    </div>
+                </div>
+                <div class="upload-details">
+                    <p id="cardUploadStatus">جاري التحقق من الاتصال...</p>
+                    <p id="cardCurrentFile" style="font-size: 0.9rem; color: #666;"></p>
+                </div>
+            </div>
+            <div class="device-sync-info" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                <i class="fas fa-sync-alt" style="color: #17a2b8;"></i>
+                <small>سيتم مزامنة مرفقات البطاقة تلقائياً مع جميع الأجهزة</small>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(progressModal);
+
+    try {
+        // Check if Supabase is available and working
+        const supabaseAvailable = await checkSupabaseAvailability();
+
+        if (supabaseAvailable) {
+            document.getElementById('cardUploadStatus').textContent = 'جاري رفع مرفقات البطاقة إلى السحابة...';
+
+            // Upload files with progress tracking
+            await handleCardFilesEnhancedWithProgress(files, cardKey, notes);
+
+            // Remove progress modal
+            progressModal.remove();
+
+            // 🎯 تحديث قائمة المرفقات فوراً بعد الرفع الناجح
+            setTimeout(() => {
+                refreshCardAttachmentsList(cardKey);
+
+                // Force show any hidden elements
+                const allAttachmentElements = document.querySelectorAll('[id*="cardAttachments"], [class*="attachment"]');
+                allAttachmentElements.forEach(el => {
+                    if (el.style.display === 'none') {
+                        el.style.display = 'block';
+                        console.log('🔧 تم إظهار عنصر مخفي:', el);
+                    }
+                    if (el.style.visibility === 'hidden') {
+                        el.style.visibility = 'visible';
+                        console.log('🔧 تم إظهار عنصر مخفي:', el);
+                    }
+                });
+            }, 500);
+
+            // تنظيف النموذج
+            event.target.value = '';
+            const notesElement = document.getElementById(`cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+            if (notesElement) {
+                notesElement.value = '';
+            }
+
+            // Show success message with cross-device info
+            const successModal = document.createElement('div');
+            successModal.className = 'modal-overlay';
+            successModal.innerHTML = `
+                <div class="modal-box success-modal" style="text-align: center; padding: 40px;">
+                    <div class="success-animation">
+                        <i class="fas fa-check-circle" style="font-size: 3rem; color: #28a745; margin-bottom: 1rem;"></i>
+                    </div>
+                    <h3>تم رفع مرفقات البطاقة بنجاح!</h3>
+                    <div class="success-details">
+                        <p>تم رفع ${files.length} ملف إلى السحابة</p>
+                        <div class="sync-status" style="margin: 20px 0; padding: 15px; background: #d4edda; border-radius: 8px; color: #155724;">
+                            <i class="fas fa-globe" style="margin-left: 8px;"></i>
+                            <strong>متزامن عبر جميع الأجهزة</strong>
+                            <br>
+                            <small>مرفقات البطاقة متاحة الآن على جميع الأجهزة والمتصفحات</small>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn-primary" onclick="closeModal(); refreshCardAttachmentsList('${cardKey}')">
+                            <i class="fas fa-eye"></i> عرض المرفقات
+                        </button>
+                        <button class="btn-secondary" onclick="closeModal()">
+                            <i class="fas fa-times"></i> إغلاق
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(successModal);
+
+            // Auto-close success modal after 5 seconds
+            setTimeout(() => {
+                if (document.body.contains(successModal)) {
+                    successModal.remove();
+                }
+            }, 5000);
+
+        } else {
+            throw new Error('Supabase غير متوفر');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في رفع مرفقات البطاقة:', error);
+
+        // Update status
+        document.getElementById('cardUploadStatus').textContent = 'جاري الحفظ محلياً...';
+
+        // Fallback to local upload
+        await handleCardFilesLocal(files, cardKey, notes);
+
+        // Remove progress modal
+        progressModal.remove();
+
+        // 🎯 تحديث قائمة المرفقات حتى في حالة الحفظ المحلي
+        setTimeout(() => {
+            refreshCardAttachmentsList(cardKey);
+        }, 500);
+
+        // Show fallback message with sync options
+        const fallbackModal = document.createElement('div');
+        fallbackModal.className = 'modal-overlay';
+        fallbackModal.innerHTML = `
+            <div class="modal-box fallback-modal" style="text-align: center; padding: 40px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ffc107; margin-bottom: 1rem;"></i>
+                <h3>تم حفظ مرفقات البطاقة محلياً</h3>
+                <div class="fallback-details">
+                    <p>لم يتمكن من الرفع للسحابة، تم حفظ الملفات محلياً</p>
+                    <div class="local-storage-info" style="margin: 20px 0; padding: 15px; background: #fff3cd; border-radius: 8px; color: #856404;">
+                        <i class="fas fa-laptop" style="margin-left: 8px;"></i>
+                        <strong>محفوظ على هذا الجهاز فقط</strong>
+                        <br>
+                        <small>يمكنك المزامنة لاحقاً عند توفر الاتصال</small>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-primary" onclick="closeModal(); refreshCardAttachmentsList('${cardKey}')">
+                        <i class="fas fa-eye"></i> عرض المرفقات
+                    </button>
+                    <button class="btn-warning" onclick="closeModal(); retryCardUploadToSupabase('${cardKey}')">
+                        <i class="fas fa-sync"></i> إعادة المحاولة
+                    </button>
+                    <button class="btn-secondary" onclick="closeModal()">
+                        <i class="fas fa-times"></i> إغلاق
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(fallbackModal);
+    }
+}
+
+// Handle card files upload with progress
+async function handleCardFilesEnhancedWithProgress(files, cardKey, notes) {
+    let uploadedCount = 0;
+    const totalFiles = files.length;
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Update progress
+        const progressFill = document.getElementById('cardProgressFill');
+        const progressText = document.getElementById('cardProgressText');
+        const progressPercentage = document.getElementById('cardProgressPercentage');
+        const currentFileElement = document.getElementById('cardCurrentFile');
+
+        if (currentFileElement) {
+            currentFileElement.textContent = `جاري رفع: ${file.name}`;
+        }
+
+        try {
+            if (typeof uploadCardFileToSupabase === 'function') {
+                const result = await uploadCardFileToSupabase(file, cardKey, notes);
+
+                if (result) {
+                    uploadedCount++;
+
+                    // Update progress
+                    const progress = Math.round((uploadedCount / totalFiles) * 100);
+                    if (progressFill) progressFill.style.width = progress + '%';
+                    if (progressText) progressText.textContent = `${uploadedCount} من ${totalFiles} ملف`;
+                    if (progressPercentage) progressPercentage.textContent = progress + '%';
+
+                    console.log(`✅ تم رفع ملف البطاقة: ${file.name}`);
+
+                    // 🎯 إطلاق حدث real-time للمزامنة الفورية
+                    window.dispatchEvent(new CustomEvent('cardAttachmentAdded', {
+                        detail: { cardKey, attachment: result }
+                    }));
+
+                    // إطلاق حدث عام للمرفقات
+                    window.dispatchEvent(new CustomEvent('attachmentAdded', {
+                        detail: {
+                            type: 'card',
+                            cardKey,
+                            attachment: result,
+                            propertyKey: cardKey // للتوافق مع النظام العام
+                        }
+                    }));
+                } else {
+                    throw new Error('لم يتم إرجاع بيانات الملف');
+                }
+            } else {
+                throw new Error('وظيفة uploadCardFileToSupabase غير متوفرة');
+            }
+        } catch (error) {
+            console.error(`❌ خطأ في رفع ملف البطاقة ${file.name}:`, error);
+            throw error;
+        }
+    }
+}
+
+// Handle card files local storage fallback
+async function handleCardFilesLocal(files, cardKey, notes) {
+    const cardFiles = [];
+
+    for (const file of files) {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            const fileData = {
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                data: e.target.result,
-                uploadDate: new Date().toISOString(),
-                notes: notes
+
+        await new Promise((resolve) => {
+            reader.onload = function(e) {
+                const fileData = {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    data: e.target.result,
+                    uploadDate: new Date().toISOString(),
+                    notes: notes
+                };
+
+                cardFiles.push(fileData);
+                resolve();
             };
-
-            // إضافة الملف إلى مرفقات البطاقة
-            if (!cardAttachments[cardKey]) {
-                cardAttachments[cardKey] = [];
-            }
-            cardAttachments[cardKey].push(fileData);
-
-            // حفظ في localStorage
-            localStorage.setItem('cardAttachments', JSON.stringify(cardAttachments));
-
-            // تحديث القائمة
-            const listContainer = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
-            if (listContainer) {
-                listContainer.innerHTML = renderCardAttachmentsList(cardKey);
-            }
-        };
-        reader.readAsDataURL(file);
-    });
-
-    // تنظيف النموذج
-    event.target.value = '';
-    if (notesTextarea) {
-        notesTextarea.value = '';
+            reader.readAsDataURL(file);
+        });
     }
 
-    alert(`تم رفع ${files.length} ملف بنجاح!`);
+    // Save to localStorage
+    if (!window.cardAttachments) {
+        window.cardAttachments = {};
+    }
+
+    if (!window.cardAttachments[cardKey]) {
+        window.cardAttachments[cardKey] = [];
+    }
+
+    window.cardAttachments[cardKey].push(...cardFiles);
+    localStorage.setItem('cardAttachments', JSON.stringify(window.cardAttachments));
+
+    console.log(`💾 تم حفظ ${cardFiles.length} ملف بطاقة محلياً`);
 }
 
 // إعداد السحب والإفلات لمرفقات البطاقة
@@ -5567,6 +6057,309 @@ function deleteCardAttachment(cardKey, fileName) {
     const listContainer = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
     if (listContainer) {
         listContainer.innerHTML = renderCardAttachmentsList(cardKey);
+    }
+}
+
+// Enhanced delete card attachment from Supabase
+async function deleteCardAttachmentFromSupabase(attachmentId, cardKey) {
+    try {
+        if (typeof deleteCardAttachmentEnhanced === 'function') {
+            const success = await deleteCardAttachmentEnhanced(attachmentId);
+
+            if (success) {
+                // Refresh the attachments list
+                await refreshCardAttachmentsList(cardKey);
+
+                // Show success notification
+                showConnectionNotification('تم حذف مرفق البطاقة بنجاح', 'success');
+            }
+        } else {
+            throw new Error('وظيفة deleteCardAttachmentEnhanced غير متوفرة');
+        }
+    } catch (error) {
+        console.error('❌ خطأ في حذف مرفق البطاقة:', error);
+        alert(`خطأ في حذف المرفق: ${error.message}`);
+    }
+}
+
+// Setup enhanced drag and drop for card attachments
+function setupCardDragAndDropEnhanced(cardKey) {
+    const uploadZone = document.querySelector('.upload-zone.enhanced');
+    if (!uploadZone) return;
+
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.style.borderColor = '#007bff';
+        uploadZone.style.background = 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)';
+    });
+
+    uploadZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadZone.style.borderColor = '#17a2b8';
+        uploadZone.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.style.borderColor = '#17a2b8';
+        uploadZone.style.background = 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)';
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const fileInput = document.getElementById('cardFileInput');
+            if (fileInput) {
+                fileInput.files = files;
+                handleCardFileUploadEnhanced({ target: { files } }, cardKey);
+            }
+        }
+    });
+}
+
+// Setup real-time updates for card modal
+function setupCardModalRealTimeUpdates(cardKey) {
+    // Listen for card attachment changes
+    window.addEventListener('cardAttachmentAdded', (event) => {
+        if (event.detail.cardKey === cardKey) {
+            console.log(`🔄 تحديث مرفقات البطاقة: ${cardKey} - ملف جديد`);
+            refreshCardAttachmentsList(cardKey);
+
+            // Show notification if not from current user
+            if (!isCurrentUserAction(event.detail.attachment)) {
+                showConnectionNotification(`تم إضافة ملف جديد للبطاقة: ${event.detail.attachment.file_name}`, 'info');
+            }
+        }
+    });
+
+    window.addEventListener('cardAttachmentDeleted', (event) => {
+        if (event.detail.cardKey === cardKey) {
+            console.log(`🔄 تحديث مرفقات البطاقة: ${cardKey} - حذف ملف`);
+            refreshCardAttachmentsList(cardKey);
+
+            // Show notification if not from current user
+            if (!isCurrentUserAction(event.detail.attachment)) {
+                showConnectionNotification(`تم حذف ملف من البطاقة: ${event.detail.attachment.file_name}`, 'warning');
+            }
+        }
+    });
+
+    // Listen for general attachment events (for compatibility)
+    window.addEventListener('attachmentAdded', (event) => {
+        if (event.detail.type === 'card' && event.detail.cardKey === cardKey) {
+            console.log(`🔄 تحديث عام لمرفقات البطاقة: ${cardKey}`);
+            refreshCardAttachmentsList(cardKey);
+        }
+    });
+}
+
+// Update card sync status
+function updateCardSyncStatus() {
+    const syncStatus = document.getElementById('cardSyncStatus');
+    if (!syncStatus) return;
+
+    if (supabaseClient && typeof getCardAttachmentsEnhanced === 'function') {
+        syncStatus.innerHTML = '<i class="fas fa-sync-alt" style="color: #28a745;"></i> متزامن';
+        syncStatus.title = 'متزامن مع السحابة';
+    } else {
+        syncStatus.innerHTML = '<i class="fas fa-wifi-slash" style="color: #ffc107;"></i> محلي فقط';
+        syncStatus.title = 'غير متصل - البيانات محلية فقط';
+    }
+}
+
+// Filter card attachments list
+function filterCardAttachmentsList(event) {
+    const searchTerm = event.target.value.toLowerCase();
+    const attachmentItems = document.querySelectorAll('.card-attachments-list .attachment-item');
+
+    attachmentItems.forEach(item => {
+        const fileName = item.getAttribute('data-name') || '';
+        const isVisible = fileName.includes(searchTerm);
+        item.style.display = isVisible ? 'flex' : 'none';
+    });
+}
+
+// Refresh card attachments list in modal
+async function refreshCardAttachmentsList(cardKey) {
+    try {
+        console.log(`🔄 تحديث قائمة مرفقات البطاقة: ${cardKey}`);
+
+        // Try multiple selectors to find the list container
+        const possibleSelectors = [
+            `cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`,
+            'cardAttachmentsList',
+            'attachmentsList'
+        ];
+
+        let listContainer = null;
+        for (const selector of possibleSelectors) {
+            listContainer = document.getElementById(selector);
+            if (listContainer) {
+                console.log(`✅ تم العثور على الحاوية: #${selector}`);
+                break;
+            }
+        }
+
+        if (!listContainer) {
+            console.warn('⚠️ لم يتم العثور على حاوية قائمة المرفقات');
+            console.log('🔍 العناصر المتاحة:');
+            possibleSelectors.forEach(selector => {
+                console.log(`- #${selector}:`, document.getElementById(selector));
+            });
+            return;
+        }
+
+        // Get updated attachments
+        let attachments = [];
+
+        // Try to get from Supabase first
+        if (typeof getCardAttachmentsEnhanced === 'function') {
+            try {
+                attachments = await getCardAttachmentsEnhanced(cardKey);
+                console.log(`☁️ تم جلب ${attachments.length} مرفق من السحابة`);
+            } catch (error) {
+                console.warn('⚠️ فشل في جلب المرفقات من السحابة:', error);
+            }
+        }
+
+        // Fallback to local storage if no cloud attachments
+        if (attachments.length === 0) {
+            const localAttachments = window.cardAttachments?.[cardKey] || [];
+            attachments = localAttachments.map(att => ({
+                id: 'local_' + Date.now(),
+                file_name: att.name,
+                file_size: att.size,
+                file_type: att.type,
+                created_at: att.uploadDate,
+                notes: att.notes,
+                isLocal: true
+            }));
+            console.log(`💾 تم جلب ${attachments.length} مرفق محلي`);
+        }
+
+        // Force visibility before updating
+        listContainer.style.display = 'block';
+        listContainer.style.visibility = 'visible';
+        listContainer.style.opacity = '1';
+
+        // Update the list
+        listContainer.innerHTML = renderCardAttachmentsList(cardKey, attachments);
+
+        // Force visibility of all attachment items
+        setTimeout(() => {
+            const attachmentItems = listContainer.querySelectorAll('.attachment-item');
+            attachmentItems.forEach(item => {
+                item.style.display = 'flex';
+                item.style.visibility = 'visible';
+                item.style.opacity = '1';
+            });
+
+            // Force visibility of the entire container again
+            listContainer.style.display = 'block';
+            listContainer.style.visibility = 'visible';
+            listContainer.style.opacity = '1';
+
+            console.log(`🔧 تم إجبار إظهار ${attachmentItems.length} عنصر مرفق`);
+        }, 100);
+
+        // Update attachment count badge if exists
+        const countBadge = document.querySelector(`[data-card-key="${cardKey}"] .attachment-count`);
+        if (countBadge) {
+            countBadge.textContent = `${attachments.length} مرفق`;
+        }
+
+        console.log(`✅ تم تحديث قائمة مرفقات البطاقة: ${attachments.length} مرفق`);
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث قائمة مرفقات البطاقة:', error);
+    }
+}
+
+// Check Supabase availability for card attachments
+async function checkSupabaseAvailability() {
+    try {
+        if (!supabaseClient || typeof getCardAttachmentsEnhanced !== 'function') {
+            return false;
+        }
+
+        // Test connection with a simple query
+        const { error } = await supabaseClient
+            .from('card_attachments')
+            .select('count', { count: 'exact', head: true });
+
+        return !error;
+    } catch (error) {
+        console.warn('⚠️ Supabase غير متوفر للبطاقات:', error);
+        return false;
+    }
+}
+
+// Retry card upload to Supabase
+async function retryCardUploadToSupabase(cardKey) {
+    try {
+        const localAttachments = window.cardAttachments?.[cardKey] || [];
+
+        if (localAttachments.length === 0) {
+            alert('لا توجد مرفقات محلية للمزامنة');
+            return;
+        }
+
+        // Show progress modal
+        const progressModal = document.createElement('div');
+        progressModal.className = 'modal-overlay';
+        progressModal.innerHTML = `
+            <div class="modal-box" style="text-align: center; padding: 40px;">
+                <i class="fas fa-sync-alt fa-spin" style="font-size: 3rem; color: #17a2b8; margin-bottom: 1rem;"></i>
+                <h3>مزامنة مرفقات البطاقة</h3>
+                <p>جاري رفع المرفقات المحلية إلى السحابة...</p>
+                <div class="progress-info">
+                    <span id="syncProgress">0 من ${localAttachments.length}</span>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(progressModal);
+
+        let syncedCount = 0;
+        const progressElement = document.getElementById('syncProgress');
+
+        for (const attachment of localAttachments) {
+            try {
+                // Convert data URL back to file
+                const response = await fetch(attachment.data);
+                const blob = await response.blob();
+                const file = new File([blob], attachment.name, { type: attachment.type });
+
+                // Upload to Supabase
+                if (typeof uploadCardFileToSupabase === 'function') {
+                    await uploadCardFileToSupabase(file, cardKey, attachment.notes);
+                    syncedCount++;
+
+                    if (progressElement) {
+                        progressElement.textContent = `${syncedCount} من ${localAttachments.length}`;
+                    }
+                }
+            } catch (error) {
+                console.error(`❌ فشل في مزامنة ${attachment.name}:`, error);
+            }
+        }
+
+        // Remove progress modal
+        progressModal.remove();
+
+        if (syncedCount > 0) {
+            // Clear local attachments after successful sync
+            delete window.cardAttachments[cardKey];
+            localStorage.setItem('cardAttachments', JSON.stringify(window.cardAttachments));
+
+            // Refresh the list
+            await refreshCardAttachmentsList(cardKey);
+
+            alert(`تم مزامنة ${syncedCount} من ${localAttachments.length} ملف بنجاح`);
+        } else {
+            alert('فشل في مزامنة المرفقات. تحقق من الاتصال وحاول مرة أخرى.');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في إعادة المحاولة:', error);
+        alert(`خطأ في المزامنة: ${error.message}`);
     }
 }
 

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار مرفقات البطاقات المحسنة</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .card-test {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .card-test:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+        .card-test.has-attachments {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        .upload-test {
+            border: 2px dashed #17a2b8;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-test:hover {
+            background: #f0f8ff;
+            border-color: #007bff;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار مرفقات البطاقات المحسنة</h1>
+        
+        <div class="test-section info">
+            <h3>📋 حالة النظام</h3>
+            <div id="systemStatus">جاري التحقق...</div>
+            <button onclick="checkCardAttachmentsSystem()">فحص النظام</button>
+            <button onclick="initializeCardAttachmentsSystem()">تهيئة النظام</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 إحصائيات مرفقات البطاقات</h3>
+            <div class="stats-grid" id="cardAttachmentsStats">
+                <div class="stat-card">
+                    <div class="stat-number" id="cloudCardAttachments">-</div>
+                    <div class="stat-label">مرفقات السحابة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="localCardAttachments">-</div>
+                    <div class="stat-label">مرفقات محلية</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalCardAttachments">-</div>
+                    <div class="stat-label">إجمالي المرفقات</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="cardsWithAttachments">-</div>
+                    <div class="stat-label">بطاقات لها مرفقات</div>
+                </div>
+            </div>
+            <button onclick="loadCardAttachmentsStats()">تحديث الإحصائيات</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبار رفع مرفقات البطاقة</h3>
+            <div class="upload-test" onclick="document.getElementById('testCardFile').click()">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #17a2b8; margin-bottom: 10px;"></i>
+                <h4>رفع ملف تجريبي للبطاقة</h4>
+                <p>انقر لاختيار ملف أو اسحب الملف هنا</p>
+                <input type="file" id="testCardFile" style="display: none;" onchange="testCardFileUpload(event)">
+            </div>
+            <div>
+                <label for="testCardKey">مفتاح البطاقة التجريبية:</label>
+                <input type="text" id="testCardKey" value="الرياض_مجمع_تجريبي_contract_123" style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            <button onclick="createTestCardFile()">إنشاء ملف تجريبي</button>
+            <button onclick="testCardAttachmentsModal()">اختبار نافذة المرفقات</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔄 اختبار المزامنة الفورية</h3>
+            <p>اختبر المزامنة الفورية بين متصفحين أو جهازين</p>
+            <button onclick="testRealTimeSync()">اختبار المزامنة</button>
+            <button onclick="simulateRemoteCardAttachment()">محاكاة مرفق من جهاز آخر</button>
+            <div id="syncTestResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🏷️ اختبار بطاقات مختلفة</h3>
+            <div id="cardTestsList">
+                <div class="card-test" onclick="testCardAttachments('الرياض_مجمع_سكني_contract_001')">
+                    <strong>بطاقة عقد سكني</strong><br>
+                    <small>الرياض - مجمع سكني - عقد 001</small>
+                    <div class="attachments-count" id="count_الرياض_مجمع_سكني_contract_001">0 مرفق</div>
+                </div>
+                <div class="card-test" onclick="testCardAttachments('جدة_فيلا_تجارية_unit_A1')">
+                    <strong>بطاقة وحدة تجارية</strong><br>
+                    <small>جدة - فيلا تجارية - وحدة A1</small>
+                    <div class="attachments-count" id="count_جدة_فيلا_تجارية_unit_A1">0 مرفق</div>
+                </div>
+                <div class="card-test" onclick="testCardAttachments('الدمام_مكاتب_إدارية_general')">
+                    <strong>بطاقة عامة</strong><br>
+                    <small>الدمام - مكاتب إدارية - عام</small>
+                    <div class="attachments-count" id="count_الدمام_مكاتب_إدارية_general">0 مرفق</div>
+                </div>
+            </div>
+            <button onclick="refreshCardTestsList()">تحديث قائمة البطاقات</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 أدوات التشخيص</h3>
+            <button onclick="exportCardAttachmentsData()">تصدير بيانات المرفقات</button>
+            <button onclick="clearAllCardAttachments()">مسح جميع المرفقات</button>
+            <button onclick="resetCardAttachmentsSystem()">إعادة تعيين النظام</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 سجل الاختبار</h3>
+            <button onclick="clearLog()">مسح السجل</button>
+            <div id="testLog" class="log"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logDiv.textContent += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').textContent = '';
+            log('🧹 تم مسح السجل');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 بدء اختبار مرفقات البطاقات المحسنة...');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                log('Supabase تهيئة:', initialized ? 'نجح' : 'فشل');
+            }
+            
+            // فحص النظام
+            setTimeout(() => {
+                checkCardAttachmentsSystem();
+                loadCardAttachmentsStats();
+                refreshCardTestsList();
+            }, 1000);
+        });
+
+        async function checkCardAttachmentsSystem() {
+            log('🔍 فحص نظام مرفقات البطاقات...');
+            
+            const statusDiv = document.getElementById('systemStatus');
+            let html = '<ul>';
+            
+            // فحص Supabase
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                html += '<li>✅ Supabase Client متوفر</li>';
+                log('✅ Supabase Client متوفر', 'success');
+            } else {
+                html += '<li>❌ Supabase Client غير متوفر</li>';
+                log('❌ Supabase Client غير متوفر', 'error');
+            }
+            
+            // فحص وظائف مرفقات البطاقات
+            const cardFunctions = [
+                'uploadCardFileToSupabase',
+                'getCardAttachmentsEnhanced',
+                'deleteCardAttachmentEnhanced',
+                'showCardAttachmentsModal'
+            ];
+            
+            let functionsFound = 0;
+            cardFunctions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    functionsFound++;
+                    html += `<li>✅ ${funcName}</li>`;
+                } else {
+                    html += `<li>❌ ${funcName}</li>`;
+                    log(`❌ وظيفة ${funcName} مفقودة`, 'error');
+                }
+            });
+            
+            html += `<li>📊 الوظائف: ${functionsFound}/${cardFunctions.length}</li>`;
+            
+            // فحص جدول card_attachments
+            try {
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('card_attachments')
+                        .select('count', { count: 'exact', head: true });
+                    
+                    if (!error) {
+                        html += '<li>✅ جدول card_attachments متوفر</li>';
+                        log('✅ جدول card_attachments متوفر', 'success');
+                    } else {
+                        html += '<li>❌ مشكلة في جدول card_attachments</li>';
+                        log(`❌ مشكلة في جدول card_attachments: ${error.message}`, 'error');
+                    }
+                }
+            } catch (error) {
+                html += '<li>❌ خطأ في فحص قاعدة البيانات</li>';
+                log(`❌ خطأ في فحص قاعدة البيانات: ${error.message}`, 'error');
+            }
+            
+            html += '</ul>';
+            statusDiv.innerHTML = html;
+            
+            log(`📊 فحص النظام مكتمل: ${functionsFound}/${cardFunctions.length} وظيفة متوفرة`);
+        }
+
+        async function loadCardAttachmentsStats() {
+            log('📊 تحميل إحصائيات مرفقات البطاقات...');
+            
+            try {
+                let cloudCount = 0;
+                let localCount = 0;
+                let cardsWithAttachments = 0;
+                
+                // إحصائيات السحابة
+                if (supabaseClient) {
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('card_attachments')
+                            .select('card_key');
+                        
+                        if (!error && data) {
+                            cloudCount = data.length;
+                            const uniqueCards = new Set(data.map(item => item.card_key));
+                            cardsWithAttachments = uniqueCards.size;
+                        }
+                    } catch (error) {
+                        log(`⚠️ خطأ في جلب إحصائيات السحابة: ${error.message}`, 'warning');
+                    }
+                }
+                
+                // إحصائيات محلية
+                const localAttachments = JSON.parse(localStorage.getItem('cardAttachments') || '{}');
+                Object.values(localAttachments).forEach(attachments => {
+                    if (Array.isArray(attachments)) {
+                        localCount += attachments.length;
+                    }
+                });
+                
+                // تحديث العرض
+                document.getElementById('cloudCardAttachments').textContent = cloudCount;
+                document.getElementById('localCardAttachments').textContent = localCount;
+                document.getElementById('totalCardAttachments').textContent = cloudCount + localCount;
+                document.getElementById('cardsWithAttachments').textContent = cardsWithAttachments;
+                
+                log(`📊 الإحصائيات: ${cloudCount} سحابة، ${localCount} محلي، ${cardsWithAttachments} بطاقة`, 'success');
+                
+            } catch (error) {
+                log(`❌ خطأ في تحميل الإحصائيات: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCardFileUpload(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            const file = files[0];
+            const cardKey = document.getElementById('testCardKey').value || 'test_card_default';
+            
+            log(`📤 اختبار رفع ملف البطاقة: ${file.name} للبطاقة: ${cardKey}`);
+            
+            try {
+                if (typeof uploadCardFileToSupabase === 'function') {
+                    const result = await uploadCardFileToSupabase(file, cardKey, 'ملف تجريبي من صفحة الاختبار');
+                    
+                    if (result) {
+                        log(`✅ تم رفع ملف البطاقة بنجاح: ${file.name}`, 'success');
+                        
+                        // تحديث الإحصائيات
+                        await loadCardAttachmentsStats();
+                        await refreshCardTestsList();
+                        
+                    } else {
+                        throw new Error('لم يتم إرجاع بيانات الملف');
+                    }
+                } else {
+                    throw new Error('وظيفة uploadCardFileToSupabase غير متوفرة');
+                }
+            } catch (error) {
+                log(`❌ خطأ في رفع ملف البطاقة: ${error.message}`, 'error');
+            }
+        }
+
+        function createTestCardFile() {
+            log('📁 إنشاء ملف تجريبي للبطاقة...');
+            
+            const cardKey = document.getElementById('testCardKey').value || 'test_card_default';
+            const content = `ملف تجريبي لمرفقات البطاقة
+مفتاح البطاقة: ${cardKey}
+تاريخ الإنشاء: ${new Date().toISOString()}
+المتصفح: ${navigator.userAgent}
+الوقت: ${new Date().toLocaleString('ar-SA')}
+
+هذا ملف تجريبي لاختبار رفع مرفقات البطاقات إلى Supabase.
+`;
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const file = new File([blob], `بطاقة_تجريبية_${Date.now()}.txt`, { type: 'text/plain' });
+            
+            log(`✅ تم إنشاء ملف تجريبي: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+            
+            // رفع الملف تلقائياً
+            testCardFileUpload({ target: { files: [file] } });
+        }
+
+        function testCardAttachmentsModal() {
+            log('🔄 اختبار نافذة مرفقات البطاقة...');
+            
+            if (typeof showCardAttachmentsModal === 'function') {
+                showCardAttachmentsModal('الرياض', 'مجمع_تجريبي', '123', null);
+                log('✅ تم فتح نافذة مرفقات البطاقة', 'success');
+            } else {
+                log('❌ وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        async function testCardAttachments(cardKey) {
+            log(`🏷️ اختبار مرفقات البطاقة: ${cardKey}`);
+            
+            try {
+                let attachments = [];
+                
+                if (typeof getCardAttachmentsEnhanced === 'function') {
+                    attachments = await getCardAttachmentsEnhanced(cardKey);
+                }
+                
+                log(`📎 البطاقة ${cardKey} لديها ${attachments.length} مرفق`, 'info');
+                
+                // تحديث العداد
+                const countElement = document.getElementById(`count_${cardKey}`);
+                if (countElement) {
+                    countElement.textContent = `${attachments.length} مرفق`;
+                    
+                    const cardElement = countElement.closest('.card-test');
+                    if (attachments.length > 0) {
+                        cardElement.classList.add('has-attachments');
+                    } else {
+                        cardElement.classList.remove('has-attachments');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ خطأ في اختبار البطاقة ${cardKey}: ${error.message}`, 'error');
+            }
+        }
+
+        async function refreshCardTestsList() {
+            log('🔄 تحديث قائمة البطاقات التجريبية...');
+            
+            const cardKeys = [
+                'الرياض_مجمع_سكني_contract_001',
+                'جدة_فيلا_تجارية_unit_A1',
+                'الدمام_مكاتب_إدارية_general'
+            ];
+            
+            for (const cardKey of cardKeys) {
+                await testCardAttachments(cardKey);
+            }
+            
+            log('✅ تم تحديث قائمة البطاقات', 'success');
+        }
+
+        function testRealTimeSync() {
+            log('🔄 اختبار المزامنة الفورية...');
+            
+            // محاكاة تغيير من جهاز آخر
+            if (typeof subscribeToCardAttachmentChanges === 'function') {
+                const subscription = subscribeToCardAttachmentChanges();
+                
+                if (subscription) {
+                    log('✅ تم تفعيل المزامنة الفورية', 'success');
+                    
+                    document.getElementById('syncTestResults').innerHTML = `
+                        <div class="success">
+                            <p>✅ المزامنة الفورية نشطة</p>
+                            <p>جرب رفع ملف في متصفح آخر لرؤية المزامنة</p>
+                        </div>
+                    `;
+                } else {
+                    log('❌ فشل في تفعيل المزامنة الفورية', 'error');
+                }
+            } else {
+                log('❌ وظيفة subscribeToCardAttachmentChanges غير متوفرة', 'error');
+            }
+        }
+
+        function simulateRemoteCardAttachment() {
+            log('🎭 محاكاة مرفق من جهاز آخر...');
+            
+            // محاكاة حدث real-time
+            const mockAttachment = {
+                id: 'mock_' + Date.now(),
+                card_key: 'الرياض_مجمع_تجريبي_contract_123',
+                file_name: 'ملف_محاكاة_' + Date.now() + '.pdf',
+                file_type: 'application/pdf',
+                file_size: 1024 * 50, // 50KB
+                created_at: new Date().toISOString()
+            };
+            
+            // إطلاق حدث مخصص
+            window.dispatchEvent(new CustomEvent('cardAttachmentAdded', {
+                detail: { 
+                    attachment: mockAttachment, 
+                    cardKey: mockAttachment.card_key 
+                }
+            }));
+            
+            log(`✅ تم محاكاة إضافة مرفق: ${mockAttachment.file_name}`, 'success');
+            
+            document.getElementById('syncTestResults').innerHTML = `
+                <div class="info">
+                    <p>🎭 تم محاكاة مرفق جديد من جهاز آخر</p>
+                    <p><strong>الملف:</strong> ${mockAttachment.file_name}</p>
+                    <p><strong>البطاقة:</strong> ${mockAttachment.card_key}</p>
+                </div>
+            `;
+        }
+
+        async function exportCardAttachmentsData() {
+            log('📄 تصدير بيانات مرفقات البطاقات...');
+            
+            try {
+                const data = {
+                    timestamp: new Date().toISOString(),
+                    local: JSON.parse(localStorage.getItem('cardAttachments') || '{}'),
+                    cloud: null
+                };
+                
+                // جلب بيانات السحابة
+                if (supabaseClient) {
+                    try {
+                        const { data: cloudData, error } = await supabaseClient
+                            .from('card_attachments')
+                            .select('*');
+                        
+                        if (!error) {
+                            data.cloud = cloudData;
+                        }
+                    } catch (error) {
+                        log(`⚠️ لم يتمكن من جلب بيانات السحابة: ${error.message}`, 'warning');
+                    }
+                }
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `card-attachments-data-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                log('✅ تم تصدير بيانات مرفقات البطاقات', 'success');
+                
+            } catch (error) {
+                log(`❌ خطأ في تصدير البيانات: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAllCardAttachments() {
+            if (!confirm('هل أنت متأكد من حذف جميع مرفقات البطاقات المحلية؟')) return;
+            
+            localStorage.removeItem('cardAttachments');
+            window.cardAttachments = {};
+            
+            log('🗑️ تم حذف جميع مرفقات البطاقات المحلية', 'warning');
+            
+            // تحديث الإحصائيات
+            loadCardAttachmentsStats();
+            refreshCardTestsList();
+        }
+
+        function resetCardAttachmentsSystem() {
+            if (!confirm('هل أنت متأكد من إعادة تعيين نظام مرفقات البطاقات؟')) return;
+            
+            // مسح البيانات المحلية
+            localStorage.removeItem('cardAttachments');
+            window.cardAttachments = {};
+            
+            // إعادة تهيئة النظام
+            if (typeof initSupabase === 'function') {
+                initSupabase();
+            }
+            
+            log('🔄 تم إعادة تعيين نظام مرفقات البطاقات', 'warning');
+            
+            // إعادة فحص النظام
+            setTimeout(() => {
+                checkCardAttachmentsSystem();
+                loadCardAttachmentsStats();
+                refreshCardTestsList();
+            }, 1000);
+        }
+
+        function initializeCardAttachmentsSystem() {
+            log('🚀 تهيئة نظام مرفقات البطاقات...');
+            
+            if (typeof initializeAttachmentsSystem === 'function') {
+                initializeAttachmentsSystem();
+                log('✅ تم تهيئة نظام المرفقات', 'success');
+            } else {
+                log('❌ وظيفة initializeAttachmentsSystem غير متوفرة', 'error');
+            }
+            
+            // إعادة فحص النظام
+            setTimeout(checkCardAttachmentsSystem, 1000);
+        }
+    </script>
+</body>
+</html>

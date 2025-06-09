@@ -812,10 +812,116 @@ tr:hover {
     color: #333;
 }
 
+/* 🆕 تنسيق تفاصيل الصك المحسن */
+.deed-info-mobile {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left: 4px solid #007bff;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 6px 0;
+  transition: all 0.3s ease;
+  border-bottom: none !important;
+}
+
+.deed-info-mobile:hover {
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  transform: translateX(-2px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.deed-info-mobile .card-label {
+  color: #495057 !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.deed-info-mobile .card-label i {
+  color: #007bff;
+  margin-left: 6px;
+  font-size: 0.9rem;
+}
+
+.deed-info-mobile .card-value {
+  color: #212529 !important;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.deed-info-mobile .deed-number {
+  color: #dc3545 !important;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  background: rgba(220, 53, 69, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.deed-info-mobile .registry-number {
+  color: #28a745 !important;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  background: rgba(40, 167, 69, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.deed-info-mobile .deed-area {
+  color: #fd7e14 !important;
+  font-weight: bold;
+  background: rgba(253, 126, 20, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 .card-row:has(.card-label:contains("الاجمالى")) .card-value {
     color: var(--primary-color);
     font-weight: bold;
     font-size: 1.1rem;
+}
+
+/* 🆕 تنسيق تفاصيل الصك في الإحصائيات للجوال */
+.mobile-deed-info {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid #007bff;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin: 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.mobile-deed-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-deed-info .total-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+.mobile-deed-info .total-value {
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.mobile-deed-info .total-value i {
+    margin-left: 8px;
+    font-size: 1.1rem;
+}
+
+/* ألوان مخصصة لكل نوع */
+.deed-number-stat {
+    border-left-color: #dc3545 !important;
+}
+
+.deed-area-stat {
+    border-left-color: #fd7e14 !important;
+}
+
+.registry-stat {
+    border-left-color: #28a745 !important;
 }
 
 .card-footer {
@@ -1268,19 +1374,19 @@ footer {
   .mobile-menu-btn {
     display: block;
   }
-  
+
   .header-title h1 {
     font-size: 1.8rem;
   }
-  
+
   .header-countries {
     display: none;
   }
-  
+
   .header-actions {
     display: none;
   }
-  
+
   aside {
     width: 100%;
     height: 100vh;
@@ -1288,7 +1394,7 @@ footer {
     right: 0;
     z-index: 1500;
   }
-  
+
   .hide-sidebar-btn {
     display: block !important;
     position: absolute;
@@ -1302,16 +1408,18 @@ footer {
     cursor: pointer;
     font-size: 1rem;
   }
-  
+
   /* تعديل البطاقات لتأخذ عرض الشاشة كاملاً */
   .cards-container {
     grid-template-columns: 1fr;
   }
-  
+
   .property-card {
     width: 100%;
     margin-bottom: 15px;
   }
+
+
   
   /* تحسين عرض الإحصائيات على الشاشات الصغيرة */
   .mobile-totals {
@@ -1377,39 +1485,41 @@ footer {
   .header-title h1 {
     font-size: 1.5rem;
   }
-  
+
   .card-row {
     flex-direction: column;
     gap: 5px;
   }
-  
+
   .card-footer button {
     width: 100%;
     margin: 5px 0;
     max-width: none;
   }
-  
+
   .modal-box {
     padding: 1rem;
   }
-  
+
   .country-selection button,
   .status-filter button,
   .view-selection button {
     min-width: 45%;
     padding: 10px;
   }
-  
+
   /* تحسين عرض الجدول على الشاشات الصغيرة */
   .table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   .table-action-btn {
     padding: 4px 6px;
     font-size: 0.8rem;
   }
+
+
 }
 
 /* تحسينات للشاشات الصغيرة جداً */
@@ -1442,16 +1552,18 @@ footer {
   .header-title h1 {
     font-size: 1rem;
   }
-  
+
   .card-header {
     flex-direction: column;
     gap: 5px;
   }
-  
+
   .mobile-menu-content ol li button {
     font-size: 0.9rem;
     padding: 8px;
   }
+
+
 }
 
 /* تنسيق روابط الموقع */
