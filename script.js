@@ -31,8 +31,12 @@ document.addEventListener('DOMContentLoaded', function() {
     restoreDataFromLocalStorage();
 
     // Initialize data loading (Supabase or JSON fallback)
+    console.log('🚀 بدء تحميل البيانات...');
+
     initializeDataLoading()
         .then(() => {
+            console.log(`✅ تم تحميل ${properties ? properties.length : 0} عقار`);
+
             // إصلاح التواريخ المحفوظة بشكل خاطئ
             fixCorruptedDates();
 
@@ -51,13 +55,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Initialize Supabase attachments system
             initializeAttachmentsSystem();
+
+            console.log('🎉 تم تهيئة التطبيق بنجاح');
         })
         .catch(error => {
-            console.error('خطأ في تحميل البيانات:', error);
+            console.error('❌ خطأ في تحميل البيانات:', error);
+
             // Fallback to JSON if everything fails
+            console.log('🔄 محاولة تحميل البيانات من JSON...');
             fetch('data.json')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log(`✅ تم تحميل ${data.length} عقار من JSON`);
                     properties = data;
                     recalculateAllTotals();
                     initializeApp();
@@ -66,10 +80,123 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 100);
                 })
                 .catch(jsonError => {
-                    console.error('خطأ في تحميل البيانات من JSON:', jsonError);
+                    console.error('❌ خطأ في تحميل البيانات من JSON:', jsonError);
+
+                    // إنشاء بيانات تجريبية إذا فشل كل شيء
+                    console.log('🔧 إنشاء بيانات تجريبية...');
+                    createSampleData();
+                    initializeApp();
                 });
         });
 });
+
+// إنشاء بيانات تجريبية في حالة فشل تحميل البيانات
+function createSampleData() {
+    console.log('🔧 إنشاء بيانات تجريبية للاختبار...');
+
+    properties = [
+        {
+            'رقم  الوحدة ': 'SAMPLE_001',
+            'المدينة': 'الرياض',
+            'اسم العقار': 'عقار تجريبي 1',
+            'اسم المستأجر': 'مستأجر تجريبي 1',
+            'رقم العقد': 'CONTRACT_001',
+            'قيمة  الايجار ': '50000',
+            'المساحة': '150',
+            'تاريخ البداية': '01/01/2024',
+            'تاريخ النهاية': '31/12/2024',
+            'الاجمالى': '57500',
+            'نوع العقد': 'ضريبي',
+            'عدد الاقساط': 3,
+            'تاريخ القسط الاول': '01/01/2024',
+            'مبلغ القسط الاول': 19166.67,
+            'تاريخ القسط الثاني': '01/05/2024',
+            'مبلغ القسط الثاني': 19166.67,
+            'تاريخ القسط الثالث': '01/09/2024',
+            'مبلغ القسط الثالث': 19166.66
+        },
+        {
+            'رقم  الوحدة ': 'SAMPLE_002',
+            'المدينة': 'جدة',
+            'اسم العقار': 'عقار تجريبي 2',
+            'اسم المستأجر': 'مستأجر تجريبي 2',
+            'رقم العقد': 'CONTRACT_002',
+            'قيمة  الايجار ': '40000',
+            'المساحة': '120',
+            'تاريخ البداية': '01/02/2024',
+            'تاريخ النهاية': '31/01/2025',
+            'الاجمالى': '46000',
+            'نوع العقد': 'ضريبي',
+            'عدد الاقساط': 2,
+            'تاريخ القسط الاول': '01/02/2024',
+            'مبلغ القسط الاول': 23000,
+            'تاريخ القسط الثاني': '01/08/2024',
+            'مبلغ القسط الثاني': 23000
+        },
+        {
+            'رقم  الوحدة ': 'SAMPLE_003',
+            'المدينة': 'الدمام',
+            'اسم العقار': 'عقار تجريبي 3',
+            'اسم المستأجر': 'مستأجر تجريبي 3',
+            'رقم العقد': 'CONTRACT_003',
+            'قيمة  الايجار ': '60000',
+            'المساحة': '200',
+            'تاريخ البداية': '01/03/2024',
+            'تاريخ النهاية': '28/02/2025',
+            'الاجمالى': '60000',
+            'نوع العقد': 'سكني',
+            'عدد الاقساط': 4,
+            'تاريخ القسط الاول': '01/03/2024',
+            'مبلغ القسط الاول': 15000,
+            'تاريخ القسط الثاني': '01/06/2024',
+            'مبلغ القسط الثاني': 15000,
+            'تاريخ القسط الثالث': '01/09/2024',
+            'مبلغ القسط الثالث': 15000,
+            'تاريخ القسط الرابع': '01/12/2024',
+            'مبلغ القسط الرابع': 15000
+        }
+    ];
+
+    console.log(`✅ تم إنشاء ${properties.length} عقار تجريبي`);
+}
+
+// تحديث الإحصائيات العامة
+function updateTotalStats() {
+    console.log('🔄 تحديث الإحصائيات...');
+
+    if (!properties || properties.length === 0) {
+        console.warn('⚠️ لا توجد بيانات لحساب الإحصائيات');
+        return;
+    }
+
+    // تحديث إحصائيات الشاشة الكبيرة
+    renderTotals(properties);
+
+    // تحديث إحصائيات الشاشة الصغيرة
+    renderMobileTotals(properties);
+
+    console.log('✅ تم تحديث الإحصائيات');
+}
+
+// تهيئة أزرار المدن
+function initializeCityButtons() {
+    console.log('🔄 تهيئة أزرار المدن...');
+    initCountryButtons();
+}
+
+// تهيئة البحث
+function initializeSearch() {
+    console.log('🔄 تهيئة البحث...');
+    initGlobalSearch();
+    initPropertySearch();
+}
+
+// تهيئة التصفية
+function initializeFilters() {
+    console.log('🔄 تهيئة التصفية...');
+    initStatusFilter();
+    initDateFilter();
+}
 
 // تهيئة القائمة المنسدلة للجوال
 function initMobileMenu() {
@@ -108,6 +235,7 @@ function initMobileMenu() {
     });
     
     document.getElementById('mobile-property-btn').addEventListener('click', function() {
+        // إظهار الـ sidebar بالعقارات
         toggleSidebar();
         mobileMenu.classList.remove('active');
         menuOverlay.classList.remove('active');
@@ -236,6 +364,33 @@ function showViewToggle() {
 
 // تهيئة التطبيق
 function initializeApp() {
+    console.log('🚀 بدء تهيئة التطبيق...');
+
+    // التحقق من وجود البيانات
+    if (!properties || properties.length === 0) {
+        console.warn('⚠️ لا توجد بيانات للعرض في initializeApp');
+
+        // محاولة تحميل البيانات من localStorage
+        const localData = localStorage.getItem('properties');
+        if (localData) {
+            try {
+                properties = JSON.parse(localData);
+                console.log(`✅ تم تحميل ${properties.length} عقار من localStorage`);
+            } catch (e) {
+                console.error('❌ خطأ في تحليل بيانات localStorage:', e);
+                properties = [];
+            }
+        }
+
+        // إذا لم تكن هناك بيانات، إنشاء بيانات تجريبية
+        if (!properties || properties.length === 0) {
+            console.log('🔧 إنشاء بيانات تجريبية...');
+            createSampleData();
+        }
+    }
+
+    console.log(`📊 عدد العقارات المتاحة: ${properties ? properties.length : 0}`);
+
     // معالجة الحالات الفارغة تلقائياً
     properties.forEach(property => {
         // إذا كان اسم المستأجر أو المالك فارغ، اجعل الحالتين فارغتين
@@ -375,7 +530,15 @@ function initializeApp() {
     
     // عرض البيانات الأولية
     renderData();
-    
+
+    // تحديث الإحصائيات
+    updateTotalStats();
+
+    // تهيئة الـ sidebar
+    initializeSidebar();
+
+    console.log('✅ تم تهيئة التطبيق بنجاح');
+
     // إضافة زر إخفاء السايدبار
     const sidebar = document.getElementById('sidebar');
     const hideBtn = document.querySelector('.hide-sidebar-btn');
@@ -573,19 +736,95 @@ function toggleView(view) {
 // تبديل عرض الشريط الجانبي
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
+
+    // في الشاشات الصغيرة فقط
+    if (window.innerWidth <= 900) {
+        sidebar.classList.toggle('active');
+    }
+    // في الشاشات الكبيرة الـ sidebar دائماً ظاهر
+}
+
+
+// تهيئة الـ sidebar حسب حجم الشاشة
+function initializeSidebar() {
+    const sidebar = document.getElementById('sidebar');
     const main = document.querySelector('main');
-    
-    sidebar.classList.toggle('active');
-    
-    // تعديل هامش المحتوى الرئيسي فقط على الشاشات الكبيرة
+    const footer = document.querySelector('footer');
+
     if (window.innerWidth > 900) {
-        if (sidebar.classList.contains('active')) {
-            main.classList.add('with-sidebar');
-        } else {
-            main.classList.remove('with-sidebar');
+        // في الشاشات الكبيرة: الـ sidebar دائماً ظاهر
+        sidebar.classList.add('active');
+
+        // تطبيق الأنماط مباشرة للتأكد
+        sidebar.style.position = 'fixed';
+        sidebar.style.top = '70px';
+        sidebar.style.right = '0';
+        sidebar.style.width = '280px';
+        sidebar.style.height = 'calc(100vh - 70px)';
+        sidebar.style.transform = 'translateX(0)';
+        sidebar.style.zIndex = '900';
+        sidebar.style.backgroundColor = 'white';
+        sidebar.style.boxShadow = '0 0 15px rgba(0,0,0,0.2)';
+        sidebar.style.overflowY = 'auto';
+        sidebar.style.padding = '1rem';
+
+        document.body.classList.add('desktop-layout');
+
+        // التأكد من الهوامش الصحيحة
+        if (main) {
+            main.style.marginRight = '280px';
+            main.style.marginLeft = '20px';
+            main.style.width = 'calc(100vw - 320px)';
+            main.style.boxSizing = 'border-box';
+        }
+        if (footer) {
+            footer.style.marginRight = '280px';
+            footer.style.marginLeft = '20px';
+            footer.style.width = 'calc(100vw - 320px)';
+            footer.style.boxSizing = 'border-box';
+        }
+    } else {
+        // في الشاشات الصغيرة: الـ sidebar مخفي افتراضياً
+        sidebar.classList.remove('active');
+
+        // إعادة تعيين الأنماط للشاشات الصغيرة
+        sidebar.style.position = 'fixed';
+        sidebar.style.top = '0';
+        sidebar.style.right = '0';
+        sidebar.style.width = '100%';
+        sidebar.style.height = '100vh';
+        sidebar.style.transform = 'translateX(100%)';
+        sidebar.style.zIndex = '1500';
+
+        document.body.classList.remove('desktop-layout');
+
+        // إزالة الهوامش في الشاشات الصغيرة
+        if (main) {
+            main.style.marginRight = '0';
+            main.style.marginLeft = '0';
+            main.style.width = '100%';
+
+            // تحسين padding حسب حجم الشاشة
+            if (window.innerWidth <= 480) {
+                main.style.padding = '0.5rem';
+            } else if (window.innerWidth <= 360) {
+                main.style.padding = '0.25rem';
+            } else {
+                main.style.padding = '1rem';
+            }
+        }
+        if (footer) {
+            footer.style.marginRight = '0';
+            footer.style.marginLeft = '0';
+            footer.style.width = '100%';
         }
     }
 }
+
+// مستمع لتغيير حجم الشاشة
+window.addEventListener('resize', function() {
+    initializeSidebar();
+});
 
 // تهيئة فلتر التاريخ
 function initDateFilter() {
@@ -663,6 +902,25 @@ function clearDateFilter() {
 
 // تعديل دالة تصفية البيانات
 function renderData() {
+  // التحقق من وجود البيانات
+  if (!properties || properties.length === 0) {
+    console.warn('⚠️ لا توجد بيانات للعرض');
+    const container = document.getElementById('content');
+    if (container) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 3rem; color: #666;">
+          <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; color: #f39c12;"></i>
+          <h3>لا توجد بيانات للعرض</h3>
+          <p>يرجى التحقق من اتصال الإنترنت أو إعادة تحميل الصفحة</p>
+          <button onclick="location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 1rem;">
+            إعادة تحميل الصفحة
+          </button>
+        </div>
+      `;
+    }
+    return;
+  }
+
   let filteredData = properties;
 
   // فلتر التاريخ شامل جميع تواريخ البداية أو النهاية والأقساط
@@ -832,17 +1090,138 @@ function renderTotals(data) {
     const vat = taxableBase * 0.15;
     const afterTaxCommercial = taxableBase + vat;
 
-    // إضافة الإحصائيات للواجهة
-    addTotalItem(container, 'عدد الوحدات', totalUnits, 'units-stat');
-    addTotalItem(container, 'عدد المستأجرين', tenantsCount, 'tenants-stat');
-    addTotalItem(container, 'عدد الوحدات الفارغة', `<i class=\"fas fa-minus-circle\"></i> ${countEmpty}`, 'empty-stat clickable-empty-units');
-    addTotalItem(container, 'الجاري', activeCount, 'active-stat');
-    addTotalItem(container, 'المنتهي', countExpired, 'expired-stat');
-    addTotalItem(container, 'على وشك', countPending, 'pending-stat');
-    addTotalItem(container, 'إجمالي تجاري قبل الضريبة', `<i class=\"fas fa-cash-register\" style=\"color:#2a4b9b;\"></i> ${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'taxable-base-stat');
-    addTotalItem(container, 'ضريبة التجاري', `<i class=\"fas fa-receipt\" style=\"color:#e46e6d;\"></i> ${vat.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'vat-stat');
-    addTotalItem(container, 'إجمالي تجاري بعد الضريبة', `<i class=\"fas fa-coins\" style=\"color:#05940e;\"></i> ${afterTaxCommercial.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'after-taxonly-stat');
-    addTotalItem(container, 'إجمالي سكني', `<i class=\"fas fa-home\" style=\"color:#f59e42;\"></i> ${totalResidential.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'residential-stat');
+    // إنشاء 3 بطاقات إحصائيات للشاشات الكبيرة
+    if (window.innerWidth > 900) {
+        // البطاقة الأولى: إحصائيات الوحدات
+        const unitsCard = document.createElement('div');
+        unitsCard.className = 'total-card';
+        unitsCard.innerHTML = `
+            <h3><i class="fas fa-building"></i> إحصائيات الوحدات</h3>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <div class="stat-value">${totalUnits}</div>
+                    <div class="stat-label">عدد الوحدات</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${tenantsCount}</div>
+                    <div class="stat-label">عدد المستأجرين</div>
+                </div>
+                <div class="stat-item clickable-empty-units" style="cursor: pointer;">
+                    <div class="stat-value">${countEmpty}</div>
+                    <div class="stat-label">الوحدات الفارغة</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${activeCount}</div>
+                    <div class="stat-label">الوحدات المؤجرة</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(unitsCard);
+
+        // البطاقة الثانية: حالات العقود
+        const statusCard = document.createElement('div');
+        statusCard.className = 'total-card';
+        statusCard.innerHTML = `
+            <h3><i class="fas fa-chart-pie"></i> حالات العقود</h3>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #28a745;">${countActive}</div>
+                    <div class="stat-label">الجاري</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #dc3545;">${countExpired}</div>
+                    <div class="stat-label">المنتهي</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #fd7e14;">${countPending}</div>
+                    <div class="stat-label">على وشك</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #6c757d;">${countEmpty}</div>
+                    <div class="stat-label">فارغ</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(statusCard);
+
+        // البطاقة الثالثة: الإجماليات المالية
+        const financialCard = document.createElement('div');
+        financialCard.className = 'total-card';
+        financialCard.innerHTML = `
+            <h3><i class="fas fa-money-bill-wave"></i> الإجماليات المالية</h3>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #2a4b9b;">${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})}</div>
+                    <div class="stat-label">تجاري قبل الضريبة</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #e46e6d;">${vat.toLocaleString(undefined, {maximumFractionDigits:2})}</div>
+                    <div class="stat-label">ضريبة التجاري</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #05940e;">${afterTaxCommercial.toLocaleString(undefined, {maximumFractionDigits:2})}</div>
+                    <div class="stat-label">تجاري بعد الضريبة</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #f59e42;">${totalResidential.toLocaleString(undefined, {maximumFractionDigits:2})}</div>
+                    <div class="stat-label">إجمالي سكني</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(financialCard);
+
+        // إضافة معلومات الصك للبطاقة الأولى إذا كان هناك عقار محدد
+        if (currentProperty) {
+            const uniqueContractsList = {};
+            data.forEach(property => {
+                if (property['رقم العقد'] && property['اسم العقار']) {
+                    const key = `${property['رقم العقد']}_${property['اسم العقار']}`;
+                    if (!uniqueContractsList[key]) uniqueContractsList[key] = property;
+                }
+            });
+            const uniqueList = Object.values(uniqueContractsList);
+
+            const firstDeedNumber = uniqueList.find(p => p['رقم الصك'] && p['رقم الصك'].toString().trim() !== '');
+            const firstDeedArea = uniqueList.find(p => p['مساحةالصك'] && !isNaN(parseFloat(p['مساحةالصك'])));
+            const firstSijil = uniqueList.find(p => p['السجل العيني '] && p['السجل العيني '].toString().trim() !== '');
+
+            if (firstDeedNumber || firstDeedArea || firstSijil) {
+                // إضافة معلومات الصك للبطاقة الأولى
+                const deedInfo = document.createElement('div');
+                deedInfo.className = 'deed-info';
+                deedInfo.style.marginTop = '15px';
+                deedInfo.style.paddingTop = '15px';
+                deedInfo.style.borderTop = '2px solid #e9ecef';
+
+                let deedHtml = '<div style="text-align: center; margin-bottom: 10px; color: var(--primary-color); font-weight: 600;">معلومات الصك</div>';
+
+                if (firstDeedNumber) {
+                    deedHtml += `<div style="margin-bottom: 8px;"><i class="fas fa-file-alt" style="color: #dc3545; margin-left: 8px;"></i><strong>رقم الصك:</strong> ${firstDeedNumber['رقم الصك']}</div>`;
+                }
+                if (firstDeedArea) {
+                    deedHtml += `<div style="margin-bottom: 8px;"><i class="fas fa-ruler-combined" style="color: #fd7e14; margin-left: 8px;"></i><strong>مساحة الصك:</strong> ${parseFloat(firstDeedArea['مساحةالصك']).toLocaleString()} م²</div>`;
+                }
+                if (firstSijil) {
+                    deedHtml += `<div><i class="fas fa-clipboard-list" style="color: #28a745; margin-left: 8px;"></i><strong>السجل العيني:</strong> ${firstSijil['السجل العيني '].toString().trim()}</div>`;
+                }
+
+                deedInfo.innerHTML = deedHtml;
+                unitsCard.appendChild(deedInfo);
+            }
+        }
+    } else {
+        // للشاشات الصغيرة: استخدم التصميم القديم
+        addTotalItem(container, 'عدد الوحدات', totalUnits, 'units-stat');
+        addTotalItem(container, 'عدد المستأجرين', tenantsCount, 'tenants-stat');
+        addTotalItem(container, 'عدد الوحدات الفارغة', `<i class=\"fas fa-minus-circle\"></i> ${countEmpty}`, 'empty-stat clickable-empty-units');
+        addTotalItem(container, 'الجاري', activeCount, 'active-stat');
+        addTotalItem(container, 'المنتهي', countExpired, 'expired-stat');
+        addTotalItem(container, 'على وشك', countPending, 'pending-stat');
+        addTotalItem(container, 'إجمالي تجاري قبل الضريبة', `<i class=\"fas fa-cash-register\" style=\"color:#2a4b9b;\"></i> ${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'taxable-base-stat');
+        addTotalItem(container, 'ضريبة التجاري', `<i class=\"fas fa-receipt\" style=\"color:#e46e6d;\"></i> ${vat.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'vat-stat');
+        addTotalItem(container, 'إجمالي تجاري بعد الضريبة', `<i class=\"fas fa-coins\" style=\"color:#05940e;\"></i> ${afterTaxCommercial.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'after-taxonly-stat');
+        addTotalItem(container, 'إجمالي سكني', `<i class=\"fas fa-home\" style=\"color:#f59e42;\"></i> ${totalResidential.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'residential-stat');
+    }
     // رقم الصك ومساحة الصك عند تحديد عقار
     const uniqueContractsList = {};
     data.forEach(property => {
@@ -1434,21 +1813,18 @@ function renderCards(data) {
                         })()}
                     </span>
                 </div>
+                ${property['عدد الاقساط'] && property['عدد الاقساط'] > 0 ? `
                 <div class="card-row">
                     <span class="card-label">عدد الأقساط:</span>
                     <span class="card-value">
-                    ${
-                        property['عدد الاقساط']
-                        ? `<span class="installment-number installment-${status.isInstallmentEnded ? 'installment-ended' : status.final === 'جاري' ? 'active' : status.final === 'منتهى' ? 'expired' : status.final === 'على وشك' ? 'pending' : 'empty'}">
-                                ${property['عدد الاقساط']}
-                           </span>`
-                        : ''
-                    }
-                    <span class="installments-link" style="color:#2a4b9b;cursor:pointer;font-weight:bold;margin-right:8px;"
-                        onclick="showInstallmentsDetails('${property['رقم العقد']}', '${property['اسم العقار']}')">
-                        تفاصيل الأقساط
+                        <span class="installments-count-badge installment-${status.isInstallmentEnded ? 'installment-ended' : status.final === 'جاري' ? 'active' : status.final === 'منتهى' ? 'expired' : status.final === 'على وشك' ? 'pending' : 'empty'}"
+                              onclick="showInstallmentsDetails('${property['رقم العقد']}', '${property['اسم العقار']}')"
+                              title="انقر لعرض تفاصيل جميع الأقساط">
+                            <i class="fas fa-calendar-check"></i>
+                            ${property['عدد الاقساط']} ${property['عدد الاقساط'] === 1 ? 'قسط' : 'أقساط'}
+                        </span>
                     </span>
-                </div>
+                </div>` : ''}
                 ${property['عدد الاقساط المتبقية'] ? `
                 <div class="card-row">
                     <span class="card-label">الأقساط المتبقية:</span>
@@ -2384,7 +2760,30 @@ function executePrint(contractNumber, propertyName, unitNumber = null) {
 function showInstallmentsDetails(contractNumber, propertyName) {
     // ابحث عن أول عنصر يطابق رقم العقد واسم العقار
     const prop = properties.find(p => p['رقم العقد'] === contractNumber && p['اسم العقار'] === propertyName);
-    if (!prop || !prop['عدد الاقساط']) return;
+    if (!prop) {
+        alert('لم يتم العثور على العقار');
+        return;
+    }
+
+    // حساب عدد الأقساط الفعلي
+    let actualInstallmentCount = 0;
+    for (let i = 1; i <= 10; i++) {
+        const dateKey = i === 1 ? 'تاريخ القسط الاول' :
+                       i === 2 ? 'تاريخ القسط الثاني' :
+                       `تاريخ القسط ${getArabicNumber(i)}`;
+        const amountKey = i === 1 ? 'مبلغ القسط الاول' :
+                         i === 2 ? 'مبلغ القسط الثاني' :
+                         `مبلغ القسط ${getArabicNumber(i)}`;
+
+        if (prop[dateKey] || prop[amountKey]) {
+            actualInstallmentCount = i;
+        }
+    }
+
+    if (actualInstallmentCount === 0) {
+        alert('لا توجد أقساط لهذا العقار');
+        return;
+    }
 
     // تحديد لون الحالة
     let status = 'default';
@@ -2399,34 +2798,105 @@ function showInstallmentsDetails(contractNumber, propertyName) {
     }
 
     let html = `<div class="modal-overlay" style="display:flex;">
-        <div class="modal-box">
+        <div class="modal-box installments-details-modal">
             <button class="close-modal" onclick="closeModal()">×</button>
-            <h3>تفاصيل الأقساط (${prop['عدد الاقساط']})</h3>
-            <div class="property-details">`;
+            <div class="modal-header">
+                <h3><i class="fas fa-calendar-check"></i> تفاصيل الأقساط</h3>
+                <p>${prop['اسم العقار']} - ${prop['اسم المستأجر'] || 'غير محدد'}</p>
+            </div>
+            <div class="installments-summary">
+                <div class="summary-item">
+                    <span class="summary-label">إجمالي الأقساط:</span>
+                    <span class="summary-value">${actualInstallmentCount}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">رقم العقد:</span>
+                    <span class="summary-value">${prop['رقم العقد'] || 'غير محدد'}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">نوع العقد:</span>
+                    <span class="summary-value">${prop['نوع العقد'] || 'غير محدد'}</span>
+                </div>
+            </div>
+            <div class="installments-grid">`;
 
-    for (let i = 1; i <= Number(prop['عدد الاقساط']); i++) {
-        const date = prop[`تاريخ القسط ${i === 1 ? 'الاول' : `الثاني`}`] || prop[`تاريخ القسط ${i}`];
-        const amount = prop[`مبلغ القسط ${i === 1 ? 'الاول' : `الثاني`}`] || prop[`مبلغ القسط ${i}`];
-        if (amount) {
-            const base = parseFloat(amount) / 1.15;
-            const vat = base * 0.15;
+    let totalAmount = 0;
+    let installmentsWithAmount = 0;
+
+    for (let i = 1; i <= actualInstallmentCount; i++) {
+        const dateKey = i === 1 ? 'تاريخ القسط الاول' :
+                       i === 2 ? 'تاريخ القسط الثاني' :
+                       `تاريخ القسط ${getArabicNumber(i)}`;
+        const amountKey = i === 1 ? 'مبلغ القسط الاول' :
+                         i === 2 ? 'مبلغ القسط الثاني' :
+                         `مبلغ القسط ${getArabicNumber(i)}`;
+
+        const date = prop[dateKey];
+        const amount = prop[amountKey];
+
+        if (date || amount) {
+            const amountValue = parseFloat(amount) || 0;
+            if (amountValue > 0) {
+                totalAmount += amountValue;
+                installmentsWithAmount++;
+            }
+
+            const base = amountValue / 1.15;
+            const vat = amountValue - base;
+
             html += `
-            <div class="detail-row installment-row installment-${status}">
-                <span class="installment-number">القسط رقم ${i}:</span>
-                <span class="detail-value" style="color:#222;">
-                    ${date ? `<span style="color:#317ee7;font-weight:bold;">تاريخ:</span> ${date}` : ''}
-                    <br>
-                    <span style="color:#05940e;font-weight:bold;">المبلغ الكلي:</span> ${parseFloat(amount).toLocaleString()} ريال
-                    <br>
-                    <span style="color:#1abc9c;font-weight:bold;">المبلغ الخاضع:</span> ${base.toLocaleString(undefined, {maximumFractionDigits:2})} ريال
-                    <br>
-                    <span style="color:#e46e6d;font-weight:bold;">الضريبة (15%):</span> ${vat.toLocaleString(undefined, {maximumFractionDigits:2})} ريال
-                </span>
+            <div class="installment-card installment-${status}">
+                <div class="installment-header">
+                    <h4><i class="fas fa-calendar-day"></i> القسط ${getArabicNumber(i)}</h4>
+                    <span class="installment-number">#${i}</span>
+                </div>
+                <div class="installment-body">
+                    ${date ? `
+                    <div class="installment-field">
+                        <span class="field-label"><i class="fas fa-calendar"></i> التاريخ:</span>
+                        <span class="field-value">${date}</span>
+                    </div>` : `
+                    <div class="installment-field missing">
+                        <span class="field-label"><i class="fas fa-calendar"></i> التاريخ:</span>
+                        <span class="field-value">غير محدد</span>
+                    </div>`}
+
+                    ${amount ? `
+                    <div class="installment-field">
+                        <span class="field-label"><i class="fas fa-money-bill-wave"></i> المبلغ الكلي:</span>
+                        <span class="field-value amount">${amountValue.toLocaleString()} ريال</span>
+                    </div>
+                    ${prop['نوع العقد'] === 'ضريبي' ? `
+                    <div class="installment-field tax-details">
+                        <span class="field-label">المبلغ الخاضع للضريبة:</span>
+                        <span class="field-value">${base.toFixed(2).toLocaleString()} ريال</span>
+                    </div>
+                    <div class="installment-field tax-details">
+                        <span class="field-label">قيمة الضريبة (15%):</span>
+                        <span class="field-value">${vat.toFixed(2).toLocaleString()} ريال</span>
+                    </div>` : ''}` : `
+                    <div class="installment-field missing">
+                        <span class="field-label"><i class="fas fa-money-bill-wave"></i> المبلغ:</span>
+                        <span class="field-value">غير محدد</span>
+                    </div>`}
+                </div>
             </div>`;
         }
     }
 
-    html += `</div></div></div>`;
+    html += `</div>
+            <div class="installments-total">
+                <div class="total-item">
+                    <span class="total-label">إجمالي المبلغ:</span>
+                    <span class="total-value">${totalAmount.toLocaleString()} ريال</span>
+                </div>
+                <div class="total-item">
+                    <span class="total-label">أقساط بمبالغ:</span>
+                    <span class="total-value">${installmentsWithAmount} من ${actualInstallmentCount}</span>
+                </div>
+            </div>
+        </div>
+    </div>`;
     document.body.insertAdjacentHTML('beforeend', html);
 
     document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
@@ -6784,6 +7254,26 @@ function savePropertyEdit(event) {
         updatedProperty[key] = value || null;
     }
 
+    // تحديث عدد الأقساط بناءً على الأقساط الموجودة فعلياً
+    let actualInstallmentCount = 0;
+    for (let i = 1; i <= 10; i++) {
+        const dateKey = i === 1 ? 'تاريخ القسط الاول' :
+                       i === 2 ? 'تاريخ القسط الثاني' :
+                       `تاريخ القسط ${getArabicNumber(i)}`;
+        const amountKey = i === 1 ? 'مبلغ القسط الاول' :
+                         i === 2 ? 'مبلغ القسط الثاني' :
+                         `مبلغ القسط ${getArabicNumber(i)}`;
+
+        if (updatedProperty[dateKey] || updatedProperty[amountKey]) {
+            actualInstallmentCount = i;
+        }
+    }
+
+    // تحديث عدد الأقساط في البيانات
+    updatedProperty['عدد الاقساط'] = actualInstallmentCount;
+
+    console.log(`✅ تم تحديث عدد الأقساط إلى: ${actualInstallmentCount}`);
+
     // إذا تم تحديث رقم العقد، تحديث جميع الوحدات المرتبطة
     const newContractNumber = formData.get('رقم العقد');
     if (originalContractNumber && newContractNumber && originalContractNumber !== newContractNumber) {
@@ -7229,17 +7719,45 @@ function autoSaveInstallmentChanges() {
 
     if (propertyIndex === -1) return;
 
-    // تحديث بيانات الأقساط فقط
+    // تحديث بيانات الأقساط فقط - مع الحفاظ على جميع الأقساط الموجودة
     const updatedProperty = { ...properties[propertyIndex] };
 
-    // تحديث الأقساط من النموذج
+    // أولاً: مسح جميع الأقساط القديمة لتجنب التداخل
+    for (let i = 1; i <= 10; i++) {
+        const dateKey = i === 1 ? 'تاريخ القسط الاول' :
+                       i === 2 ? 'تاريخ القسط الثاني' :
+                       `تاريخ القسط ${getArabicNumber(i)}`;
+        const amountKey = i === 1 ? 'مبلغ القسط الاول' :
+                         i === 2 ? 'مبلغ القسط الثاني' :
+                         `مبلغ القسط ${getArabicNumber(i)}`;
+
+        // مسح القيم القديمة
+        updatedProperty[dateKey] = null;
+        updatedProperty[amountKey] = null;
+    }
+
+    // ثانياً: تحديث الأقساط من النموذج
     for (let [key, value] of formData.entries()) {
         if (key.includes('القسط')) {
             // معالجة تواريخ الأقساط
             if (key.includes('تاريخ') && value) {
                 const dateParts = value.split('-');
                 if (dateParts.length === 3 && dateParts[0].length === 4) {
-                    value = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                    // التحقق من صحة التاريخ
+                    const year = parseInt(dateParts[0]);
+                    const month = parseInt(dateParts[1]);
+                    const day = parseInt(dateParts[2]);
+
+                    if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                        const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                        if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                            value = `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+                        } else {
+                            value = null; // تاريخ غير صالح
+                        }
+                    } else {
+                        value = null; // تاريخ غير صحيح
+                    }
                 }
             }
 
@@ -7248,9 +7766,29 @@ function autoSaveInstallmentChanges() {
                 value = parseFloat(value) || 0;
             }
 
-            updatedProperty[key] = value || null;
+            // حفظ القيمة فقط إذا كانت صالحة
+            if (value !== null && value !== '' && value !== 0) {
+                updatedProperty[key] = value;
+            }
         }
     }
+
+    // تحديث عدد الأقساط بناءً على الأقساط الموجودة فعلياً
+    let installmentCount = 0;
+    for (let i = 1; i <= 10; i++) {
+        const dateKey = i === 1 ? 'تاريخ القسط الاول' :
+                       i === 2 ? 'تاريخ القسط الثاني' :
+                       `تاريخ القسط ${getArabicNumber(i)}`;
+        const amountKey = i === 1 ? 'مبلغ القسط الاول' :
+                         i === 2 ? 'مبلغ القسط الثاني' :
+                         `مبلغ القسط ${getArabicNumber(i)}`;
+
+        if (updatedProperty[dateKey] || updatedProperty[amountKey]) {
+            installmentCount = i;
+        }
+    }
+
+    updatedProperty['عدد الاقساط'] = installmentCount;
 
     // حساب الإجمالي الجديد
     const yearlyData = calculateYearlyTotal(updatedProperty);
@@ -7277,6 +7815,53 @@ function autoSaveInstallmentChanges() {
     }
 
     console.log('✅ تم حفظ تغييرات الأقساط تلقائياً');
+}
+
+// دالة تشخيص الأقساط - للتحقق من المشاكل
+function diagnoseInstallments(contractNumber, propertyName) {
+    console.log(`🔍 تشخيص أقساط العقد: ${contractNumber} - ${propertyName}`);
+
+    const property = properties.find(p =>
+        p['رقم العقد'] === contractNumber && p['اسم العقار'] === propertyName
+    );
+
+    if (!property) {
+        console.error('❌ لم يتم العثور على العقار');
+        return;
+    }
+
+    console.log('📊 تفاصيل الأقساط:');
+    let foundInstallments = 0;
+
+    for (let i = 1; i <= 10; i++) {
+        const dateKey = i === 1 ? 'تاريخ القسط الاول' :
+                       i === 2 ? 'تاريخ القسط الثاني' :
+                       `تاريخ القسط ${getArabicNumber(i)}`;
+        const amountKey = i === 1 ? 'مبلغ القسط الاول' :
+                         i === 2 ? 'مبلغ القسط الثاني' :
+                         `مبلغ القسط ${getArabicNumber(i)}`;
+
+        const date = property[dateKey];
+        const amount = property[amountKey];
+
+        if (date || amount) {
+            foundInstallments++;
+            console.log(`✅ القسط ${i}: التاريخ = ${date || 'غير محدد'}, المبلغ = ${amount || 'غير محدد'}`);
+        }
+    }
+
+    console.log(`📈 إجمالي الأقساط الموجودة: ${foundInstallments}`);
+    console.log(`📋 عدد الأقساط المحفوظ: ${property['عدد الاقساط'] || 'غير محدد'}`);
+
+    const yearlyData = calculateYearlyTotal(property);
+    console.log(`💰 الإجمالي المحسوب: ${yearlyData.total.toLocaleString()} ريال (${yearlyData.count} أقساط)`);
+
+    return {
+        foundInstallments,
+        savedCount: property['عدد الاقساط'],
+        yearlyTotal: yearlyData.total,
+        yearlyCount: yearlyData.count
+    };
 }
 
 // ==================== وظائف حساب الإجمالي بناءً على السنة ====================

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار حفظ الأقساط في قاعدة البيانات</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .log-container {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-entry.success { color: #00ff00; }
+        .log-entry.error { color: #ff4444; }
+        .log-entry.warning { color: #ffaa00; }
+        .log-entry.info { color: #44aaff; }
+        
+        .test-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .installments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .installment-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 اختبار حفظ الأقساط في قاعدة البيانات</h1>
+            <p>أداة مخصصة للتحقق من حفظ جميع الأقساط في Supabase</p>
+        </div>
+
+        <div class="section">
+            <h2>🔧 إعداد الاختبار</h2>
+            <div class="test-form">
+                <div class="form-group">
+                    <label>اسم العقار:</label>
+                    <input type="text" id="testPropertyName" value="عقار_اختبار_الأقساط" placeholder="اسم العقار">
+                </div>
+                <div class="form-group">
+                    <label>رقم العقد:</label>
+                    <input type="text" id="testContractNumber" value="TEST_INSTALLMENTS_001" placeholder="رقم العقد">
+                </div>
+                <div class="form-group">
+                    <label>رقم الوحدة:</label>
+                    <input type="text" id="testUnitNumber" value="UNIT_TEST_001" placeholder="رقم الوحدة">
+                </div>
+                <div class="form-group">
+                    <label>اسم المستأجر:</label>
+                    <input type="text" id="testTenantName" value="مستأجر اختبار الأقساط" placeholder="اسم المستأجر">
+                </div>
+                <div class="form-group">
+                    <label>عدد الأقساط للاختبار:</label>
+                    <input type="number" id="testInstallmentCount" value="5" min="1" max="10" placeholder="عدد الأقساط">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚀 تشغيل الاختبارات</h2>
+            <button class="button" onclick="initializeTest()">تهيئة النظام</button>
+            <button class="button" onclick="createTestProperty()">إنشاء عقار اختبار</button>
+            <button class="button" onclick="saveToSupabase()">حفظ في قاعدة البيانات</button>
+            <button class="button" onclick="verifyInSupabase()">التحقق من قاعدة البيانات</button>
+            <button class="button" onclick="runFullTest()">اختبار شامل</button>
+        </div>
+
+        <div class="section">
+            <h2>📊 نتائج الاختبار</h2>
+            <div class="installments-grid" id="installmentsGrid">
+                <!-- سيتم ملؤها بالنتائج -->
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📝 سجل الاختبار</h2>
+            <button class="button" onclick="clearLog()">مسح السجل</button>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry info">🚀 جاهز لبدء اختبار حفظ الأقساط...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-migration.js"></script>
+    <script src="script.js"></script>
+    <script>
+        let testProperty = null;
+        let testResults = {};
+
+        // دالة تسجيل الأحداث
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // مسح السجل
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = 
+                '<div class="log-entry info">🚀 تم مسح السجل - جاهز للمتابعة...</div>';
+        }
+
+        // تهيئة النظام
+        async function initializeTest() {
+            log('🔧 بدء تهيئة النظام...', 'info');
+            
+            try {
+                // تهيئة Supabase
+                if (typeof initSupabase === 'function') {
+                    const result = initSupabase();
+                    if (result) {
+                        log('✅ تم تهيئة Supabase بنجاح', 'success');
+                    } else {
+                        log('❌ فشل في تهيئة Supabase', 'error');
+                        return false;
+                    }
+                } else {
+                    log('❌ دالة initSupabase غير متوفرة', 'error');
+                    return false;
+                }
+
+                // تحميل البيانات
+                if (typeof loadDataLocally === 'function') {
+                    await loadDataLocally();
+                    log('✅ تم تحميل البيانات المحلية', 'success');
+                } else {
+                    log('⚠️ دالة loadDataLocally غير متوفرة', 'warning');
+                }
+
+                // اختبار الاتصال
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('properties')
+                        .select('count(*)')
+                        .limit(1);
+                    
+                    if (error) {
+                        log(`❌ خطأ في الاتصال: ${error.message}`, 'error');
+                        return false;
+                    } else {
+                        log('✅ تم اختبار الاتصال بقاعدة البيانات بنجاح', 'success');
+                    }
+                } else {
+                    log('❌ supabaseClient غير متوفر', 'error');
+                    return false;
+                }
+
+                log('🎉 تم تهيئة النظام بنجاح', 'success');
+                return true;
+
+            } catch (error) {
+                log(`❌ خطأ في التهيئة: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // إنشاء عقار اختبار
+        function createTestProperty() {
+            log('🏗️ إنشاء عقار اختبار...', 'info');
+            
+            try {
+                const propertyName = document.getElementById('testPropertyName').value;
+                const contractNumber = document.getElementById('testContractNumber').value;
+                const unitNumber = document.getElementById('testUnitNumber').value;
+                const tenantName = document.getElementById('testTenantName').value;
+                const installmentCount = parseInt(document.getElementById('testInstallmentCount').value);
+
+                testProperty = {
+                    'اسم العقار': propertyName,
+                    'رقم العقد': contractNumber,
+                    'رقم  الوحدة ': unitNumber,
+                    'اسم المستأجر': tenantName,
+                    'المدينة': 'الرياض',
+                    'عدد الاقساط': installmentCount
+                };
+
+                // إضافة الأقساط
+                for (let i = 1; i <= installmentCount; i++) {
+                    const dateKey = i === 1 ? 'تاريخ القسط الاول' :
+                                   i === 2 ? 'تاريخ القسط الثاني' :
+                                   `تاريخ القسط ${getArabicNumber(i)}`;
+                    const amountKey = i === 1 ? 'مبلغ القسط الاول' :
+                                     i === 2 ? 'مبلغ القسط الثاني' :
+                                     `مبلغ القسط ${getArabicNumber(i)}`;
+                    
+                    testProperty[dateKey] = `${i.toString().padStart(2, '0')}/01/2024`;
+                    testProperty[amountKey] = 1000 * i;
+                }
+
+                // إضافة للبيانات المحلية
+                if (typeof properties !== 'undefined') {
+                    // حذف العقار إذا كان موجوداً
+                    const existingIndex = properties.findIndex(p => 
+                        p['رقم العقد'] === contractNumber || p['رقم  الوحدة '] === unitNumber
+                    );
+                    if (existingIndex !== -1) {
+                        properties.splice(existingIndex, 1);
+                        log('🗑️ تم حذف العقار الموجود مسبقاً', 'info');
+                    }
+                    
+                    properties.push(testProperty);
+                    log(`✅ تم إنشاء عقار اختبار بـ ${installmentCount} أقساط`, 'success');
+                } else {
+                    log('❌ متغير properties غير متوفر', 'error');
+                }
+
+            } catch (error) {
+                log(`❌ خطأ في إنشاء العقار: ${error.message}`, 'error');
+            }
+        }
+
+        // حفظ في قاعدة البيانات
+        async function saveToSupabase() {
+            log('💾 حفظ العقار في قاعدة البيانات...', 'info');
+            
+            try {
+                if (!testProperty) {
+                    log('❌ لا يوجد عقار اختبار. قم بإنشاء عقار أولاً', 'error');
+                    return;
+                }
+
+                if (!supabaseClient) {
+                    log('❌ Supabase client غير متوفر', 'error');
+                    return;
+                }
+
+                // استخدام دالة الحفظ الموجودة
+                if (typeof savePropertyToSupabase === 'function') {
+                    const result = await savePropertyToSupabase(testProperty);
+                    if (result) {
+                        log('✅ تم حفظ العقار في قاعدة البيانات بنجاح', 'success');
+                    } else {
+                        log('❌ فشل في حفظ العقار', 'error');
+                    }
+                } else {
+                    log('❌ دالة savePropertyToSupabase غير متوفرة', 'error');
+                }
+
+            } catch (error) {
+                log(`❌ خطأ في الحفظ: ${error.message}`, 'error');
+            }
+        }
+
+        // التحقق من قاعدة البيانات
+        async function verifyInSupabase() {
+            log('🔍 التحقق من البيانات في قاعدة البيانات...', 'info');
+            
+            try {
+                if (!testProperty) {
+                    log('❌ لا يوجد عقار اختبار للتحقق منه', 'error');
+                    return;
+                }
+
+                const unitNumber = testProperty['رقم  الوحدة '];
+                
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('*')
+                    .eq('unit_number', unitNumber)
+                    .single();
+
+                if (error) {
+                    log(`❌ خطأ في استرجاع البيانات: ${error.message}`, 'error');
+                    return;
+                }
+
+                if (!data) {
+                    log('❌ لم يتم العثور على العقار في قاعدة البيانات', 'error');
+                    return;
+                }
+
+                log('✅ تم العثور على العقار في قاعدة البيانات', 'success');
+
+                // فحص الأقساط
+                testResults = {};
+                const installmentFields = [
+                    { date: 'first_installment_date', amount: 'first_installment_amount', name: 'القسط الأول' },
+                    { date: 'second_installment_date', amount: 'second_installment_amount', name: 'القسط الثاني' },
+                    { date: 'third_installment_date', amount: 'third_installment_amount', name: 'القسط الثالث' },
+                    { date: 'fourth_installment_date', amount: 'fourth_installment_amount', name: 'القسط الرابع' },
+                    { date: 'fifth_installment_date', amount: 'fifth_installment_amount', name: 'القسط الخامس' },
+                    { date: 'sixth_installment_date', amount: 'sixth_installment_amount', name: 'القسط السادس' },
+                    { date: 'seventh_installment_date', amount: 'seventh_installment_amount', name: 'القسط السابع' },
+                    { date: 'eighth_installment_date', amount: 'eighth_installment_amount', name: 'القسط الثامن' },
+                    { date: 'ninth_installment_date', amount: 'ninth_installment_amount', name: 'القسط التاسع' },
+                    { date: 'tenth_installment_date', amount: 'tenth_installment_amount', name: 'القسط العاشر' }
+                ];
+
+                let savedInstallments = 0;
+                let expectedInstallments = testProperty['عدد الاقساط'] || 0;
+
+                installmentFields.forEach((field, index) => {
+                    const installmentNumber = index + 1;
+                    const hasDate = data[field.date] !== null;
+                    const hasAmount = data[field.amount] !== null && data[field.amount] > 0;
+                    const isExpected = installmentNumber <= expectedInstallments;
+                    
+                    testResults[installmentNumber] = {
+                        name: field.name,
+                        hasDate: hasDate,
+                        hasAmount: hasAmount,
+                        isExpected: isExpected,
+                        status: isExpected ? (hasDate && hasAmount ? 'success' : 'error') : (hasDate || hasAmount ? 'warning' : 'success')
+                    };
+
+                    if (hasDate && hasAmount) {
+                        savedInstallments++;
+                        log(`✅ ${field.name}: محفوظ بنجاح`, 'success');
+                    } else if (isExpected) {
+                        log(`❌ ${field.name}: مفقود (التاريخ: ${hasDate ? 'موجود' : 'مفقود'}, المبلغ: ${hasAmount ? 'موجود' : 'مفقود'})`, 'error');
+                    }
+                });
+
+                log(`📊 النتيجة: تم حفظ ${savedInstallments} من أصل ${expectedInstallments} أقساط`, savedInstallments === expectedInstallments ? 'success' : 'error');
+                
+                // عرض النتائج
+                displayResults();
+
+            } catch (error) {
+                log(`❌ خطأ في التحقق: ${error.message}`, 'error');
+            }
+        }
+
+        // عرض النتائج
+        function displayResults() {
+            const grid = document.getElementById('installmentsGrid');
+            grid.innerHTML = '';
+
+            Object.keys(testResults).forEach(key => {
+                const result = testResults[key];
+                const card = document.createElement('div');
+                card.className = 'installment-card';
+                
+                card.innerHTML = `
+                    <h4>${result.name} <span class="status-indicator status-${result.status}"></span></h4>
+                    <p><strong>متوقع:</strong> ${result.isExpected ? 'نعم' : 'لا'}</p>
+                    <p><strong>التاريخ:</strong> ${result.hasDate ? '✅ محفوظ' : '❌ مفقود'}</p>
+                    <p><strong>المبلغ:</strong> ${result.hasAmount ? '✅ محفوظ' : '❌ مفقود'}</p>
+                    <p><strong>الحالة:</strong> ${
+                        result.status === 'success' ? '✅ صحيح' :
+                        result.status === 'error' ? '❌ خطأ' :
+                        '⚠️ تحذير'
+                    }</p>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // اختبار شامل
+        async function runFullTest() {
+            log('🚀 بدء الاختبار الشامل...', 'info');
+            
+            const steps = [
+                { name: 'تهيئة النظام', func: initializeTest },
+                { name: 'إنشاء عقار اختبار', func: createTestProperty },
+                { name: 'حفظ في قاعدة البيانات', func: saveToSupabase },
+                { name: 'التحقق من قاعدة البيانات', func: verifyInSupabase }
+            ];
+
+            for (let i = 0; i < steps.length; i++) {
+                const step = steps[i];
+                log(`📋 الخطوة ${i + 1}: ${step.name}...`, 'info');
+                
+                try {
+                    const result = await step.func();
+                    if (result === false) {
+                        log(`❌ فشل في الخطوة: ${step.name}`, 'error');
+                        return;
+                    }
+                    
+                    // تأخير بين الخطوات
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                } catch (error) {
+                    log(`❌ خطأ في الخطوة ${step.name}: ${error.message}`, 'error');
+                    return;
+                }
+            }
+
+            log('🎉 انتهى الاختبار الشامل', 'success');
+        }
+
+        // دالة مساعدة للأرقام العربية
+        function getArabicNumber(num) {
+            const arabicNumbers = {
+                1: 'الأول', 2: 'الثاني', 3: 'الثالث', 4: 'الرابع', 5: 'الخامس',
+                6: 'السادس', 7: 'السابع', 8: 'الثامن', 9: 'التاسع', 10: 'العاشر'
+            };
+            return arabicNumbers[num] || num.toString();
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 تم تحميل أداة اختبار حفظ الأقساط', 'success');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تشخيص مشكلة الشاشة الكبيرة</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .debug-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .debug-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .debug-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .debug-button:hover {
+            background: #2980b9;
+        }
+        
+        .debug-output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        .status-good { color: #27ae60; }
+        .status-warning { color: #f39c12; }
+        .status-error { color: #e74c3c; }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .info-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔧 تشخيص مشكلة الشاشة الكبيرة</h1>
+        
+        <div class="debug-section">
+            <h2>📊 معلومات النظام</h2>
+            <div class="info-grid" id="systemInfo">
+                <!-- سيتم ملؤها بالبيانات -->
+            </div>
+        </div>
+        
+        <div class="debug-section">
+            <h2>🔍 اختبارات التشخيص</h2>
+            <button class="debug-button" onclick="checkDataLoading()">فحص تحميل البيانات</button>
+            <button class="debug-button" onclick="checkDOMElements()">فحص عناصر الصفحة</button>
+            <button class="debug-button" onclick="checkCSS()">فحص CSS</button>
+            <button class="debug-button" onclick="checkJavaScript()">فحص JavaScript</button>
+            <button class="debug-button" onclick="runFullDiagnosis()">تشخيص شامل</button>
+        </div>
+        
+        <div class="debug-section">
+            <h2>🛠️ إجراءات الإصلاح</h2>
+            <button class="debug-button" onclick="forceReloadData()">إعادة تحميل البيانات</button>
+            <button class="debug-button" onclick="clearCache()">مسح التخزين المؤقت</button>
+            <button class="debug-button" onclick="resetToDefaults()">إعادة تعيين الإعدادات</button>
+            <button class="debug-button" onclick="loadSampleData()">تحميل بيانات تجريبية</button>
+        </div>
+        
+        <div class="debug-section">
+            <h2>📝 نتائج التشخيص</h2>
+            <div class="debug-output" id="debugOutput">
+                جاهز لبدء التشخيص...
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-migration.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        let debugInfo = {
+            screenWidth: window.innerWidth,
+            screenHeight: window.innerHeight,
+            userAgent: navigator.userAgent,
+            propertiesCount: 0,
+            elementsFound: 0,
+            cssLoaded: false,
+            jsLoaded: false
+        };
+
+        // دالة تسجيل النتائج
+        function log(message, type = 'info') {
+            const output = document.getElementById('debugOutput');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const className = type === 'error' ? 'status-error' : 
+                             type === 'warning' ? 'status-warning' : 
+                             type === 'success' ? 'status-good' : '';
+            
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // تحديث معلومات النظام
+        function updateSystemInfo() {
+            const systemInfo = document.getElementById('systemInfo');
+            systemInfo.innerHTML = `
+                <div class="info-card">
+                    <div class="info-value">${debugInfo.screenWidth}x${debugInfo.screenHeight}</div>
+                    <div class="info-label">دقة الشاشة</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-value">${debugInfo.propertiesCount}</div>
+                    <div class="info-label">عدد العقارات</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-value">${debugInfo.elementsFound}</div>
+                    <div class="info-label">عناصر DOM</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-value">${debugInfo.cssLoaded ? 'نعم' : 'لا'}</div>
+                    <div class="info-label">CSS محمل</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-value">${debugInfo.jsLoaded ? 'نعم' : 'لا'}</div>
+                    <div class="info-label">JS محمل</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-value">${window.innerWidth > 900 ? 'كبيرة' : 'صغيرة'}</div>
+                    <div class="info-label">نوع الشاشة</div>
+                </div>
+            `;
+        }
+
+        // فحص تحميل البيانات
+        function checkDataLoading() {
+            log('🔍 فحص تحميل البيانات...', 'info');
+            
+            // فحص متغير properties
+            if (typeof properties !== 'undefined') {
+                debugInfo.propertiesCount = properties ? properties.length : 0;
+                log(`✅ متغير properties موجود: ${debugInfo.propertiesCount} عقار`, 'success');
+            } else {
+                log('❌ متغير properties غير موجود', 'error');
+            }
+            
+            // فحص localStorage
+            const localData = localStorage.getItem('properties');
+            if (localData) {
+                try {
+                    const parsed = JSON.parse(localData);
+                    log(`✅ بيانات localStorage موجودة: ${parsed.length} عقار`, 'success');
+                } catch (e) {
+                    log('❌ خطأ في تحليل بيانات localStorage', 'error');
+                }
+            } else {
+                log('⚠️ لا توجد بيانات في localStorage', 'warning');
+            }
+            
+            // فحص Supabase
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                log('✅ Supabase client متوفر', 'success');
+            } else {
+                log('⚠️ Supabase client غير متوفر', 'warning');
+            }
+            
+            updateSystemInfo();
+        }
+
+        // فحص عناصر DOM
+        function checkDOMElements() {
+            log('🔍 فحص عناصر الصفحة...', 'info');
+            
+            const elements = [
+                'content',
+                'totalContainer', 
+                'countryButtons',
+                'propertyList',
+                'globalSearch',
+                'sidebar'
+            ];
+            
+            let foundElements = 0;
+            elements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    foundElements++;
+                    log(`✅ عنصر ${id} موجود`, 'success');
+                } else {
+                    log(`❌ عنصر ${id} مفقود`, 'error');
+                }
+            });
+            
+            debugInfo.elementsFound = foundElements;
+            log(`📊 تم العثور على ${foundElements} من أصل ${elements.length} عناصر`, 'info');
+            updateSystemInfo();
+        }
+
+        // فحص CSS
+        function checkCSS() {
+            log('🔍 فحص تحميل CSS...', 'info');
+            
+            const stylesheets = document.styleSheets;
+            log(`📄 تم تحميل ${stylesheets.length} ملف CSS`, 'info');
+            
+            // فحص وجود قواعد CSS مهمة
+            const testElement = document.createElement('div');
+            testElement.className = 'cards-container';
+            document.body.appendChild(testElement);
+            
+            const styles = window.getComputedStyle(testElement);
+            const display = styles.display;
+            const gridTemplateColumns = styles.gridTemplateColumns;
+            
+            document.body.removeChild(testElement);
+            
+            if (display === 'grid') {
+                log('✅ CSS Grid يعمل بشكل صحيح', 'success');
+                debugInfo.cssLoaded = true;
+            } else {
+                log('❌ مشكلة في CSS Grid', 'error');
+            }
+            
+            log(`📐 Grid columns: ${gridTemplateColumns}`, 'info');
+            updateSystemInfo();
+        }
+
+        // فحص JavaScript
+        function checkJavaScript() {
+            log('🔍 فحص JavaScript...', 'info');
+            
+            const functions = [
+                'renderData',
+                'renderCards', 
+                'initializeApp',
+                'showInstallmentsDetails',
+                'toggleView'
+            ];
+            
+            let workingFunctions = 0;
+            functions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    workingFunctions++;
+                    log(`✅ دالة ${funcName} متوفرة`, 'success');
+                } else {
+                    log(`❌ دالة ${funcName} مفقودة`, 'error');
+                }
+            });
+            
+            debugInfo.jsLoaded = workingFunctions === functions.length;
+            log(`📊 ${workingFunctions} من أصل ${functions.length} دوال تعمل`, 'info');
+            updateSystemInfo();
+        }
+
+        // تشخيص شامل
+        function runFullDiagnosis() {
+            log('🚀 بدء التشخيص الشامل...', 'info');
+            
+            checkDataLoading();
+            setTimeout(() => checkDOMElements(), 500);
+            setTimeout(() => checkCSS(), 1000);
+            setTimeout(() => checkJavaScript(), 1500);
+            
+            setTimeout(() => {
+                log('🎯 انتهى التشخيص الشامل', 'success');
+                
+                // تحليل النتائج
+                if (debugInfo.propertiesCount === 0) {
+                    log('🔧 المشكلة: لا توجد بيانات للعرض', 'error');
+                    log('💡 الحل: جرب "إعادة تحميل البيانات" أو "تحميل بيانات تجريبية"', 'info');
+                } else if (debugInfo.elementsFound < 4) {
+                    log('🔧 المشكلة: عناصر الصفحة مفقودة', 'error');
+                    log('💡 الحل: تحقق من ملف HTML', 'info');
+                } else if (!debugInfo.cssLoaded) {
+                    log('🔧 المشكلة: CSS لا يعمل بشكل صحيح', 'error');
+                    log('💡 الحل: تحقق من ملف CSS', 'info');
+                } else if (!debugInfo.jsLoaded) {
+                    log('🔧 المشكلة: JavaScript لا يعمل بشكل صحيح', 'error');
+                    log('💡 الحل: تحقق من ملف JavaScript', 'info');
+                } else {
+                    log('✅ جميع المكونات تعمل بشكل صحيح', 'success');
+                    log('🔧 جرب إعادة تحميل البيانات', 'info');
+                }
+            }, 2000);
+        }
+
+        // إعادة تحميل البيانات
+        function forceReloadData() {
+            log('🔄 إعادة تحميل البيانات...', 'info');
+            
+            if (typeof renderData === 'function') {
+                renderData();
+                log('✅ تم استدعاء renderData', 'success');
+            }
+            
+            if (typeof initializeApp === 'function') {
+                initializeApp();
+                log('✅ تم استدعاء initializeApp', 'success');
+            }
+        }
+
+        // مسح التخزين المؤقت
+        function clearCache() {
+            log('🗑️ مسح التخزين المؤقت...', 'info');
+            
+            localStorage.clear();
+            sessionStorage.clear();
+            log('✅ تم مسح localStorage و sessionStorage', 'success');
+            
+            // إعادة تحميل الصفحة
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        }
+
+        // إعادة تعيين الإعدادات
+        function resetToDefaults() {
+            log('🔧 إعادة تعيين الإعدادات...', 'info');
+            
+            if (typeof properties !== 'undefined') {
+                // إعادة تعيين المتغيرات العامة
+                currentCountry = null;
+                currentProperty = null;
+                currentView = 'cards';
+                filterStatus = null;
+                
+                log('✅ تم إعادة تعيين المتغيرات', 'success');
+                
+                if (typeof renderData === 'function') {
+                    renderData();
+                    log('✅ تم إعادة عرض البيانات', 'success');
+                }
+            }
+        }
+
+        // تحميل بيانات تجريبية
+        function loadSampleData() {
+            log('📝 تحميل بيانات تجريبية...', 'info');
+            
+            if (typeof createSampleData === 'function') {
+                createSampleData();
+                log('✅ تم إنشاء بيانات تجريبية', 'success');
+                
+                if (typeof initializeApp === 'function') {
+                    initializeApp();
+                    log('✅ تم تهيئة التطبيق', 'success');
+                }
+                
+                debugInfo.propertiesCount = properties ? properties.length : 0;
+                updateSystemInfo();
+            } else {
+                log('❌ دالة createSampleData غير متوفرة', 'error');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 تم تحميل أداة التشخيص', 'success');
+            updateSystemInfo();
+            
+            // تشغيل فحص أولي
+            setTimeout(() => {
+                checkDataLoading();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
