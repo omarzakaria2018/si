@@ -5186,6 +5186,395 @@ footer {
     background: #dc2626;
 }
 
+/* أزرار حذف الوحدات */
+.btn-delete {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 36px;
+    height: 36px;
+    justify-content: center;
+}
+
+.btn-delete:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-delete:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+}
+
+/* تحسين أزرار الإجراءات في الوحدات */
+.unit-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.unit-actions .btn-edit,
+.unit-actions .btn-view,
+.unit-actions .btn-delete {
+    min-width: 80px;
+    height: 36px;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+}
+
+/* تحسين أزرار الإجراءات في العقارات */
+.property-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.property-actions .btn-edit,
+.property-actions .btn-view,
+.property-actions .btn-secondary,
+.property-actions .btn-delete {
+    min-width: 100px;
+    height: 38px;
+    font-size: 0.85rem;
+    padding: 8px 14px;
+}
+
+/* زر اختبار النظام */
+.nav-btn.test-btn {
+    background: linear-gradient(135deg, #17a2b8, #138496) !important;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.2);
+}
+
+.nav-btn.test-btn:hover {
+    background: linear-gradient(135deg, #138496, #117a8b) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(23, 162, 184, 0.3);
+}
+
+.nav-btn.test-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.2);
+}
+
+.nav-btn.test-btn i {
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+.nav-btn.test-btn span {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* زر تشخيص قاعدة البيانات */
+.nav-btn.debug-btn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+}
+
+.nav-btn.debug-btn:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3);
+}
+
+.nav-btn.debug-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+}
+
+.nav-btn.debug-btn i {
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+.nav-btn.debug-btn span {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* زر إعادة التحميل من السحابة */
+.nav-btn.reload-btn {
+    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(243, 156, 18, 0.2);
+}
+
+.nav-btn.reload-btn:hover {
+    background: linear-gradient(135deg, #e67e22, #d35400) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(243, 156, 18, 0.3);
+}
+
+.nav-btn.reload-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(243, 156, 18, 0.2);
+}
+
+.nav-btn.reload-btn i {
+    color: #ffffff;
+    font-size: 1.1rem;
+    animation: none;
+}
+
+.nav-btn.reload-btn:hover i {
+    animation: spin 1s linear infinite;
+}
+
+.nav-btn.reload-btn span {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* زر تنظيف قاعدة البيانات */
+.nav-btn.cleanup-btn {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad) !important;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(155, 89, 182, 0.2);
+}
+
+.nav-btn.cleanup-btn:hover {
+    background: linear-gradient(135deg, #8e44ad, #7d3c98) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(155, 89, 182, 0.3);
+}
+
+.nav-btn.cleanup-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(155, 89, 182, 0.2);
+}
+
+.nav-btn.cleanup-btn i {
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+.nav-btn.cleanup-btn span {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* زر التحقق من التزامن */
+.nav-btn.verify-btn {
+    background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.2);
+}
+
+.nav-btn.verify-btn:hover {
+    background: linear-gradient(135deg, #2ecc71, #58d68d) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(39, 174, 96, 0.3);
+}
+
+.nav-btn.verify-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.2);
+}
+
+.nav-btn.verify-btn i {
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+.nav-btn.verify-btn span {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* زر الحذف القسري */
+.nav-btn.force-delete-btn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    animation: pulse-red 2s infinite;
+}
+
+.nav-btn.force-delete-btn:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(231, 76, 60, 0.4);
+    animation: none;
+}
+
+.nav-btn.force-delete-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+.nav-btn.force-delete-btn i {
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+.nav-btn.force-delete-btn span {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+@keyframes pulse-red {
+    0% { box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3); }
+    50% { box-shadow: 0 4px 16px rgba(231, 76, 60, 0.5); }
+    100% { box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3); }
+}
+
+/* زر الحذف الشامل */
+.nav-btn.nuclear-btn {
+    background: linear-gradient(135deg, #8e44ad, #9b59b6) !important;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3);
+    animation: pulse-purple 3s infinite;
+}
+
+.nav-btn.nuclear-btn:hover {
+    background: linear-gradient(135deg, #9b59b6, #af7ac5) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(142, 68, 173, 0.4);
+    animation: none;
+}
+
+.nav-btn.nuclear-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3);
+}
+
+.nav-btn.nuclear-btn i {
+    color: #ffffff;
+    font-size: 1.1rem;
+    animation: bounce 2s infinite;
+}
+
+.nav-btn.nuclear-btn span {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+@keyframes pulse-purple {
+    0% { box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3); }
+    50% { box-shadow: 0 4px 16px rgba(142, 68, 173, 0.6); }
+    100% { box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3); }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-3px); }
+    60% { transform: translateY(-1px); }
+}
+
+/* زر الحذف المتقدم */
+.nav-btn.advanced-delete-btn {
+    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+    animation: pulse-blue 2s infinite;
+}
+
+.nav-btn.advanced-delete-btn:hover {
+    background: linear-gradient(135deg, #2980b9, #1f618d) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(52, 152, 219, 0.4);
+    animation: none;
+}
+
+.nav-btn.advanced-delete-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.nav-btn.advanced-delete-btn i {
+    color: #ffffff;
+    font-size: 1.1rem;
+    animation: rotate 3s linear infinite;
+}
+
+.nav-btn.advanced-delete-btn span {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+@keyframes pulse-blue {
+    0% { box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3); }
+    50% { box-shadow: 0 4px 16px rgba(52, 152, 219, 0.5); }
+    100% { box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3); }
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* زر تبديل ترتيب العرض */
+#sort-order-btn {
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+}
+
+#sort-order-btn:hover {
+    background: linear-gradient(135deg, #5f3dc4, #9775fa);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+}
+
+#sort-order-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+}
+
+#sort-order-btn i {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+#sort-order-btn:hover i {
+    transform: scale(1.1);
+}
+
 .attachment-btn.view-btn:hover {
     background: #e8f4f8;
     border-color: #17a2b8;
@@ -8912,10 +9301,10 @@ td .remaining-installments {
     background: white;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    max-width: 500px;
-    width: 90%;
+    /* max-width: 500px; */
+    width: 100%;
     max-height: 80vh;
-    overflow-y: auto;
+    /* overflow-y: auto; */
     animation: modalSlideIn 0.3s ease-out;
 }
 
@@ -8933,12 +9322,14 @@ td .remaining-installments {
 .modal-header {
     padding: 20px;
     border-bottom: 1px solid #eee;
-    display: flex;
-    justify-content: space-between;
+    display: flex
+;
+    /* justify-content: space-between; */
     align-items: center;
     background: linear-gradient(135deg, #6f42c1, #5a32a3);
     color: white;
     border-radius: 12px 12px 0 0;
+    flex-direction: column;
 }
 
 .modal-header h3 {

@@ -156,6 +156,335 @@ async function deleteProperty(id) {
     }
 }
 
+// Enhanced property deletion with comprehensive search and error handling
+async function deletePropertyFromSupabase(propertyData) {
+    try {
+        if (!supabaseClient) {
+            console.warn('🚫 Supabase client not initialized - skipping cloud deletion');
+            return { success: false, reason: 'NO_CLIENT', message: 'Supabase not connected' };
+        }
+
+        console.log('🗑️ Starting property deletion from Supabase database');
+        console.log('📋 Property data to delete:', {
+            unitNumber: propertyData['رقم  الوحدة '],
+            propertyName: propertyData['اسم العقار'],
+            city: propertyData['المدينة'],
+            tenant: propertyData['اسم المستأجر'],
+            contract: propertyData['رقم العقد']
+        });
+
+        // Step 1: Get database schema to understand field names
+        const { data: schemaData, error: schemaError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .limit(1);
+
+        if (schemaError) {
+            console.error('❌ Failed to fetch database schema:', schemaError);
+            return { success: false, reason: 'SCHEMA_ERROR', message: schemaError.message };
+        }
+
+        if (schemaData && schemaData.length > 0) {
+            console.log('📊 Database schema fields:', Object.keys(schemaData[0]));
+        }
+
+        // Step 2: Comprehensive search strategies with multiple field combinations
+        const searchStrategies = [
+            // Strategy 1: Exact match with unit number and property name
+            {
+                name: 'Unit + Property Name',
+                query: {
+                    unit_number: propertyData['رقم  الوحدة '],
+                    property_name: propertyData['اسم العقار']
+                }
+            },
+            // Strategy 2: Unit number only
+            {
+                name: 'Unit Number Only',
+                query: { unit_number: propertyData['رقم  الوحدة '] }
+            },
+            // Strategy 3: Contract number if available
+            ...(propertyData['رقم العقد'] ? [{
+                name: 'Contract Number',
+                query: { contract_number: propertyData['رقم العقد'] }
+            }] : []),
+            // Strategy 4: Property name and city
+            {
+                name: 'Property + City',
+                query: {
+                    property_name: propertyData['اسم العقار'],
+                    city: propertyData['المدينة']
+                }
+            },
+            // Strategy 5: Tenant name if available
+            ...(propertyData['اسم المستأجر'] ? [{
+                name: 'Tenant Name',
+                query: { tenant_name: propertyData['اسم المستأجر'] }
+            }] : [])
+        ];
+
+        let foundProperties = [];
+        let successfulStrategy = null;
+
+        // Execute search strategies
+        for (const strategy of searchStrategies) {
+            console.log(`🔍 Trying search strategy: ${strategy.name}`, strategy.query);
+
+            try {
+                let query = supabaseClient.from('properties').select('*');
+
+                // Apply search conditions
+                Object.entries(strategy.query).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined && value !== '') {
+                        query = query.eq(key, value);
+                    }
+                });
+
+                const { data, error } = await query;
+
+                if (error) {
+                    console.warn(`⚠️ Strategy "${strategy.name}" failed:`, error.message);
+                    continue;
+                }
+
+                if (data && data.length > 0) {
+                    console.log(`✅ Strategy "${strategy.name}" found ${data.length} record(s)`);
+                    foundProperties = data;
+                    successfulStrategy = strategy.name;
+                    break;
+                }
+
+                console.log(`ℹ️ Strategy "${strategy.name}" found no records`);
+            } catch (searchError) {
+                console.error(`❌ Error in strategy "${strategy.name}":`, searchError.message);
+            }
+        }
+
+        // Step 3: Handle search results
+        if (foundProperties.length === 0) {
+            console.warn('⚠️ No matching records found in database');
+
+            // Debug: Show sample of existing data
+            try {
+                const { data: sampleData } = await supabaseClient
+                    .from('properties')
+                    .select('id, unit_number, property_name, city, tenant_name, contract_number')
+                    .limit(10);
+
+                console.log('📋 Sample of existing database records:', sampleData);
+            } catch (debugError) {
+                console.error('❌ Failed to fetch sample data:', debugError.message);
+            }
+
+            return {
+                success: false,
+                reason: 'NOT_FOUND',
+                message: 'Property not found in database',
+                searchedWith: searchStrategies.map(s => s.query)
+            };
+        }
+
+        // Step 4: Remove duplicates and delete records with foreign key handling
+        const uniqueProperties = foundProperties.filter((property, index, self) =>
+            index === self.findIndex(p => p.id === property.id)
+        );
+
+        console.log(`📋 Found ${uniqueProperties.length} unique record(s) to delete using strategy: ${successfulStrategy}`);
+
+        let deletedCount = 0;
+        const deletionResults = [];
+
+        for (const property of uniqueProperties) {
+            console.log(`🗑️ Starting advanced deletion for record ID: ${property.id}, Unit: ${property.unit_number}`);
+
+            try {
+                // Step 4a: Delete related activity_log records first
+                console.log(`🗂️ Deleting activity logs for property ${property.id}...`);
+                const { data: activityLogs, error: activityError } = await supabaseClient
+                    .from('activity_log')
+                    .select('id')
+                    .eq('property_id', property.id);
+
+                if (!activityError && activityLogs && activityLogs.length > 0) {
+                    console.log(`📋 Found ${activityLogs.length} activity log(s) for property ${property.id}`);
+
+                    const { error: deleteActivityError } = await supabaseClient
+                        .from('activity_log')
+                        .delete()
+                        .eq('property_id', property.id);
+
+                    if (!deleteActivityError) {
+                        console.log(`✅ Deleted ${activityLogs.length} activity log(s) for property ${property.id}`);
+                    } else {
+                        console.warn(`⚠️ Failed to delete activity logs for property ${property.id}:`, deleteActivityError.message);
+                    }
+                } else {
+                    console.log(`ℹ️ No activity logs found for property ${property.id}`);
+                }
+
+                // Step 4b: Delete related attachments
+                console.log(`📎 Deleting attachments for property ${property.id}...`);
+                try {
+                    const { data: attachments, error: attachmentError } = await supabaseClient
+                        .from('attachments')
+                        .select('id')
+                        .eq('property_id', property.id);
+
+                    if (!attachmentError && attachments && attachments.length > 0) {
+                        console.log(`📎 Found ${attachments.length} attachment(s) for property ${property.id}`);
+
+                        const { error: deleteAttachmentError } = await supabaseClient
+                            .from('attachments')
+                            .delete()
+                            .eq('property_id', property.id);
+
+                        if (!deleteAttachmentError) {
+                            console.log(`✅ Deleted ${attachments.length} attachment(s) for property ${property.id}`);
+                        } else {
+                            console.warn(`⚠️ Failed to delete attachments for property ${property.id}:`, deleteAttachmentError.message);
+                        }
+                    } else {
+                        console.log(`ℹ️ No attachments found for property ${property.id}`);
+                    }
+                } catch (attachmentError) {
+                    console.warn(`⚠️ Error handling attachments for property ${property.id}:`, attachmentError.message);
+                }
+
+                // Step 4c: Now delete the main property record
+                console.log(`🏠 Deleting main property record ${property.id}...`);
+                const { error: deleteError } = await supabaseClient
+                    .from('properties')
+                    .delete()
+                    .eq('id', property.id);
+
+                if (deleteError) {
+                    console.error(`❌ Failed to delete property record ${property.id}:`, deleteError.message);
+                    deletionResults.push({
+                        id: property.id,
+                        success: false,
+                        error: deleteError.message,
+                        stage: 'property_deletion'
+                    });
+                } else {
+                    deletedCount++;
+                    console.log(`✅ Successfully deleted property record ${property.id} with all related data`);
+                    deletionResults.push({
+                        id: property.id,
+                        success: true,
+                        stage: 'complete'
+                    });
+                }
+
+            } catch (deleteError) {
+                console.error(`❌ Critical error during deletion of record ${property.id}:`, deleteError.message);
+                deletionResults.push({
+                    id: property.id,
+                    success: false,
+                    error: deleteError.message,
+                    stage: 'critical_error'
+                });
+            }
+        }
+
+        // Step 5: Return comprehensive result
+        const result = {
+            success: deletedCount > 0,
+            deletedCount,
+            totalFound: uniqueProperties.length,
+            strategy: successfulStrategy,
+            deletionResults,
+            message: deletedCount > 0
+                ? `Successfully deleted ${deletedCount} of ${uniqueProperties.length} records`
+                : 'Failed to delete any records'
+        };
+
+        console.log(`📊 Deletion summary:`, result);
+        return result;
+
+    } catch (error) {
+        console.error('❌ Critical error in deletePropertyFromSupabase:', error);
+        return {
+            success: false,
+            reason: 'CRITICAL_ERROR',
+            message: error.message,
+            stack: error.stack
+        };
+    }
+}
+
+// Delete all attachments for a unit from Supabase
+async function deleteUnitAttachmentsFromSupabase(unitNumber, propertyName) {
+    try {
+        if (!supabaseClient) {
+            console.warn('Supabase not initialized, skipping attachment deletion');
+            return true; // Return true for local-only mode
+        }
+
+        console.log(`🗑️ محاولة حذف مرفقات الوحدة: ${propertyName}_${unitNumber}`);
+
+        // Get all attachments for this unit
+        const { data: attachments, error: fetchError } = await supabaseClient
+            .from('attachments')
+            .select('*')
+            .eq('property_key', `${propertyName}_${unitNumber}`);
+
+        if (fetchError) {
+            console.error('❌ خطأ في جلب مرفقات الوحدة:', fetchError);
+            // Don't fail the operation if fetching fails
+            return true;
+        }
+
+        if (attachments && attachments.length > 0) {
+            console.log(`📎 تم العثور على ${attachments.length} مرفق للحذف`);
+
+            // Delete each attachment file from storage and database
+            for (const attachment of attachments) {
+                try {
+                    console.log(`🗑️ حذف المرفق: ${attachment.file_name}`);
+
+                    // Delete file from storage
+                    if (attachment.file_path) {
+                        const { error: storageError } = await supabaseClient.storage
+                            .from('attachments')
+                            .remove([attachment.file_path]);
+
+                        if (storageError) {
+                            console.error('❌ خطأ في حذف الملف من التخزين:', storageError);
+                        } else {
+                            console.log(`✅ تم حذف الملف من التخزين: ${attachment.file_path}`);
+                        }
+                    }
+
+                    // Delete attachment record from database
+                    const { error: deleteError } = await supabaseClient
+                        .from('attachments')
+                        .delete()
+                        .eq('id', attachment.id);
+
+                    if (deleteError) {
+                        console.error('❌ خطأ في حذف سجل المرفق:', deleteError);
+                    } else {
+                        console.log(`✅ تم حذف سجل المرفق: ${attachment.id}`);
+                    }
+                } catch (attachmentError) {
+                    console.error('❌ خطأ في حذف مرفق فردي:', attachmentError);
+                }
+            }
+
+            console.log(`✅ تم حذف جميع مرفقات الوحدة ${unitNumber}`);
+        } else {
+            console.log(`ℹ️ لا توجد مرفقات للوحدة ${unitNumber}`);
+        }
+
+        return true;
+    } catch (error) {
+        console.error('❌ خطأ في deleteUnitAttachmentsFromSupabase:', error);
+        // Don't fail the local deletion if cloud deletion fails
+        console.log('⚠️ فشل حذف المرفقات السحابية، سيتم الحذف محلياً فقط');
+        return true;
+    }
+}
+
 // ===== ACTIVITY LOGGING =====
 async function logActivity(propertyId, actionType, description, oldValues, newValues) {
     try {

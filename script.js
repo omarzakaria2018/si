@@ -6,6 +6,7 @@ let filterStatus = null;
 let contractTypeFilter = null;
 let multiFilterSelectedCity = null;
 let multiFilterSelectedProperties = [];
+let isReverseOrder = true; // ترتيب عكسي افتراضياً (الأحدث أولاً)
 // متغيرات عامة للفلتر
 let dateFilterType = '';
 let dateFilterDay = '';
@@ -365,6 +366,9 @@ function showViewToggle() {
 // تهيئة التطبيق
 function initializeApp() {
     console.log('🚀 بدء تهيئة التطبيق...');
+
+    // تحميل إعداد الترتيب
+    loadSortOrderSetting();
 
     // التحقق من وجود البيانات
     if (!properties || properties.length === 0) {
@@ -1546,7 +1550,7 @@ function renderTable(data) {
     html += '</tr>';
 
     // ترتيب العقود حسب اسم العقار أو رقم العقد
-    const groupedOrder = Object.keys(groupedData).sort((a, b) => {
+    let groupedOrder = Object.keys(groupedData).sort((a, b) => {
         // ترتيب حسب اسم العقار ثم رقم العقد
         const [contractA, nameA] = a.split('_');
         const [contractB, nameB] = b.split('_');
@@ -1555,6 +1559,11 @@ function renderTable(data) {
         }
         return nameA.localeCompare(nameB, 'ar', {numeric: true});
     });
+
+    // تطبيق الترتيب العكسي إذا كان مفعلاً
+    if (isReverseOrder) {
+        groupedOrder = groupedOrder.reverse();
+    }
 
     groupedOrder.forEach(key => {
         const property = groupedData[key];
@@ -1689,8 +1698,11 @@ function renderCards(data) {
     });
     const uniqueData = Array.from(uniqueMap.values());
 
+    // ترتيب البطاقات حسب الإعداد المحدد
+    const sortedData = isReverseOrder ? uniqueData.reverse() : uniqueData;
+
     let html = '<div class="cards-container">';
-    uniqueData.forEach(property => {
+    sortedData.forEach(property => {
         const status = calculateStatus(property);
         let headerClass = '', badgeClass = 'badge-empty', badgeIcon = '', displayStatus = status.display;
         
@@ -5219,6 +5231,38 @@ function enterManagementMode() {
                         <span>تصفية حسب المدينة</span>
                         <i class="fas fa-chevron-down filter-arrow" id="filterArrow"></i>
                     </button>
+                    <button class="nav-btn test-btn" onclick="testPropertyManagementFunctions()" style="background: linear-gradient(135deg, #17a2b8, #138496); margin-top: 20px;">
+                        <i class="fas fa-vial"></i>
+                        <span>اختبار النظام</span>
+                    </button>
+                    <button class="nav-btn debug-btn" onclick="debugDatabaseSync()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); margin-top: 10px;">
+                        <i class="fas fa-database"></i>
+                        <span>تشخيص قاعدة البيانات</span>
+                    </button>
+                    <button class="nav-btn reload-btn" onclick="reloadFromSupabase()" style="background: linear-gradient(135deg, #f39c12, #e67e22); margin-top: 10px;">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>إعادة تحميل من السحابة</span>
+                    </button>
+                    <button class="nav-btn cleanup-btn" onclick="cleanupDatabase()" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); margin-top: 10px;">
+                        <i class="fas fa-broom"></i>
+                        <span>تنظيف قاعدة البيانات</span>
+                    </button>
+                    <button class="nav-btn verify-btn" onclick="verifyDatabaseSync()" style="background: linear-gradient(135deg, #27ae60, #2ecc71); margin-top: 10px;">
+                        <i class="fas fa-check-double"></i>
+                        <span>التحقق من التزامن</span>
+                    </button>
+                    <button class="nav-btn force-delete-btn" onclick="forceDeleteSpecificUnits()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); margin-top: 10px;">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>حذف الوحدات المحددة</span>
+                    </button>
+                    <button class="nav-btn nuclear-btn" onclick="nuclearDeleteAllTestUnits()" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); margin-top: 10px;">
+                        <i class="fas fa-bomb"></i>
+                        <span>حذف شامل لوحدات TEST</span>
+                    </button>
+                    <button class="nav-btn advanced-delete-btn" onclick="advancedDeleteWithForeignKeys()" style="background: linear-gradient(135deg, #3498db, #2980b9); margin-top: 10px;">
+                        <i class="fas fa-cogs"></i>
+                        <span>حذف متقدم مع الروابط</span>
+                    </button>
 
                     <!-- قائمة المدن القابلة للطي -->
                     <div class="city-filter-list" id="cityFilterList">
@@ -5458,6 +5502,9 @@ function renderPropertiesTab() {
                                     </button>
                                     <button onclick="showPropertyStatistics('${property}')" class="btn-secondary">
                                         <i class="fas fa-chart-bar"></i> الإحصائيات
+                                    </button>
+                                    <button onclick="deleteProperty('${property}')" class="btn-delete">
+                                        <i class="fas fa-trash"></i> حذف العقار
                                     </button>
                                 </div>
                             </div>
@@ -5826,6 +5873,1917 @@ function addNewUnit() {
     document.getElementById('units-tab').innerHTML = renderUnitsTab();
 }
 
+// ===== وظيفة حذف الوحدة =====
+async function deleteUnit(unitNumber, propertyName) {
+    console.log('🚀 بدء وظيفة حذف الوحدة:', { unitNumber, propertyName });
+
+    // التحقق من وجود الوحدة
+    const unitIndex = properties.findIndex(p =>
+        p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName
+    );
+
+    console.log('🔍 فهرس الوحدة في المصفوفة:', unitIndex);
+    console.log('📊 إجمالي عدد العقارات:', properties.length);
+
+    if (unitIndex === -1) {
+        console.error('❌ لم يتم العثور على الوحدة في المصفوفة');
+        alert('لم يتم العثور على الوحدة المحددة');
+        return;
+    }
+
+    const unit = properties[unitIndex];
+
+    // نافذة تأكيد الحذف
+    const confirmModal = document.createElement('div');
+    confirmModal.className = 'modal-overlay';
+    confirmModal.style.display = 'flex';
+    confirmModal.innerHTML = `
+        <div class="modal-box" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 style="color: #dc3545; margin: 0;">
+                    <i class="fas fa-exclamation-triangle"></i> تأكيد حذف الوحدة
+                </h3>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #856404;">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>تحذير:</strong> هذا الإجراء لا يمكن التراجع عنه!
+                    </p>
+                </div>
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #495057;">بيانات الوحدة المراد حذفها:</h4>
+                    <p><strong>رقم الوحدة:</strong> ${unitNumber}</p>
+                    <p><strong>اسم العقار:</strong> ${propertyName}</p>
+                    <p><strong>المدينة:</strong> ${unit['المدينة']}</p>
+                    <p><strong>المستأجر:</strong> ${unit['اسم المستأجر'] || 'فارغ'}</p>
+                    <p><strong>رقم العقد:</strong> ${unit['رقم العقد'] || 'غير محدد'}</p>
+                </div>
+                <p style="color: #dc3545; font-weight: 600; text-align: center;">
+                    هل أنت متأكد من حذف هذه الوحدة وجميع مرفقاتها؟
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-action-btn close-btn" onclick="closeDeleteConfirmModal()">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+                <button class="modal-action-btn print-btn" onclick="confirmDeleteUnit('${unitNumber}', '${propertyName}', ${unitIndex})"
+                        style="background: #dc3545; border-color: #dc3545;">
+                    <i class="fas fa-trash"></i> تأكيد الحذف
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(confirmModal);
+}
+
+// إغلاق نافذة تأكيد الحذف
+function closeDeleteConfirmModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// تأكيد حذف الوحدة
+async function confirmDeleteUnit(unitNumber, propertyName, unitIndex) {
+    // إغلاق نافذة التأكيد
+    closeDeleteConfirmModal();
+
+    // إظهار مؤشر التحميل
+    const loadingModal = document.createElement('div');
+    loadingModal.className = 'modal-overlay';
+    loadingModal.style.display = 'flex';
+    loadingModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #dc3545; margin-bottom: 20px;"></i>
+            <h3>جاري حذف الوحدة...</h3>
+            <p>يرجى الانتظار، جاري حذف الوحدة وجميع مرفقاتها</p>
+        </div>
+    `;
+    document.body.appendChild(loadingModal);
+
+    try {
+        const unit = properties[unitIndex];
+        console.log('🗑️ بدء عملية حذف الوحدة:', unitNumber, 'من العقار:', propertyName);
+
+        // 1. استخدام الحذف المتقدم الجديد
+        console.log('🔧 استخدام الحذف المتقدم مع معالجة الروابط...');
+
+        const enhancedResult = await enhancedDeleteUnit(unit);
+
+        if (enhancedResult.success) {
+            console.log('✅ تم الحذف المتقدم بنجاح');
+
+            // إزالة مؤشر التحميل
+            loadingModal.remove();
+
+            // إظهار رسالة نجاح
+            showSuccessMessage(
+                'تم حذف الوحدة بنجاح',
+                `تم حذف الوحدة وجميع البيانات المرتبطة نهائياً (محلي: ${enhancedResult.localDeleted || 0}, سحابي: ${enhancedResult.cloudDeleted || 0})`
+            );
+
+            // تحديث الواجهة
+            if (document.getElementById('units-tab')) {
+                document.getElementById('units-tab').innerHTML = renderUnitsTab();
+            }
+
+            const searchResults = document.getElementById('unitSearchResults');
+            if (searchResults) {
+                const searchInput = document.getElementById('unitSearchInput');
+                if (searchInput && searchInput.value.trim()) {
+                    searchUnits();
+                }
+            }
+
+            return; // انتهى بنجاح
+        } else {
+            console.warn('⚠️ فشل الحذف المتقدم، سيتم المتابعة بالطريقة التقليدية');
+        }
+
+        // 2. Delete from Supabase with advanced foreign key handling
+        console.log('🏠 Starting advanced Supabase deletion process...');
+        console.log('📋 Property data for deletion:', {
+            unitNumber: unit['رقم  الوحدة '],
+            propertyName: unit['اسم العقار'],
+            city: unit['المدينة'],
+            tenant: unit['اسم المستأجر'],
+            contract: unit['رقم العقد']
+        });
+
+        let deletionResult = { success: false, reason: 'UNKNOWN' };
+
+        if (typeof deletePropertyFromSupabase === 'function') {
+            try {
+                // Show deletion progress to user
+                showToast('جاري حذف الوحدة مع جميع البيانات المرتبطة...', 'info');
+
+                // Advanced deletion with foreign key handling
+                deletionResult = await deletePropertyFromSupabase(unit);
+                console.log('🏠 Advanced deletion result:', deletionResult);
+
+                // Handle results and provide detailed user feedback
+                if (deletionResult.success) {
+                    console.log('✅ Property and all related data successfully deleted from Supabase');
+
+                    // Show detailed success message
+                    const successMessage = deletionResult.deletedCount > 0
+                        ? `تم حذف الوحدة نهائياً مع جميع البيانات المرتبطة (${deletionResult.deletedCount} سجل)`
+                        : 'تم حذف الوحدة نهائياً من قاعدة البيانات';
+
+                    showToast(successMessage, 'success');
+
+                    // Log deletion details
+                    if (deletionResult.deletionResults) {
+                        const successfulDeletions = deletionResult.deletionResults.filter(r => r.success);
+                        console.log(`📊 Deletion summary: ${successfulDeletions.length}/${deletionResult.deletionResults.length} records deleted successfully`);
+                    }
+
+                    // Trigger UI refresh after successful deletion
+                    setTimeout(() => {
+                        console.log('🔄 Triggering data refresh after successful advanced deletion');
+                        renderData();
+                    }, 1000);
+
+                } else {
+                    // Handle different failure scenarios with more context
+                    let userMessage = '';
+                    let logLevel = 'warn';
+
+                    switch (deletionResult.reason) {
+                        case 'NO_CLIENT':
+                            userMessage = 'تم الحذف محلياً فقط - قاعدة البيانات غير متصلة';
+                            break;
+                        case 'NOT_FOUND':
+                            userMessage = 'تم الحذف محلياً - الوحدة غير موجودة في قاعدة البيانات';
+                            break;
+                        case 'SCHEMA_ERROR':
+                            userMessage = 'خطأ في هيكل قاعدة البيانات - تم الحذف محلياً فقط';
+                            logLevel = 'error';
+                            break;
+                        case 'CRITICAL_ERROR':
+                            userMessage = 'خطأ خطير في قاعدة البيانات - تم الحذف محلياً فقط';
+                            logLevel = 'error';
+                            break;
+                        default:
+                            // Check if partial deletion occurred
+                            if (deletionResult.deletionResults) {
+                                const partialSuccess = deletionResult.deletionResults.some(r => r.success);
+                                if (partialSuccess) {
+                                    userMessage = 'تم حذف بعض البيانات - قد تحتاج لاستخدام "الحذف المتقدم"';
+                                    logLevel = 'warning';
+                                } else {
+                                    userMessage = 'فشل الحذف من قاعدة البيانات - تم الحذف محلياً فقط';
+                                }
+                            } else {
+                                userMessage = 'فشل الحذف من قاعدة البيانات - تم الحذف محلياً فقط';
+                            }
+                    }
+
+                    console[logLevel]('⚠️ Advanced Supabase deletion failed:', deletionResult);
+                    showToast(userMessage, logLevel === 'error' ? 'error' : 'warning');
+
+                    // Provide specific guidance based on failure type
+                    if (deletionResult.reason === 'NOT_FOUND') {
+                        setTimeout(() => {
+                            showToast('استخدم "تشخيص قاعدة البيانات" للتحقق من التزامن', 'info');
+                        }, 3000);
+                    } else if (deletionResult.deletionResults && deletionResult.deletionResults.some(r => r.error && r.error.includes('foreign key'))) {
+                        setTimeout(() => {
+                            showToast('استخدم زر "حذف متقدم مع الروابط" لحذف البيانات المرتبطة', 'info');
+                        }, 3000);
+                    }
+                }
+
+            } catch (error) {
+                console.error('❌ Critical error during advanced Supabase deletion:', error);
+                showToast('خطأ خطير في حذف الوحدة من قاعدة البيانات', 'error');
+
+                // Log comprehensive error information
+                console.error('Advanced deletion error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    propertyData: unit,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        } else {
+            console.warn('⚠️ deletePropertyFromSupabase function not available');
+            showToast('تم الحذف محلياً فقط - وظيفة قاعدة البيانات غير متوفرة', 'warning');
+        }
+
+        // 3. حذف الوحدة من المصفوفة المحلية
+        console.log('💾 حذف الوحدة من البيانات المحلية...');
+        properties.splice(unitIndex, 1);
+        console.log('✅ تم حذف الوحدة من المصفوفة المحلية');
+
+        // 4. حذف المرفقات المحلية
+        console.log('📁 حذف المرفقات المحلية...');
+        const propertyKey = `${propertyName}_${unitNumber}`;
+        if (attachments[propertyKey]) {
+            delete attachments[propertyKey];
+            localStorage.setItem('propertyAttachments', JSON.stringify(attachments));
+            console.log('✅ تم حذف المرفقات المحلية');
+        } else {
+            console.log('ℹ️ لا توجد مرفقات محلية للحذف');
+        }
+
+        // 5. حفظ البيانات محلياً
+        console.log('💾 حفظ البيانات محلياً...');
+        saveDataLocally();
+        console.log('✅ تم حفظ البيانات محلياً');
+
+        // 6. إعادة تحميل التطبيق
+        console.log('🔄 إعادة تحميل التطبيق...');
+        initializeApp();
+        console.log('✅ تم إعادة تحميل التطبيق');
+
+        // إزالة مؤشر التحميل
+        loadingModal.remove();
+
+        // إظهار رسالة نجاح
+        showSuccessMessage('تم حذف الوحدة بنجاح', 'تم حذف الوحدة وجميع مرفقاتها بنجاح من النظام');
+
+        // تحديث واجهة إدارة العقارات إذا كانت مفتوحة
+        if (document.getElementById('units-tab')) {
+            document.getElementById('units-tab').innerHTML = renderUnitsTab();
+        }
+
+        // تحديث نتائج البحث إذا كانت موجودة
+        const searchResults = document.getElementById('unitSearchResults');
+        if (searchResults) {
+            // إعادة تشغيل البحث الحالي
+            const searchInput = document.getElementById('unitSearchInput');
+            if (searchInput && searchInput.value.trim()) {
+                searchUnits();
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف الوحدة:', error);
+
+        // إزالة مؤشر التحميل
+        loadingModal.remove();
+
+        // حتى لو فشل الحذف السحابي، نحاول الحذف المحلي
+        try {
+            console.log('🔄 محاولة الحذف المحلي فقط...');
+
+            // حذف الوحدة من المصفوفة المحلية
+            const localUnitIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName
+            );
+
+            if (localUnitIndex !== -1) {
+                properties.splice(localUnitIndex, 1);
+                console.log('✅ تم حذف الوحدة محلياً');
+
+                // حذف المرفقات المحلية
+                const propertyKey = `${propertyName}_${unitNumber}`;
+                if (attachments[propertyKey]) {
+                    delete attachments[propertyKey];
+                    localStorage.setItem('propertyAttachments', JSON.stringify(attachments));
+                    console.log('✅ تم حذف المرفقات محلياً');
+                }
+
+                // حفظ البيانات محلياً
+                saveDataLocally();
+
+                // إعادة تحميل التطبيق
+                initializeApp();
+
+                // إظهار رسالة نجاح مع تحذير
+                showSuccessMessage(
+                    'تم حذف الوحدة محلياً',
+                    'تم حذف الوحدة من البيانات المحلية. قد تحتاج لحذفها يدوياً من قاعدة البيانات السحابية.'
+                );
+
+                // تحديث واجهة إدارة العقارات إذا كانت مفتوحة
+                if (document.getElementById('units-tab')) {
+                    document.getElementById('units-tab').innerHTML = renderUnitsTab();
+                }
+
+                // تحديث نتائج البحث إذا كانت موجودة
+                const searchResults = document.getElementById('unitSearchResults');
+                if (searchResults) {
+                    const searchInput = document.getElementById('unitSearchInput');
+                    if (searchInput && searchInput.value.trim()) {
+                        searchUnits();
+                    }
+                }
+
+                return; // نجح الحذف المحلي
+            }
+        } catch (localError) {
+            console.error('❌ فشل الحذف المحلي أيضاً:', localError);
+        }
+
+        // إظهار رسالة خطأ
+        showErrorMessage(
+            'خطأ في حذف الوحدة',
+            'فشل في حذف الوحدة من قاعدة البيانات. يرجى المحاولة مرة أخرى أو الاتصال بالدعم الفني.'
+        );
+    }
+}
+
+// إظهار رسالة نجاح
+function showSuccessMessage(title, message) {
+    const successModal = document.createElement('div');
+    successModal.className = 'modal-overlay';
+    successModal.style.display = 'flex';
+    successModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px; max-width: 450px;">
+            <i class="fas fa-check-circle" style="font-size: 3rem; color: #28a745; margin-bottom: 20px;"></i>
+            <h3 style="color: #28a745; margin-bottom: 15px;">${title}</h3>
+            <p style="color: #6c757d; margin-bottom: 25px;">${message}</p>
+            <button class="modal-action-btn print-btn" onclick="closeModal()"
+                    style="background: #28a745; border-color: #28a745;">
+                <i class="fas fa-check"></i> موافق
+            </button>
+        </div>
+    `;
+    document.body.appendChild(successModal);
+}
+
+// إظهار رسالة خطأ
+function showErrorMessage(title, message) {
+    const errorModal = document.createElement('div');
+    errorModal.className = 'modal-overlay';
+    errorModal.style.display = 'flex';
+    errorModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px; max-width: 450px;">
+            <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: #dc3545; margin-bottom: 20px;"></i>
+            <h3 style="color: #dc3545; margin-bottom: 15px;">${title}</h3>
+            <p style="color: #6c757d; margin-bottom: 25px;">${message}</p>
+            <button class="modal-action-btn close-btn" onclick="closeModal()">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+        </div>
+    `;
+    document.body.appendChild(errorModal);
+}
+
+// ===== وظيفة حذف العقار بالكامل =====
+async function deleteProperty(propertyName) {
+    // البحث عن جميع وحدات العقار
+    const propertyUnits = properties.filter(p => p['اسم العقار'] === propertyName);
+
+    if (propertyUnits.length === 0) {
+        alert('لم يتم العثور على العقار المحدد');
+        return;
+    }
+
+    // نافذة تأكيد الحذف
+    const confirmModal = document.createElement('div');
+    confirmModal.className = 'modal-overlay';
+    confirmModal.style.display = 'flex';
+    confirmModal.innerHTML = `
+        <div class="modal-box" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 style="color: #dc3545; margin: 0;">
+                    <i class="fas fa-exclamation-triangle"></i> تأكيد حذف العقار
+                </h3>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #856404;">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>تحذير:</strong> سيتم حذف العقار وجميع وحداته ومرفقاته نهائياً!
+                    </p>
+                </div>
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 10px 0; color: #495057;">بيانات العقار المراد حذفه:</h4>
+                    <p><strong>اسم العقار:</strong> ${propertyName}</p>
+                    <p><strong>المدينة:</strong> ${propertyUnits[0]['المدينة']}</p>
+                    <p><strong>عدد الوحدات:</strong> ${propertyUnits.length} وحدة</p>
+                    <p><strong>الوحدات:</strong> ${propertyUnits.map(u => u['رقم  الوحدة ']).join(', ')}</p>
+                </div>
+                <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #721c24; font-weight: 600;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        سيتم حذف جميع البيانات والمرفقات المرتبطة بهذا العقار
+                    </p>
+                </div>
+                <p style="color: #dc3545; font-weight: 600; text-align: center;">
+                    هل أنت متأكد من حذف هذا العقار بالكامل؟
+                </p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-action-btn close-btn" onclick="closeDeleteConfirmModal()">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+                <button class="modal-action-btn print-btn" onclick="confirmDeleteProperty('${propertyName}')"
+                        style="background: #dc3545; border-color: #dc3545;">
+                    <i class="fas fa-trash"></i> تأكيد الحذف
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(confirmModal);
+}
+
+// تأكيد حذف العقار
+async function confirmDeleteProperty(propertyName) {
+    // إغلاق نافذة التأكيد
+    closeDeleteConfirmModal();
+
+    // إظهار مؤشر التحميل
+    const loadingModal = document.createElement('div');
+    loadingModal.className = 'modal-overlay';
+    loadingModal.style.display = 'flex';
+    loadingModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #dc3545; margin-bottom: 20px;"></i>
+            <h3>جاري حذف العقار...</h3>
+            <p>يرجى الانتظار، جاري حذف العقار وجميع وحداته ومرفقاته</p>
+        </div>
+    `;
+    document.body.appendChild(loadingModal);
+
+    try {
+        // البحث عن جميع وحدات العقار
+        const propertyUnits = properties.filter(p => p['اسم العقار'] === propertyName);
+
+        // حذف كل وحدة باستخدام الحذف المتقدم
+        for (const unit of propertyUnits) {
+            console.log(`🔧 حذف متقدم للوحدة: ${unit['رقم  الوحدة ']}`);
+
+            // استخدام الحذف المتقدم
+            const result = await enhancedDeleteUnit(unit);
+
+            if (result.success) {
+                console.log(`✅ تم حذف الوحدة ${unit['رقم  الوحدة ']} بنجاح`);
+            } else {
+                console.warn(`⚠️ فشل حذف الوحدة ${unit['رقم  الوحدة ']} من قاعدة البيانات`);
+
+                // حذف محلي كبديل
+                const propertyKey = `${propertyName}_${unit['رقم  الوحدة ']}`;
+                if (attachments[propertyKey]) {
+                    delete attachments[propertyKey];
+                }
+            }
+        }
+
+        // حذف جميع وحدات العقار من المصفوفة المحلية
+        for (let i = properties.length - 1; i >= 0; i--) {
+            if (properties[i]['اسم العقار'] === propertyName) {
+                properties.splice(i, 1);
+            }
+        }
+
+        // حفظ البيانات محلياً
+        localStorage.setItem('propertyAttachments', JSON.stringify(attachments));
+        saveDataLocally();
+
+        // إعادة تحميل التطبيق
+        initializeApp();
+
+        // إزالة مؤشر التحميل
+        loadingModal.remove();
+
+        // إظهار رسالة نجاح
+        showSuccessMessage('تم حذف العقار بنجاح', `تم حذف العقار "${propertyName}" وجميع وحداته ومرفقاته بنجاح من النظام`);
+
+        // تحديث واجهة إدارة العقارات إذا كانت مفتوحة
+        if (document.getElementById('properties-tab')) {
+            document.getElementById('properties-tab').innerHTML = renderPropertiesTab();
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف العقار:', error);
+
+        // إزالة مؤشر التحميل
+        loadingModal.remove();
+
+        // إظهار رسالة خطأ
+        showErrorMessage('خطأ في حذف العقار', error.message || 'حدث خطأ غير متوقع أثناء حذف العقار');
+    }
+}
+
+// ===== وظيفة اختبار شاملة لإدارة العقارات =====
+async function testPropertyManagementFunctions() {
+    console.log('🧪 بدء اختبار وظائف إدارة العقارات...');
+
+    const testResults = {
+        addProperty: false,
+        editProperty: false,
+        deleteProperty: false,
+        addUnit: false,
+        editUnit: false,
+        deleteUnit: false,
+        attachments: false,
+        search: false,
+        supabaseSync: false
+    };
+
+    try {
+        // اختبار إضافة عقار جديد
+        console.log('📝 اختبار إضافة عقار جديد...');
+        const testProperty = {
+            'رقم  الوحدة ': 'TEST_001',
+            'المدينة': 'الرياض',
+            'اسم العقار': 'عقار اختبار',
+            'موقع العقار': 'موقع اختبار',
+            'الارتفاع': null,
+            'رقم الصك': '12345',
+            'السجل العيني ': '67890',
+            'مساحةالصك': '500',
+            'المالك': 'مالك اختبار',
+            'اسم المستأجر': null,
+            'رقم العقد': null,
+            'قيمة  الايجار ': null,
+            'المساحة': null,
+            'تاريخ البداية': null,
+            'تاريخ النهاية': null,
+            'الاجمالى': 0.0,
+            'رقم حساب الكهرباء': null,
+            'عدد الاقساط المتبقية': null,
+            'تاريخ القسط الاول': null,
+            'مبلغ القسط الاول': null,
+            'تاريخ القسط الثاني': null,
+            'مبلغ القسط الثاني': null,
+            'تاريخ نهاية القسط': null,
+            'نوع العقد': 'سكني'
+        };
+
+        properties.push(testProperty);
+        if (typeof savePropertyToSupabase === 'function') {
+            await savePropertyToSupabase(testProperty);
+        }
+        testResults.addProperty = true;
+        console.log('✅ نجح اختبار إضافة العقار');
+
+        // اختبار تعديل العقار
+        console.log('✏️ اختبار تعديل العقار...');
+        const propertyIndex = properties.findIndex(p => p['رقم  الوحدة '] === 'TEST_001');
+        if (propertyIndex !== -1) {
+            properties[propertyIndex]['المالك'] = 'مالك محدث';
+            if (typeof savePropertyToSupabase === 'function') {
+                await savePropertyToSupabase(properties[propertyIndex]);
+            }
+            testResults.editProperty = true;
+            console.log('✅ نجح اختبار تعديل العقار');
+        }
+
+        // اختبار البحث
+        console.log('🔍 اختبار وظيفة البحث...');
+        const searchResults = properties.filter(p =>
+            p['اسم العقار'].includes('اختبار') ||
+            p['رقم  الوحدة '].includes('TEST')
+        );
+        if (searchResults.length > 0) {
+            testResults.search = true;
+            console.log('✅ نجح اختبار البحث');
+        }
+
+        // اختبار الاتصال بـ Supabase
+        console.log('☁️ اختبار الاتصال بـ Supabase...');
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('count', { count: 'exact', head: true });
+
+                if (!error) {
+                    testResults.supabaseSync = true;
+                    console.log('✅ نجح اختبار الاتصال بـ Supabase');
+                }
+            } catch (supabaseError) {
+                console.log('⚠️ Supabase غير متوفر أو غير مكون');
+            }
+        }
+
+        // اختبار حذف العقار (تنظيف)
+        console.log('🗑️ اختبار حذف العقار...');
+        const deleteIndex = properties.findIndex(p => p['رقم  الوحدة '] === 'TEST_001');
+        if (deleteIndex !== -1) {
+            const unitToDelete = properties[deleteIndex];
+            if (typeof deletePropertyFromSupabase === 'function') {
+                await deletePropertyFromSupabase(unitToDelete);
+            }
+            properties.splice(deleteIndex, 1);
+            testResults.deleteProperty = true;
+            console.log('✅ نجح اختبار حذف العقار');
+        }
+
+        // حفظ البيانات
+        saveDataLocally();
+
+    } catch (error) {
+        console.error('❌ خطأ في الاختبار:', error);
+    }
+
+    // عرض نتائج الاختبار
+    const passedTests = Object.values(testResults).filter(result => result).length;
+    const totalTests = Object.keys(testResults).length;
+
+    console.log('📊 نتائج الاختبار:');
+    console.log(`✅ نجح: ${passedTests}/${totalTests} اختبار`);
+    console.log('تفاصيل النتائج:', testResults);
+
+    // إظهار رسالة للمستخدم
+    const testModal = document.createElement('div');
+    testModal.className = 'modal-overlay';
+    testModal.style.display = 'flex';
+    testModal.innerHTML = `
+        <div class="modal-box" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 style="color: #28a745; margin: 0;">
+                    <i class="fas fa-check-circle"></i> نتائج اختبار النظام
+                </h3>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #155724; font-weight: 600; text-align: center;">
+                        نجح ${passedTests} من ${totalTests} اختبار
+                    </p>
+                </div>
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 15px;">
+                    <h4 style="margin: 0 0 10px 0;">تفاصيل الاختبارات:</h4>
+                    <ul style="margin: 0; padding-right: 20px;">
+                        <li style="color: ${testResults.addProperty ? '#28a745' : '#dc3545'}">
+                            ${testResults.addProperty ? '✅' : '❌'} إضافة العقارات
+                        </li>
+                        <li style="color: ${testResults.editProperty ? '#28a745' : '#dc3545'}">
+                            ${testResults.editProperty ? '✅' : '❌'} تعديل العقارات
+                        </li>
+                        <li style="color: ${testResults.deleteProperty ? '#28a745' : '#dc3545'}">
+                            ${testResults.deleteProperty ? '✅' : '❌'} حذف العقارات
+                        </li>
+                        <li style="color: ${testResults.search ? '#28a745' : '#dc3545'}">
+                            ${testResults.search ? '✅' : '❌'} البحث والفلترة
+                        </li>
+                        <li style="color: ${testResults.supabaseSync ? '#28a745' : '#dc3545'}">
+                            ${testResults.supabaseSync ? '✅' : '❌'} التزامن مع Supabase
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-action-btn print-btn" onclick="closeModal()"
+                        style="background: #28a745; border-color: #28a745;">
+                    <i class="fas fa-check"></i> موافق
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(testModal);
+
+    return testResults;
+}
+
+// ===== وظيفة تبديل ترتيب العرض =====
+function toggleSortOrder() {
+    // تبديل حالة الترتيب
+    isReverseOrder = !isReverseOrder;
+
+    // تحديث نص وأيقونة الزر
+    const sortBtn = document.getElementById('sort-order-btn');
+    if (sortBtn) {
+        if (isReverseOrder) {
+            sortBtn.innerHTML = '<i class="fas fa-sort-amount-down"></i> الأحدث أولاً';
+            sortBtn.title = 'ترتيب عكسي - الأحدث أولاً';
+        } else {
+            sortBtn.innerHTML = '<i class="fas fa-sort-amount-up"></i> الأقدم أولاً';
+            sortBtn.title = 'ترتيب طبيعي - الأقدم أولاً';
+        }
+    }
+
+    // إعادة عرض البيانات بالترتيب الجديد
+    renderData();
+
+    // حفظ الإعداد في التخزين المحلي
+    localStorage.setItem('sortOrder', isReverseOrder ? 'reverse' : 'normal');
+
+    // إظهار رسالة تأكيد
+    const message = isReverseOrder ? 'تم تغيير الترتيب إلى: الأحدث أولاً' : 'تم تغيير الترتيب إلى: الأقدم أولاً';
+    showToast(message, 'success');
+}
+
+// تحميل إعداد الترتيب من التخزين المحلي
+function loadSortOrderSetting() {
+    const savedOrder = localStorage.getItem('sortOrder');
+    if (savedOrder) {
+        isReverseOrder = savedOrder === 'reverse';
+
+        // تحديث الزر حسب الإعداد المحفوظ
+        const sortBtn = document.getElementById('sort-order-btn');
+        if (sortBtn) {
+            if (isReverseOrder) {
+                sortBtn.innerHTML = '<i class="fas fa-sort-amount-down"></i> الأحدث أولاً';
+                sortBtn.title = 'ترتيب عكسي - الأحدث أولاً';
+            } else {
+                sortBtn.innerHTML = '<i class="fas fa-sort-amount-up"></i> الأقدم أولاً';
+                sortBtn.title = 'ترتيب طبيعي - الأقدم أولاً';
+            }
+        }
+    }
+}
+
+// ===== Advanced Database Diagnostics Tool =====
+async function debugDatabaseSync() {
+    console.log('🔍 Starting comprehensive database diagnostics...');
+
+    if (!supabaseClient) {
+        console.error('❌ Supabase client not available');
+        showToast('Supabase غير متصل - لا يمكن تشخيص قاعدة البيانات', 'error');
+        return;
+    }
+
+    try {
+        // Show loading indicator
+        const diagnosticsModal = document.createElement('div');
+        diagnosticsModal.className = 'modal-overlay';
+        diagnosticsModal.style.display = 'flex';
+        diagnosticsModal.innerHTML = `
+            <div class="modal-box" style="max-width: 90vw; max-height: 90vh; overflow-y: auto;">
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-cog fa-spin" style="font-size: 2rem; color: #3b82f6; margin-bottom: 20px;"></i>
+                    <h3>Running Database Diagnostics...</h3>
+                    <div id="diagnostics-content">
+                        <p>Analyzing database structure and content...</p>
+                    </div>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+            </div>
+        `;
+        document.body.appendChild(diagnosticsModal);
+
+        const contentDiv = diagnosticsModal.querySelector('#diagnostics-content');
+
+        // Step 1: Test connection
+        contentDiv.innerHTML += '<p>✅ Testing Supabase connection...</p>';
+        const { data: connectionTest, error: connectionError } = await supabaseClient
+            .from('properties')
+            .select('count', { count: 'exact', head: true });
+
+        if (connectionError) {
+            throw new Error(`Connection failed: ${connectionError.message}`);
+        }
+
+        // Step 2: Get database schema
+        contentDiv.innerHTML += '<p>✅ Fetching database schema...</p>';
+        const { data: schemaData, error: schemaError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .limit(1);
+
+        if (schemaError) {
+            throw new Error(`Schema fetch failed: ${schemaError.message}`);
+        }
+
+        const dbFields = schemaData.length > 0 ? Object.keys(schemaData[0]) : [];
+        console.log('📊 Database schema fields:', dbFields);
+
+        // Step 3: Get all properties from database
+        contentDiv.innerHTML += '<p>✅ Fetching all database records...</p>';
+        const { data: allDbProperties, error: fetchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (fetchError) {
+            throw new Error(`Data fetch failed: ${fetchError.message}`);
+        }
+
+        // Step 4: Analyze local vs database data
+        contentDiv.innerHTML += '<p>✅ Analyzing data synchronization...</p>';
+
+        const localCount = properties.length;
+        const dbCount = allDbProperties.length;
+
+        // Find potential matches and mismatches
+        const localUnits = new Set(properties.map(p => p['رقم  الوحدة ']));
+        const dbUnits = new Set(allDbProperties.map(p => p.unit_number));
+
+        const onlyLocal = [...localUnits].filter(unit => !dbUnits.has(unit));
+        const onlyDb = [...dbUnits].filter(unit => !localUnits.has(unit));
+        const inBoth = [...localUnits].filter(unit => dbUnits.has(unit));
+
+        // Generate comprehensive report
+        const report = `
+            <div style="text-align: left; font-family: monospace; background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <h4>🔍 Database Diagnostics Report</h4>
+
+                <h5>📊 Data Counts:</h5>
+                <ul>
+                    <li>Local properties: ${localCount}</li>
+                    <li>Database properties: ${dbCount}</li>
+                    <li>Difference: ${Math.abs(localCount - dbCount)}</li>
+                </ul>
+
+                <h5>🏗️ Database Schema:</h5>
+                <ul>
+                    ${dbFields.map(field => `<li>${field}</li>`).join('')}
+                </ul>
+
+                <h5>🔄 Synchronization Analysis:</h5>
+                <ul>
+                    <li>Units in both local and database: ${inBoth.length}</li>
+                    <li>Units only in local: ${onlyLocal.length}</li>
+                    <li>Units only in database: ${onlyDb.length}</li>
+                </ul>
+
+                ${onlyLocal.length > 0 ? `
+                <h5>⚠️ Units only in local storage:</h5>
+                <ul>
+                    ${onlyLocal.slice(0, 10).map(unit => `<li>${unit}</li>`).join('')}
+                    ${onlyLocal.length > 10 ? `<li>... and ${onlyLocal.length - 10} more</li>` : ''}
+                </ul>
+                ` : ''}
+
+                ${onlyDb.length > 0 ? `
+                <h5>⚠️ Units only in database:</h5>
+                <ul>
+                    ${onlyDb.slice(0, 10).map(unit => `<li>${unit}</li>`).join('')}
+                    ${onlyDb.length > 10 ? `<li>... and ${onlyDb.length - 10} more</li>` : ''}
+                </ul>
+                ` : ''}
+
+                <h5>📋 Sample Database Records:</h5>
+                <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                    <tr style="background: #ddd;">
+                        <th style="border: 1px solid #ccc; padding: 5px;">ID</th>
+                        <th style="border: 1px solid #ccc; padding: 5px;">Unit Number</th>
+                        <th style="border: 1px solid #ccc; padding: 5px;">Property Name</th>
+                        <th style="border: 1px solid #ccc; padding: 5px;">City</th>
+                    </tr>
+                    ${allDbProperties.slice(0, 10).map(prop => `
+                        <tr>
+                            <td style="border: 1px solid #ccc; padding: 5px;">${prop.id}</td>
+                            <td style="border: 1px solid #ccc; padding: 5px;">${prop.unit_number || 'N/A'}</td>
+                            <td style="border: 1px solid #ccc; padding: 5px;">${prop.property_name || 'N/A'}</td>
+                            <td style="border: 1px solid #ccc; padding: 5px;">${prop.city || 'N/A'}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+
+                <h5>💡 Recommendations:</h5>
+                <ul>
+                    ${localCount !== dbCount ? '<li>Consider using "Reload from Cloud" to sync data</li>' : ''}
+                    ${onlyLocal.length > 0 ? '<li>Some local data may need to be uploaded to database</li>' : ''}
+                    ${onlyDb.length > 0 ? '<li>Some database records are not in local storage</li>' : ''}
+                    <li>Use "Cleanup Database" to remove duplicates</li>
+                </ul>
+            </div>
+        `;
+
+        contentDiv.innerHTML = report;
+
+        // Log detailed information to console
+        console.log('📊 Diagnostics Summary:', {
+            localCount,
+            dbCount,
+            dbFields,
+            synchronization: {
+                inBoth: inBoth.length,
+                onlyLocal: onlyLocal.length,
+                onlyDb: onlyDb.length
+            }
+        });
+
+        console.log('📋 Sample database records:');
+        console.table(allDbProperties.slice(0, 10));
+
+        console.log('📋 Sample local records:');
+        console.table(properties.slice(0, 10).map(p => ({
+            unit_number: p['رقم  الوحدة '],
+            property_name: p['اسم العقار'],
+            city: p['المدينة'],
+            tenant_name: p['اسم المستأجر']
+        })));
+
+        showToast('تم إكمال تشخيص قاعدة البيانات - راجع النتائج', 'success');
+
+    } catch (error) {
+        console.error('❌ Error during database diagnostics:', error);
+
+        const errorModal = document.querySelector('.modal-overlay');
+        if (errorModal) {
+            errorModal.querySelector('#diagnostics-content').innerHTML = `
+                <div style="color: red; text-align: center;">
+                    <h4>❌ Diagnostics Failed</h4>
+                    <p>Error: ${error.message}</p>
+                    <p>Check console for detailed error information</p>
+                </div>
+            `;
+        }
+
+        showToast('فشل في تشخيص قاعدة البيانات - راجع وحدة التحكم', 'error');
+    }
+}
+
+// ===== إعادة تحميل البيانات من Supabase =====
+async function reloadFromSupabase() {
+    console.log('🔄 إعادة تحميل البيانات من Supabase...');
+
+    if (!supabaseClient) {
+        alert('Supabase غير متصل');
+        return;
+    }
+
+    try {
+        // إظهار مؤشر التحميل
+        const loadingModal = document.createElement('div');
+        loadingModal.className = 'modal-overlay';
+        loadingModal.style.display = 'flex';
+        loadingModal.innerHTML = `
+            <div class="modal-box" style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #3b82f6; margin-bottom: 20px;"></i>
+                <h3>جاري إعادة تحميل البيانات...</h3>
+                <p>يرجى الانتظار، جاري تحميل البيانات من قاعدة البيانات</p>
+            </div>
+        `;
+        document.body.appendChild(loadingModal);
+
+        // تحميل البيانات من Supabase
+        const { data: supabaseProperties, error } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (error) {
+            throw new Error(`خطأ في تحميل البيانات: ${error.message}`);
+        }
+
+        // تحويل البيانات إلى التنسيق المحلي
+        properties = supabaseProperties.map(convertSupabaseToLocal);
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
+
+        // إعادة تحميل التطبيق
+        initializeApp();
+
+        // إزالة مؤشر التحميل
+        loadingModal.remove();
+
+        // إظهار رسالة نجاح
+        showSuccessMessage(
+            'تم إعادة تحميل البيانات بنجاح',
+            `تم تحميل ${supabaseProperties.length} وحدة من قاعدة البيانات`
+        );
+
+        console.log(`✅ تم تحميل ${supabaseProperties.length} وحدة من Supabase`);
+
+    } catch (error) {
+        console.error('❌ خطأ في إعادة تحميل البيانات:', error);
+
+        // إزالة مؤشر التحميل
+        const loadingModal = document.querySelector('.modal-overlay');
+        if (loadingModal) {
+            loadingModal.remove();
+        }
+
+        // إظهار رسالة خطأ
+        showErrorMessage('خطأ في إعادة التحميل', error.message || 'حدث خطأ غير متوقع');
+    }
+}
+
+// ===== تنظيف قاعدة البيانات =====
+async function cleanupDatabase() {
+    if (!confirm('هل أنت متأكد من تنظيف قاعدة البيانات؟\nسيتم حذف جميع البيانات المكررة والفارغة.')) {
+        return;
+    }
+
+    console.log('🧹 بدء تنظيف قاعدة البيانات...');
+
+    if (!supabaseClient) {
+        alert('Supabase غير متصل');
+        return;
+    }
+
+    try {
+        // إظهار مؤشر التحميل
+        const loadingModal = document.createElement('div');
+        loadingModal.className = 'modal-overlay';
+        loadingModal.style.display = 'flex';
+        loadingModal.innerHTML = `
+            <div class="modal-box" style="text-align: center; padding: 40px;">
+                <i class="fas fa-broom fa-spin" style="font-size: 2rem; color: #e67e22; margin-bottom: 20px;"></i>
+                <h3>جاري تنظيف قاعدة البيانات...</h3>
+                <p>يرجى الانتظار، جاري حذف البيانات المكررة والفارغة</p>
+            </div>
+        `;
+        document.body.appendChild(loadingModal);
+
+        // جلب جميع البيانات
+        const { data: allProperties, error } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .order('id', { ascending: true });
+
+        if (error) {
+            throw new Error(`خطأ في جلب البيانات: ${error.message}`);
+        }
+
+        console.log(`📊 تم جلب ${allProperties.length} وحدة للتنظيف`);
+
+        // العثور على البيانات المكررة
+        const duplicates = [];
+        const seen = new Set();
+
+        allProperties.forEach(property => {
+            const key = `${property.unit_number}_${property.property_name}_${property.city}`;
+            if (seen.has(key)) {
+                duplicates.push(property.id);
+            } else {
+                seen.add(key);
+            }
+        });
+
+        console.log(`🔍 تم العثور على ${duplicates.length} وحدة مكررة`);
+
+        // حذف البيانات المكررة
+        let deletedCount = 0;
+        for (const id of duplicates) {
+            try {
+                const { error: deleteError } = await supabaseClient
+                    .from('properties')
+                    .delete()
+                    .eq('id', id);
+
+                if (!deleteError) {
+                    deletedCount++;
+                    console.log(`✅ تم حذف الوحدة المكررة ID: ${id}`);
+                }
+            } catch (deleteError) {
+                console.error(`❌ فشل حذف الوحدة ${id}:`, deleteError);
+            }
+        }
+
+        // إزالة مؤشر التحميل
+        loadingModal.remove();
+
+        // إظهار النتائج
+        showSuccessMessage(
+            'تم تنظيف قاعدة البيانات بنجاح',
+            `تم حذف ${deletedCount} وحدة مكررة من أصل ${duplicates.length}`
+        );
+
+        console.log(`✅ تم تنظيف قاعدة البيانات - حذف ${deletedCount} وحدة مكررة`);
+
+        // إعادة تحميل البيانات
+        await reloadFromSupabase();
+
+    } catch (error) {
+        console.error('❌ خطأ في تنظيف قاعدة البيانات:', error);
+
+        // إزالة مؤشر التحميل
+        const loadingModal = document.querySelector('.modal-overlay');
+        if (loadingModal) {
+            loadingModal.remove();
+        }
+
+        showErrorMessage('خطأ في التنظيف', error.message || 'حدث خطأ غير متوقع');
+    }
+}
+
+// ===== Database Sync Verification =====
+async function verifyDatabaseSync() {
+    console.log('🔍 Verifying database synchronization...');
+
+    if (!supabaseClient) {
+        showToast('Supabase غير متصل', 'error');
+        return false;
+    }
+
+    try {
+        // Get current database state
+        const { data: dbProperties, error } = await supabaseClient
+            .from('properties')
+            .select('id, unit_number, property_name, city')
+            .order('id', { ascending: false });
+
+        if (error) {
+            console.error('❌ Failed to fetch database properties:', error);
+            return false;
+        }
+
+        // Compare with local data
+        const localUnits = new Set(properties.map(p => p['رقم  الوحدة ']));
+        const dbUnits = new Set(dbProperties.map(p => p.unit_number));
+
+        const syncStatus = {
+            localCount: properties.length,
+            dbCount: dbProperties.length,
+            inSync: localUnits.size === dbUnits.size,
+            onlyLocal: [...localUnits].filter(unit => !dbUnits.has(unit)),
+            onlyDb: [...dbUnits].filter(unit => !localUnits.has(unit))
+        };
+
+        console.log('📊 Sync verification result:', syncStatus);
+
+        if (syncStatus.inSync && syncStatus.onlyLocal.length === 0 && syncStatus.onlyDb.length === 0) {
+            showToast('قاعدة البيانات متزامنة بشكل صحيح', 'success');
+            return true;
+        } else {
+            showToast(`عدم تزامن في البيانات - محلي: ${syncStatus.localCount}, قاعدة البيانات: ${syncStatus.dbCount}`, 'warning');
+            return false;
+        }
+
+    } catch (error) {
+        console.error('❌ Error verifying database sync:', error);
+        showToast('خطأ في التحقق من تزامن قاعدة البيانات', 'error');
+        return false;
+    }
+}
+
+// ===== Enhanced Property Deletion with Verification =====
+async function deletePropertyWithVerification(unitNumber, propertyName, city) {
+    console.log('🗑️ Starting verified property deletion...');
+
+    // Step 1: Verify the property exists locally
+    const localProperty = properties.find(p =>
+        p['رقم  الوحدة '] === unitNumber &&
+        p['اسم العقار'] === propertyName
+    );
+
+    if (!localProperty) {
+        console.error('❌ Property not found in local data');
+        showToast('الوحدة غير موجودة في البيانات المحلية', 'error');
+        return false;
+    }
+
+    // Step 2: Delete from Supabase first
+    let dbDeletionSuccess = false;
+    if (typeof deletePropertyFromSupabase === 'function') {
+        const result = await deletePropertyFromSupabase(localProperty);
+        dbDeletionSuccess = result.success;
+
+        if (dbDeletionSuccess) {
+            console.log('✅ Property deleted from database successfully');
+        } else {
+            console.warn('⚠️ Database deletion failed:', result.reason);
+        }
+    }
+
+    // Step 3: Delete from local data
+    const originalLength = properties.length;
+    properties = properties.filter(p =>
+        !(p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName)
+    );
+
+    const localDeletionSuccess = properties.length < originalLength;
+
+    // Step 4: Save updated local data
+    if (localDeletionSuccess) {
+        saveDataLocally();
+        renderData();
+    }
+
+    // Step 5: Verify deletion
+    setTimeout(async () => {
+        const isInSync = await verifyDatabaseSync();
+        if (!isInSync && dbDeletionSuccess) {
+            console.log('⚠️ Sync verification failed after deletion');
+            showToast('تم الحذف ولكن قد تحتاج لإعادة تحميل البيانات', 'warning');
+        }
+    }, 2000);
+
+    return {
+        localSuccess: localDeletionSuccess,
+        dbSuccess: dbDeletionSuccess,
+        overall: localDeletionSuccess && dbDeletionSuccess
+    };
+}
+
+// ===== Force Delete Specific Units =====
+async function forceDeleteSpecificUnits() {
+    const targetUnits = ['TEST_001', 'TEST_UNIT_003', 'TEST_UNIT_001'];
+
+    if (!confirm(`هل أنت متأكد من حذف الوحدات التالية نهائياً؟\n${targetUnits.join('\n')}\n\nسيتم الحذف من قاعدة البيانات والبيانات المحلية.`)) {
+        return;
+    }
+
+    console.log('🗑️ بدء الحذف القسري للوحدات المحددة:', targetUnits);
+
+    // Show progress modal
+    const progressModal = document.createElement('div');
+    progressModal.className = 'modal-overlay';
+    progressModal.style.display = 'flex';
+    progressModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px; max-width: 600px;">
+            <i class="fas fa-trash-alt fa-spin" style="font-size: 2rem; color: #e74c3c; margin-bottom: 20px;"></i>
+            <h3>جاري حذف الوحدات المحددة...</h3>
+            <div id="deletion-progress" style="text-align: left; background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0; font-family: monospace;">
+                <p>🔍 البحث عن الوحدات في قاعدة البيانات...</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button>
+        </div>
+    `;
+    document.body.appendChild(progressModal);
+
+    const progressDiv = progressModal.querySelector('#deletion-progress');
+    let deletionResults = [];
+
+    try {
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // Step 1: Search for all target units in database
+        progressDiv.innerHTML += '<p>📋 البحث عن الوحدات في قاعدة البيانات...</p>';
+
+        const { data: allDbProperties, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*');
+
+        if (searchError) {
+            throw new Error(`خطأ في البحث: ${searchError.message}`);
+        }
+
+        progressDiv.innerHTML += `<p>✅ تم جلب ${allDbProperties.length} سجل من قاعدة البيانات</p>`;
+
+        // Step 2: Find matching records for each target unit
+        for (const targetUnit of targetUnits) {
+            progressDiv.innerHTML += `<p>🔍 البحث عن الوحدة: ${targetUnit}</p>`;
+
+            // Search with multiple strategies
+            const matchingRecords = allDbProperties.filter(record => {
+                return (
+                    record.unit_number === targetUnit ||
+                    record.property_name === targetUnit ||
+                    record.tenant_name === targetUnit ||
+                    record.contract_number === targetUnit ||
+                    JSON.stringify(record).includes(targetUnit)
+                );
+            });
+
+            if (matchingRecords.length > 0) {
+                progressDiv.innerHTML += `<p style="color: orange;">📋 تم العثور على ${matchingRecords.length} سجل للوحدة ${targetUnit}</p>`;
+
+                // Delete each matching record
+                for (const record of matchingRecords) {
+                    try {
+                        const { error: deleteError } = await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('id', record.id);
+
+                        if (deleteError) {
+                            progressDiv.innerHTML += `<p style="color: red;">❌ فشل حذف السجل ${record.id}: ${deleteError.message}</p>`;
+                            deletionResults.push({ unit: targetUnit, id: record.id, success: false, error: deleteError.message });
+                        } else {
+                            progressDiv.innerHTML += `<p style="color: green;">✅ تم حذف السجل ${record.id} للوحدة ${targetUnit}</p>`;
+                            deletionResults.push({ unit: targetUnit, id: record.id, success: true });
+                        }
+                    } catch (deleteError) {
+                        progressDiv.innerHTML += `<p style="color: red;">❌ خطأ في حذف السجل ${record.id}: ${deleteError.message}</p>`;
+                        deletionResults.push({ unit: targetUnit, id: record.id, success: false, error: deleteError.message });
+                    }
+                }
+            } else {
+                progressDiv.innerHTML += `<p style="color: gray;">ℹ️ لم يتم العثور على الوحدة ${targetUnit} في قاعدة البيانات</p>`;
+                deletionResults.push({ unit: targetUnit, id: null, success: false, error: 'Not found in database' });
+            }
+        }
+
+        // Step 3: Delete from local data
+        progressDiv.innerHTML += '<p>🏠 حذف الوحدات من البيانات المحلية...</p>';
+
+        const originalLength = properties.length;
+        properties = properties.filter(property => {
+            const unitNumber = property['رقم  الوحدة '];
+            const propertyName = property['اسم العقار'];
+            const tenantName = property['اسم المستأجر'];
+
+            // Check if this property matches any target unit
+            const shouldDelete = targetUnits.some(target =>
+                unitNumber === target ||
+                propertyName === target ||
+                tenantName === target ||
+                JSON.stringify(property).includes(target)
+            );
+
+            if (shouldDelete) {
+                progressDiv.innerHTML += `<p style="color: green;">✅ تم حذف ${unitNumber || propertyName} من البيانات المحلية</p>`;
+            }
+
+            return !shouldDelete;
+        });
+
+        const localDeletedCount = originalLength - properties.length;
+        progressDiv.innerHTML += `<p style="color: blue;">📊 تم حذف ${localDeletedCount} وحدة من البيانات المحلية</p>`;
+
+        // Step 4: Save and refresh
+        saveDataLocally();
+        renderData();
+
+        // Step 5: Show final results
+        const successfulDeletions = deletionResults.filter(r => r.success).length;
+        const totalAttempts = deletionResults.length;
+
+        progressDiv.innerHTML += `
+            <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px;">
+                <h4 style="color: #27ae60;">📊 ملخص النتائج:</h4>
+                <ul style="text-align: right;">
+                    <li>عمليات حذف ناجحة من قاعدة البيانات: ${successfulDeletions}</li>
+                    <li>إجمالي المحاولات: ${totalAttempts}</li>
+                    <li>حذف من البيانات المحلية: ${localDeletedCount} وحدة</li>
+                </ul>
+                <p style="color: #27ae60; font-weight: bold;">✅ تم إكمال عملية الحذف القسري</p>
+            </div>
+        `;
+
+        // Auto-close modal after 10 seconds
+        setTimeout(() => {
+            if (progressModal.parentElement) {
+                progressModal.remove();
+            }
+        }, 10000);
+
+        showToast(`تم حذف ${successfulDeletions} سجل من قاعدة البيانات و ${localDeletedCount} من البيانات المحلية`, 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في الحذف القسري:', error);
+        progressDiv.innerHTML += `<p style="color: red;">❌ خطأ خطير: ${error.message}</p>`;
+        showToast('فشل في الحذف القسري - راجع التفاصيل', 'error');
+    }
+}
+
+// ===== Nuclear Delete - Complete Cleanup =====
+async function nuclearDeleteAllTestUnits() {
+    if (!confirm('⚠️ تحذير: سيتم حذف جميع الوحدات التي تحتوي على "TEST" نهائياً!\n\nهذا الإجراء لا يمكن التراجع عنه.\n\nهل أنت متأكد؟')) {
+        return;
+    }
+
+    if (!confirm('تأكيد نهائي: سيتم حذف جميع البيانات التي تحتوي على "TEST" من قاعدة البيانات والبيانات المحلية.\n\nاضغط موافق للمتابعة.')) {
+        return;
+    }
+
+    console.log('💥 بدء الحذف الشامل لجميع وحدات TEST...');
+
+    const progressModal = document.createElement('div');
+    progressModal.className = 'modal-overlay';
+    progressModal.style.display = 'flex';
+    progressModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px; max-width: 700px;">
+            <i class="fas fa-bomb fa-spin" style="font-size: 2rem; color: #e74c3c; margin-bottom: 20px;"></i>
+            <h3 style="color: #e74c3c;">الحذف الشامل لوحدات TEST</h3>
+            <div id="nuclear-progress" style="text-align: left; background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0; font-family: monospace; max-height: 400px; overflow-y: auto;">
+                <p>🚀 بدء عملية الحذف الشامل...</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(progressModal);
+
+    const progressDiv = progressModal.querySelector('#nuclear-progress');
+
+    try {
+        // Step 1: Delete from Supabase
+        if (supabaseClient) {
+            progressDiv.innerHTML += '<p>☁️ الاتصال بقاعدة البيانات...</p>';
+
+            // Get all records
+            const { data: allRecords, error: fetchError } = await supabaseClient
+                .from('properties')
+                .select('*');
+
+            if (fetchError) {
+                throw new Error(`خطأ في جلب البيانات: ${fetchError.message}`);
+            }
+
+            progressDiv.innerHTML += `<p>📋 تم جلب ${allRecords.length} سجل من قاعدة البيانات</p>`;
+
+            // Find all TEST-related records
+            const testRecords = allRecords.filter(record => {
+                const recordString = JSON.stringify(record).toLowerCase();
+                return recordString.includes('test');
+            });
+
+            progressDiv.innerHTML += `<p style="color: orange;">🎯 تم العثور على ${testRecords.length} سجل يحتوي على "TEST"</p>`;
+
+            // Delete each TEST record
+            let deletedFromDb = 0;
+            for (const record of testRecords) {
+                try {
+                    const { error: deleteError } = await supabaseClient
+                        .from('properties')
+                        .delete()
+                        .eq('id', record.id);
+
+                    if (!deleteError) {
+                        deletedFromDb++;
+                        progressDiv.innerHTML += `<p style="color: green;">✅ حذف السجل ${record.id}: ${record.unit_number || record.property_name || 'غير محدد'}</p>`;
+                    } else {
+                        progressDiv.innerHTML += `<p style="color: red;">❌ فشل حذف السجل ${record.id}: ${deleteError.message}</p>`;
+                    }
+                } catch (error) {
+                    progressDiv.innerHTML += `<p style="color: red;">❌ خطأ في حذف السجل ${record.id}: ${error.message}</p>`;
+                }
+            }
+
+            progressDiv.innerHTML += `<p style="color: blue;">📊 تم حذف ${deletedFromDb} من أصل ${testRecords.length} سجل من قاعدة البيانات</p>`;
+        }
+
+        // Step 2: Delete from local data
+        progressDiv.innerHTML += '<p>🏠 تنظيف البيانات المحلية...</p>';
+
+        const originalLength = properties.length;
+        properties = properties.filter(property => {
+            const propertyString = JSON.stringify(property).toLowerCase();
+            const containsTest = propertyString.includes('test');
+
+            if (containsTest) {
+                progressDiv.innerHTML += `<p style="color: green;">✅ حذف محلي: ${property['رقم  الوحدة '] || property['اسم العقار'] || 'غير محدد'}</p>`;
+            }
+
+            return !containsTest;
+        });
+
+        const localDeleted = originalLength - properties.length;
+        progressDiv.innerHTML += `<p style="color: blue;">📊 تم حذف ${localDeleted} وحدة من البيانات المحلية</p>`;
+
+        // Step 3: Clean localStorage
+        progressDiv.innerHTML += '<p>💾 تنظيف التخزين المحلي...</p>';
+        saveDataLocally();
+
+        // Step 4: Refresh interface
+        progressDiv.innerHTML += '<p>🔄 تحديث الواجهة...</p>';
+        renderData();
+
+        // Step 5: Final verification
+        progressDiv.innerHTML += '<p>🔍 التحقق النهائي...</p>';
+
+        setTimeout(async () => {
+            if (supabaseClient) {
+                const { data: remainingRecords } = await supabaseClient
+                    .from('properties')
+                    .select('*');
+
+                const remainingTestRecords = remainingRecords?.filter(record =>
+                    JSON.stringify(record).toLowerCase().includes('test')
+                ) || [];
+
+                progressDiv.innerHTML += `<p style="color: ${remainingTestRecords.length === 0 ? 'green' : 'orange'};">🔍 سجلات TEST المتبقية في قاعدة البيانات: ${remainingTestRecords.length}</p>`;
+            }
+
+            const localTestRecords = properties.filter(property =>
+                JSON.stringify(property).toLowerCase().includes('test')
+            );
+
+            progressDiv.innerHTML += `<p style="color: ${localTestRecords.length === 0 ? 'green' : 'orange'};">🔍 سجلات TEST المتبقية محلياً: ${localTestRecords.length}</p>`;
+
+            progressDiv.innerHTML += `
+                <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px;">
+                    <h4 style="color: #27ae60;">💥 اكتمل الحذف الشامل!</h4>
+                    <p style="color: #27ae60; font-weight: bold;">تم تنظيف جميع وحدات TEST من النظام</p>
+                    <button onclick="location.reload()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                        إعادة تحميل الصفحة للتأكد
+                    </button>
+                </div>
+            `;
+
+            showToast('تم الحذف الشامل لجميع وحدات TEST بنجاح!', 'success');
+        }, 2000);
+
+    } catch (error) {
+        console.error('❌ خطأ في الحذف الشامل:', error);
+        progressDiv.innerHTML += `<p style="color: red;">❌ خطأ خطير: ${error.message}</p>`;
+        showToast('فشل في الحذف الشامل', 'error');
+    }
+}
+
+// ===== Advanced Delete with Foreign Key Handling =====
+async function advancedDeleteWithForeignKeys() {
+    if (!confirm('⚠️ حذف متقدم: سيتم حذف الوحدات مع جميع السجلات المرتبطة!\n\nسيتم حذف:\n- الوحدات من جدول properties\n- السجلات من جدول activity_log\n- أي مرفقات مرتبطة\n\nهل أنت متأكد؟')) {
+        return;
+    }
+
+    console.log('🔧 بدء الحذف المتقدم مع معالجة Foreign Keys...');
+
+    const progressModal = document.createElement('div');
+    progressModal.className = 'modal-overlay';
+    progressModal.style.display = 'flex';
+    progressModal.innerHTML = `
+        <div class="modal-box" style="text-align: center; padding: 40px; max-width: 800px;">
+            <i class="fas fa-cogs fa-spin" style="font-size: 2rem; color: #3498db; margin-bottom: 20px;"></i>
+            <h3 style="color: #3498db;">الحذف المتقدم مع معالجة الروابط</h3>
+            <div id="advanced-progress" style="text-align: left; background: #f5f5f5; padding: 15px; border-radius: 8px; margin: 20px 0; font-family: monospace; max-height: 500px; overflow-y: auto;">
+                <p>🔧 بدء الحذف المتقدم...</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(progressModal);
+
+    const progressDiv = progressModal.querySelector('#advanced-progress');
+
+    try {
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // Step 1: Find all TEST records
+        progressDiv.innerHTML += '<p>🔍 البحث عن جميع سجلات TEST...</p>';
+
+        const { data: allRecords, error: fetchError } = await supabaseClient
+            .from('properties')
+            .select('*');
+
+        if (fetchError) {
+            throw new Error(`خطأ في جلب البيانات: ${fetchError.message}`);
+        }
+
+        const testRecords = allRecords.filter(record => {
+            const recordString = JSON.stringify(record).toLowerCase();
+            return recordString.includes('test');
+        });
+
+        progressDiv.innerHTML += `<p style="color: orange;">🎯 تم العثور على ${testRecords.length} سجل TEST</p>`;
+
+        // Step 2: Delete related activity_log records first
+        progressDiv.innerHTML += '<p>🗂️ حذف السجلات المرتبطة من activity_log...</p>';
+
+        let deletedActivityLogs = 0;
+        for (const record of testRecords) {
+            try {
+                const { data: activityLogs, error: activityError } = await supabaseClient
+                    .from('activity_log')
+                    .select('id')
+                    .eq('property_id', record.id);
+
+                if (!activityError && activityLogs && activityLogs.length > 0) {
+                    progressDiv.innerHTML += `<p>📋 وجد ${activityLogs.length} سجل نشاط للوحدة ${record.id}</p>`;
+
+                    const { error: deleteActivityError } = await supabaseClient
+                        .from('activity_log')
+                        .delete()
+                        .eq('property_id', record.id);
+
+                    if (!deleteActivityError) {
+                        deletedActivityLogs += activityLogs.length;
+                        progressDiv.innerHTML += `<p style="color: green;">✅ تم حذف ${activityLogs.length} سجل نشاط للوحدة ${record.id}</p>`;
+                    } else {
+                        progressDiv.innerHTML += `<p style="color: red;">❌ فشل حذف سجلات النشاط للوحدة ${record.id}: ${deleteActivityError.message}</p>`;
+                    }
+                }
+            } catch (error) {
+                progressDiv.innerHTML += `<p style="color: red;">❌ خطأ في معالجة سجلات النشاط للوحدة ${record.id}: ${error.message}</p>`;
+            }
+        }
+
+        progressDiv.innerHTML += `<p style="color: blue;">📊 تم حذف ${deletedActivityLogs} سجل نشاط إجمالي</p>`;
+
+        // Step 3: Delete related attachments
+        progressDiv.innerHTML += '<p>📎 حذف المرفقات المرتبطة...</p>';
+
+        let deletedAttachments = 0;
+        for (const record of testRecords) {
+            try {
+                const { data: attachments, error: attachmentError } = await supabaseClient
+                    .from('attachments')
+                    .select('id')
+                    .eq('property_id', record.id);
+
+                if (!attachmentError && attachments && attachments.length > 0) {
+                    progressDiv.innerHTML += `<p>📎 وجد ${attachments.length} مرفق للوحدة ${record.id}</p>`;
+
+                    const { error: deleteAttachmentError } = await supabaseClient
+                        .from('attachments')
+                        .delete()
+                        .eq('property_id', record.id);
+
+                    if (!deleteAttachmentError) {
+                        deletedAttachments += attachments.length;
+                        progressDiv.innerHTML += `<p style="color: green;">✅ تم حذف ${attachments.length} مرفق للوحدة ${record.id}</p>`;
+                    } else {
+                        progressDiv.innerHTML += `<p style="color: red;">❌ فشل حذف المرفقات للوحدة ${record.id}: ${deleteAttachmentError.message}</p>`;
+                    }
+                }
+            } catch (error) {
+                progressDiv.innerHTML += `<p style="color: orange;">⚠️ تخطي المرفقات للوحدة ${record.id}: ${error.message}</p>`;
+            }
+        }
+
+        progressDiv.innerHTML += `<p style="color: blue;">📊 تم حذف ${deletedAttachments} مرفق إجمالي</p>`;
+
+        // Step 4: Now delete the main property records
+        progressDiv.innerHTML += '<p>🏠 حذف سجلات الوحدات الرئيسية...</p>';
+
+        let deletedProperties = 0;
+        for (const record of testRecords) {
+            try {
+                const { error: deleteError } = await supabaseClient
+                    .from('properties')
+                    .delete()
+                    .eq('id', record.id);
+
+                if (!deleteError) {
+                    deletedProperties++;
+                    progressDiv.innerHTML += `<p style="color: green;">✅ تم حذف الوحدة ${record.unit_number || record.property_name || record.id}</p>`;
+                } else {
+                    progressDiv.innerHTML += `<p style="color: red;">❌ فشل حذف الوحدة ${record.id}: ${deleteError.message}</p>`;
+                }
+            } catch (error) {
+                progressDiv.innerHTML += `<p style="color: red;">❌ خطأ في حذف الوحدة ${record.id}: ${error.message}</p>`;
+            }
+        }
+
+        progressDiv.innerHTML += `<p style="color: blue;">📊 تم حذف ${deletedProperties} من أصل ${testRecords.length} وحدة من قاعدة البيانات</p>`;
+
+        // Step 5: Clean local data
+        progressDiv.innerHTML += '<p>🏠 تنظيف البيانات المحلية...</p>';
+
+        const originalLength = properties.length;
+        properties = properties.filter(property => {
+            const propertyString = JSON.stringify(property).toLowerCase();
+            const containsTest = propertyString.includes('test');
+
+            if (containsTest) {
+                progressDiv.innerHTML += `<p style="color: green;">✅ حذف محلي: ${property['رقم  الوحدة '] || property['اسم العقار'] || 'غير محدد'}</p>`;
+            }
+
+            return !containsTest;
+        });
+
+        const localDeleted = originalLength - properties.length;
+        progressDiv.innerHTML += `<p style="color: blue;">📊 تم حذف ${localDeleted} وحدة من البيانات المحلية</p>`;
+
+        // Step 6: Save and refresh
+        saveDataLocally();
+        renderData();
+
+        // Step 7: Final verification
+        progressDiv.innerHTML += '<p>🔍 التحقق النهائي...</p>';
+
+        setTimeout(async () => {
+            const { data: remainingRecords } = await supabaseClient
+                .from('properties')
+                .select('*');
+
+            const remainingTestRecords = remainingRecords?.filter(record =>
+                JSON.stringify(record).toLowerCase().includes('test')
+            ) || [];
+
+            progressDiv.innerHTML += `<p style="color: ${remainingTestRecords.length === 0 ? 'green' : 'orange'};">🔍 سجلات TEST المتبقية في قاعدة البيانات: ${remainingTestRecords.length}</p>`;
+
+            const localTestRecords = properties.filter(property =>
+                JSON.stringify(property).toLowerCase().includes('test')
+            );
+
+            progressDiv.innerHTML += `<p style="color: ${localTestRecords.length === 0 ? 'green' : 'orange'};">🔍 سجلات TEST المتبقية محلياً: ${localTestRecords.length}</p>`;
+
+            progressDiv.innerHTML += `
+                <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px;">
+                    <h4 style="color: #27ae60;">🎉 اكتمل الحذف المتقدم!</h4>
+                    <ul style="text-align: right; color: #27ae60;">
+                        <li>سجلات النشاط المحذوفة: ${deletedActivityLogs}</li>
+                        <li>المرفقات المحذوفة: ${deletedAttachments}</li>
+                        <li>الوحدات المحذوفة من قاعدة البيانات: ${deletedProperties}</li>
+                        <li>الوحدات المحذوفة محلياً: ${localDeleted}</li>
+                    </ul>
+                    <button onclick="location.reload()" style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                        إعادة تحميل الصفحة للتأكد النهائي
+                    </button>
+                </div>
+            `;
+
+            if (remainingTestRecords.length === 0) {
+                showToast('تم حذف جميع وحدات TEST نهائياً!', 'success');
+            } else {
+                showToast(`تم حذف معظم الوحدات - ${remainingTestRecords.length} وحدة متبقية`, 'warning');
+            }
+        }, 2000);
+
+    } catch (error) {
+        console.error('❌ خطأ في الحذف المتقدم:', error);
+        progressDiv.innerHTML += `<p style="color: red;">❌ خطأ خطير: ${error.message}</p>`;
+        showToast('فشل في الحذف المتقدم', 'error');
+    }
+}
+
+// ===== Universal Advanced Delete Function =====
+async function universalAdvancedDelete(propertyData, showProgress = false) {
+    console.log('🔧 Starting universal advanced delete...');
+
+    if (!supabaseClient) {
+        console.warn('⚠️ Supabase not available for advanced delete');
+        return { success: false, reason: 'NO_CLIENT' };
+    }
+
+    try {
+        let progressCallback = null;
+
+        if (showProgress) {
+            progressCallback = (message, type = 'info') => {
+                console.log(`📋 ${message}`);
+                showToast(message, type);
+            };
+        }
+
+        // Step 1: Find the property in database
+        if (progressCallback) progressCallback('البحث عن الوحدة في قاعدة البيانات...');
+
+        const { data: foundProperties, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .or(`unit_number.eq.${propertyData['رقم  الوحدة ']},property_name.eq.${propertyData['اسم العقار']}`);
+
+        if (searchError) {
+            console.error('❌ Search error:', searchError);
+            return { success: false, reason: 'SEARCH_ERROR', error: searchError.message };
+        }
+
+        if (!foundProperties || foundProperties.length === 0) {
+            console.log('ℹ️ Property not found in database');
+            return { success: false, reason: 'NOT_FOUND' };
+        }
+
+        const property = foundProperties[0];
+        if (progressCallback) progressCallback(`تم العثور على الوحدة: ${property.id}`);
+
+        // Step 2: Delete related activity logs
+        if (progressCallback) progressCallback('حذف سجلات النشاط المرتبطة...');
+
+        const { data: activityLogs, error: activityError } = await supabaseClient
+            .from('activity_log')
+            .select('id')
+            .eq('property_id', property.id);
+
+        if (!activityError && activityLogs && activityLogs.length > 0) {
+            const { error: deleteActivityError } = await supabaseClient
+                .from('activity_log')
+                .delete()
+                .eq('property_id', property.id);
+
+            if (!deleteActivityError) {
+                if (progressCallback) progressCallback(`تم حذف ${activityLogs.length} سجل نشاط`);
+            } else {
+                console.warn('⚠️ Failed to delete activity logs:', deleteActivityError);
+            }
+        }
+
+        // Step 3: Delete related attachments
+        if (progressCallback) progressCallback('حذف المرفقات المرتبطة...');
+
+        try {
+            const { data: attachments, error: attachmentError } = await supabaseClient
+                .from('attachments')
+                .select('id')
+                .eq('property_id', property.id);
+
+            if (!attachmentError && attachments && attachments.length > 0) {
+                const { error: deleteAttachmentError } = await supabaseClient
+                    .from('attachments')
+                    .delete()
+                    .eq('property_id', property.id);
+
+                if (!deleteAttachmentError) {
+                    if (progressCallback) progressCallback(`تم حذف ${attachments.length} مرفق`);
+                } else {
+                    console.warn('⚠️ Failed to delete attachments:', deleteAttachmentError);
+                }
+            }
+        } catch (attachmentError) {
+            console.warn('⚠️ Error handling attachments:', attachmentError);
+        }
+
+        // Step 4: Delete the main property record
+        if (progressCallback) progressCallback('حذف سجل الوحدة الرئيسي...');
+
+        const { error: deleteError } = await supabaseClient
+            .from('properties')
+            .delete()
+            .eq('id', property.id);
+
+        if (deleteError) {
+            console.error('❌ Failed to delete property:', deleteError);
+            return {
+                success: false,
+                reason: 'DELETE_ERROR',
+                error: deleteError.message,
+                propertyId: property.id
+            };
+        }
+
+        if (progressCallback) progressCallback('تم حذف الوحدة نهائياً من قاعدة البيانات', 'success');
+
+        return {
+            success: true,
+            deletedCount: 1,
+            propertyId: property.id,
+            message: 'Property and all related data deleted successfully'
+        };
+
+    } catch (error) {
+        console.error('❌ Critical error in universal advanced delete:', error);
+        return {
+            success: false,
+            reason: 'CRITICAL_ERROR',
+            error: error.message
+        };
+    }
+}
+
+// ===== Enhanced Delete Unit Function =====
+async function enhancedDeleteUnit(unitData) {
+    console.log('🗑️ Starting enhanced unit deletion...');
+
+    // Show progress to user
+    showToast('جاري حذف الوحدة مع جميع البيانات المرتبطة...', 'info');
+
+    try {
+        // Use universal advanced delete
+        const result = await universalAdvancedDelete(unitData, true);
+
+        if (result.success) {
+            // Remove from local data
+            const originalLength = properties.length;
+            properties = properties.filter(p =>
+                !(p['رقم  الوحدة '] === unitData['رقم  الوحدة '] &&
+                  p['اسم العقار'] === unitData['اسم العقار'])
+            );
+
+            const localDeleted = originalLength - properties.length;
+
+            if (localDeleted > 0) {
+                saveDataLocally();
+                renderData();
+                showToast('تم حذف الوحدة نهائياً من النظام', 'success');
+            }
+
+            return { success: true, localDeleted, cloudDeleted: 1 };
+        } else {
+            // Handle failure
+            let message = 'فشل في حذف الوحدة من قاعدة البيانات';
+
+            if (result.reason === 'NOT_FOUND') {
+                message = 'الوحدة غير موجودة في قاعدة البيانات - سيتم الحذف محلياً فقط';
+
+                // Still delete locally
+                const originalLength = properties.length;
+                properties = properties.filter(p =>
+                    !(p['رقم  الوحدة '] === unitData['رقم  الوحدة '] &&
+                      p['اسم العقار'] === unitData['اسم العقار'])
+                );
+
+                const localDeleted = originalLength - properties.length;
+
+                if (localDeleted > 0) {
+                    saveDataLocally();
+                    renderData();
+                }
+
+                showToast(message, 'warning');
+                return { success: true, localDeleted, cloudDeleted: 0 };
+            }
+
+            showToast(message, 'error');
+            return { success: false, error: result.error };
+        }
+
+    } catch (error) {
+        console.error('❌ Error in enhanced delete unit:', error);
+        showToast('خطأ في حذف الوحدة', 'error');
+        return { success: false, error: error.message };
+    }
+}
+
 // تحميل الوحدات للدمج
 function loadUnitsForMerge() {
     const propertyName = document.getElementById('mergePropertyName').value;
@@ -5955,6 +7913,9 @@ function displayUnitsResults(units) {
                 </button>
                 <button onclick="showUnitDetails('${unit['رقم  الوحدة ']}', '${unit['اسم العقار']}', '${unit['رقم العقد'] || ''}')" class="btn-view">
                     <i class="fas fa-eye"></i> عرض
+                </button>
+                <button onclick="deleteUnit('${unit['رقم  الوحدة ']}', '${unit['اسم العقار']}')" class="btn-delete">
+                    <i class="fas fa-trash"></i> حذف
                 </button>
             </div>
         </div>
@@ -7370,6 +9331,9 @@ function viewPropertyUnits(propertyName) {
                                 </button>
                                 <button onclick="showUnitDetails('${unit['رقم  الوحدة ']}', '${propertyName}', '${unit['رقم العقد'] || ''}')" class="btn-view">
                                     <i class="fas fa-eye"></i> عرض
+                                </button>
+                                <button onclick="deleteUnit('${unit['رقم  الوحدة ']}', '${propertyName}')" class="btn-delete">
+                                    <i class="fas fa-trash"></i> حذف
                                 </button>
                             </div>
                         </div>
