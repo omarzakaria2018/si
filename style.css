@@ -616,8 +616,9 @@ main {
   main {
     margin-right: 0 !important;
     margin-left: 0 !important;
-    padding: 1rem !important;
+    padding: 1rem 0.75rem !important;
     width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   footer {
@@ -643,6 +644,8 @@ main {
     margin: 0 !important;
     box-sizing: border-box !important;
     max-width: 100% !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
   }
 
   .card-body p {
@@ -689,13 +692,15 @@ main {
   }
 
   main {
-    padding: 0.5rem !important;
+    padding: 0.5rem 0.75rem !important;
   }
 
   .cards-container {
-    gap: 0.5rem !important;
+    gap: 0.75rem !important;
     padding: 0 !important;
     margin: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .card {
@@ -828,7 +833,7 @@ main {
   }
 
   main {
-    padding: 0.25rem !important;
+    padding: 0.5rem 0.75rem !important;
   }
 
   .card {
@@ -3851,7 +3856,7 @@ footer {
     display: block !important;
     position: absolute;
     top: 10px;
-    left: 10px;
+    right: 10px;
     background-color: var(--primary-color);
     color: white;
     border: none;

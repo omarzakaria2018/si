@@ -804,13 +804,13 @@ function initializeSidebar() {
             main.style.marginLeft = '0';
             main.style.width = '100%';
 
-            // تحسين padding حسب حجم الشاشة
+            // تحسين padding حسب حجم الشاشة مع هوامش جانبية
             if (window.innerWidth <= 480) {
-                main.style.padding = '0.5rem';
+                main.style.padding = '0.5rem 0.75rem';
             } else if (window.innerWidth <= 360) {
-                main.style.padding = '0.25rem';
+                main.style.padding = '0.5rem 0.75rem';
             } else {
-                main.style.padding = '1rem';
+                main.style.padding = '1rem 0.75rem';
             }
         }
         if (footer) {
