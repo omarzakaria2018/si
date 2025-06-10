@@ -14,6 +14,27 @@ let dateFilterMonth = '';
 let dateFilterYear = '';
 let attachments = {}; // مرفقات العقارات العامة
 let cardAttachments = {}; // مرفقات البطاقات المنفصلة
+
+// تهيئة المتغير العام للمرفقات
+if (!window.attachments) {
+    window.attachments = {};
+}
+
+// تحديث المتغير العام من localStorage
+try {
+    const storedAttachments = JSON.parse(localStorage.getItem('propertyAttachments') || '{}');
+    const storedLegacyAttachments = JSON.parse(localStorage.getItem('attachments') || '{}');
+
+    // دمج المرفقات من مصادر مختلفة
+    window.attachments = { ...storedLegacyAttachments, ...storedAttachments };
+    attachments = window.attachments;
+
+    console.log(`📎 تم تحميل ${Object.keys(window.attachments).length} مجموعة مرفقات من localStorage`);
+} catch (error) {
+    console.warn('⚠️ خطأ في تحميل المرفقات من localStorage:', error);
+    window.attachments = {};
+    attachments = {};
+}
 let isManagementMode = false; // متغير لتتبع وضع الإدارة
 let currentCalculationYear = new Date().getFullYear(); // السنة الحالية للحساب (2025)
 let selectedCityFilter = 'all'; // المدينة المختارة للتصفية في صفحة الإدارة
@@ -3571,13 +3592,17 @@ function showAttachmentsProperties(city) {
     });
 }
 
-// Enhanced attachments modal with real-time cross-device synchronization
+// Enhanced attachments modal with real-time cross-device synchronization (Updated to match Card Attachments)
 function showAttachmentsModal(city, propertyName) {
+    console.log('🎯 فتح نافذة مرفقات العقار...', { city, propertyName });
+
+    // إغلاق أي نوافذ موجودة مسبقاً
     closeModal();
+
     const propertyKey = `${city}_${propertyName}`;
 
     // Try to get attachments from Supabase first, fallback to local
-    async function loadAttachments() {
+    async function loadPropertyAttachments() {
         let propertyAttachments = [];
         let isFromCloud = false;
 
@@ -3602,221 +3627,708 @@ function showAttachmentsModal(city, propertyName) {
         return { propertyAttachments, isFromCloud };
     }
 
-    loadAttachments().then(({ propertyAttachments, isFromCloud }) => {
-        let html = `<div class="modal-overlay" style="display:flex;">
-            <div class="attachments-modal enhanced" data-property-key="${propertyKey}">
-                <div class="attachments-header enhanced" style="flex-direction:column;align-items:flex-start;">
-                    <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
-                        <div>
-                            <span style="color:#2a4b9b;font-weight:bold;font-size:1.2em;">
-                                <i class="fas fa-building"></i> ${propertyName}
-                            </span>
-                            <span style="color:#888;font-size:1em;margin-right:10px;">
-                                <i class="fas fa-map-marker-alt"></i> ${city}
-                            </span>
-                            <span class="attachment-count" style="color: #666; font-size: 0.9rem; margin-right: 10px;">
-                                (${propertyAttachments.length} ملف)
-                            </span>
-                        </div>
-                        <div class="header-controls">
-                            <span id="syncStatus" class="sync-indicator" style="margin-left: 15px; font-size: 0.9rem;">
-                                <i class="fas fa-sync-alt" style="color: #28a745;"></i> متزامن
-                            </span>
-                            <button class="close-modal" onclick="closeModal()" title="إغلاق">×</button>
-                        </div>
+    // تصميم مختلف للجوال والشاشات الكبيرة
+    const isMobile = isMobileDevice();
+
+    let html;
+
+    if (isMobile) {
+        // تصميم مخصص للجوال - مبسط ومضغوط
+        html = `
+        <div class="modal-overlay mobile-attachments-overlay" style="display:flex;">
+            <div class="modal-box mobile-attachments-modal">
+                <!-- رأس النافذة المبسط للجوال -->
+                <div class="mobile-attachments-header">
+                    <h2><i class="fas fa-paperclip"></i> مرفقات العقار</h2>
+                    <button class="mobile-close-btn" onclick="closeModal()" title="إغلاق">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- معلومات العقار المضغوطة -->
+                <div class="mobile-card-info">
+                    <span><i class="fas fa-building"></i> ${propertyName}</span>
+                    <span><i class="fas fa-map-marker-alt"></i> ${city}</span>
+                </div>
+
+                <!-- زر الإرفاق المضغوط (20% من المساحة) -->
+                <div class="mobile-upload-section">
+                    <button class="mobile-upload-btn" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                        <i class="fas fa-plus"></i> إضافة مرفق
+                    </button>
+                    <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
+                </div>
+
+                <!-- قائمة المرفقات (80% من المساحة) -->
+                <div class="mobile-attachments-section">
+                    <div class="mobile-attachments-header-small">
+                        <span><i class="fas fa-folder-open"></i> المرفقات الموجودة</span>
+                        <span class="mobile-attachments-count" id="mobilePropertyAttachmentsCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}">جاري التحميل...</span>
                     </div>
-                    <div style="margin-top:8px;color:#888;font-size:0.95em;">
-                        إدارة مرفقات العقار • متزامن عبر جميع الأجهزة
+                    <div id="propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="mobile-attachments-list">
+                        <div class="mobile-loading" style="text-align: center; padding: 20px; color: #666;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
+                            <p style="font-size: 0.9rem;">جاري تحميل المرفقات...</p>
+                        </div>
                     </div>
                 </div>
-                <div class="attachments-content enhanced">
-                    <div class="upload-zone enhanced" onclick="document.getElementById('fileUploadInput').click()" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px dashed #17a2b8; border-radius: 12px; padding: 25px; transition: all 0.3s ease;">
-                        <i class="fas fa-cloud-upload-alt" style="font-size: 2.5rem; color: #17a2b8; margin-bottom: 10px;"></i>
-                        <h4 style="margin: 10px 0; color: #495057;">رفع الملفات</h4>
-                        <p style="margin: 5px 0; color: #6c757d;">انقر أو اسحب الملفات هنا للرفع</p>
-                        <p style="margin: 5px 0; color: #868e96; font-size: 0.9rem;">سيتم مزامنة الملفات تلقائياً مع جميع الأجهزة</p>
-                        <input type="file" id="fileUploadInput" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
-                        <div style="margin-top: 15px;">
-                            <button class="btn-primary" style="margin-left: 10px;">
-                                <i class="fas fa-plus"></i> إضافة ملفات
-                            </button>
-                            <button class="btn-secondary" onclick="refreshAttachmentsList('${propertyKey}')" title="تحديث القائمة">
-                                <i class="fas fa-refresh"></i> تحديث
-                            </button>
-                        </div>
-                    </div>
 
-                    <div class="upload-options enhanced" style="margin: 15px 0;">
-                        <label for="uploadNotes" style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">ملاحظات (اختياري):</label>
-                        <textarea id="uploadNotes" placeholder="أضف ملاحظات حول الملفات..." style="width: 100%; height: 60px; padding: 10px; border: 1px solid #ced4da; border-radius: 8px; resize: vertical; font-family: inherit;"></textarea>
-                    </div>
-
-                    <div class="attachments-search enhanced">
-                        <div style="position: relative;">
-                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
-                            <input type="text" placeholder="بحث في المرفقات..." onkeyup="filterAttachmentsList(event)" style="width: 100%; padding: 10px 10px 10px 40px; border: 1px solid #ced4da; border-radius: 8px; margin-bottom: 15px;">
-                        </div>
-                    </div>
-
-                    <div class="attachments-list enhanced">`;
-
-        if (propertyAttachments.length === 0) {
-            html += `<div class="no-attachments-state" style="text-align:center;color:#888;padding:40px 20px;">
-                <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #ccc; margin-bottom: 15px;"></i>
-                <h4 style="margin: 10px 0; color: #6c757d;">لا توجد مرفقات بعد</h4>
-                <p style="color: #aaa; margin: 0;">اسحب الملفات هنا أو استخدم زر الرفع لإضافة مرفقات</p>
-            </div>`;
-        } else {
-            propertyAttachments.forEach(att => {
-                // Handle both Supabase and local attachment formats
-                const fileName = att.file_name || att.name;
-                const fileType = att.file_type || att.type;
-                const fileSize = att.file_size || att.size;
-                const uploadDate = att.created_at || att.date;
-                const notes = att.notes || '';
-
-                html += `<div class="attachment-item enhanced" data-name="${fileName.toLowerCase()}" ${att.id ? `data-id="${att.id}"` : ''}>
-                    <div class="attachment-icon">
-                        <i class="${getFileIcon(fileType)}" style="font-size: 1.5rem;"></i>
-                    </div>
-                    <div class="attachment-details">
-                        <div class="attachment-name" title="${fileName}">${fileName}</div>
-                        <div class="attachment-meta">
-                            <span class="file-size">${formatFileSize(fileSize)}</span>
-                            <span class="upload-date">${formatDate(uploadDate)}</span>
-                            ${notes ? `<span class="file-notes" title="${notes}"><i class="fas fa-sticky-note"></i></span>` : ''}
-                        </div>
-                    </div>
-                    <div class="attachment-actions">
-                        ${att.id ?
-                            // Supabase attachment
-                            `<button class="attachment-btn view-btn" onclick="viewAttachmentFromSupabase('${att.id}', '${att.file_url}', '${fileType}')" title="معاينة">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="attachment-btn download-btn" onclick="downloadAttachmentFromSupabase('${att.file_url}', '${fileName}')" title="تحميل">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button class="attachment-btn delete-btn" onclick="deleteAttachmentFromSupabase('${att.id}', '${propertyKey}')" title="حذف">
-                                <i class="fas fa-trash"></i>
-                            </button>` :
-                            // Local attachment
-                            `<button class="attachment-btn view-btn" onclick="viewAttachment('${propertyKey}', '${fileName}')" title="معاينة">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="attachment-btn download-btn" onclick="downloadAttachment('${propertyKey}', '${fileName}')" title="تحميل">
-                                <i class="fas fa-download"></i>
-                            </button>
-                            <button class="attachment-btn delete-btn" onclick="deleteAttachment('${propertyKey}', '${fileName}', '${city}', '${propertyName}')" title="حذف">
-                                <i class="fas fa-trash"></i>
-                            </button>`
-                        }
-                    </div>
-                </div>`;
-            });
-        }
-
-        html += `</div>
-                </div>
-                <div class="modal-footer enhanced">
-                    <div class="footer-info">
-                        <span class="attachments-summary">
-                            <i class="fas fa-info-circle"></i>
-                            ${propertyAttachments.length} ملف • متزامن عبر جميع الأجهزة
-                        </span>
-                    </div>
-                    <div class="footer-actions">
-                        ${typeof syncAttachmentsManually === 'function' ?
-                            `<button class="btn-outline sync-btn" onclick="syncAttachmentsManually('${propertyKey}')" title="مزامنة يدوية">
-                                <i class="fas fa-sync"></i> مزامنة
-                            </button>` : ''
-                        }
-                        <button onclick="closeModal()" class="modal-action-btn close-btn">
-                            <i class="fas fa-times"></i> إغلاق
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-
-        document.body.insertAdjacentHTML('beforeend', html);
-
-        // Setup enhanced drag and drop
-        setupDragAndDropEnhanced(propertyKey);
-
-        // Setup real-time updates for this modal
-        setupModalRealTimeUpdates(propertyKey);
-
-        // Update sync status
-        updateSyncStatus();
-
-    }).catch(error => {
-        console.error('❌ خطأ في تحميل المرفقات:', error);
-
-        // Show error modal with fallback to local attachments
-        const localAttachments = attachments[propertyKey] || [];
-
-        let html = `<div class="modal-overlay" style="display:flex;">
-            <div class="attachments-modal error-fallback">
-                <div class="attachments-header" style="background: #fff3cd; border-bottom: 1px solid #ffeaa7;">
-                    <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
-                        <div>
-                            <span style="color:#856404;font-weight:bold;font-size:1.1em;">
-                                <i class="fas fa-exclamation-triangle"></i> ${propertyName} - ${city}
-                            </span>
-                            <span style="color:#856404;font-size:0.9rem;display:block;">
-                                خطأ في تحميل المرفقات السحابية - عرض المرفقات المحلية
-                            </span>
-                        </div>
-                        <button class="close-modal" onclick="closeModal()">×</button>
-                    </div>
-                </div>
-                <div class="attachments-content">
-                    <div class="error-notice" style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 15px; margin-bottom: 20px; color: #721c24;">
-                        <i class="fas fa-wifi" style="margin-left: 8px;"></i>
-                        <strong>مشكلة في الاتصال:</strong> يتم عرض المرفقات المحلية فقط
-                        <button class="btn-sm btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')" style="margin-right: 10px;">
-                            <i class="fas fa-redo"></i> إعادة المحاولة
-                        </button>
-                    </div>
-                    ${localAttachments.length > 0 ?
-                        `<div class="attachments-list">
-                            ${localAttachments.map(att => `
-                                <div class="attachment-item" data-name="${att.name.toLowerCase()}">
-                                    <div class="attachment-icon"><i class="${getFileIcon(att.type)}"></i></div>
-                                    <div class="attachment-name">${att.name}</div>
-                                    <div class="attachment-actions">
-                                        <button class="attachment-btn" onclick="viewAttachment('${propertyKey}', '${att.name}')"><i class="fas fa-eye"></i></button>
-                                        <button class="attachment-btn" onclick="downloadAttachment('${propertyKey}', '${att.name}')"><i class="fas fa-download"></i></button>
-                                        <button class="attachment-btn" onclick="deleteAttachment('${propertyKey}', '${att.name}', '${city}', '${propertyName}')"><i class="fas fa-trash"></i></button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>` :
-                        `<div style="text-align:center;color:#888;padding:30px 0;">
-                            <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p>لا توجد مرفقات محلية</p>
-                        </div>`
-                    }
-                </div>
-                <div class="modal-actions">
-                    <button onclick="closeModal()" class="modal-action-btn close-btn">
+                <!-- زر الإغلاق في الأسفل -->
+                <div class="mobile-footer">
+                    <button class="mobile-close-footer-btn" onclick="closeModal()">
                         <i class="fas fa-times"></i> إغلاق
                     </button>
                 </div>
             </div>
         </div>`;
+    } else {
+        // التصميم الحالي للشاشات الكبيرة (بدون تغيير)
+        html = `
+        <div class="modal-overlay enhanced-modal-overlay" style="display:flex;">
+            <div class="modal-box attachments-modal enhanced-attachments-modal">
+                <!-- زر الإغلاق المحسن -->
+                <button class="close-modal enhanced-close-btn" onclick="closeModal()" title="إغلاق النافذة">
+                    <i class="fas fa-times"></i>
+                </button>
 
-        document.body.insertAdjacentHTML('beforeend', html);
+                <!-- رأس النافذة المحسن -->
+                <div class="attachments-modal-header enhanced-header">
+                    <div class="header-content">
+                        <h2><i class="fas fa-paperclip"></i> مرفقات العقار</h2>
+                        <div class="card-info">
+                            <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
+                            <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- محتوى النافذة بالتخطيط الجديد -->
+                <div class="attachments-modal-content enhanced-content">
+                    <div class="content-layout-new">
+                        <!-- الجانب الأيسر: منطقة الرفع والملاحظات -->
+                        <div class="upload-notes-sidebar">
+                            <!-- منطقة الرفع -->
+                            <div class="upload-section compact-upload">
+                                <div class="upload-area enhanced-upload" id="propertyUploadArea_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}">
+                                    <div class="upload-dropzone" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p>اسحب الملفات هنا أو انقر للاختيار</p>
+                                        <small>يدعم جميع أنواع الملفات</small>
+                                    </div>
+                                    <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
+                                </div>
+                            </div>
+
+                            <!-- قسم الملاحظات -->
+                            <div class="notes-section-compact">
+                                <div class="notes-container-compact">
+                                    <h4><i class="fas fa-sticky-note"></i> ملاحظات</h4>
+                                    <textarea
+                                        id="propertyUploadNotes_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                                        class="notes-textarea-compact"
+                                        placeholder="أضف ملاحظات..."
+                                        rows="3"
+                                    ></textarea>
+                                    <div class="notes-info-compact">
+                                        <small><i class="fas fa-info-circle"></i> ستُحفظ مع المرفقات الجديدة</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- الجانب الأيمن: قائمة المرفقات (العرض الكامل) -->
+                        <div class="attachments-main-section">
+                            <div class="attachments-header">
+                                <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
+                            </div>
+                            <div id="propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list scrollable-attachments">
+                                <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                    <p>جاري تحميل المرفقات...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- زر الإغلاق في الأسفل -->
+                <div class="modal-footer-actions">
+                    <button class="close-modal-btn" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                        إغلاق النافذة
+                    </button>
+                </div>
+
+                <!-- زر العودة للأعلى -->
+                <button class="scroll-to-top-btn" id="scrollToTopBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" onclick="scrollToTopPropertyAttachments('${propertyKey}')" title="العودة للأعلى">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+        </div>`;
+    }
+
+    // إدراج النافذة في الصفحة
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // 🎯 تحميل المرفقات بعد إنشاء النافذة
+    loadPropertyAttachments().then(({ propertyAttachments, isFromCloud }) => {
+        console.log(`📎 تم تحميل ${propertyAttachments.length} مرفق للعقار ${propertyKey} (${isFromCloud ? 'من السحابة' : 'محلي'})`);
+
+        const listContainer = document.getElementById(`propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (listContainer) {
+            // Force visibility with enhanced mobile support
+            listContainer.style.display = 'block';
+            listContainer.style.visibility = 'visible';
+            listContainer.style.opacity = '1';
+
+            // Add mobile-specific classes
+            if (isMobileDevice()) {
+                listContainer.classList.add('mobile-list', 'mobile-optimized');
+                listContainer.style.minHeight = '300px';
+                listContainer.style.maxHeight = '60vh';
+                listContainer.style.overflowY = 'auto';
+            }
+
+            // Render attachments with layout specific to device type
+            if (isMobileDevice()) {
+                listContainer.innerHTML = renderMobilePropertyAttachmentsList(propertyKey, propertyAttachments);
+
+                // Update mobile attachments count
+                const mobileCountBadge = document.getElementById(`mobilePropertyAttachmentsCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+                if (mobileCountBadge) {
+                    mobileCountBadge.textContent = `${propertyAttachments.length} مرفق`;
+                }
+            } else {
+                listContainer.innerHTML = renderPropertyAttachmentsList(propertyKey, propertyAttachments);
+
+                // Enhanced mobile display optimization
+                enhanceAttachmentDisplayForMobile();
+            }
+
+            // إعداد اسكرول المرفقات بعد التحميل
+            setTimeout(() => {
+                setupPropertyAttachmentsScroll(propertyKey);
+            }, 100);
+
+            // إضافة سكرول للأعلى لإظهار المرفقات (للشاشات الكبيرة فقط)
+            if (!isMobileDevice()) {
+                setTimeout(() => {
+                    scrollToAttachments();
+                }, 300);
+            }
+
+            console.log('✅ تم عرض المرفقات في النافذة مع تحسينات الجوال');
+        } else {
+            console.error('❌ لم يتم العثور على حاوية قائمة المرفقات');
+        }
+    }).catch(error => {
+        console.error('❌ خطأ في تحميل مرفقات العقار:', error);
+
+        const listContainer = document.getElementById(`propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (listContainer) {
+            listContainer.innerHTML = `
+                <div class="error-loading-attachments enhanced-error" style="text-align: center; padding: ${isMobileDevice() ? '40px 20px' : '20px'}; color: #dc3545;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: ${isMobileDevice() ? '3rem' : '2rem'}; margin-bottom: ${isMobileDevice() ? '20px' : '10px'};"></i>
+                    <p style="font-size: ${isMobileDevice() ? '1.2rem' : '1rem'};">خطأ في تحميل المرفقات</p>
+                    <button onclick="refreshPropertyAttachmentsList('${propertyKey}')" class="btn-primary" style="margin-top: ${isMobileDevice() ? '15px' : '10px'}; padding: ${isMobileDevice() ? '12px 20px' : '8px 16px'}; font-size: ${isMobileDevice() ? '1.1rem' : '0.9rem'};">
+                        <i class="fas fa-refresh"></i> إعادة المحاولة
+                    </button>
+                </div>
+            `;
+        }
     });
+
+    // إضافة حدث إغلاق للمودال
+    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+
+    // إضافة أحداث السحب والإفلات
+    setupPropertyDragAndDrop(propertyKey);
 }
-// ...existing code...
+
+// ===== Render Property Attachments List (Desktop) =====
+function renderPropertyAttachmentsList(propertyKey, attachments) {
+    console.log(`🖥️ عرض ${attachments.length} مرفق للشاشات الكبيرة - العقار: ${propertyKey}`);
+
+    if (!attachments || attachments.length === 0) {
+        return `
+            <div class="no-attachments-state" style="text-align: center; padding: 40px 20px; color: #6c757d;">
+                <i class="fas fa-folder-open" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+                <h4 style="margin: 10px 0; font-size: 1.2rem;">لا توجد مرفقات</h4>
+                <p style="margin: 0; opacity: 0.7;">استخدم منطقة الرفع لإضافة الملفات</p>
+            </div>
+        `;
+    }
+
+    return attachments.map((file, index) => {
+        // Handle both local and cloud file formats
+        const fileName = file.file_name || file.name;
+        const fileSize = formatFileSize(file.file_size || file.size);
+        const fileType = file.file_type || file.type;
+        const uploadDate = new Date(file.created_at || file.uploadDate).toLocaleDateString('ar-SA');
+        const fileIcon = getFileIcon(fileName);
+
+        // Determine file source
+        const isCloudFile = file.file_url || file.url;
+        const sourceIcon = isCloudFile ? '☁️' : '💾';
+        const sourceText = isCloudFile ? 'سحابي' : 'محلي';
+
+        return `
+            <div class="attachment-item desktop-enhanced-item" data-file-index="${index}">
+                <div class="file-icon-enhanced" style="color: ${getFileIconColor(fileName)};">
+                    ${fileIcon}
+                </div>
+                <div class="file-details-enhanced">
+                    <div class="file-name-text" title="${fileName}">
+                        ${fileName}
+                    </div>
+                    <div class="file-meta-enhanced">
+                        <span><i class="fas fa-weight-hanging"></i> ${fileSize}</span>
+                        <span><i class="fas fa-calendar"></i> ${uploadDate}</span>
+                        <span title="${sourceText}">${sourceIcon}</span>
+                    </div>
+                </div>
+                <div class="attachment-actions-enhanced">
+                    ${isCloudFile ?
+                        `<button class="btn-enhanced view-btn" onclick="viewAttachmentFromSupabase('${file.id}', '${file.file_url || file.url}', '${file.file_type || file.type}')" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-enhanced download-btn" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="btn-enhanced delete-btn" onclick="deletePropertyAttachmentFromSupabase('${file.id}', '${propertyKey}')" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>` :
+                        `<button class="btn-enhanced view-btn" onclick="viewPropertyAttachment('${propertyKey}', ${index})" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-enhanced download-btn" onclick="downloadPropertyAttachment('${propertyKey}', ${index})" title="تحميل">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="btn-enhanced delete-btn" onclick="deletePropertyAttachment('${propertyKey}', ${index})" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>`
+                    }
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ===== Render Mobile Property Attachments List =====
+function renderMobilePropertyAttachmentsList(propertyKey, attachments) {
+    console.log(`📱 عرض ${attachments.length} مرفق للجوال - العقار: ${propertyKey}`);
+
+    if (!attachments || attachments.length === 0) {
+        return `
+            <div class="mobile-no-attachments" style="text-align: center; padding: 30px 20px; color: #6c757d;">
+                <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+                <p style="margin: 0; font-size: 0.9rem;">لا توجد مرفقات</p>
+                <small style="opacity: 0.7;">استخدم زر "إضافة مرفق" لرفع الملفات</small>
+            </div>
+        `;
+    }
+
+    let html = '';
+
+    attachments.forEach((file, index) => {
+        // Handle both local and cloud file formats
+        const fileName = file.file_name || file.name;
+        const fileSize = formatFileSize(file.file_size || file.size);
+        const uploadDate = new Date(file.created_at || file.uploadDate).toLocaleDateString('ar-SA');
+        const fileIcon = getFileIcon(fileName);
+
+        // Determine file source
+        const isCloudFile = file.file_url || file.url;
+        const sourceIcon = isCloudFile ? '☁️' : '💾';
+        const sourceText = isCloudFile ? 'سحابي' : 'محلي';
+
+        html += `
+            <div class="mobile-attachment-item" data-file-index="${index}">
+                <!-- أيقونة الملف -->
+                <div class="mobile-file-icon" style="color: ${getFileIconColor(fileName)};">
+                    ${fileIcon}
+                </div>
+
+                <!-- معلومات الملف -->
+                <div class="mobile-file-info">
+                    <div class="mobile-file-name" title="${fileName}">
+                        ${fileName}
+                    </div>
+                    <div class="mobile-file-meta">
+                        <span><i class="fas fa-weight-hanging"></i> ${fileSize}</span>
+                        <span><i class="fas fa-calendar"></i> ${uploadDate}</span>
+                        <span title="${sourceText}">${sourceIcon}</span>
+                    </div>
+                </div>
+
+                <!-- أزرار العمليات -->
+                <div class="mobile-file-actions">
+                    ${isCloudFile ?
+                        `<button class="mobile-action-btn view" onclick="viewAttachmentFromSupabase('${file.id}', '${file.file_url || file.url}', '${file.file_type || file.type}')" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="mobile-action-btn download" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="mobile-action-btn delete" onclick="deletePropertyAttachmentFromSupabase('${file.id}', '${propertyKey}')" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>` :
+                        `<button class="mobile-action-btn view" onclick="viewPropertyAttachment('${propertyKey}', ${index})" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="mobile-action-btn download" onclick="downloadPropertyAttachment('${propertyKey}', ${index})" title="تحميل">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="mobile-action-btn delete" onclick="deletePropertyAttachment('${propertyKey}', ${index})" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>`
+                    }
+                </div>
+            </div>
+        `;
+    });
+
+    console.log(`✅ تم إنشاء قائمة المرفقات للجوال - ${attachments.length} عنصر`);
+    return html;
+}
+
+// ===== Setup Property Attachments Scroll =====
+function setupPropertyAttachmentsScroll(propertyKey) {
+    console.log('📜 إعداد اسكرول مرفقات العقار مع زر العودة للأعلى...');
+
+    const attachmentsList = document.getElementById(`propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const scrollToTopBtn = document.getElementById(`scrollToTopBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+
+    if (!attachmentsList || !scrollToTopBtn) {
+        console.warn('⚠️ لم يتم العثور على عناصر الاسكرول للعقار');
+        return;
+    }
+
+    // إضافة حدث الاسكرول لإظهار/إخفاء زر العودة للأعلى
+    attachmentsList.addEventListener('scroll', function() {
+        const scrollTop = this.scrollTop;
+        const scrollThreshold = 100; // إظهار الزر بعد التمرير 100px
+
+        if (scrollTop > scrollThreshold) {
+            scrollToTopBtn.classList.add('show');
+        } else {
+            scrollToTopBtn.classList.remove('show');
+        }
+    });
+
+    // تحسين الاسكرول للجوال
+    if (isMobileDevice()) {
+        attachmentsList.style.webkitOverflowScrolling = 'touch';
+        attachmentsList.style.scrollBehavior = 'smooth';
+    }
+
+    console.log('✅ تم إعداد اسكرول مرفقات العقار بنجاح');
+}
+
+// ===== Scroll to Top Function for Property Attachments =====
+function scrollToTopPropertyAttachments(propertyKey) {
+    console.log('⬆️ العودة لأعلى قائمة مرفقات العقار...');
+
+    const attachmentsList = document.getElementById(`propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+
+    if (attachmentsList) {
+        // اسكرول سلس للأعلى
+        attachmentsList.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+
+        // تأثير بصري للزر
+        const scrollToTopBtn = document.getElementById(`scrollToTopBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (scrollToTopBtn) {
+            scrollToTopBtn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                scrollToTopBtn.style.transform = 'scale(1)';
+            }, 150);
+        }
+
+        console.log('✅ تم التمرير لأعلى قائمة مرفقات العقار');
+    } else {
+        console.warn('⚠️ لم يتم العثور على قائمة مرفقات العقار');
+    }
+}
+
+// ===== Setup Property Drag and Drop =====
+function setupPropertyDragAndDrop(propertyKey) {
+    console.log('🎯 إعداد السحب والإفلات لمرفقات العقار...');
+
+    const uploadArea = document.getElementById(`propertyUploadArea_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+
+    if (!uploadArea) {
+        console.warn('⚠️ لم يتم العثور على منطقة الرفع للعقار');
+        return;
+    }
+
+    // منع السلوك الافتراضي للسحب والإفلات
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    // تأثيرات بصرية عند السحب
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    // معالجة الإفلات
+    uploadArea.addEventListener('drop', handlePropertyDrop, false);
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function highlight(e) {
+        uploadArea.classList.add('dragover');
+        uploadArea.style.borderColor = '#007bff';
+        uploadArea.style.backgroundColor = '#f8f9ff';
+    }
+
+    function unhighlight(e) {
+        uploadArea.classList.remove('dragover');
+        uploadArea.style.borderColor = '#007bff';
+        uploadArea.style.backgroundColor = 'white';
+    }
+
+    function handlePropertyDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        if (files.length > 0) {
+            // استخراج معلومات العقار من propertyKey
+            const [city, propertyName] = propertyKey.split('_');
+
+            // محاكاة حدث تغيير الملف
+            const fileInput = document.getElementById(`propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+            if (fileInput) {
+                // إنشاء حدث مخصص
+                const event = new Event('change');
+                Object.defineProperty(event, 'target', {
+                    value: { files: files },
+                    enumerable: true
+                });
+
+                handleFileUploadEnhanced(event, city, propertyName);
+            }
+        }
+    }
+
+    console.log('✅ تم إعداد السحب والإفلات لمرفقات العقار');
+}
+
+// ===== Property Attachment Functions =====
+
+// عرض مرفق العقار
+function viewPropertyAttachment(propertyKey, fileIndex) {
+    const propertyFiles = attachments[propertyKey] || [];
+    const file = propertyFiles[fileIndex];
+
+    if (!file) {
+        alert('لم يتم العثور على الملف');
+        return;
+    }
+
+    // فتح الملف في نافذة جديدة
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(`
+        <html>
+            <head>
+                <title>${file.name}</title>
+                <style>
+                    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                    img { max-width: 100%; height: auto; }
+                    .file-info { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="file-info">
+                    <h2>${file.name}</h2>
+                    <p>الحجم: ${formatFileSize(file.size)}</p>
+                    <p>تاريخ الرفع: ${new Date(file.uploadDate).toLocaleDateString('ar-SA')}</p>
+                    ${file.notes ? `<p>ملاحظات: ${file.notes}</p>` : ''}
+                </div>
+                ${file.type.startsWith('image/') ?
+                    `<img src="${file.data}" alt="${file.name}">` :
+                    `<p>لا يمكن عرض هذا النوع من الملفات. <a href="${file.data}" download="${file.name}">تحميل الملف</a></p>`
+                }
+            </body>
+        </html>
+    `);
+}
+
+// تحميل مرفق العقار
+function downloadPropertyAttachment(propertyKey, fileIndex) {
+    const propertyFiles = attachments[propertyKey] || [];
+    const file = propertyFiles[fileIndex];
+
+    if (!file) {
+        alert('لم يتم العثور على الملف');
+        return;
+    }
+
+    // إنشاء رابط التحميل
+    const link = document.createElement('a');
+    link.href = file.data;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// حذف مرفق العقار
+function deletePropertyAttachment(propertyKey, fileIndex) {
+    if (!confirm('هل أنت متأكد من حذف هذا المرفق؟')) return;
+
+    attachments[propertyKey] = (attachments[propertyKey] || []).filter((_, index) => index !== fileIndex);
+    localStorage.setItem('attachments', JSON.stringify(attachments));
+
+    // تحديث القائمة
+    const listContainer = document.getElementById(`propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    if (listContainer) {
+        if (isMobileDevice()) {
+            listContainer.innerHTML = renderMobilePropertyAttachmentsList(propertyKey, attachments[propertyKey] || []);
+        } else {
+            listContainer.innerHTML = renderPropertyAttachmentsList(propertyKey, attachments[propertyKey] || []);
+        }
+    }
+}
+
+// حذف مرفق العقار من Supabase
+async function deletePropertyAttachmentFromSupabase(attachmentId, propertyKey) {
+    try {
+        if (typeof deleteAttachmentEnhanced === 'function') {
+            const success = await deleteAttachmentEnhanced(attachmentId);
+
+            if (success) {
+                // تحديث القائمة
+                await refreshPropertyAttachmentsList(propertyKey);
+                console.log('✅ تم حذف مرفق العقار من السحابة');
+            }
+        } else {
+            console.warn('⚠️ وظيفة حذف المرفقات من السحابة غير متوفرة');
+        }
+    } catch (error) {
+        console.error('❌ خطأ في حذف مرفق العقار:', error);
+        alert('حدث خطأ في حذف المرفق');
+    }
+}
+
+// تحديث قائمة مرفقات العقار
+async function refreshPropertyAttachmentsList(propertyKey) {
+    console.log(`🔄 تحديث قائمة مرفقات العقار: ${propertyKey}`);
+    console.log(`📊 حالة المتغيرات: window.attachments=${!!window.attachments}, attachments=${!!attachments}`);
+
+    const listContainer = document.getElementById(`propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    if (!listContainer) {
+        console.warn('⚠️ لم يتم العثور على حاوية قائمة المرفقات');
+        return;
+    }
+
+    try {
+        // إظهار حالة التحميل
+        listContainer.style.opacity = '0.5';
+
+        // تحميل المرفقات المحدثة
+        let propertyAttachments = [];
+        let isFromCloud = false;
+
+        // محاولة التحميل من السحابة أولاً
+        if (typeof getPropertyAttachmentsEnhanced === 'function' && supabaseClient) {
+            try {
+                console.log(`☁️ جلب مرفقات ${propertyKey} من السحابة...`);
+                propertyAttachments = await getPropertyAttachmentsEnhanced(propertyKey);
+                isFromCloud = true;
+                console.log(`✅ تم جلب ${propertyAttachments.length} مرفق من السحابة`);
+            } catch (cloudError) {
+                console.warn('⚠️ فشل في تحميل المرفقات من السحابة:', cloudError);
+            }
+        }
+
+        // التراجع للمرفقات المحلية
+        if (!isFromCloud || propertyAttachments.length === 0) {
+            // استخدام المتغير العام للمرفقات أو localStorage
+            const localAttachments = window.attachments?.[propertyKey] ||
+                                   JSON.parse(localStorage.getItem('propertyAttachments') || '{}')[propertyKey] ||
+                                   [];
+            propertyAttachments = localAttachments;
+            console.log(`💾 تم جلب ${propertyAttachments.length} مرفق محلي`);
+        }
+
+        // تحديث القائمة
+        if (isMobileDevice()) {
+            listContainer.innerHTML = renderMobilePropertyAttachmentsList(propertyKey, propertyAttachments);
+
+            // Update mobile attachments count
+            const mobileCountBadge = document.getElementById(`mobilePropertyAttachmentsCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+            if (mobileCountBadge) {
+                mobileCountBadge.textContent = `${propertyAttachments.length} مرفق`;
+            }
+        } else {
+            listContainer.innerHTML = renderPropertyAttachmentsList(propertyKey, propertyAttachments);
+        }
+
+        // استعادة الشفافية
+        listContainer.style.opacity = '1';
+
+        console.log(`✅ تم تحديث قائمة مرفقات العقار: ${attachments.length} ملف`);
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث قائمة مرفقات العقار:', error);
+
+        // عرض رسالة خطأ
+        listContainer.innerHTML = `
+            <div class="error-loading-attachments" style="text-align: center; padding: 20px; color: #dc3545;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <p>خطأ في تحديث المرفقات</p>
+                <button onclick="refreshPropertyAttachmentsList('${propertyKey}')" class="btn-primary">
+                    <i class="fas fa-refresh"></i> إعادة المحاولة
+                </button>
+            </div>
+        `;
+
+        // استعادة الشفافية
+        listContainer.style.opacity = '1';
+    }
+}
 
 // Enhanced file upload with comprehensive cross-device synchronization
 async function handleFileUploadEnhanced(event, city, propertyName) {
-    const files = event.target.files;
-    const notes = document.getElementById('uploadNotes')?.value || '';
+    console.log(`🚀 بدء رفع الملفات للعقار: ${city}_${propertyName}`);
 
-    if (files.length === 0) return;
+    const files = event.target.files;
+    const propertyKey = `${city}_${propertyName}`;
+
+    console.log(`📁 عدد الملفات المحددة: ${files.length}`);
+    console.log(`🔑 مفتاح العقار: ${propertyKey}`);
+
+    // Get notes from the correct element based on the new design
+    let notes = '';
+    const notesElement = document.getElementById(`propertyUploadNotes_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`) ||
+                        document.getElementById('uploadNotes');
+    if (notesElement) {
+        notes = notesElement.value || '';
+        console.log(`📝 ملاحظات: ${notes}`);
+    } else {
+        console.log(`⚠️ لم يتم العثور على عنصر الملاحظات`);
+    }
+
+    if (files.length === 0) {
+        console.log(`❌ لا توجد ملفات للرفع`);
+        return;
+    }
 
     // Show enhanced upload progress modal
     const progressModal = document.createElement('div');
@@ -3858,10 +4370,18 @@ async function handleFileUploadEnhanced(event, city, propertyName) {
             document.getElementById('uploadStatus').textContent = 'جاري الرفع إلى السحابة...';
 
             // Upload files with progress tracking
-            await handleFilesEnhancedWithProgress(files, city, propertyName, notes);
+            await handleFilesEnhanced(files, city, propertyName, notes);
 
             // Remove progress modal
             progressModal.remove();
+
+            // Update the attachments list immediately
+            try {
+                await refreshPropertyAttachmentsList(propertyKey);
+                console.log('✅ تم تحديث قائمة المرفقات بعد الرفع');
+            } catch (updateError) {
+                console.warn('⚠️ خطأ في تحديث قائمة المرفقات:', updateError);
+            }
 
             // Show success message with cross-device info
             const successModal = document.createElement('div');
@@ -3882,7 +4402,7 @@ async function handleFileUploadEnhanced(event, city, propertyName) {
                         </div>
                     </div>
                     <div class="modal-actions">
-                        <button class="btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')">
+                        <button class="btn-primary" onclick="closeModal(); refreshPropertyAttachmentsList('${propertyKey}')">
                             <i class="fas fa-eye"></i> عرض المرفقات
                         </button>
                         <button class="btn-secondary" onclick="closeModal()">
@@ -3916,6 +4436,14 @@ async function handleFileUploadEnhanced(event, city, propertyName) {
         // Remove progress modal
         progressModal.remove();
 
+        // Update the attachments list immediately
+        try {
+            await refreshPropertyAttachmentsList(propertyKey);
+            console.log('✅ تم تحديث قائمة المرفقات بعد الحفظ المحلي');
+        } catch (updateError) {
+            console.warn('⚠️ خطأ في تحديث قائمة المرفقات:', updateError);
+        }
+
         // Show fallback message with sync options
         const fallbackModal = document.createElement('div');
         fallbackModal.className = 'modal-overlay';
@@ -3933,7 +4461,7 @@ async function handleFileUploadEnhanced(event, city, propertyName) {
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="btn-primary" onclick="closeModal(); showAttachmentsModal('${city}', '${propertyName}')">
+                    <button class="btn-primary" onclick="closeModal(); refreshPropertyAttachmentsList('${propertyKey}')">
                         <i class="fas fa-eye"></i> عرض المرفقات
                     </button>
                     <button class="btn-warning" onclick="closeModal(); retryUploadToSupabase('${city}', '${propertyName}')">
@@ -4215,7 +4743,15 @@ async function handleFileLocal(file, propertyKey, notes = '') {
 // Fallback local file handling
 async function handleFilesLocal(files, city, propertyName, notes = '') {
     const propertyKey = `${city}_${propertyName}`;
-    if (!attachments[propertyKey]) attachments[propertyKey] = [];
+
+    // Initialize global attachments if not exists
+    if (!window.attachments) {
+        window.attachments = {};
+    }
+
+    if (!window.attachments[propertyKey]) {
+        window.attachments[propertyKey] = [];
+    }
 
     let filesProcessed = 0;
     const totalFiles = files.length;
@@ -4225,15 +4761,17 @@ async function handleFilesLocal(files, city, propertyName, notes = '') {
 
         await new Promise((resolve) => {
             reader.onload = function(e) {
-                attachments[propertyKey].push({
+                const attachment = {
                     name: file.name,
                     type: file.type,
                     data: e.target.result,
                     date: new Date().toISOString(),
+                    uploadDate: new Date().toISOString(),
                     size: file.size,
                     notes: notes
-                });
+                };
 
+                window.attachments[propertyKey].push(attachment);
                 filesProcessed++;
                 resolve();
             };
@@ -4241,8 +4779,11 @@ async function handleFilesLocal(files, city, propertyName, notes = '') {
         });
     }
 
-    // Save to localStorage
-    localStorage.setItem('propertyAttachments', JSON.stringify(attachments));
+    // Save to localStorage with both keys for compatibility
+    localStorage.setItem('propertyAttachments', JSON.stringify(window.attachments));
+    localStorage.setItem('attachments', JSON.stringify(window.attachments));
+
+    console.log(`💾 تم حفظ ${filesProcessed} ملف محلياً للعقار ${propertyKey}`);
 }
 
 // Legacy function for backward compatibility
@@ -4263,15 +4804,92 @@ function filterAttachmentsList(event) {
 }
 
 // أيقونة الملف حسب النوع
-function getFileIcon(type) {
-    if (type.startsWith('image/')) return 'fas fa-image';
-    if (type === 'application/pdf') return 'fas fa-file-pdf';
-    if (type.includes('word')) return 'fas fa-file-word';
-    if (type.includes('excel') || type.includes('spreadsheet')) return 'fas fa-file-excel';
-    if (type.startsWith('video/')) return 'fas fa-file-video';
-    if (type.startsWith('audio/')) return 'fas fa-file-audio';
-    if (type.startsWith('text/')) return 'fas fa-file-alt';
-    return 'fas fa-file';
+function getFileIcon(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+
+    // صور
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(extension)) {
+        return '<i class="fas fa-image"></i>';
+    }
+    // PDF
+    if (extension === 'pdf') {
+        return '<i class="fas fa-file-pdf"></i>';
+    }
+    // Word
+    if (['doc', 'docx'].includes(extension)) {
+        return '<i class="fas fa-file-word"></i>';
+    }
+    // Excel
+    if (['xls', 'xlsx', 'csv'].includes(extension)) {
+        return '<i class="fas fa-file-excel"></i>';
+    }
+    // PowerPoint
+    if (['ppt', 'pptx'].includes(extension)) {
+        return '<i class="fas fa-file-powerpoint"></i>';
+    }
+    // فيديو
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(extension)) {
+        return '<i class="fas fa-file-video"></i>';
+    }
+    // صوت
+    if (['mp3', 'wav', 'flac', 'aac', 'ogg'].includes(extension)) {
+        return '<i class="fas fa-file-audio"></i>';
+    }
+    // نص
+    if (['txt', 'rtf'].includes(extension)) {
+        return '<i class="fas fa-file-alt"></i>';
+    }
+    // أرشيف
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
+        return '<i class="fas fa-file-archive"></i>';
+    }
+
+    return '<i class="fas fa-file"></i>';
+}
+
+// لون أيقونة الملف حسب النوع
+function getFileIconColor(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+
+    // صور - أزرق
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(extension)) {
+        return '#007bff';
+    }
+    // PDF - أحمر
+    if (extension === 'pdf') {
+        return '#dc3545';
+    }
+    // Word - أزرق داكن
+    if (['doc', 'docx'].includes(extension)) {
+        return '#2b579a';
+    }
+    // Excel - أخضر
+    if (['xls', 'xlsx', 'csv'].includes(extension)) {
+        return '#217346';
+    }
+    // PowerPoint - برتقالي
+    if (['ppt', 'pptx'].includes(extension)) {
+        return '#d24726';
+    }
+    // فيديو - بنفسجي
+    if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'].includes(extension)) {
+        return '#6f42c1';
+    }
+    // صوت - وردي
+    if (['mp3', 'wav', 'flac', 'aac', 'ogg'].includes(extension)) {
+        return '#e83e8c';
+    }
+    // نص - رمادي
+    if (['txt', 'rtf'].includes(extension)) {
+        return '#6c757d';
+    }
+    // أرشيف - بني
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
+        return '#795548';
+    }
+
+    // افتراضي - رمادي
+    return '#6c757d';
 }
 
 // تنسيق حجم الملف
@@ -4644,7 +5262,7 @@ async function refreshAttachmentsList(propertyKey) {
                 return `
                     <div class="attachment-item enhanced" data-name="${fileName.toLowerCase()}" ${att.id ? `data-id="${att.id}"` : ''}>
                         <div class="attachment-icon">
-                            <i class="${getFileIcon(fileType)}" style="font-size: 1.5rem;"></i>
+                            ${getFileIcon(fileName)}
                             ${isCloudFile ?
                                 '<i class="fas fa-cloud" style="position: absolute; top: -5px; right: -5px; font-size: 0.8rem; color: #17a2b8;" title="متزامن مع السحابة"></i>' :
                                 '<i class="fas fa-laptop" style="position: absolute; top: -5px; right: -5px; font-size: 0.8rem; color: #ffc107;" title="محلي فقط"></i>'
@@ -5035,22 +5653,7 @@ function formatDate(dateString) {
     }
 }
 
-// Enhanced file icon function
-function getFileIcon(type) {
-    if (!type) return 'fas fa-file';
-
-    if (type.startsWith('image/')) return 'fas fa-image';
-    if (type === 'application/pdf') return 'fas fa-file-pdf';
-    if (type.includes('word') || type.includes('document')) return 'fas fa-file-word';
-    if (type.includes('excel') || type.includes('spreadsheet')) return 'fas fa-file-excel';
-    if (type.includes('powerpoint') || type.includes('presentation')) return 'fas fa-file-powerpoint';
-    if (type.startsWith('video/')) return 'fas fa-file-video';
-    if (type.startsWith('audio/')) return 'fas fa-file-audio';
-    if (type.startsWith('text/') || type === 'text/plain') return 'fas fa-file-alt';
-    if (type.includes('zip') || type.includes('rar') || type.includes('archive')) return 'fas fa-file-archive';
-
-    return 'fas fa-file';
-}
+// Enhanced file icon function (legacy - replaced by new getFileIcon above)
 
 // Enhanced file size formatting
 function formatFileSize(bytes) {

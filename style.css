@@ -438,7 +438,7 @@ main {
 .total-item .total-label { color: #ffffff !important; font-weight: 900; margin-left: 6px; }
 .total-item .total-value { color: #ffffff  !important; font-weight: 900; }
 
-.total-item:nth-child(2) { background: #e8f7ef !important; }    /* جاري: أخضر فاتح */
+.total-item:nth-child(2) { background: #0f2984  !important; }    /* جاري: أخضر فاتح */
 .total-item:nth-child(3) { background: #03288a !important;}    /* منتهي: برتقالي فاتح */
 .total-item:nth-child(4) { background: #03288a !important }    /* الفارغ: رمادي فاتح */
 .total-item:nth-child(5) { background: #fffbe6 !important; }    /* على وشك: أصفر فاتح */
@@ -1952,7 +1952,7 @@ tr:hover {
 /* أنماط رأس المرفقات */
 .attachments-header {
     padding: 20px 25px 15px 25px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #667eea 0%, #eae6ef 100%);
     color: white;
     border-bottom: 1px solid #e2e8f0;
 }
@@ -10813,7 +10813,7 @@ td .remaining-installments {
 ;
     /* justify-content: space-between; */
     align-items: center;
-    background: linear-gradient(135deg, #6f42c1, #5a32a3);
+    background: linear-gradient(135deg, #efecf3, #dfdce4);
     color: white;
     border-radius: 12px 12px 0 0;
     flex-direction: column;
