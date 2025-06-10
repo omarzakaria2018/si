@@ -1403,11 +1403,32 @@ function isSameDate(d1, d2) {
 }
 
 function calculateStatus(property) {
-    // حساب عدد الأقساط تلقائياً
-    let count = 0;
-    if (property['تاريخ القسط الاول']) count++;
-    if (property['تاريخ القسط الثاني']) count++;
-    if (count > 0) property['عدد الاقساط'] = count;
+    // حساب عدد الأقساط الفعلي من جميع الأقساط الموجودة
+    let actualInstallmentCount = 0;
+    const propertyName = property['اسم العقار'] || 'غير محدد';
+
+    for (let i = 1; i <= 10; i++) {
+        const dateKey = i === 1 ? 'تاريخ القسط الاول' :
+                       i === 2 ? 'تاريخ القسط الثاني' :
+                       `تاريخ القسط ${getArabicNumber(i)}`;
+        const amountKey = i === 1 ? 'مبلغ القسط الاول' :
+                         i === 2 ? 'مبلغ القسط الثاني' :
+                         `مبلغ القسط ${getArabicNumber(i)}`;
+
+        if (property[dateKey] || property[amountKey]) {
+            actualInstallmentCount = i; // نحفظ أعلى رقم قسط موجود
+            console.log(`📊 ${propertyName}: وجد قسط رقم ${i} (${dateKey}: ${property[dateKey]}, ${amountKey}: ${property[amountKey]})`);
+        }
+    }
+
+    // تحديث عدد الأقساط إذا كان هناك أقساط فعلية
+    if (actualInstallmentCount > 0) {
+        const oldCount = property['عدد الاقساط'];
+        property['عدد الاقساط'] = actualInstallmentCount;
+        console.log(`✅ ${propertyName}: تم تحديث عدد الأقساط من ${oldCount} إلى ${actualInstallmentCount}`);
+    } else {
+        console.log(`⚠️ ${propertyName}: لا توجد أقساط`);
+    }
 
     if (!property['اسم المستأجر'] || !property['المالك']) {
         return { final: 'فارغ', display: 'فارغ', isInstallmentEnded: false };
