@@ -3316,7 +3316,7 @@ footer {
 
 /* تحسين تنسيق النوافذ المنبثقة */
 .modal-box h3 {
-  color: #eaebef;
+  color: #05144f;
   text-align: center;
   margin-bottom: 20px;
   font-size: 1.5rem;
@@ -5536,6 +5536,472 @@ footer {
 @keyframes rotate {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* تحسينات المرفقات للجوال والشاشة الكبيرة */
+.attachment-item.mobile-enhanced-item,
+.attachment-item.desktop-enhanced-item {
+    display: flex !important;
+    align-items: center;
+    padding: 15px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    min-height: 70px;
+}
+
+.attachment-item.mobile-enhanced-item:hover,
+.attachment-item.desktop-enhanced-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    border-color: #007bff;
+}
+
+.file-icon-enhanced {
+    font-size: .01rem;
+
+}
+
+.file-info-enhanced {
+    flex: 1;
+    min-width: 0;
+    padding: 0 10px;
+}
+
+.file-name-enhanced {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.file-name-text {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.storage-indicator-enhanced {
+    font-size: 1.2rem;
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+.file-meta-enhanced {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.file-size-enhanced,
+.file-date-enhanced,
+.file-notes-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.file-size-enhanced i,
+.file-date-enhanced i,
+.file-notes-enhanced i {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.attachment-actions-enhanced {
+    display: flex;
+    gap: 8px;
+    margin-right: 10px;
+}
+
+.btn-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 44px;
+    justify-content: center;
+}
+
+.btn-enhanced:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-enhanced.btn-view {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+}
+
+.btn-enhanced.btn-view:hover {
+    background: linear-gradient(135deg, #138496, #117a8b);
+}
+
+.btn-enhanced.btn-download {
+    background: linear-gradient(135deg, #28a745, #218838);
+    color: white;
+}
+
+.btn-enhanced.btn-download:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+}
+
+.btn-enhanced.btn-delete {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+}
+
+.btn-enhanced.btn-delete:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+}
+
+/* تحسينات خاصة للجوال */
+@media (max-width: 768px) {
+    .attachment-item.mobile-enhanced-item {
+        padding: 18px 15px;
+        margin-bottom: 15px;
+        min-height: 80px;
+    }
+
+    .file-icon-enhanced {
+        font-size: 3rem;
+        min-width: 60px;
+        margin-left: 18px;
+    }
+
+    .file-name-text {
+        font-size: 1.2rem;
+        line-height: 1.4;
+    }
+
+    .file-meta-enhanced {
+        font-size: 1rem;
+        gap: 15px;
+    }
+
+    .btn-enhanced {
+        padding: 12px 15px;
+        min-width: 50px;
+        font-size: 1.1rem;
+    }
+
+    .btn-enhanced i {
+        font-size: 1.2rem;
+    }
+
+    .attachment-actions-enhanced {
+        gap: 10px;
+        margin-right: 12px;
+    }
+
+    /* تحسين عرض المرفقات في النافذة */
+    .attachments-list,
+    .card-attachments-list {
+        max-height: 60vh !important;
+        overflow-y: auto;
+        padding: 10px;
+    }
+
+    /* تحسين حاوية المرفقات */
+    .attachments-main-section {
+        width: 100% !important;
+        min-height: 400px;
+    }
+
+    /* تحسين نافذة المرفقات للجوال */
+    .attachments-modal.enhanced-attachments-modal {
+        max-width: 95vw !important;
+        max-height: 90vh !important;
+        margin: 20px;
+    }
+
+    .attachments-modal-content {
+        flex-direction: column !important;
+        height: auto !important;
+    }
+
+    .upload-section {
+        width: 100% !important;
+        margin-bottom: 20px;
+        order: 1;
+    }
+
+    .attachments-main-section {
+        width: 100% !important;
+        order: 2;
+    }
+}
+
+/* تحسين عام لقائمة المرفقات */
+.attachments-list.compact-list {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 200px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+}
+
+/* إصلاح مشكلة الإخفاء */
+[id*="cardAttachmentsList"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.attachment-item {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* تحسين رسالة عدم وجود مرفقات */
+.no-attachments {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+    font-size: 1.1rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border: 2px dashed #dee2e6;
+    margin: 20px 0;
+}
+
+.no-attachments::before {
+    content: "📎";
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+/* تحسينات إضافية للنافذة في الجوال */
+@media (max-width: 768px) {
+    /* تحسين النافذة الرئيسية */
+    .modal-box.attachments-modal.enhanced-attachments-modal {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        height: 85vh !important;
+        max-height: 85vh !important;
+        margin: 20px auto !important;
+        padding: 15px !important;
+        overflow: hidden;
+    }
+
+    /* تحسين المحتوى */
+    .attachments-modal-content.enhanced-content {
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .content-layout-new {
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px;
+    }
+
+    /* قسم المرفقات يأخذ معظم المساحة */
+    .attachments-main-section {
+        flex: 1 !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        order: 1 !important;
+    }
+
+    .attachments-header {
+        flex-shrink: 0 !important;
+        padding: 10px 0 !important;
+        border-bottom: 2px solid #e9ecef !important;
+        margin-bottom: 10px !important;
+    }
+
+    .attachments-header h3 {
+        font-size: 1.3rem !important;
+        margin: 0 !important;
+        color: #2c3e50 !important;
+    }
+
+    /* قائمة المرفقات قابلة للتمرير */
+    .attachments-list.compact-list {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        padding: 10px !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        border: 1px solid #e9ecef !important;
+        border-radius: 12px !important;
+        min-height: 300px !important;
+    }
+
+    /* منطقة الرفع مضغوطة */
+    .upload-notes-sidebar {
+        flex-shrink: 0 !important;
+        order: 2 !important;
+        background: #f8f9fa !important;
+        border-radius: 12px !important;
+        padding: 15px !important;
+        border: 1px solid #e9ecef !important;
+    }
+
+    .upload-section.compact-upload {
+        margin-bottom: 15px !important;
+    }
+
+    .upload-area.enhanced-upload {
+        min-height: 80px !important;
+        padding: 15px !important;
+    }
+
+    .upload-dropzone {
+        padding: 20px 15px !important;
+        text-align: center !important;
+        border: 2px dashed #007bff !important;
+        border-radius: 8px !important;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .upload-dropzone:hover {
+        border-color: #0056b3 !important;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%) !important;
+    }
+
+    .upload-dropzone i {
+        font-size: 2rem !important;
+        color: #007bff !important;
+        margin-bottom: 10px !important;
+        display: block !important;
+    }
+
+    .upload-dropzone p {
+        margin: 0 0 5px 0 !important;
+        font-weight: 600 !important;
+        color: #2c3e50 !important;
+        font-size: 1.1rem !important;
+    }
+
+    .upload-dropzone small {
+        color: #6c757d !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* قسم الملاحظات مضغوط */
+    .notes-section-compact {
+        margin-top: 0 !important;
+    }
+
+    .notes-container-compact h4 {
+        font-size: 1.1rem !important;
+        margin: 0 0 8px 0 !important;
+        color: #2c3e50 !important;
+    }
+
+    .notes-textarea-compact {
+        width: 100% !important;
+        min-height: 60px !important;
+        padding: 10px !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 8px !important;
+        font-size: 1rem !important;
+        resize: vertical !important;
+    }
+
+    .notes-info-compact {
+        margin-top: 5px !important;
+    }
+
+    .notes-info-compact small {
+        color: #6c757d !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* زر الإغلاق */
+    .modal-footer-actions {
+        flex-shrink: 0 !important;
+        padding: 15px 0 0 0 !important;
+        border-top: 1px solid #e9ecef !important;
+        margin-top: 15px !important;
+    }
+
+    .close-modal-btn {
+        width: 100% !important;
+        padding: 15px !important;
+        font-size: 1.1rem !important;
+        background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .close-modal-btn:hover {
+        background: linear-gradient(135deg, #5a6268, #495057) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    /* إخفاء عناصر غير ضرورية في الجوال */
+    .enhanced-close-btn {
+        display: none !important;
+    }
+
+    /* تحسين رسائل التحميل والأخطاء */
+    .loading-attachments.enhanced-loading {
+        padding: 40px 20px !important;
+        text-align: center !important;
+    }
+
+    .loading-attachments.enhanced-loading i {
+        font-size: 3rem !important;
+        margin-bottom: 20px !important;
+    }
+
+    .loading-attachments.enhanced-loading p {
+        font-size: 1.2rem !important;
+        margin: 10px 0 !important;
+    }
+
+    .error-loading-attachments {
+        padding: 40px 20px !important;
+        text-align: center !important;
+    }
+
+    .error-loading-attachments i {
+        font-size: 3rem !important;
+        margin-bottom: 20px !important;
+    }
+
+    .error-loading-attachments p {
+        font-size: 1.2rem !important;
+        margin: 10px 0 !important;
+    }
+
+    .error-loading-attachments button {
+        padding: 12px 20px !important;
+        font-size: 1.1rem !important;
+        margin-top: 15px !important;
+    }
 }
 
 /* زر تبديل ترتيب العرض */

@@ -7784,6 +7784,58 @@ async function enhancedDeleteUnit(unitData) {
     }
 }
 
+// ===== Mobile Device Detection =====
+function isMobileDevice() {
+    // Check multiple indicators for mobile devices
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+    // Check for mobile user agents
+    const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+    const isMobileUA = mobileRegex.test(userAgent.toLowerCase());
+
+    // Check screen size
+    const isSmallScreen = window.innerWidth <= 768;
+
+    // Check touch capability
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    // Return true if any mobile indicator is present
+    return isMobileUA || (isSmallScreen && isTouchDevice);
+}
+
+// ===== Enhanced Attachment Display for Mobile =====
+function enhanceAttachmentDisplayForMobile() {
+    // Force show all attachment elements
+    const attachmentElements = document.querySelectorAll(`
+        .attachments-list,
+        .card-attachments-list,
+        .attachment-item,
+        [id*="cardAttachmentsList"],
+        [id*="attachmentsList"]
+    `);
+
+    attachmentElements.forEach(element => {
+        element.style.display = 'block';
+        element.style.visibility = 'visible';
+        element.style.opacity = '1';
+
+        // Add mobile-specific classes
+        if (isMobileDevice()) {
+            element.classList.add('mobile-optimized');
+        }
+    });
+
+    // Ensure attachment items use flex layout
+    const attachmentItems = document.querySelectorAll('.attachment-item');
+    attachmentItems.forEach(item => {
+        item.style.display = 'flex';
+        item.style.visibility = 'visible';
+        item.style.opacity = '1';
+    });
+
+    console.log(`📱 تم تحسين عرض ${attachmentElements.length} عنصر مرفقات للجوال`);
+}
+
 // تحميل الوحدات للدمج
 function loadUnitsForMerge() {
     const propertyName = document.getElementById('mergePropertyName').value;
@@ -8051,26 +8103,45 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
 
     document.body.insertAdjacentHTML('beforeend', html);
 
-    // 🎯 تحميل المرفقات بعد إنشاء النافذة
+    // 🎯 تحميل المرفقات بعد إنشاء النافذة مع التحسينات للجوال
     loadCardAttachments().then(({ cardAttachments, isFromCloud }) => {
         console.log(`📎 تم تحميل ${cardAttachments.length} مرفق للبطاقة ${cardKey} (${isFromCloud ? 'من السحابة' : 'محلي'})`);
 
         const listContainer = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
         if (listContainer) {
-            // Force visibility
+            // Force visibility with enhanced mobile support
             listContainer.style.display = 'block';
             listContainer.style.visibility = 'visible';
             listContainer.style.opacity = '1';
 
-            // Render attachments
+            // Add mobile-specific classes
+            if (isMobileDevice()) {
+                listContainer.classList.add('mobile-list', 'mobile-optimized');
+                listContainer.style.minHeight = '300px';
+                listContainer.style.maxHeight = '60vh';
+                listContainer.style.overflowY = 'auto';
+            }
+
+            // Render attachments with enhanced layout
             listContainer.innerHTML = renderCardAttachmentsList(cardKey, cardAttachments);
 
-            // إضافة سكرول للأعلى لإظهار المرفقات
-            setTimeout(() => {
-                scrollToAttachments();
-            }, 300);
+            // Update attachments count badge
+            const countBadge = document.getElementById(`attachmentsCount_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+            if (countBadge) {
+                countBadge.innerHTML = `<i class="fas fa-paperclip"></i> ${cardAttachments.length} مرفق`;
+            }
 
-            console.log('✅ تم عرض المرفقات في النافذة');
+            // Enhanced mobile display optimization
+            enhanceAttachmentDisplayForMobile();
+
+            // إضافة سكرول للأعلى لإظهار المرفقات (للشاشات الكبيرة فقط)
+            if (!isMobileDevice()) {
+                setTimeout(() => {
+                    scrollToAttachments();
+                }, 300);
+            }
+
+            console.log('✅ تم عرض المرفقات في النافذة مع تحسينات الجوال');
         } else {
             console.error('❌ لم يتم العثور على حاوية قائمة المرفقات');
         }
@@ -8080,10 +8151,10 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
         const listContainer = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
         if (listContainer) {
             listContainer.innerHTML = `
-                <div class="error-loading-attachments" style="text-align: center; padding: 20px; color: #dc3545;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    <p>خطأ في تحميل المرفقات</p>
-                    <button onclick="refreshCardAttachmentsList('${cardKey}')" class="btn-primary" style="margin-top: 10px;">
+                <div class="error-loading-attachments enhanced-error" style="text-align: center; padding: ${isMobileDevice() ? '40px 20px' : '20px'}; color: #dc3545;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: ${isMobileDevice() ? '3rem' : '2rem'}; margin-bottom: ${isMobileDevice() ? '20px' : '10px'};"></i>
+                    <p style="font-size: ${isMobileDevice() ? '1.2rem' : '1rem'};">خطأ في تحميل المرفقات</p>
+                    <button onclick="refreshCardAttachmentsList('${cardKey}')" class="btn-primary" style="margin-top: ${isMobileDevice() ? '15px' : '10px'}; padding: ${isMobileDevice() ? '12px 20px' : '8px 16px'}; font-size: ${isMobileDevice() ? '1.1rem' : '0.9rem'};">
                         <i class="fas fa-refresh"></i> إعادة المحاولة
                     </button>
                 </div>
@@ -8161,6 +8232,9 @@ function renderCardAttachmentsList(cardKey, attachments = null) {
         return '<p class="no-attachments">لا توجد مرفقات لهذه البطاقة</p>';
     }
 
+    // Check if mobile device for responsive design
+    const isMobile = isMobileDevice();
+
     return cardFiles.map(file => {
         // Handle both local and cloud file formats
         const fileName = file.file_name || file.name;
@@ -8174,36 +8248,42 @@ function renderCardAttachmentsList(cardKey, attachments = null) {
         const storageIcon = isLocal ? '💾' : '☁️';
         const storageTitle = isLocal ? 'محفوظ محلياً' : 'محفوظ في السحابة';
 
+        // Use enhanced layout for mobile and desktop
         return `
-        <div class="attachment-item compact-item" data-name="${fileName}">
-            <div class="file-icon-compact">${fileIcon}</div>
-            <div class="file-info-compact">
-                <div class="file-name-compact" title="${fileName}">
-                    ${fileName}
-                    <span class="storage-indicator-compact" title="${storageTitle}">${storageIcon}</span>
+        <div class="attachment-item ${isMobile ? 'mobile-enhanced-item' : 'desktop-enhanced-item'}" data-name="${fileName}">
+            <div class="file-icon-enhanced">${fileIcon}</div>
+            <div class="file-info-enhanced">
+                <div class="file-name-enhanced" title="${fileName}">
+                    <span class="file-name-text">${fileName}</span>
+                    <span class="storage-indicator-enhanced" title="${storageTitle}">${storageIcon}</span>
                 </div>
-                <div class="file-meta-compact">
-                    <span class="file-size-compact">${fileSize}</span>
-                    <span class="file-date-compact">${uploadDate}</span>
-                    ${(file.notes || file.description) ? `<span class="file-notes-compact" title="${file.notes || file.description}"><i class="fas fa-sticky-note"></i></span>` : ''}
+                <div class="file-meta-enhanced">
+                    <span class="file-size-enhanced"><i class="fas fa-weight-hanging"></i> ${fileSize}</span>
+                    <span class="file-date-enhanced"><i class="fas fa-calendar"></i> ${uploadDate}</span>
+                    ${(file.notes || file.description) ? `<span class="file-notes-enhanced" title="${file.notes || file.description}"><i class="fas fa-sticky-note"></i> ملاحظة</span>` : ''}
                 </div>
             </div>
-            <div class="attachment-actions-compact">
+            <div class="attachment-actions-enhanced">
                 ${isLocal ?
-                    `<button onclick="downloadCardAttachment('${cardKey}', '${fileName}')" class="btn-compact btn-download" title="تحميل">
+                    `<button onclick="downloadCardAttachment('${cardKey}', '${fileName}')" class="btn-enhanced btn-download" title="تحميل">
                         <i class="fas fa-download"></i>
+                        ${!isMobile ? '<span>تحميل</span>' : ''}
                     </button>
-                    <button onclick="deleteCardAttachment('${cardKey}', '${fileName}')" class="btn-compact btn-delete" title="حذف">
+                    <button onclick="deleteCardAttachment('${cardKey}', '${fileName}')" class="btn-enhanced btn-delete" title="حذف">
                         <i class="fas fa-trash"></i>
+                        ${!isMobile ? '<span>حذف</span>' : ''}
                     </button>` :
-                    `<button onclick="window.open('${file.file_url}', '_blank')" class="btn-compact btn-view" title="عرض">
+                    `<button onclick="window.open('${file.file_url}', '_blank')" class="btn-enhanced btn-view" title="عرض">
                         <i class="fas fa-eye"></i>
+                        ${!isMobile ? '<span>عرض</span>' : ''}
                     </button>
-                    <button onclick="downloadAttachmentFromSupabase('${file.file_url}', '${fileName}')" class="btn-compact btn-download" title="تحميل">
+                    <button onclick="downloadAttachmentFromSupabase('${file.file_url}', '${fileName}')" class="btn-enhanced btn-download" title="تحميل">
                         <i class="fas fa-download"></i>
+                        ${!isMobile ? '<span>تحميل</span>' : ''}
                     </button>
-                    <button onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" class="btn-compact btn-delete" title="حذف">
+                    <button onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" class="btn-enhanced btn-delete" title="حذف">
                         <i class="fas fa-trash"></i>
+                        ${!isMobile ? '<span>حذف</span>' : ''}
                     </button>`
                 }
             </div>
