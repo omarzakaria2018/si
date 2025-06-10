@@ -1174,45 +1174,8 @@ function renderTotals(data) {
         `;
         container.appendChild(financialCard);
 
-        // إضافة معلومات الصك للبطاقة الأولى إذا كان هناك عقار محدد
-        if (currentProperty) {
-            const uniqueContractsList = {};
-            data.forEach(property => {
-                if (property['رقم العقد'] && property['اسم العقار']) {
-                    const key = `${property['رقم العقد']}_${property['اسم العقار']}`;
-                    if (!uniqueContractsList[key]) uniqueContractsList[key] = property;
-                }
-            });
-            const uniqueList = Object.values(uniqueContractsList);
-
-            const firstDeedNumber = uniqueList.find(p => p['رقم الصك'] && p['رقم الصك'].toString().trim() !== '');
-            const firstDeedArea = uniqueList.find(p => p['مساحةالصك'] && !isNaN(parseFloat(p['مساحةالصك'])));
-            const firstSijil = uniqueList.find(p => p['السجل العيني '] && p['السجل العيني '].toString().trim() !== '');
-
-            if (firstDeedNumber || firstDeedArea || firstSijil) {
-                // إضافة معلومات الصك للبطاقة الأولى
-                const deedInfo = document.createElement('div');
-                deedInfo.className = 'deed-info';
-                deedInfo.style.marginTop = '15px';
-                deedInfo.style.paddingTop = '15px';
-                deedInfo.style.borderTop = '2px solid #e9ecef';
-
-                let deedHtml = '<div style="text-align: center; margin-bottom: 10px; color: var(--primary-color); font-weight: 600;">معلومات الصك</div>';
-
-                if (firstDeedNumber) {
-                    deedHtml += `<div style="margin-bottom: 8px;"><i class="fas fa-file-alt" style="color: #dc3545; margin-left: 8px;"></i><strong>رقم الصك:</strong> ${firstDeedNumber['رقم الصك']}</div>`;
-                }
-                if (firstDeedArea) {
-                    deedHtml += `<div style="margin-bottom: 8px;"><i class="fas fa-ruler-combined" style="color: #fd7e14; margin-left: 8px;"></i><strong>مساحة الصك:</strong> ${parseFloat(firstDeedArea['مساحةالصك']).toLocaleString()} م²</div>`;
-                }
-                if (firstSijil) {
-                    deedHtml += `<div><i class="fas fa-clipboard-list" style="color: #28a745; margin-left: 8px;"></i><strong>السجل العيني:</strong> ${firstSijil['السجل العيني '].toString().trim()}</div>`;
-                }
-
-                deedInfo.innerHTML = deedHtml;
-                unitsCard.appendChild(deedInfo);
-            }
-        }
+        // ملاحظة: تم إزالة عرض معلومات الصك من البطاقات لتجنب التكرار
+        // معلومات الصك تظهر فقط في قسم الإحصائيات
     } else {
         // للشاشات الصغيرة: استخدم التصميم القديم
         addTotalItem(container, 'عدد الوحدات', totalUnits, 'units-stat');
@@ -1322,34 +1285,37 @@ function renderMobileTotals(data) {
     addTotalItem(container, 'إجمالي تجاري بعد الضريبة', `<i class="fas fa-coins" style="color:#05940e;"></i> ${afterTaxCommercial.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'after-taxonly-stat');
     addTotalItem(container, 'إجمالي سكني', `<i class="fas fa-home" style="color:#f59e42;"></i> ${totalResidential.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'residential-stat');
 
-    // 🆕 إضافة تفاصيل الصك للإحصائيات في الجوال فقط
-    // رقم الصك ومساحة الصك والسجل العيني من البيانات المعروضة
-    const uniqueContractsList = {};
-    data.forEach(property => {
-        if (property['رقم العقد'] && property['اسم العقار']) {
-            const key = `${property['رقم العقد']}_${property['اسم العقار']}`;
-            if (!uniqueContractsList[key]) uniqueContractsList[key] = property;
+    // إضافة معلومات الصك للشاشات الكبيرة فقط
+    if (!isMobileDevice()) {
+        // 🆕 إضافة تفاصيل الصك للإحصائيات في الشاشات الكبيرة فقط
+        const uniqueContractsList = {};
+        data.forEach(property => {
+            if (property['رقم العقد'] && property['اسم العقار']) {
+                const key = `${property['رقم العقد']}_${property['اسم العقار']}`;
+                if (!uniqueContractsList[key]) uniqueContractsList[key] = property;
+            }
+        });
+        const uniqueList = Object.values(uniqueContractsList);
+
+        // إضافة رقم الصك إذا وُجد في البيانات المعروضة
+        const firstDeedNumber = uniqueList.find(p => p['رقم الصك'] && p['رقم الصك'].toString().trim() !== '');
+        if (firstDeedNumber && firstDeedNumber['رقم الصك']) {
+            addTotalItem(container, 'رقم الصك', `<i class="fas fa-file-contract" style="color:#dc3545;"></i> ${firstDeedNumber['رقم الصك']}`, 'deed-number-stat desktop-deed-info');
         }
-    });
-    const uniqueList = Object.values(uniqueContractsList);
 
-    // إضافة رقم الصك إذا وُجد في البيانات المعروضة
-    const firstDeedNumber = uniqueList.find(p => p['رقم الصك'] && p['رقم الصك'].toString().trim() !== '');
-    if (firstDeedNumber && firstDeedNumber['رقم الصك']) {
-        addTotalItem(container, 'رقم الصك', `<i class="fas fa-file-contract" style="color:#dc3545;"></i> ${firstDeedNumber['رقم الصك']}`, 'deed-number-stat mobile-deed-info');
-    }
+        // إضافة مساحة الصك إذا وُجدت في البيانات المعروضة
+        const firstDeedArea = uniqueList.find(p => p['مساحةالصك'] && !isNaN(parseFloat(p['مساحةالصك'])));
+        if (firstDeedArea && firstDeedArea['مساحةالصك']) {
+            addTotalItem(container, 'مساحة الصك', `<i class="fas fa-ruler-combined" style="color:#fd7e14;"></i> ${parseFloat(firstDeedArea['مساحةالصك']).toLocaleString()} م²`, 'deed-area-stat desktop-deed-info');
+        }
 
-    // إضافة مساحة الصك إذا وُجدت في البيانات المعروضة
-    const firstDeedArea = uniqueList.find(p => p['مساحةالصك'] && !isNaN(parseFloat(p['مساحةالصك'])));
-    if (firstDeedArea && firstDeedArea['مساحةالصك']) {
-        addTotalItem(container, 'مساحة الصك', `<i class="fas fa-ruler-combined" style="color:#fd7e14;"></i> ${parseFloat(firstDeedArea['مساحةالصك']).toLocaleString()} م²`, 'deed-area-stat mobile-deed-info');
+        // إضافة السجل العيني إذا وُجد في البيانات المعروضة
+        const firstSijil = uniqueList.find(p => p['السجل العيني '] && p['السجل العيني '].toString().trim() !== '');
+        if (firstSijil && firstSijil['السجل العيني ']) {
+            addTotalItem(container, 'السجل العيني', `<i class="fas fa-clipboard-list" style="color:#28a745;"></i> ${firstSijil['السجل العيني '].toString().trim()}`, 'registry-stat desktop-deed-info');
+        }
     }
-
-    // إضافة السجل العيني إذا وُجد في البيانات المعروضة
-    const firstSijil = uniqueList.find(p => p['السجل العيني '] && p['السجل العيني '].toString().trim() !== '');
-    if (firstSijil && firstSijil['السجل العيني ']) {
-        addTotalItem(container, 'السجل العيني', `<i class="fas fa-clipboard-list" style="color:#28a745;"></i> ${firstSijil['السجل العيني '].toString().trim()}`, 'registry-stat mobile-deed-info');
-    }
+    // ملاحظة: في الجوال، معلومات الصك تظهر فقط عند تحديد عقار محدد
 }
 
 // إضافة عنصر إحصائي
@@ -1927,36 +1893,8 @@ function showPropertyDetails(index) {
     html += '<div class="property-basic-info">';
     html += '<h4><i class="fas fa-building"></i> معلومات العقار الأساسية</h4>';
 
-    // السجل العيني ومساحة الصك ورقم الصك
-    if (property['السجل العيني '] || property['مساحةالصك'] || property['رقم الصك']) {
-        html += '<div class="property-deed-section">';
-
-        if (property['رقم الصك']) {
-            html += `
-            <div class="detail-row deed-info">
-                <span class="detail-label"><i class="fas fa-file-contract"></i> رقم الصك:</span>
-                <span class="detail-value">${property['رقم الصك']}</span>
-            </div>`;
-        }
-
-        if (property['السجل العيني ']) {
-            html += `
-            <div class="detail-row deed-info">
-                <span class="detail-label"><i class="fas fa-clipboard-list"></i> السجل العيني:</span>
-                <span class="detail-value">${property['السجل العيني ']}</span>
-            </div>`;
-        }
-
-        if (property['مساحةالصك']) {
-            html += `
-            <div class="detail-row deed-info">
-                <span class="detail-label"><i class="fas fa-ruler-combined"></i> مساحة الصك:</span>
-                <span class="detail-value">${parseFloat(property['مساحةالصك']).toLocaleString()} م²</span>
-            </div>`;
-        }
-
-        html += '</div>';
-    }
+    // ملاحظة: تم إزالة عرض معلومات الصك من تفاصيل الوحدة في الجوال
+    // معلومات الصك ستظهر فقط عند تحديد عقار محدد
     html += '</div>';
 
     // قسم معلومات الوحدات
@@ -2203,7 +2141,7 @@ function showInstallmentsDetails(contractNumber, propertyName) {
     </div>
     `;
 
-    // باقي الحقول
+    // باقي الحقول (تم إزالة معلومات الصك من العرض العام في الجوال)
     const basicInfo = [
         { label: 'رقم العقد', key: 'رقم العقد' },
         { label: 'اسم المستأجر', key: 'اسم المستأجر' },
@@ -2211,8 +2149,8 @@ function showInstallmentsDetails(contractNumber, propertyName) {
         { label: 'المدينة', key: 'المدينة' },
         { label: 'نوع العقد', key: 'نوع العقد' },
         { label: 'رقم حساب الكهرباء', key: 'رقم حساب الكهرباء' },
-        { label: 'الارتفاع', key: 'الارتفاع' },
-        { label: 'رقم الصك', key: 'رقم الصك' }
+        { label: 'الارتفاع', key: 'الارتفاع' }
+        // ملاحظة: تم إزالة 'رقم الصك' من العرض العام في الجوال
     ];
 
     basicInfo.forEach(info => {
@@ -5500,6 +5438,11 @@ function renderPropertiesTab() {
                                     <button onclick="viewPropertyUnits('${property}')" class="btn-view">
                                         <i class="fas fa-eye"></i> عرض الوحدات
                                     </button>
+                                    ${isMobileDevice() ? `
+                                    <button onclick="showDeedInfoForProperty('${property}', '${cityName}')" class="btn-deed" style="background: linear-gradient(135deg, #17a2b8, #138496); color: white;">
+                                        <i class="fas fa-file-contract"></i> معلومات الصك
+                                    </button>
+                                    ` : ''}
                                     <button onclick="showPropertyStatistics('${property}')" class="btn-secondary">
                                         <i class="fas fa-chart-bar"></i> الإحصائيات
                                     </button>
@@ -7782,6 +7725,102 @@ async function enhancedDeleteUnit(unitData) {
         showToast('خطأ في حذف الوحدة', 'error');
         return { success: false, error: error.message };
     }
+}
+
+// ===== Show Deed Information for Selected Property in Mobile =====
+function showDeedInfoForProperty(propertyName, city) {
+    console.log(`📋 عرض معلومات الصك للعقار: ${propertyName} في ${city}`);
+
+    // البحث عن العقار المحدد
+    const relatedProperties = properties.filter(p =>
+        p['اسم العقار'] === propertyName && p['المدينة'] === city
+    );
+
+    if (relatedProperties.length === 0) {
+        console.warn('⚠️ لم يتم العثور على العقار المحدد');
+        return;
+    }
+
+    // الحصول على معلومات الصك من أول وحدة تحتوي على البيانات
+    const propertyWithDeed = relatedProperties.find(p =>
+        p['رقم الصك'] || p['مساحةالصك'] || p['السجل العيني ']
+    );
+
+    if (!propertyWithDeed) {
+        console.log('ℹ️ لا توجد معلومات صك لهذا العقار');
+        return;
+    }
+
+    // إنشاء نافذة معلومات الصك
+    const deedModal = document.createElement('div');
+    deedModal.className = 'modal-overlay';
+    deedModal.style.display = 'flex';
+    deedModal.innerHTML = `
+        <div class="modal-box deed-info-modal" style="max-width: ${isMobileDevice() ? '95vw' : '600px'}; padding: 30px;">
+            <div class="deed-header" style="text-align: center; margin-bottom: 25px;">
+                <i class="fas fa-file-contract" style="font-size: 3rem; color: #007bff; margin-bottom: 15px;"></i>
+                <h2 style="color: #2c3e50; margin: 0;">معلومات الصك</h2>
+                <p style="color: #6c757d; margin: 10px 0 0 0;">${propertyName} - ${city}</p>
+            </div>
+
+            <div class="deed-details" style="background: #f8f9fa; border-radius: 12px; padding: 20px;">
+                ${propertyWithDeed['رقم الصك'] ? `
+                <div class="deed-item" style="display: flex; align-items: center; margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div class="deed-icon" style="margin-left: 15px;">
+                        <i class="fas fa-file-alt" style="font-size: 1.5rem; color: #dc3545;"></i>
+                    </div>
+                    <div class="deed-content" style="flex: 1;">
+                        <div class="deed-label" style="font-weight: 600; color: #495057; margin-bottom: 5px;">رقم الصك</div>
+                        <div class="deed-value" style="font-size: 1.1rem; color: #2c3e50;">${propertyWithDeed['رقم الصك']}</div>
+                    </div>
+                </div>
+                ` : ''}
+
+                ${propertyWithDeed['السجل العيني '] ? `
+                <div class="deed-item" style="display: flex; align-items: center; margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div class="deed-icon" style="margin-left: 15px;">
+                        <i class="fas fa-clipboard-list" style="font-size: 1.5rem; color: #28a745;"></i>
+                    </div>
+                    <div class="deed-content" style="flex: 1;">
+                        <div class="deed-label" style="font-weight: 600; color: #495057; margin-bottom: 5px;">رقم السجل العقاري</div>
+                        <div class="deed-value" style="font-size: 1.1rem; color: #2c3e50;">${propertyWithDeed['السجل العيني ']}</div>
+                    </div>
+                </div>
+                ` : ''}
+
+                ${propertyWithDeed['مساحةالصك'] ? `
+                <div class="deed-item" style="display: flex; align-items: center; margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div class="deed-icon" style="margin-left: 15px;">
+                        <i class="fas fa-ruler-combined" style="font-size: 1.5rem; color: #fd7e14;"></i>
+                    </div>
+                    <div class="deed-content" style="flex: 1;">
+                        <div class="deed-label" style="font-weight: 600; color: #495057; margin-bottom: 5px;">مساحة الصك</div>
+                        <div class="deed-value" style="font-size: 1.1rem; color: #2c3e50;">${parseFloat(propertyWithDeed['مساحةالصك']).toLocaleString()} م²</div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+
+            <div class="deed-actions" style="text-align: center; margin-top: 25px;">
+                <button onclick="this.parentElement.parentElement.parentElement.remove()"
+                        class="btn-primary"
+                        style="padding: 12px 30px; font-size: 1.1rem; border-radius: 8px; background: linear-gradient(135deg, #007bff, #0056b3); border: none; color: white; cursor: pointer; transition: all 0.3s ease;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(deedModal);
+
+    // إضافة تأثير الإغلاق عند النقر خارج النافذة
+    deedModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.remove();
+        }
+    });
+
+    console.log('✅ تم عرض نافذة معلومات الصك');
 }
 
 // ===== Mobile Device Detection =====

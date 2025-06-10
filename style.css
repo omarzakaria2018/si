@@ -6004,6 +6004,183 @@ footer {
     }
 }
 
+/* زر معلومات الصك */
+.btn-deed {
+    background: linear-gradient(135deg, #17a2b8, #138496) !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.btn-deed:hover {
+    background: linear-gradient(135deg, #138496, #117a8b) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3) !important;
+}
+
+.btn-deed:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 4px rgba(23, 162, 184, 0.2) !important;
+}
+
+.btn-deed i {
+    font-size: 1rem !important;
+}
+
+/* تحسين نافذة معلومات الصك */
+.deed-info-modal {
+    background: white !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+    border: none !important;
+}
+
+.deed-info-modal .deed-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border-radius: 16px 16px 0 0 !important;
+    margin: -30px -30px 25px -30px !important;
+    padding: 30px !important;
+}
+
+.deed-info-modal .deed-details {
+    background: #f8f9fa !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    border: 1px solid #e9ecef !important;
+}
+
+.deed-info-modal .deed-item {
+    background: white !important;
+    border-radius: 8px !important;
+    padding: 15px !important;
+    margin-bottom: 15px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid #e9ecef !important;
+    transition: all 0.3s ease !important;
+}
+
+.deed-info-modal .deed-item:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.deed-info-modal .deed-item:last-child {
+    margin-bottom: 0 !important;
+}
+
+.deed-info-modal .deed-icon {
+    margin-left: 15px !important;
+    min-width: 40px !important;
+    text-align: center !important;
+}
+
+.deed-info-modal .deed-content {
+    flex: 1 !important;
+}
+
+.deed-info-modal .deed-label {
+    font-weight: 600 !important;
+    color: #495057 !important;
+    margin-bottom: 5px !important;
+    font-size: 0.9rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.deed-info-modal .deed-value {
+    font-size: 1.1rem !important;
+    color: #2c3e50 !important;
+    font-weight: 500 !important;
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+.deed-info-modal .deed-actions button {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+    border: none !important;
+    color: white !important;
+    padding: 12px 30px !important;
+    font-size: 1.1rem !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    font-weight: 500 !important;
+}
+
+.deed-info-modal .deed-actions button:hover {
+    background: linear-gradient(135deg, #0056b3, #004085) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
+}
+
+.deed-info-modal .deed-actions button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.2) !important;
+}
+
+/* تحسينات للجوال */
+@media (max-width: 768px) {
+    .btn-deed {
+        padding: 10px 14px !important;
+        font-size: 1rem !important;
+        margin: 2px !important;
+    }
+
+    .deed-info-modal {
+        margin: 10px !important;
+        max-width: 95vw !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+    }
+
+    .deed-info-modal .deed-header {
+        margin: -15px -15px 20px -15px !important;
+        padding: 20px !important;
+    }
+
+    .deed-info-modal .deed-header h2 {
+        font-size: 1.5rem !important;
+    }
+
+    .deed-info-modal .deed-item {
+        padding: 18px !important;
+        margin-bottom: 18px !important;
+    }
+
+    .deed-info-modal .deed-icon {
+        margin-left: 18px !important;
+        min-width: 50px !important;
+    }
+
+    .deed-info-modal .deed-icon i {
+        font-size: 1.8rem !important;
+    }
+
+    .deed-info-modal .deed-label {
+        font-size: 1rem !important;
+        margin-bottom: 8px !important;
+    }
+
+    .deed-info-modal .deed-value {
+        font-size: 1.3rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .deed-info-modal .deed-actions button {
+        width: 100% !important;
+        padding: 15px !important;
+        font-size: 1.2rem !important;
+    }
+}
+
 /* زر تبديل ترتيب العرض */
 #sort-order-btn {
     background: linear-gradient(135deg, #6c5ce7, #a29bfe);
