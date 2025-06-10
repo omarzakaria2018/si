@@ -3972,10 +3972,10 @@ footer {
   }
 
   .hide-sidebar-btn {
-    display: block !important;
+    
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 5px;
+    right: 17px;
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -6178,6 +6178,850 @@ footer {
         width: 100% !important;
         padding: 15px !important;
         font-size: 1.2rem !important;
+    }
+}
+
+/* تحسينات نافذة مرفقات البطاقة */
+.card-attachments-overlay {
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(5px) !important;
+    z-index: 10000 !important;
+}
+
+.card-attachments-modal {
+    background: white !important;
+    border: none !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+.mobile-card-modal {
+    margin: 10px !important;
+    border-radius: 16px !important;
+}
+
+.desktop-card-modal {
+    border-radius: 16px !important;
+}
+
+.card-modal-header {
+    position: relative !important;
+}
+
+.card-modal-header .header-info h2 {
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+}
+
+.card-modal-header .card-info {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+}
+
+.card-modal-content {
+    background: #f8f9fa !important;
+}
+
+.attachments-section {
+    background: transparent !important;
+}
+
+.attachments-list-container {
+    background: white !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 12px !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+.attachments-list-container::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+.attachments-list-container::-webkit-scrollbar-track {
+    background: #f1f1f1 !important;
+    border-radius: 4px !important;
+}
+
+.attachments-list-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1 !important;
+    border-radius: 4px !important;
+}
+
+.attachments-list-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8 !important;
+}
+
+.upload-section {
+    background: transparent !important;
+}
+
+.upload-area {
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.upload-area::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: linear-gradient(45deg, transparent 30%, rgba(0, 123, 255, 0.05) 50%, transparent 70%) !important;
+    opacity: 0 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.upload-area:hover::before {
+    opacity: 1 !important;
+}
+
+.notes-section {
+    background: white !important;
+    border: 1px solid #e9ecef !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+.notes-section textarea {
+    border: 1px solid #ced4da !important;
+    transition: all 0.3s ease !important;
+    font-family: inherit !important;
+}
+
+.notes-section textarea:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    outline: none !important;
+}
+
+.card-modal-footer {
+    background: white !important;
+    border-top: 1px solid #e9ecef !important;
+}
+
+.card-modal-footer button {
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-modal-footer button:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.card-modal-footer button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* تحسينات عرض المرفقات */
+.mobile-enhanced-item,
+.desktop-enhanced-item {
+    display: flex !important;
+    align-items: center !important;
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+}
+
+.mobile-enhanced-item:hover,
+.desktop-enhanced-item:hover {
+    background: #e3f2fd !important;
+    border-color: #007bff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15) !important;
+}
+
+.file-icon-enhanced {
+    font-size: .01rem !important;
+
+}
+
+.file-info-enhanced {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.file-name-enhanced {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 4px !important;
+}
+
+.file-name-text {
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+}
+
+.storage-indicator-enhanced {
+    font-size: 0.9rem !important;
+    opacity: 0.8 !important;
+}
+
+.file-meta-enhanced {
+    display: flex !important;
+    gap: 15px !important;
+    font-size: 0.8rem !important;
+    color: #6c757d !important;
+}
+
+.file-meta-enhanced span {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.attachment-actions-enhanced {
+    display: flex !important;
+    gap: 5px !important;
+    margin-right: 10px !important;
+}
+
+.btn-enhanced {
+    padding: 6px 10px !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.btn-enhanced:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn-enhanced.btn-view {
+    background: linear-gradient(135deg, #17a2b8, #138496) !important;
+    color: white !important;
+}
+
+.btn-enhanced.btn-download {
+    background: linear-gradient(135deg, #28a745, #1e7e34) !important;
+    color: white !important;
+}
+
+.btn-enhanced.btn-delete {
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+    color: white !important;
+}
+
+/* اسكرول نافذة مرفقات البطاقة */
+.scrollable-attachments {
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 10px !important;
+    margin-right: -10px !important;
+}
+
+/* تحسين شريط التمرير لنافذة مرفقات البطاقة */
+.scrollable-attachments::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+.scrollable-attachments::-webkit-scrollbar-track {
+    background: #f1f1f1 !important;
+    border-radius: 10px !important;
+    margin: 5px 0 !important;
+}
+
+.scrollable-attachments::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+    border-radius: 10px !important;
+    transition: all 0.3s ease !important;
+}
+
+.scrollable-attachments::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #0056b3, #004085) !important;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3) !important;
+}
+
+/* تحسين النافذة الرئيسية للمرفقات */
+.attachments-modal.enhanced {
+    max-height: 85vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.attachments-modal-content.enhanced-content {
+    flex: 1 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.content-layout-new {
+    flex: 1 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    gap: 20px !important;
+}
+
+.attachments-main-section {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+}
+
+.attachments-header {
+    flex-shrink: 0 !important;
+    margin-bottom: 15px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 2px solid #e9ecef !important;
+}
+
+.attachments-header h3 {
+    margin: 0 !important;
+    color: #2c3e50 !important;
+    font-size: 1.2rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.attachments-header h3 i {
+    color: #007bff !important;
+}
+
+/* تحسين عناصر المرفقات للاسكرول */
+.attachment-item {
+    margin-bottom: 12px !important;
+    padding: 15px !important;
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+}
+
+.attachment-item:hover {
+    background: #e3f2fd !important;
+    border-color: #007bff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15) !important;
+}
+
+.attachment-item:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* زر العودة للأعلى */
+.scroll-to-top-btn {
+    position: absolute !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+    color: white !important;
+    border: none !important;
+    width: 45px !important;
+    height: 45px !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    font-size: 1.2rem !important;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
+    transition: all 0.3s ease !important;
+    z-index: 1000 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+.scroll-to-top-btn.show {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.scroll-to-top-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #004085) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4) !important;
+}
+
+.scroll-to-top-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2) !important;
+}
+
+/* ===== تصميم نافذة المرفقات للجوال ===== */
+.mobile-attachments-overlay {
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(3px) !important;
+}
+
+.mobile-attachments-modal {
+    width: 95vw !important;
+    height: 90vh !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    background: white !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* رأس النافذة للجوال */
+.mobile-attachments-header {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+    color: white !important;
+    padding: 12px 15px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+
+.mobile-attachments-header h2 {
+    margin: 0 !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+}
+
+.mobile-close-btn {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: none !important;
+    color: white !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    font-size: 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
+}
+
+.mobile-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    transform: scale(1.1) !important;
+}
+
+/* معلومات البطاقة المضغوطة */
+.mobile-card-info {
+    background: #f8f9fa !important;
+    padding: 8px 15px !important;
+    border-bottom: 1px solid #e9ecef !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    font-size: 0.8rem !important;
+    color: #6c757d !important;
+    flex-shrink: 0 !important;
+}
+
+.mobile-card-info span {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.mobile-card-info i {
+    font-size: 0.75rem !important;
+    color: #007bff !important;
+}
+
+/* زر الإرفاق المضغوط (20% من المساحة) */
+.mobile-upload-section {
+    padding: 10px 15px !important;
+    background: #f8f9fa !important;
+    border-bottom: 2px solid #e9ecef !important;
+    flex-shrink: 0 !important;
+    height: 20% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.mobile-upload-btn {
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3) !important;
+}
+
+.mobile-upload-btn:hover {
+    background: linear-gradient(135deg, #218838, #1e7e34) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+}
+
+.mobile-upload-btn:active {
+    transform: translateY(0) !important;
+}
+
+/* قسم المرفقات (80% من المساحة) */
+.mobile-attachments-section {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding: 0 15px !important;
+    height: 80% !important;
+}
+
+.mobile-attachments-header-small {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px 0 8px 0 !important;
+    border-bottom: 1px solid #e9ecef !important;
+    margin-bottom: 10px !important;
+    flex-shrink: 0 !important;
+}
+
+.mobile-attachments-header-small span:first-child {
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.mobile-attachments-header-small i {
+    color: #007bff !important;
+    font-size: 0.8rem !important;
+}
+
+.mobile-attachments-count {
+    background: #007bff !important;
+    color: white !important;
+    padding: 2px 8px !important;
+    border-radius: 12px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+/* قائمة المرفقات للجوال */
+.mobile-attachments-list {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 5px !important;
+    margin-right: -5px !important;
+}
+
+/* شريط التمرير للجوال */
+.mobile-attachments-list::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+.mobile-attachments-list::-webkit-scrollbar-track {
+    background: #f1f1f1 !important;
+    border-radius: 10px !important;
+}
+
+.mobile-attachments-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #007bff, #0056b3) !important;
+    border-radius: 10px !important;
+}
+
+.mobile-attachments-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #0056b3, #004085) !important;
+}
+
+/* عناصر المرفقات للجوال - صفوف مضغوطة */
+.mobile-attachment-item {
+    display: flex !important;
+    align-items: center !important;
+    padding: 8px 10px !important;
+    margin-bottom: 6px !important;
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 6px !important;
+    transition: all 0.3s ease !important;
+    font-size: 0.85rem !important;
+}
+
+.mobile-attachment-item:hover {
+    background: #e3f2fd !important;
+    border-color: #007bff !important;
+    transform: translateX(2px) !important;
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.15) !important;
+}
+
+.mobile-attachment-item:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* أيقونة الملف للجوال */
+.mobile-file-icon {
+    font-size: 1.2rem !important;
+    margin-left: 10px !important;
+    min-width: 30px !important;
+    text-align: center !important;
+}
+
+/* معلومات الملف للجوال */
+.mobile-file-info {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    min-width: 0 !important;
+}
+
+.mobile-file-name {
+    font-weight: 500 !important;
+    color: #2c3e50 !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.mobile-file-meta {
+    font-size: 0.7rem !important;
+    color: #6c757d !important;
+    display: flex !important;
+    gap: 8px !important;
+}
+
+/* أزرار العمليات للجوال */
+.mobile-file-actions {
+    display: flex !important;
+    gap: 4px !important;
+    margin-right: 8px !important;
+    flex-shrink: 0 !important;
+}
+
+.mobile-action-btn {
+    background: transparent !important;
+    border: 1px solid #dee2e6 !important;
+    color: #6c757d !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 0.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
+}
+
+.mobile-action-btn.view {
+    color: #007bff !important;
+    border-color: #007bff !important;
+}
+
+.mobile-action-btn.view:hover {
+    background: #007bff !important;
+    color: white !important;
+}
+
+.mobile-action-btn.download {
+    color: #28a745 !important;
+    border-color: #28a745 !important;
+}
+
+.mobile-action-btn.download:hover {
+    background: #28a745 !important;
+    color: white !important;
+}
+
+.mobile-action-btn.delete {
+    color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+
+.mobile-action-btn.delete:hover {
+    background: #dc3545 !important;
+    color: white !important;
+}
+
+/* تذييل النافذة للجوال */
+.mobile-footer {
+    padding: 10px 15px !important;
+    border-top: 1px solid #e9ecef !important;
+    background: #f8f9fa !important;
+    text-align: center !important;
+    flex-shrink: 0 !important;
+}
+
+.mobile-close-footer-btn {
+    background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 20px !important;
+    border-radius: 6px !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 0 auto !important;
+}
+
+.mobile-close-footer-btn:hover {
+    background: linear-gradient(135deg, #5a6268, #495057) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* تحسينات للجوال - مرفقات البطاقة */
+@media (max-width: 768px) {
+    .scrollable-attachments {
+        max-height: 300px !important;
+        padding-right: 5px !important;
+        margin-right: -5px !important;
+    }
+
+    .scrollable-attachments::-webkit-scrollbar {
+        width: 6px !important;
+    }
+
+    .content-layout-new {
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+
+    .attachments-main-section {
+        order: 1 !important;
+        min-height: 250px !important;
+    }
+
+    .upload-notes-sidebar {
+        order: 2 !important;
+    }
+
+    .scroll-to-top-btn {
+        width: 40px !important;
+        height: 40px !important;
+        bottom: 15px !important;
+        right: 15px !important;
+        font-size: 1rem !important;
+    }
+
+    .card-attachments-modal {
+        width: 95vw !important;
+        height: 90vh !important;
+        margin: 10px !important;
+    }
+
+    .card-modal-header {
+        padding: 15px !important;
+    }
+
+    .card-modal-header .header-info h2 {
+        font-size: 1.2rem !important;
+    }
+
+    .card-modal-header .card-info {
+        font-size: 0.85rem !important;
+        flex-direction: column !important;
+        gap: 5px !important;
+    }
+
+    .card-modal-content {
+        padding: 15px !important;
+        gap: 15px !important;
+    }
+
+    .attachments-section {
+        min-height: 250px !important;
+    }
+
+    .attachments-list-container {
+        min-height: 200px !important;
+        padding: 10px !important;
+    }
+
+    .upload-area {
+        padding: 20px !important;
+    }
+
+    .upload-area i {
+        font-size: 2.5rem !important;
+    }
+
+    .upload-area h4 {
+        font-size: 1rem !important;
+    }
+
+    .upload-area p {
+        font-size: 0.85rem !important;
+    }
+
+    .notes-section {
+        padding: 15px !important;
+    }
+
+    .notes-section textarea {
+        min-height: 60px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .card-modal-footer {
+        padding: 15px !important;
+    }
+
+    .card-modal-footer button {
+        padding: 12px 30px !important;
+        font-size: 1rem !important;
+        min-width: 120px !important;
+    }
+
+    .mobile-enhanced-item {
+        padding: 15px 10px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .file-icon-enhanced {
+        font-size: .1rem !important;
+  
+    }
+
+    .file-name-text {
+        font-size: 1rem !important;
+    }
+
+    .file-meta-enhanced {
+        font-size: 0.85rem !important;
+        gap: 10px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    .attachment-actions-enhanced {
+        flex-direction: column !important;
+        gap: 8px !important;
+        margin-right: 15px !important;
+    }
+
+    .btn-enhanced {
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+        min-width: 60px !important;
+        justify-content: center !important;
     }
 }
 

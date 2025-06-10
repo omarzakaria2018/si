@@ -2313,7 +2313,7 @@ function checkPassword() {
     }
 }
 
-// إغلاق المودال
+// إغلاق المودال (التصميم السابق)
 function closeModal() {
     // حفظ تلقائي قبل الإغلاق إذا كان هناك نموذج تحرير نشط
     const activeForm = document.querySelector('.modal-overlay form');
@@ -7844,35 +7844,281 @@ function isMobileDevice() {
 
 // ===== Enhanced Attachment Display for Mobile =====
 function enhanceAttachmentDisplayForMobile() {
-    // Force show all attachment elements
+    console.log('📱 بدء تحسين عرض المرفقات للجوال...');
+
+    // Force show all attachment elements with enhanced selectors
     const attachmentElements = document.querySelectorAll(`
         .attachments-list,
+        .attachments-list-container,
         .card-attachments-list,
         .attachment-item,
+        .mobile-enhanced-item,
+        .desktop-enhanced-item,
         [id*="cardAttachmentsList"],
-        [id*="attachmentsList"]
+        [id*="attachmentsList"],
+        [class*="attachment"],
+        [class*="card-modal"]
     `);
 
+    let enhancedCount = 0;
+
     attachmentElements.forEach(element => {
-        element.style.display = 'block';
+        // Force visibility
+        element.style.display = element.classList.contains('attachment-item') ||
+                                element.classList.contains('mobile-enhanced-item') ||
+                                element.classList.contains('desktop-enhanced-item') ? 'flex' : 'block';
         element.style.visibility = 'visible';
         element.style.opacity = '1';
+        element.style.position = 'relative';
+        element.style.zIndex = 'auto';
 
-        // Add mobile-specific classes
+        // Add mobile-specific classes and styles
         if (isMobileDevice()) {
             element.classList.add('mobile-optimized');
+
+            // Enhanced mobile styles for attachment items
+            if (element.classList.contains('attachment-item') ||
+                element.classList.contains('mobile-enhanced-item')) {
+                element.style.padding = '15px 10px';
+                element.style.marginBottom = '10px';
+                element.style.borderRadius = '8px';
+                element.style.background = '#f8f9fa';
+                element.style.border = '1px solid #e9ecef';
+                element.style.transition = 'all 0.3s ease';
+            }
+
+            // Enhanced mobile styles for containers
+            if (element.classList.contains('attachments-list-container')) {
+                element.style.minHeight = '200px';
+                element.style.maxHeight = '60vh';
+                element.style.overflowY = 'auto';
+                element.style.padding = '10px';
+            }
+        }
+
+        enhancedCount++;
+    });
+
+    // Ensure attachment items use proper flex layout
+    const attachmentItems = document.querySelectorAll('.attachment-item, .mobile-enhanced-item, .desktop-enhanced-item');
+    attachmentItems.forEach(item => {
+        item.style.display = 'flex';
+        item.style.alignItems = 'center';
+        item.style.visibility = 'visible';
+        item.style.opacity = '1';
+        item.style.position = 'relative';
+
+        // Enhanced mobile layout
+        if (isMobileDevice()) {
+            item.style.flexDirection = 'row';
+            item.style.gap = '10px';
+            item.style.padding = '15px 10px';
         }
     });
 
-    // Ensure attachment items use flex layout
-    const attachmentItems = document.querySelectorAll('.attachment-item');
-    attachmentItems.forEach(item => {
-        item.style.display = 'flex';
-        item.style.visibility = 'visible';
-        item.style.opacity = '1';
+    // Force show loading and error states
+    const loadingElements = document.querySelectorAll('.loading-attachments, .loading-state, .error-loading-attachments');
+    loadingElements.forEach(element => {
+        element.style.display = 'flex';
+        element.style.visibility = 'visible';
+        element.style.opacity = '1';
     });
 
-    console.log(`📱 تم تحسين عرض ${attachmentElements.length} عنصر مرفقات للجوال`);
+    // Enhanced mobile modal adjustments
+    if (isMobileDevice()) {
+        const cardModal = document.querySelector('.card-attachments-modal');
+        if (cardModal) {
+            cardModal.style.width = '95vw';
+            cardModal.style.height = '90vh';
+            cardModal.style.maxWidth = '95vw';
+            cardModal.style.maxHeight = '90vh';
+        }
+
+        const modalContent = document.querySelector('.card-modal-content');
+        if (modalContent) {
+            modalContent.style.flexDirection = 'column';
+            modalContent.style.gap = '15px';
+            modalContent.style.padding = '15px';
+        }
+    }
+
+    // Add enhanced CSS for mobile compatibility
+    const enhancedStyle = document.createElement('style');
+    enhancedStyle.id = 'mobile-attachment-enhancement';
+    enhancedStyle.textContent = `
+        /* Force visibility for all attachment elements */
+        .attachments-list,
+        .attachments-list-container,
+        .card-attachments-list,
+        .attachment-item,
+        .mobile-enhanced-item,
+        .desktop-enhanced-item,
+        [id*="cardAttachmentsList"],
+        [id*="attachmentsList"] {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: relative !important;
+        }
+
+        .attachment-item,
+        .mobile-enhanced-item,
+        .desktop-enhanced-item {
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        /* Mobile-specific enhancements */
+        @media (max-width: 768px) {
+            .mobile-enhanced-item {
+                padding: 15px 10px !important;
+                margin-bottom: 10px !important;
+                background: #f8f9fa !important;
+                border: 1px solid #e9ecef !important;
+                border-radius: 8px !important;
+                transition: all 0.3s ease !important;
+            }
+
+            .mobile-enhanced-item:hover {
+                background: #e3f2fd !important;
+                border-color: #007bff !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15) !important;
+            }
+
+            .attachments-list-container {
+                min-height: 200px !important;
+                max-height: 60vh !important;
+                overflow-y: auto !important;
+                padding: 10px !important;
+            }
+
+            .card-attachments-modal {
+                width: 95vw !important;
+                height: 90vh !important;
+                max-width: 95vw !important;
+                max-height: 90vh !important;
+            }
+
+            .card-modal-content {
+                flex-direction: column !important;
+                gap: 15px !important;
+                padding: 15px !important;
+            }
+        }
+    `;
+
+    // Remove existing style if present
+    const existingStyle = document.getElementById('mobile-attachment-enhancement');
+    if (existingStyle) {
+        existingStyle.remove();
+    }
+
+    document.head.appendChild(enhancedStyle);
+
+    console.log(`📱 تم تحسين عرض ${enhancedCount} عنصر مرفقات للجوال`);
+    console.log(`📱 تم تحسين ${attachmentItems.length} عنصر مرفق فردي`);
+
+    // Force a repaint to ensure changes are applied
+    setTimeout(() => {
+        const allElements = document.querySelectorAll('[id*="cardAttachmentsList"], .attachment-item');
+        allElements.forEach(el => {
+            el.style.transform = 'translateZ(0)';
+            setTimeout(() => {
+                el.style.transform = '';
+            }, 10);
+        });
+    }, 100);
+}
+
+// ===== Setup Attachments Scroll with Back to Top Button =====
+function setupAttachmentsScroll(cardKey) {
+    console.log('📜 إعداد اسكرول المرفقات مع زر العودة للأعلى...');
+
+    const attachmentsList = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const scrollToTopBtn = document.getElementById(`scrollToTopBtn_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+
+    if (!attachmentsList || !scrollToTopBtn) {
+        console.warn('⚠️ لم يتم العثور على عناصر الاسكرول');
+        return;
+    }
+
+    // إضافة حدث الاسكرول لإظهار/إخفاء زر العودة للأعلى
+    attachmentsList.addEventListener('scroll', function() {
+        const scrollTop = this.scrollTop;
+        const scrollThreshold = 100; // إظهار الزر بعد التمرير 100px
+
+        if (scrollTop > scrollThreshold) {
+            scrollToTopBtn.classList.add('show');
+        } else {
+            scrollToTopBtn.classList.remove('show');
+        }
+    });
+
+    // تحسين الاسكرول للجوال
+    if (isMobileDevice()) {
+        attachmentsList.style.webkitOverflowScrolling = 'touch';
+        attachmentsList.style.scrollBehavior = 'smooth';
+    }
+
+    console.log('✅ تم إعداد اسكرول المرفقات بنجاح');
+}
+
+// ===== Scroll to Top Function for Attachments =====
+function scrollToTopAttachments(cardKey) {
+    console.log('⬆️ العودة لأعلى قائمة المرفقات...');
+
+    const attachmentsList = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+
+    if (attachmentsList) {
+        // اسكرول سلس للأعلى
+        attachmentsList.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+
+        // تأثير بصري للزر
+        const scrollToTopBtn = document.getElementById(`scrollToTopBtn_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (scrollToTopBtn) {
+            scrollToTopBtn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                scrollToTopBtn.style.transform = 'scale(1)';
+            }, 150);
+        }
+
+        console.log('✅ تم التمرير لأعلى قائمة المرفقات');
+    } else {
+        console.warn('⚠️ لم يتم العثور على قائمة المرفقات');
+    }
+}
+
+// ===== Enhanced Scroll to Attachments (for large screens) =====
+function scrollToAttachments() {
+    console.log('📜 التمرير لقسم المرفقات...');
+
+    // البحث عن قسم المرفقات في النافذة
+    const attachmentsSection = document.querySelector('.attachments-main-section');
+    const attachmentsList = document.querySelector('.scrollable-attachments');
+
+    if (attachmentsSection) {
+        // التمرير لقسم المرفقات
+        attachmentsSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+
+        console.log('✅ تم التمرير لقسم المرفقات');
+    } else if (attachmentsList) {
+        // التمرير لقائمة المرفقات كبديل
+        attachmentsList.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+
+        console.log('✅ تم التمرير لقائمة المرفقات');
+    } else {
+        console.warn('⚠️ لم يتم العثور على قسم المرفقات');
+    }
 }
 
 // تحميل الوحدات للدمج
@@ -8022,6 +8268,9 @@ function loadUnitsResults() {
 
 // Enhanced card attachments modal with real-time cross-device synchronization
 function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber) {
+    console.log('🎯 فتح نافذة مرفقات البطاقة...', { city, propertyName, contractNumber, unitNumber });
+
+    // إغلاق أي نوافذ موجودة مسبقاً
     closeModal();
 
     // إنشاء مفتاح فريد للبطاقة
@@ -8060,89 +8309,154 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
         return { cardAttachments, isFromCloud };
     }
 
-    let html = `
-    <div class="modal-overlay enhanced-modal-overlay" style="display:flex;">
-        <div class="modal-box attachments-modal enhanced-attachments-modal">
-            <!-- زر الإغلاق المحسن -->
-            <button class="close-modal enhanced-close-btn" onclick="closeModal()" title="إغلاق النافذة">
-                <i class="fas fa-times"></i>
-            </button>
+    // تصميم مختلف للجوال والشاشات الكبيرة
+    const isMobile = isMobileDevice();
 
-            <!-- رأس النافذة المحسن -->
-            <div class="attachments-modal-header enhanced-header">
-                <div class="header-content">
+    let html;
+
+    if (isMobile) {
+        // تصميم مخصص للجوال - مبسط ومضغوط
+        html = `
+        <div class="modal-overlay mobile-attachments-overlay" style="display:flex;">
+            <div class="modal-box mobile-attachments-modal">
+                <!-- رأس النافذة المبسط للجوال -->
+                <div class="mobile-attachments-header">
                     <h2><i class="fas fa-paperclip"></i> مرفقات البطاقة</h2>
-                    <div class="card-info">
-                        <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
-                        <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
-                        ${contractNumber ? `<span class="info-item"><i class="fas fa-file-contract"></i> عقد: ${contractNumber}</span>` : ''}
-                        ${unitNumber ? `<span class="info-item"><i class="fas fa-home"></i> وحدة: ${unitNumber}</span>` : ''}
-                    </div>
+                    <button class="mobile-close-btn" onclick="closeModal()" title="إغلاق">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-            </div>
 
-            <!-- محتوى النافذة بالتخطيط الجديد -->
-            <div class="attachments-modal-content enhanced-content">
-                <div class="content-layout-new">
-                    <!-- الجانب الأيسر: منطقة الرفع والملاحظات -->
-                    <div class="upload-notes-sidebar">
-                        <!-- منطقة الرفع -->
-                        <div class="upload-section compact-upload">
-                            <div class="upload-area enhanced-upload" id="cardUploadArea_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">
-                                <div class="upload-dropzone" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
-                                    <i class="fas fa-cloud-upload-alt"></i>
-                                    <p>اسحب الملفات هنا أو انقر للاختيار</p>
-                                    <small>يدعم جميع أنواع الملفات</small>
-                                </div>
-                                <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
-                            </div>
-                        </div>
+                <!-- معلومات البطاقة المضغوطة -->
+                <div class="mobile-card-info">
+                    <span><i class="fas fa-building"></i> ${propertyName}</span>
+                    <span><i class="fas fa-map-marker-alt"></i> ${city}</span>
+                    ${contractNumber ? `<span><i class="fas fa-file-contract"></i> ${contractNumber}</span>` : ''}
+                    ${unitNumber ? `<span><i class="fas fa-home"></i> ${unitNumber}</span>` : ''}
+                </div>
 
-                        <!-- قسم الملاحظات -->
-                        <div class="notes-section-compact">
-                            <div class="notes-container-compact">
-                                <h4><i class="fas fa-sticky-note"></i> ملاحظات</h4>
-                                <textarea
-                                    id="cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}"
-                                    class="notes-textarea-compact"
-                                    placeholder="أضف ملاحظات..."
-                                    rows="3"
-                                ></textarea>
-                                <div class="notes-info-compact">
-                                    <small><i class="fas fa-info-circle"></i> ستُحفظ مع المرفقات الجديدة</small>
-                                </div>
-                            </div>
-                        </div>
+                <!-- زر الإرفاق المضغوط (20% من المساحة) -->
+                <div class="mobile-upload-section">
+                    <button class="mobile-upload-btn" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                        <i class="fas fa-plus"></i> إضافة مرفق
+                    </button>
+                    <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
+                </div>
+
+                <!-- قائمة المرفقات (80% من المساحة) -->
+                <div class="mobile-attachments-section">
+                    <div class="mobile-attachments-header-small">
+                        <span><i class="fas fa-folder-open"></i> المرفقات الموجودة</span>
+                        <span class="mobile-attachments-count" id="mobileAttachmentsCount_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">جاري التحميل...</span>
                     </div>
-
-                    <!-- الجانب الأيمن: قائمة المرفقات (العرض الكامل) -->
-                    <div class="attachments-main-section">
-                        <div class="attachments-header">
-                            <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
-                        </div>
-                        <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list">
-                            <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
-                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                                <p>جاري تحميل المرفقات...</p>
-                            </div>
+                    <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="mobile-attachments-list">
+                        <div class="mobile-loading" style="text-align: center; padding: 20px; color: #666;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
+                            <p style="font-size: 0.9rem;">جاري تحميل المرفقات...</p>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- زر الإغلاق في الأسفل -->
-            <div class="modal-footer-actions">
-                <button class="close-modal-btn" onclick="closeModal()">
+                <!-- زر الإغلاق في الأسفل -->
+                <div class="mobile-footer">
+                    <button class="mobile-close-footer-btn" onclick="closeModal()">
+                        <i class="fas fa-times"></i> إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    } else {
+        // التصميم الحالي للشاشات الكبيرة (بدون تغيير)
+        html = `
+        <div class="modal-overlay enhanced-modal-overlay" style="display:flex;">
+            <div class="modal-box attachments-modal enhanced-attachments-modal">
+                <!-- زر الإغلاق المحسن -->
+                <button class="close-modal enhanced-close-btn" onclick="closeModal()" title="إغلاق النافذة">
                     <i class="fas fa-times"></i>
-                    إغلاق النافذة
+                </button>
+
+                <!-- رأس النافذة المحسن -->
+                <div class="attachments-modal-header enhanced-header">
+                    <div class="header-content">
+                        <h2><i class="fas fa-paperclip"></i> مرفقات البطاقة</h2>
+                        <div class="card-info">
+                            <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
+                            <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
+                            ${contractNumber ? `<span class="info-item"><i class="fas fa-file-contract"></i> عقد: ${contractNumber}</span>` : ''}
+                            ${unitNumber ? `<span class="info-item"><i class="fas fa-home"></i> وحدة: ${unitNumber}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- محتوى النافذة بالتخطيط الجديد -->
+                <div class="attachments-modal-content enhanced-content">
+                    <div class="content-layout-new">
+                        <!-- الجانب الأيسر: منطقة الرفع والملاحظات -->
+                        <div class="upload-notes-sidebar">
+                            <!-- منطقة الرفع -->
+                            <div class="upload-section compact-upload">
+                                <div class="upload-area enhanced-upload" id="cardUploadArea_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">
+                                    <div class="upload-dropzone" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p>اسحب الملفات هنا أو انقر للاختيار</p>
+                                        <small>يدعم جميع أنواع الملفات</small>
+                                    </div>
+                                    <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
+                                </div>
+                            </div>
+
+                            <!-- قسم الملاحظات -->
+                            <div class="notes-section-compact">
+                                <div class="notes-container-compact">
+                                    <h4><i class="fas fa-sticky-note"></i> ملاحظات</h4>
+                                    <textarea
+                                        id="cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                                        class="notes-textarea-compact"
+                                        placeholder="أضف ملاحظات..."
+                                        rows="3"
+                                    ></textarea>
+                                    <div class="notes-info-compact">
+                                        <small><i class="fas fa-info-circle"></i> ستُحفظ مع المرفقات الجديدة</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- الجانب الأيمن: قائمة المرفقات (العرض الكامل) -->
+                        <div class="attachments-main-section">
+                            <div class="attachments-header">
+                                <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
+                            </div>
+                            <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list scrollable-attachments">
+                                <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                    <p>جاري تحميل المرفقات...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- زر الإغلاق في الأسفل -->
+                <div class="modal-footer-actions">
+                    <button class="close-modal-btn" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                        إغلاق النافذة
+                    </button>
+                </div>
+
+                <!-- زر العودة للأعلى -->
+                <button class="scroll-to-top-btn" id="scrollToTopBtn_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" onclick="scrollToTopAttachments('${cardKey}')" title="العودة للأعلى">
+                    <i class="fas fa-chevron-up"></i>
                 </button>
             </div>
-        </div>
-    </div>`;
+        </div>`;
+    }
 
+    // إدراج النافذة في الصفحة
     document.body.insertAdjacentHTML('beforeend', html);
 
-    // 🎯 تحميل المرفقات بعد إنشاء النافذة مع التحسينات للجوال
+    // 🎯 تحميل المرفقات بعد إنشاء النافذة (التصميم السابق)
     loadCardAttachments().then(({ cardAttachments, isFromCloud }) => {
         console.log(`📎 تم تحميل ${cardAttachments.length} مرفق للبطاقة ${cardKey} (${isFromCloud ? 'من السحابة' : 'محلي'})`);
 
@@ -8161,17 +8475,26 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                 listContainer.style.overflowY = 'auto';
             }
 
-            // Render attachments with enhanced layout
-            listContainer.innerHTML = renderCardAttachmentsList(cardKey, cardAttachments);
+            // Render attachments with layout specific to device type
+            if (isMobileDevice()) {
+                listContainer.innerHTML = renderMobileCardAttachmentsList(cardKey, cardAttachments);
 
-            // Update attachments count badge
-            const countBadge = document.getElementById(`attachmentsCount_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
-            if (countBadge) {
-                countBadge.innerHTML = `<i class="fas fa-paperclip"></i> ${cardAttachments.length} مرفق`;
+                // Update mobile attachments count
+                const mobileCountBadge = document.getElementById(`mobileAttachmentsCount_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+                if (mobileCountBadge) {
+                    mobileCountBadge.textContent = `${cardAttachments.length} مرفق`;
+                }
+            } else {
+                listContainer.innerHTML = renderCardAttachmentsList(cardKey, cardAttachments);
+
+                // Enhanced mobile display optimization
+                enhanceAttachmentDisplayForMobile();
             }
 
-            // Enhanced mobile display optimization
-            enhanceAttachmentDisplayForMobile();
+            // إعداد اسكرول المرفقات بعد التحميل
+            setTimeout(() => {
+                setupAttachmentsScroll(cardKey);
+            }, 100);
 
             // إضافة سكرول للأعلى لإظهار المرفقات (للشاشات الكبيرة فقط)
             if (!isMobileDevice()) {
@@ -8204,6 +8527,9 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
     // إضافة أحداث السحب والإفلات
     setupCardDragAndDrop(cardKey);
 
+    // إعداد اسكرول المرفقات مع زر العودة للأعلى
+    setupAttachmentsScroll(cardKey);
+
     // 🔧 إضافة CSS إصلاحي لضمان إظهار المرفقات
     const fixStyle = document.createElement('style');
     fixStyle.textContent = `
@@ -8228,7 +8554,7 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
     `;
     document.head.appendChild(fixStyle);
 
-    // إضافة حدث إغلاق للمودال
+    // إضافة حدث إغلاق للمودال (التصميم السابق)
     document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
         if (e.target === this) {
             closeModal();
@@ -8329,6 +8655,84 @@ function renderCardAttachmentsList(cardKey, attachments = null) {
         </div>
         `;
     }).join('');
+}
+
+// ===== Render Mobile Card Attachments List =====
+function renderMobileCardAttachmentsList(cardKey, attachments) {
+    console.log(`📱 عرض ${attachments.length} مرفق للجوال - البطاقة: ${cardKey}`);
+
+    if (!attachments || attachments.length === 0) {
+        return `
+            <div class="mobile-no-attachments" style="text-align: center; padding: 30px 20px; color: #6c757d;">
+                <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+                <p style="margin: 0; font-size: 0.9rem;">لا توجد مرفقات</p>
+                <small style="opacity: 0.7;">استخدم زر "إضافة مرفق" لرفع الملفات</small>
+            </div>
+        `;
+    }
+
+    let html = '';
+
+    attachments.forEach((file, index) => {
+        // Handle both local and cloud file formats
+        const fileName = file.file_name || file.name;
+        const fileSize = formatFileSize(file.file_size || file.size);
+        const uploadDate = new Date(file.created_at || file.uploadDate).toLocaleDateString('ar-SA');
+        const fileIcon = getFileIcon(fileName);
+
+        // Determine file source
+        const isCloudFile = file.file_url || file.url;
+        const sourceIcon = isCloudFile ? '☁️' : '💾';
+        const sourceText = isCloudFile ? 'سحابي' : 'محلي';
+
+        html += `
+            <div class="mobile-attachment-item" data-file-index="${index}">
+                <!-- أيقونة الملف -->
+                <div class="mobile-file-icon" style="color: ${getFileIconColor(fileName)};">
+                    ${fileIcon}
+                </div>
+
+                <!-- معلومات الملف -->
+                <div class="mobile-file-info">
+                    <div class="mobile-file-name" title="${fileName}">
+                        ${fileName}
+                    </div>
+                    <div class="mobile-file-meta">
+                        <span><i class="fas fa-weight-hanging"></i> ${fileSize}</span>
+                        <span><i class="fas fa-calendar"></i> ${uploadDate}</span>
+                        <span title="${sourceText}">${sourceIcon}</span>
+                    </div>
+                </div>
+
+                <!-- أزرار العمليات -->
+                <div class="mobile-file-actions">
+                    ${isCloudFile ?
+                        `<button class="mobile-action-btn view" onclick="viewAttachmentFromSupabase('${file.id}', '${file.file_url || file.url}', '${file.file_type || file.type}')" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="mobile-action-btn download" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="mobile-action-btn delete" onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>` :
+                        `<button class="mobile-action-btn view" onclick="viewCardAttachment('${cardKey}', ${index})" title="عرض">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="mobile-action-btn download" onclick="downloadCardAttachment('${cardKey}', ${index})" title="تحميل">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="mobile-action-btn delete" onclick="deleteCardAttachment('${cardKey}', ${index})" title="حذف">
+                            <i class="fas fa-trash"></i>
+                        </button>`
+                    }
+                </div>
+            </div>
+        `;
+    });
+
+    console.log(`✅ تم إنشاء قائمة المرفقات للجوال - ${attachments.length} عنصر`);
+    return html;
 }
 
 // معالجة رفع ملفات البطاقة (Legacy - redirects to enhanced version)
@@ -8664,6 +9068,44 @@ function downloadCardAttachment(cardKey, fileName) {
     document.body.removeChild(link);
 }
 
+// عرض مرفق البطاقة
+function viewCardAttachment(cardKey, fileIndex) {
+    const cardFiles = cardAttachments[cardKey] || [];
+    const file = cardFiles[fileIndex];
+
+    if (!file) {
+        alert('لم يتم العثور على الملف');
+        return;
+    }
+
+    // فتح الملف في نافذة جديدة
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(`
+        <html>
+            <head>
+                <title>${file.name}</title>
+                <style>
+                    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                    img { max-width: 100%; height: auto; }
+                    .file-info { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="file-info">
+                    <h2>${file.name}</h2>
+                    <p>الحجم: ${formatFileSize(file.size)}</p>
+                    <p>تاريخ الرفع: ${new Date(file.uploadDate).toLocaleDateString('ar-SA')}</p>
+                    ${file.notes ? `<p>ملاحظات: ${file.notes}</p>` : ''}
+                </div>
+                ${file.type.startsWith('image/') ?
+                    `<img src="${file.data}" alt="${file.name}">` :
+                    `<p>لا يمكن عرض هذا النوع من الملفات. <a href="${file.data}" download="${file.name}">تحميل الملف</a></p>`
+                }
+            </body>
+        </html>
+    `);
+}
+
 // حذف مرفق البطاقة
 function deleteCardAttachment(cardKey, fileName) {
     if (!confirm('هل أنت متأكد من حذف هذا المرفق؟')) return;
@@ -8674,7 +9116,11 @@ function deleteCardAttachment(cardKey, fileName) {
     // تحديث القائمة
     const listContainer = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
     if (listContainer) {
-        listContainer.innerHTML = renderCardAttachmentsList(cardKey);
+        if (isMobileDevice()) {
+            listContainer.innerHTML = renderMobileCardAttachmentsList(cardKey, cardAttachments[cardKey] || []);
+        } else {
+            listContainer.innerHTML = renderCardAttachmentsList(cardKey);
+        }
     }
 }
 
@@ -11139,3 +11585,37 @@ function emptyUnit(contractNumber, propertyName, unitNumber) {
     // إعادة تحميل البيانات
     renderData();
 }
+
+// ==================== معالجات الأخطاء العامة ====================
+
+// معالج أخطاء عام لمنع الإغلاق المفاجئ للنوافذ
+window.addEventListener('error', function(event) {
+    console.error('❌ خطأ عام في التطبيق:', event.error);
+    // منع إغلاق النوافذ بسبب الأخطاء
+    event.preventDefault();
+    return false;
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('❌ خطأ في Promise غير معالج:', event.reason);
+    // منع إغلاق النوافذ بسبب أخطاء Promise
+    event.preventDefault();
+});
+
+// تهيئة التطبيق عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 بدء تحميل التطبيق...');
+    try {
+        initializeApp();
+    } catch (initError) {
+        console.error('❌ خطأ في تهيئة التطبيق:', initError);
+        // إعادة المحاولة بعد ثانية واحدة
+        setTimeout(() => {
+            try {
+                initializeApp();
+            } catch (retryError) {
+                console.error('❌ فشل في إعادة تهيئة التطبيق:', retryError);
+            }
+        }, 1000);
+    }
+});
