@@ -8851,49 +8851,265 @@ function enterManagementMode() {
         <div class="management-sidebar" id="managementSidebar">
             <div class="sidebar-content">
                 <!-- رأس السايد بار مع زر الإغلاق للجوال -->
-                <div class="sidebar-header">
-                    <h3><i class="fas fa-cogs"></i> التنقل السريع</h3>
-                    <button class="mobile-sidebar-close" onclick="closeManagementSidebar()">
-                        <i class="fas fa-times"></i>
+                <div class="sidebar-header" style="background: linear-gradient(135deg, #007bff, #0056b3) !important; padding: 25px 20px !important; margin: 0 !important; border-bottom: none !important; position: relative !important; flex-shrink: 0 !important; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;">
+                    <h3 style="font-size: 1.3rem !important; color: white !important; margin: 0 !important; text-align: center !important; font-weight: 700 !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important; font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; letter-spacing: 0.4px !important;"><i class="fas fa-cogs" style="margin-left: 8px; color: white; font-size: 1.2rem;"></i> التنقل السريع</h3>
+                    <button class="mobile-sidebar-close" onclick="closeManagementSidebar()" style="display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.2); border: none; color: white; font-size: 1.4rem; padding: 12px; cursor: pointer; border-radius: 50%; transition: all 0.3s ease; position: absolute; left: 20px; top: 20px; width: 45px; height: 45px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3);">
+                        <i class="fas fa-times" style="color: white; font-size: 1.4rem;"></i>
                     </button>
                 </div>
-                <nav class="sidebar-nav">
-                    <button class="nav-btn active" onclick="showPropertyTabMobile('properties')" data-tab="properties">
-                        <i class="fas fa-building"></i>
-                        <span>العقارات</span>
+                <nav class="sidebar-nav" style="flex: 1 !important; padding: 20px !important; display: flex !important; flex-direction: column !important; gap: 15px !important; overflow-y: auto !important; background: transparent !important; justify-content: flex-start !important;">
+
+                    <!-- زر العقارات -->
+                    <button class="nav-btn active" onclick="showPropertyTabMobile('properties'); hideSidebarOnMobile();" data-tab="properties"
+                            style="
+                                width: 100% !important;
+                                background: linear-gradient(135deg, #007bff, #0056b3) !important;
+                                color: white !important;
+                                border: none !important;
+                                margin: 0 0 12px 0 !important;
+                                padding: 18px 25px !important;
+                                border-radius: 12px !important;
+                                min-height: 60px !important;
+                                font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                                box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3) !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                gap: 20px !important;
+                                cursor: pointer !important;
+                                transition: all 0.3s ease !important;
+                                text-align: right !important;
+                                direction: rtl !important;
+                            ">
+                        <i class="fas fa-building" style="color: white !important; font-size: 1.4rem !important; width: 30px !important; text-align: center !important; font-weight: 900 !important; flex-shrink: 0 !important;"></i>
+                        <span style="
+                            color: white !important;
+                            font-size: 1.2rem !important;
+                            font-weight: 800 !important;
+                            flex: 1 !important;
+                            text-align: right !important;
+                            font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                            letter-spacing: 0.5px !important;
+                            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+                            line-height: 1.2 !important;
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                        ">العقارات</span>
                     </button>
-                    <button class="nav-btn" onclick="showPropertyTabMobile('units')" data-tab="units">
-                        <i class="fas fa-home"></i>
-                        <span>الوحدات</span>
+
+                    <!-- زر الوحدات -->
+                    <button class="nav-btn" onclick="showPropertyTabMobile('units'); hideSidebarOnMobile();" data-tab="units"
+                            style="
+                                width: 100% !important;
+                                background: #ffffff !important;
+                                color: #2c3e50 !important;
+                                border: 3px solid #e9ecef !important;
+                                margin: 0 0 12px 0 !important;
+                                padding: 18px 25px !important;
+                                border-radius: 12px !important;
+                                min-height: 60px !important;
+                                font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                gap: 20px !important;
+                                cursor: pointer !important;
+                                transition: all 0.3s ease !important;
+                                text-align: right !important;
+                                direction: rtl !important;
+                            ">
+                        <i class="fas fa-home" style="color: #34495e !important; font-size: 1.4rem !important; width: 30px !important; text-align: center !important; font-weight: 900 !important; flex-shrink: 0 !important;"></i>
+                        <span style="
+                            color: #2c3e50 !important;
+                            font-size: 1.2rem !important;
+                            font-weight: 800 !important;
+                            flex: 1 !important;
+                            text-align: right !important;
+                            font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                            letter-spacing: 0.5px !important;
+                            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+                            line-height: 1.2 !important;
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                        ">الوحدات</span>
                     </button>
-                    <button class="nav-btn" onclick="showPropertyTabMobile('merge')" data-tab="merge">
-                        <i class="fas fa-layer-group"></i>
-                        <span>دمج الوحدات</span>
+
+                    <!-- زر دمج الوحدات -->
+                    <button class="nav-btn" onclick="showPropertyTabMobile('merge'); hideSidebarOnMobile();" data-tab="merge"
+                            style="
+                                width: 100% !important;
+                                background: #ffffff !important;
+                                color: #2c3e50 !important;
+                                border: 3px solid #e9ecef !important;
+                                margin: 0 0 12px 0 !important;
+                                padding: 18px 25px !important;
+                                border-radius: 12px !important;
+                                min-height: 60px !important;
+                                font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                gap: 20px !important;
+                                cursor: pointer !important;
+                                transition: all 0.3s ease !important;
+                                text-align: right !important;
+                                direction: rtl !important;
+                            ">
+                        <i class="fas fa-layer-group" style="color: #34495e !important; font-size: 1.4rem !important; width: 30px !important; text-align: center !important; font-weight: 900 !important; flex-shrink: 0 !important;"></i>
+                        <span style="
+                            color: #2c3e50 !important;
+                            font-size: 1.2rem !important;
+                            font-weight: 800 !important;
+                            flex: 1 !important;
+                            text-align: right !important;
+                            font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                            letter-spacing: 0.5px !important;
+                            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+                            line-height: 1.2 !important;
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                        ">دمج الوحدات</span>
                     </button>
-                    <button class="nav-btn filter-btn" onclick="toggleCityFilter()" id="cityFilterBtn">
-                        <i class="fas fa-filter"></i>
-                        <span>تصفية حسب المدينة</span>
-                        <i class="fas fa-chevron-down filter-arrow" id="filterArrow"></i>
+                    <!-- زر تصفية حسب المدينة -->
+                    <button class="nav-btn filter-btn" onclick="toggleCityFilter()" id="cityFilterBtn"
+                            style="
+                                width: 100% !important;
+                                background: linear-gradient(135deg, #6f42c1, #5a32a3) !important;
+                                color: white !important;
+                                border: none !important;
+                                margin: 0 0 12px 0 !important;
+                                padding: 18px 25px !important;
+                                border-radius: 12px !important;
+                                min-height: 60px !important;
+                                font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                                box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3) !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                gap: 20px !important;
+                                cursor: pointer !important;
+                                transition: all 0.3s ease !important;
+                                text-align: right !important;
+                                direction: rtl !important;
+                            ">
+                        <i class="fas fa-filter" style="color: white !important; font-size: 1.4rem !important; width: 30px !important; text-align: center !important; font-weight: 900 !important; flex-shrink: 0 !important;"></i>
+                        <span style="
+                            color: white !important;
+                            font-size: 1.1rem !important;
+                            font-weight: 800 !important;
+                            flex: 1 !important;
+                            text-align: right !important;
+                            font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                            letter-spacing: 0.5px !important;
+                            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+                            line-height: 1.2 !important;
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                        ">تصفية حسب المدينة</span>
+                        <i class="fas fa-chevron-down filter-arrow" id="filterArrow" style="color: white !important; font-size: 1.1rem !important; flex-shrink: 0 !important;"></i>
                     </button>
 
 
 
-                    <!-- قائمة المدن القابلة للطي -->
-                    <div class="city-filter-list" id="cityFilterList">
-                        <div class="city-option" onclick="filterByCity('all')">
-                            <i class="fas fa-globe"></i>
-                            <span>جميع المدن</span>
-                            <span class="city-count" id="allCitiesCount">0</span>
+                    <!-- قائمة المدن القابلة للطي - تصميم محسن -->
+                    <div class="city-filter-list" id="cityFilterList"
+                         style="
+                             display: none;
+                             background: #f8f9fa;
+                             border-radius: 12px;
+                             margin: 0 20px 15px 20px;
+                             padding: 15px;
+                             border: 2px solid #e9ecef;
+                             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+                             max-height: none;
+                             overflow: visible;
+                         ">
+
+                        <!-- خيار جميع المدن -->
+                        <div class="city-option all-cities" onclick="filterByCity('all')"
+                             style="
+                                 background: linear-gradient(135deg, #28a745, #20c997);
+                                 color: white;
+                                 padding: 12px 15px;
+                                 border-radius: 8px;
+                                 margin-bottom: 10px;
+                                 cursor: pointer;
+                                 display: flex;
+                                 align-items: center;
+                                 gap: 12px;
+                                 transition: all 0.3s ease;
+                                 font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif;
+                                 font-weight: 600;
+                                 box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+                             ">
+                            <i class="fas fa-globe" style="font-size: 1rem; color: white;"></i>
+                            <span style="flex: 1; font-size: 0.9rem; color: white;">جميع المدن</span>
+                            <span class="city-count" id="allCitiesCount"
+                                  style="
+                                      background: rgba(255, 255, 255, 0.2);
+                                      color: white;
+                                      padding: 4px 8px;
+                                      border-radius: 12px;
+                                      font-size: 0.7rem;
+                                      font-weight: 700;
+                                      min-width: 25px;
+                                      text-align: center;
+                                  ">0</span>
                         </div>
-                        <div class="cities-container" id="citiesContainer">
+
+                        <!-- قائمة المدن المنظمة -->
+                        <ol class="cities-list" id="citiesContainer"
+                            style="
+                                list-style: none;
+                                margin: 0;
+                                padding: 0;
+                                counter-reset: city-counter;
+                            ">
                             <!-- سيتم ملء المدن هنا -->
-                        </div>
+                        </ol>
                     </div>
                 </nav>
-                <div class="sidebar-footer">
-                    <button class="btn-exit" onclick="exitManagementMode()">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>خروج</span>
+                <div class="sidebar-footer" style="padding: 25px 20px !important; border-top: 2px solid #e9ecef !important; background: #f8f9fa !important; margin-top: auto !important; flex-shrink: 0 !important;">
+                    <!-- زر الخروج -->
+                    <button class="btn-exit" onclick="exitManagementMode()"
+                            style="
+                                width: 100% !important;
+                                padding: 25px 30px !important;
+                                margin: 0 !important;
+                                background: linear-gradient(135deg, #dc3545, #c82333) !important;
+                                color: white !important;
+                                border: none !important;
+                                border-radius: 15px !important;
+                                font-size: 1.5rem !important;
+                                font-weight: 800 !important;
+                                cursor: pointer !important;
+                                transition: all 0.3s ease !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                gap: 15px !important;
+                                min-height: 65px !important;
+                                box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
+                                font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                                letter-spacing: 0.5px !important;
+                                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+                                text-align: center !important;
+                                direction: rtl !important;
+                            ">
+                        <i class="fas fa-sign-out-alt" style="font-size: 1.3rem !important; color: white !important; flex-shrink: 0 !important;"></i>
+                        <span style="
+                            color: white !important;
+                            font-size: 1.2rem !important;
+                            font-weight: 800 !important;
+                            font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                            line-height: 1.2 !important;
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+                        ">خروج</span>
                     </button>
                 </div>
             </div>
@@ -9038,12 +9254,15 @@ function closeManagementSidebar() {
 function showPropertyTabMobile(tabName) {
     // استدعاء الوظيفة الأصلية
     showPropertyTab(tabName);
+}
 
-    // إغلاق السايد بار في الجوال بعد اختيار التبويب
-    if (isMobileDevice()) {
+// إخفاء السايد بار في الجوال عند النقر على الأزرار
+function hideSidebarOnMobile() {
+    // التحقق من أن الجهاز جوال
+    if (isMobileDevice() || window.innerWidth <= 768) {
         setTimeout(() => {
             closeManagementSidebar();
-        }, 300);
+        }, 200);
     }
 }
 
@@ -14959,41 +15178,34 @@ function toggleCityFilter() {
 function showCityFilter() {
     const filterList = document.getElementById('cityFilterList');
     const filterArrow = document.getElementById('filterArrow');
-    const citiesContainer = document.getElementById('citiesContainer');
 
-    // الحصول على المدن الفريدة من العقارات
-    const cities = getUniqueCitiesFromProperties();
+    // إظهار القائمة
+    filterList.style.display = 'block';
 
-    // ملء قائمة المدن
-    citiesContainer.innerHTML = '';
-    cities.forEach(city => {
-        const cityCount = getPropertiesCountByCity(city);
-        const cityOption = document.createElement('div');
-        cityOption.className = `city-option ${selectedCityFilter === city ? 'active' : ''}`;
-        cityOption.onclick = () => filterByCity(city);
-        cityOption.innerHTML = `
-            <i class="fas fa-map-marker-alt"></i>
-            <span>${city}</span>
-            <span class="city-count">${cityCount}</span>
-        `;
-        citiesContainer.appendChild(cityOption);
-    });
+    // ملء قائمة المدن بالتصميم الجديد
+    populateCitiesList();
 
     // تحديث عدد جميع المدن
     const allCitiesCount = document.getElementById('allCitiesCount');
-    allCitiesCount.textContent = getUniquePropertiesCount();
-
-    // تحديث حالة "جميع المدن"
-    const allCitiesOption = filterList.querySelector('.city-option');
-    if (selectedCityFilter === 'all') {
-        allCitiesOption.classList.add('active');
-    } else {
-        allCitiesOption.classList.remove('active');
+    if (allCitiesCount) {
+        allCitiesCount.textContent = getUniquePropertiesCount();
     }
 
-    // إظهار القائمة
-    filterList.classList.add('show');
-    filterArrow.style.transform = 'rotate(180deg)';
+    // تحديث حالة "جميع المدن"
+    const allCitiesOption = filterList.querySelector('.all-cities');
+    if (allCitiesOption) {
+        if (selectedCityFilter === 'all') {
+            allCitiesOption.style.background = 'linear-gradient(135deg, #007bff, #0056b3)';
+        } else {
+            allCitiesOption.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+        }
+    }
+
+    // تحديث السهم
+    if (filterArrow) {
+        filterArrow.style.transform = 'rotate(180deg)';
+        filterArrow.className = 'fas fa-chevron-up filter-arrow';
+    }
 }
 
 // إغلاق قائمة تصفية المدن
@@ -15001,8 +15213,14 @@ function closeCityFilter() {
     const filterList = document.getElementById('cityFilterList');
     const filterArrow = document.getElementById('filterArrow');
 
-    filterList.classList.remove('show');
-    filterArrow.style.transform = 'rotate(0deg)';
+    if (filterList) {
+        filterList.style.display = 'none';
+    }
+
+    if (filterArrow) {
+        filterArrow.style.transform = 'rotate(0deg)';
+        filterArrow.className = 'fas fa-chevron-down filter-arrow';
+    }
 }
 
 
@@ -15506,6 +15724,127 @@ function initializeCityFilter() {
 
     // إغلاق القائمة إذا كانت مفتوحة
     closeCityFilter();
+
+    // ملء قائمة المدن بالتصميم الجديد
+    populateCitiesList();
+}
+
+// ملء قائمة المدن بتصميم OL/LI محسن
+function populateCitiesList() {
+    const citiesContainer = document.getElementById('citiesContainer');
+    if (!citiesContainer) return;
+
+    const cities = getUniqueCountries().filter(city => city !== 'الكل');
+    citiesContainer.innerHTML = '';
+
+    cities.forEach((city, index) => {
+        const cityCount = properties.filter(p => p['المدينة'] === city).length;
+
+        // إنشاء عنصر li للمدينة
+        const cityElement = document.createElement('li');
+        cityElement.className = 'city-item';
+        cityElement.onclick = () => filterByCity(city);
+
+        // تطبيق CSS مباشر للعنصر
+        cityElement.style.cssText = `
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif;
+            font-weight: 600;
+            position: relative;
+            counter-increment: city-counter;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        `;
+
+        // إضافة تأثيرات hover
+        cityElement.addEventListener('mouseenter', function() {
+            this.style.background = 'linear-gradient(135deg, #007bff, #0056b3)';
+            this.style.color = 'white';
+            this.style.transform = 'translateX(-5px)';
+            this.style.boxShadow = '0 4px 15px rgba(0, 123, 255, 0.3)';
+
+            // تغيير لون الأيقونة والعداد
+            const icon = this.querySelector('.city-icon');
+            const count = this.querySelector('.city-count');
+            if (icon) icon.style.color = 'white';
+            if (count) {
+                count.style.background = 'rgba(255, 255, 255, 0.2)';
+                count.style.color = 'white';
+            }
+        });
+
+        cityElement.addEventListener('mouseleave', function() {
+            this.style.background = 'white';
+            this.style.color = '#2c3e50';
+            this.style.transform = 'translateX(0)';
+            this.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.08)';
+
+            // إعادة لون الأيقونة والعداد
+            const icon = this.querySelector('.city-icon');
+            const count = this.querySelector('.city-count');
+            if (icon) icon.style.color = '#007bff';
+            if (count) {
+                count.style.background = '#e9ecef';
+                count.style.color = '#495057';
+            }
+        });
+
+        cityElement.innerHTML = `
+            <!-- رقم المدينة -->
+            <span style="
+                background: linear-gradient(135deg, #007bff, #0056b3);
+                color: white;
+                width: 25px;
+                height: 25px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.6rem;
+                font-weight: 700;
+                flex-shrink: 0;
+            ">${index + 1}</span>
+
+            <!-- أيقونة المدينة -->
+            <i class="fas fa-map-marker-alt city-icon" style="
+                color: #007bff;
+                font-size: 0.9rem;
+                flex-shrink: 0;
+            "></i>
+
+            <!-- اسم المدينة -->
+            <span style="
+                flex: 1;
+                font-size: 0.9rem;
+                color: #2c3e50;
+                font-weight: 600;
+                text-align: right;
+            ">${city}</span>
+
+            <!-- عداد العقارات -->
+            <span class="city-count" style="
+                background: #e9ecef;
+                color: #495057;
+                padding: 3px 6px;
+                border-radius: 10px;
+                font-size: 0.7rem;
+                font-weight: 700;
+                min-width: 20px;
+                text-align: center;
+                flex-shrink: 0;
+            ">${cityCount}</span>
+        `;
+
+        citiesContainer.appendChild(cityElement);
+    });
 }
 
 // ==================== وظائف إخفاء/إظهار أزرار الهيدر ====================

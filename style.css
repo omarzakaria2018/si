@@ -5242,20 +5242,21 @@ footer {
         margin: 5px 0 0 0;
     }
 
-    /* السايد بار للجوال - يملأ الشاشة بالكامل */
+    /* السايد بار للجوال - 85% من عرض الشاشة */
     .management-sidebar {
         position: fixed;
         top: 0;
-        right: -100%; /* مخفي خارج الشاشة */
-        width: 100vw; /* عرض الشاشة بالكامل */
+        right: -85%; /* مخفي خارج الشاشة */
+        width: 85vw; /* 85% من عرض الشاشة */
         height: 100vh; /* ارتفاع الشاشة بالكامل */
         background: white !important;
         z-index: 1000;
         transition: right 0.3s ease;
         overflow-y: auto;
-        box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
+        box-shadow: -8px 0 30px rgba(0, 0, 0, 0.4);
         display: flex !important;
         flex-direction: column !important;
+        border-left: 3px solid #007bff;
     }
 
     .management-sidebar.active {
@@ -5268,8 +5269,9 @@ footer {
         display: flex !important;
         flex-direction: column !important;
         padding: 0 !important;
-        height: 100% !important;
-        background: transparent !important;
+        height: 160% !important;
+        background: white !important;
+        font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
     }
 
     .management-sidebar .sidebar-header {
@@ -10582,21 +10584,24 @@ td .remaining-installments {
 .management-sidebar {
     position: fixed;
     top: 80px;
-   
+    right: 0;
     width: 280px;
     height: calc(100vh - 80px);
     background: white;
-    border-right: 1px solid #e9ecef;
+    border-left: 2px solid #e9ecef;
     z-index: 1001;
     overflow-y: auto;
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
 .sidebar-content {
-    padding: 20px;
+    padding: 15px;
     height: 100%;
     display: flex;
     flex-direction: column;
+    background: white;
+    font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif;
 }
 
 .sidebar-header {
@@ -10939,7 +10944,7 @@ td .remaining-installments {
 
     .management-body .tab-content {
         padding: 20px 15px;
-        min-height: calc(100vh - 140px);
+        min-height: calc(100vh - 10px);
     }
 }
 
@@ -11888,9 +11893,11 @@ td .remaining-installments {
 }
 
 .cities-list {
-    display: flex;
+display: flex
+;
     flex-wrap: wrap;
     gap: 8px;
+    flex-direction: column;
 }
 
 .city-tag {
