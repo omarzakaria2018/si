@@ -8858,38 +8858,8 @@ function enterManagementMode() {
                         <span>تصفية حسب المدينة</span>
                         <i class="fas fa-chevron-down filter-arrow" id="filterArrow"></i>
                     </button>
-                    <button class="nav-btn test-btn" onclick="testPropertyManagementFunctions()" style="background: linear-gradient(135deg, #17a2b8, #138496); margin-top: 20px;">
-                        <i class="fas fa-vial"></i>
-                        <span>اختبار النظام</span>
-                    </button>
-                    <button class="nav-btn debug-btn" onclick="debugDatabaseSync()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); margin-top: 10px;">
-                        <i class="fas fa-database"></i>
-                        <span>تشخيص قاعدة البيانات</span>
-                    </button>
-                    <button class="nav-btn reload-btn" onclick="reloadFromSupabase()" style="background: linear-gradient(135deg, #f39c12, #e67e22); margin-top: 10px;">
-                        <i class="fas fa-sync-alt"></i>
-                        <span>إعادة تحميل من السحابة</span>
-                    </button>
-                    <button class="nav-btn cleanup-btn" onclick="cleanupDatabase()" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); margin-top: 10px;">
-                        <i class="fas fa-broom"></i>
-                        <span>تنظيف قاعدة البيانات</span>
-                    </button>
-                    <button class="nav-btn verify-btn" onclick="verifyDatabaseSync()" style="background: linear-gradient(135deg, #27ae60, #2ecc71); margin-top: 10px;">
-                        <i class="fas fa-check-double"></i>
-                        <span>التحقق من التزامن</span>
-                    </button>
-                    <button class="nav-btn force-delete-btn" onclick="forceDeleteSpecificUnits()" style="background: linear-gradient(135deg, #e74c3c, #c0392b); margin-top: 10px;">
-                        <i class="fas fa-trash-alt"></i>
-                        <span>حذف الوحدات المحددة</span>
-                    </button>
-                    <button class="nav-btn nuclear-btn" onclick="nuclearDeleteAllTestUnits()" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); margin-top: 10px;">
-                        <i class="fas fa-bomb"></i>
-                        <span>حذف شامل لوحدات TEST</span>
-                    </button>
-                    <button class="nav-btn advanced-delete-btn" onclick="advancedDeleteWithForeignKeys()" style="background: linear-gradient(135deg, #3498db, #2980b9); margin-top: 10px;">
-                        <i class="fas fa-cogs"></i>
-                        <span>حذف متقدم مع الروابط</span>
-                    </button>
+
+
 
                     <!-- قائمة المدن القابلة للطي -->
                     <div class="city-filter-list" id="cityFilterList">

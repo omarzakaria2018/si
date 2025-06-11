@@ -5116,6 +5116,8 @@ footer {
 
 
 
+
+
 /* على وشك - برتقالي */
 .total-item:has(.total-label:contains("على وشك")) .total-label,
 .total-item:has(.total-label:contains("على وشك")) .total-value {
