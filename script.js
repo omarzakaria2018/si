@@ -7440,6 +7440,713 @@ function closeCleanupModal() {
     }
 }
 
+// Show date update modal
+function showDateUpdateModal() {
+    console.log('📅 فتح نافذة تحديث التواريخ...');
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="date-update-modal">
+            <div class="date-update-header">
+                <h2><i class="fas fa-calendar-alt"></i> تحديث التواريخ من ملف</h2>
+                <p>تحديث تواريخ العقود والأقساط من ملف JSON</p>
+            </div>
+
+            <div class="date-update-content">
+                <div class="upload-section">
+                    <h3>اختيار ملف التحديث</h3>
+                    <div class="file-upload-area" id="dateFileUploadArea">
+                        <div class="upload-icon">
+                            <i class="fas fa-calendar-upload"></i>
+                        </div>
+                        <div class="upload-text">
+                            <p>اسحب وأفلت ملف JSON هنا أو انقر للاختيار</p>
+                            <small>يجب أن يحتوي الملف على: رقم الوحدة، التواريخ الجديدة</small>
+                        </div>
+                    </div>
+                    <input type="file" id="dateFileInput" accept=".json" style="display: none;">
+
+                    <div class="file-info" id="dateFileInfo" style="display: none;">
+                        <div class="file-details">
+                            <i class="fas fa-file-code"></i>
+                            <div>
+                                <div class="file-name" id="dateFileName"></div>
+                                <div class="file-size" id="dateFileSize"></div>
+                            </div>
+                        </div>
+                        <button class="change-file-btn" onclick="changeDateFile()">تغيير الملف</button>
+                    </div>
+                </div>
+
+                <div class="preview-section" id="datePreviewSection" style="display: none;">
+                    <h3>معاينة التحديثات</h3>
+                    <div class="preview-stats" id="datePreviewStats"></div>
+                    <div class="preview-table-container">
+                        <table class="preview-table" id="datePreviewTable"></table>
+                    </div>
+                </div>
+
+                <div class="update-options" id="dateUpdateOptions" style="display: none;">
+                    <h3>خيارات التحديث</h3>
+                    <div class="options-grid">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="updateContractDates" checked>
+                            <span class="checkmark"></span>
+                            تحديث تواريخ العقود (بداية ونهاية)
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="updateInstallmentDates" checked>
+                            <span class="checkmark"></span>
+                            تحديث تواريخ الأقساط
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="createDateBackup" checked>
+                            <span class="checkmark"></span>
+                            إنشاء نسخة احتياطية قبل التحديث
+                        </label>
+                    </div>
+                </div>
+
+                <div class="update-progress" id="dateUpdateProgress" style="display: none;">
+                    <h3>تقدم التحديث</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="dateProgressFill"></div>
+                    </div>
+                    <div class="progress-text" id="dateProgressText">جاري التحضير...</div>
+                    <div class="update-log" id="dateUpdateLog"></div>
+                </div>
+
+                <div class="update-results" id="dateUpdateResults" style="display: none;">
+                    <h3>نتائج التحديث</h3>
+                    <div id="dateUpdateResultsContent"></div>
+                </div>
+            </div>
+
+            <div class="date-update-actions">
+                <button class="modal-action-btn close-btn" onclick="closeDateUpdateModal()">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+                <button class="modal-action-btn next-btn" id="dateNextBtn" onclick="previewDateUpdates()" style="display: none;">
+                    <i class="fas fa-eye"></i> معاينة
+                </button>
+                <button class="modal-action-btn update-btn" id="dateUpdateBtn" onclick="executeDateUpdate()" style="display: none;">
+                    <i class="fas fa-calendar-check"></i> تحديث التواريخ
+                </button>
+                <button class="modal-action-btn finish-btn" id="dateFinishBtn" onclick="finishDateUpdate()" style="display: none;">
+                    <i class="fas fa-check"></i> إنهاء
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    setupDateFileUpload();
+}
+
+// Alias for mobile menu compatibility
+function openDateUpdateModal() {
+    showDateUpdateModal();
+}
+
+// Setup date file upload functionality
+function setupDateFileUpload() {
+    const fileUploadArea = document.getElementById('dateFileUploadArea');
+    const fileInput = document.getElementById('dateFileInput');
+
+    // Click to upload
+    fileUploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Drag and drop
+    fileUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.add('dragover');
+    });
+
+    fileUploadArea.addEventListener('dragleave', () => {
+        fileUploadArea.classList.remove('dragover');
+    });
+
+    fileUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.remove('dragover');
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleDateFileSelection(files[0]);
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleDateFileSelection(e.target.files[0]);
+        }
+    });
+}
+
+// Handle date file selection
+async function handleDateFileSelection(file) {
+    console.log('📅 تم اختيار ملف التواريخ:', file.name);
+
+    // Validate file type
+    if (!file.name.toLowerCase().endsWith('.json')) {
+        showDateUpdateError('يجب أن يكون الملف من نوع JSON فقط');
+        return;
+    }
+
+    // Show file info
+    document.getElementById('dateFileName').textContent = file.name;
+    document.getElementById('dateFileSize').textContent = formatFileSize(file.size);
+    document.getElementById('dateFileUploadArea').style.display = 'none';
+    document.getElementById('dateFileInfo').style.display = 'flex';
+    document.getElementById('dateNextBtn').style.display = 'inline-flex';
+
+    // Parse file
+    try {
+        dateUpdateData = await parseDateUpdateFile(file);
+        console.log('✅ تم تحليل ملف التواريخ بنجاح:', dateUpdateData.length, 'سجل');
+    } catch (error) {
+        console.error('❌ خطأ في تحليل ملف التواريخ:', error);
+        showDateUpdateError('خطأ في قراءة الملف: ' + error.message);
+    }
+}
+
+// Parse date update file
+async function parseDateUpdateFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (Array.isArray(data)) {
+                    resolve(data);
+                } else {
+                    reject(new Error('ملف JSON يجب أن يحتوي على مصفوفة من البيانات'));
+                }
+            } catch (error) {
+                reject(new Error('خطأ في تحليل ملف JSON: ' + error.message));
+            }
+        };
+        reader.onerror = () => reject(new Error('خطأ في قراءة الملف'));
+        reader.readAsText(file);
+    });
+}
+
+// Preview date updates
+function previewDateUpdates() {
+    console.log('🔍 إنشاء معاينة تحديثات التواريخ...');
+
+    if (!dateUpdateData || dateUpdateData.length === 0) {
+        showDateUpdateError('لا توجد بيانات للمعاينة');
+        return;
+    }
+
+    // Analyze date updates
+    const analysis = analyzeDateUpdates();
+    displayDatePreviewStats(analysis);
+    displayDatePreviewTable(analysis);
+
+    // Show preview and options
+    document.getElementById('datePreviewSection').style.display = 'block';
+    document.getElementById('dateUpdateOptions').style.display = 'block';
+    document.getElementById('dateNextBtn').style.display = 'none';
+    document.getElementById('dateUpdateBtn').style.display = 'inline-flex';
+}
+
+// Analyze date updates
+function analyzeDateUpdates() {
+    console.log('📊 تحليل تحديثات التواريخ...');
+
+    const analysis = {
+        totalRecords: dateUpdateData.length,
+        validUpdates: 0,
+        contractDateUpdates: 0,
+        installmentDateUpdates: 0,
+        notFound: 0,
+        errors: [],
+        updates: []
+    };
+
+    dateUpdateData.forEach((record, index) => {
+        try {
+            const updateInfo = analyzeRecordDateUpdate(record, index);
+            analysis.updates.push(updateInfo);
+
+            if (updateInfo.found) {
+                analysis.validUpdates++;
+                if (updateInfo.hasContractDates) analysis.contractDateUpdates++;
+                if (updateInfo.hasInstallmentDates) analysis.installmentDateUpdates++;
+            } else {
+                analysis.notFound++;
+            }
+
+            if (updateInfo.errors.length > 0) {
+                analysis.errors.push(...updateInfo.errors);
+            }
+
+        } catch (error) {
+            console.error(`❌ خطأ في تحليل السجل ${index}:`, error);
+            analysis.errors.push(`السجل ${index + 1}: ${error.message}`);
+        }
+    });
+
+    console.log('📊 نتائج تحليل التواريخ:', analysis);
+    return analysis;
+}
+
+// Analyze individual record for date update
+function analyzeRecordDateUpdate(record, index) {
+    const updateInfo = {
+        index: index,
+        record: record,
+        found: false,
+        existingUnit: null,
+        hasContractDates: false,
+        hasInstallmentDates: false,
+        errors: [],
+        warnings: []
+    };
+
+    // Validate required field
+    if (!record['رقم  الوحدة ']) {
+        updateInfo.errors.push('رقم الوحدة مطلوب');
+        return updateInfo;
+    }
+
+    // Find existing unit
+    const unitNumber = record['رقم  الوحدة '].toString().trim();
+    updateInfo.existingUnit = properties.find(p => p['رقم  الوحدة '] === unitNumber);
+
+    if (updateInfo.existingUnit) {
+        updateInfo.found = true;
+
+        // Check for contract dates
+        if (record['تاريخ بداية العقد'] || record['تاريخ نهاية العقد']) {
+            updateInfo.hasContractDates = true;
+        }
+
+        // Check for installment dates
+        for (let i = 1; i <= 10; i++) {
+            const dateKey = i === 1 ? 'تاريخ القسط الاول' :
+                           i === 2 ? 'تاريخ القسط الثاني' :
+                           `تاريخ القسط ${getArabicNumber(i)}`;
+
+            if (record[dateKey]) {
+                updateInfo.hasInstallmentDates = true;
+                break;
+            }
+        }
+
+        // Validate date formats
+        validateDateFormats(record, updateInfo);
+
+    } else {
+        updateInfo.errors.push(`لم يتم العثور على الوحدة رقم: ${unitNumber}`);
+    }
+
+    return updateInfo;
+}
+
+// Validate date formats in record
+function validateDateFormats(record, updateInfo) {
+    const dateFields = [
+        'تاريخ بداية العقد', 'تاريخ نهاية العقد',
+        'تاريخ القسط الاول', 'تاريخ القسط الثاني'
+    ];
+
+    // Add more installment date fields
+    for (let i = 3; i <= 10; i++) {
+        dateFields.push(`تاريخ القسط ${getArabicNumber(i)}`);
+    }
+
+    dateFields.forEach(field => {
+        if (record[field]) {
+            const dateStr = record[field].toString();
+            const date = new Date(dateStr);
+
+            if (isNaN(date.getTime())) {
+                updateInfo.warnings.push(`تنسيق التاريخ غير صحيح في "${field}": ${dateStr}`);
+            }
+        }
+    });
+}
+
+// Display date preview statistics
+function displayDatePreviewStats(analysis) {
+    const statsContainer = document.getElementById('datePreviewStats');
+
+    statsContainer.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">${analysis.totalRecords}</div>
+                <div class="stat-label">إجمالي السجلات</div>
+            </div>
+            <div class="stat-item success">
+                <div class="stat-number">${analysis.validUpdates}</div>
+                <div class="stat-label">تحديثات صالحة</div>
+            </div>
+            <div class="stat-item info">
+                <div class="stat-number">${analysis.contractDateUpdates}</div>
+                <div class="stat-label">تواريخ عقود</div>
+            </div>
+            <div class="stat-item warning">
+                <div class="stat-number">${analysis.installmentDateUpdates}</div>
+                <div class="stat-label">تواريخ أقساط</div>
+            </div>
+            <div class="stat-item error">
+                <div class="stat-number">${analysis.notFound}</div>
+                <div class="stat-label">غير موجود</div>
+            </div>
+            <div class="stat-item error">
+                <div class="stat-number">${analysis.errors.length}</div>
+                <div class="stat-label">أخطاء</div>
+            </div>
+        </div>
+
+        ${analysis.errors.length > 0 ? `
+            <div class="errors-section">
+                <h4><i class="fas fa-exclamation-triangle"></i> الأخطاء المكتشفة:</h4>
+                <ul class="error-list">
+                    ${analysis.errors.slice(0, 5).map(error => `<li>${error}</li>`).join('')}
+                    ${analysis.errors.length > 5 ? `<li>... و ${analysis.errors.length - 5} خطأ آخر</li>` : ''}
+                </ul>
+            </div>
+        ` : ''}
+    `;
+}
+
+// Display date preview table
+function displayDatePreviewTable(analysis) {
+    const tableContainer = document.getElementById('datePreviewTable');
+
+    // Show only first 10 records for preview
+    const previewUpdates = analysis.updates.slice(0, 10);
+
+    let tableHTML = `
+        <thead>
+            <tr>
+                <th>رقم الوحدة</th>
+                <th>العقار</th>
+                <th>تواريخ العقد</th>
+                <th>تواريخ الأقساط</th>
+                <th>الحالة</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+    previewUpdates.forEach(update => {
+        const statusClass = update.found ? 'success' : 'error';
+        const statusText = update.found ? 'موجود' : 'غير موجود';
+
+        const contractDates = update.hasContractDates ?
+            `<i class="fas fa-check text-success"></i> سيتم التحديث` :
+            `<i class="fas fa-minus text-muted"></i> لا يوجد`;
+
+        const installmentDates = update.hasInstallmentDates ?
+            `<i class="fas fa-check text-success"></i> سيتم التحديث` :
+            `<i class="fas fa-minus text-muted"></i> لا يوجد`;
+
+        tableHTML += `
+            <tr class="${statusClass}">
+                <td>${update.record['رقم  الوحدة '] || 'غير محدد'}</td>
+                <td>${update.existingUnit ? update.existingUnit['اسم العقار'] : 'غير موجود'}</td>
+                <td>${contractDates}</td>
+                <td>${installmentDates}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            </tr>
+        `;
+    });
+
+    tableHTML += '</tbody>';
+
+    if (analysis.updates.length > 10) {
+        tableHTML += `
+            <tfoot>
+                <tr>
+                    <td colspan="5" class="text-center">
+                        <small>عرض أول 10 سجلات من ${analysis.updates.length} سجل</small>
+                    </td>
+                </tr>
+            </tfoot>
+        `;
+    }
+
+    tableContainer.innerHTML = tableHTML;
+}
+
+// Execute date update
+async function executeDateUpdate() {
+    console.log('🚀 بدء تنفيذ تحديث التواريخ...');
+
+    // Get options
+    const updateContractDates = document.getElementById('updateContractDates').checked;
+    const updateInstallmentDates = document.getElementById('updateInstallmentDates').checked;
+    const createBackup = document.getElementById('createDateBackup').checked;
+
+    console.log('⚙️ خيارات التحديث:', { updateContractDates, updateInstallmentDates, createBackup });
+
+    // Hide options and show progress
+    document.getElementById('dateUpdateOptions').style.display = 'none';
+    document.getElementById('dateUpdateBtn').style.display = 'none';
+    document.getElementById('dateUpdateProgress').style.display = 'block';
+
+    try {
+        // Create backup if requested
+        if (createBackup) {
+            updateDateProgress(10, 'إنشاء نسخة احتياطية...');
+            await createDateBackup();
+            addDateUpdateLog('✅ تم إنشاء نسخة احتياطية');
+        }
+
+        // Process updates
+        updateDateProgress(20, 'بدء معالجة التحديثات...');
+        const results = await processDateUpdates(updateContractDates, updateInstallmentDates);
+
+        // Save data
+        updateDateProgress(90, 'حفظ البيانات...');
+        saveDataLocally();
+
+        // Show results
+        updateDateProgress(100, 'تم الانتهاء!');
+        displayDateUpdateResults(results);
+
+        document.getElementById('dateUpdateProgress').style.display = 'none';
+        document.getElementById('dateUpdateResults').style.display = 'block';
+        document.getElementById('dateFinishBtn').style.display = 'inline-flex';
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث التواريخ:', error);
+        showDateUpdateError('خطأ في تحديث التواريخ: ' + error.message);
+    }
+}
+
+// Process date updates
+async function processDateUpdates(updateContractDates, updateInstallmentDates) {
+    const results = {
+        processed: 0,
+        contractDatesUpdated: 0,
+        installmentDatesUpdated: 0,
+        errors: 0,
+        skipped: 0
+    };
+
+    const analysis = analyzeDateUpdates();
+    const validUpdates = analysis.updates.filter(u => u.found);
+
+    for (let i = 0; i < validUpdates.length; i++) {
+        const update = validUpdates[i];
+        const progress = 20 + (i / validUpdates.length) * 70;
+
+        updateDateProgress(progress, `معالجة الوحدة ${update.record['رقم  الوحدة ']}...`);
+
+        try {
+            const unitIndex = properties.findIndex(p => p['رقم  الوحدة '] === update.record['رقم  الوحدة ']);
+
+            if (unitIndex !== -1) {
+                let updated = false;
+
+                // Update contract dates
+                if (updateContractDates && update.hasContractDates) {
+                    if (update.record['تاريخ بداية العقد']) {
+                        properties[unitIndex]['تاريخ بداية العقد'] = formatDateForStorage(update.record['تاريخ بداية العقد']);
+                        updated = true;
+                    }
+                    if (update.record['تاريخ نهاية العقد']) {
+                        properties[unitIndex]['تاريخ نهاية العقد'] = formatDateForStorage(update.record['تاريخ نهاية العقد']);
+                        updated = true;
+                    }
+                    if (updated) results.contractDatesUpdated++;
+                }
+
+                // Update installment dates
+                if (updateInstallmentDates && update.hasInstallmentDates) {
+                    let installmentUpdated = false;
+
+                    for (let j = 1; j <= 10; j++) {
+                        const dateKey = j === 1 ? 'تاريخ القسط الاول' :
+                                       j === 2 ? 'تاريخ القسط الثاني' :
+                                       `تاريخ القسط ${getArabicNumber(j)}`;
+
+                        if (update.record[dateKey]) {
+                            properties[unitIndex][dateKey] = formatDateForStorage(update.record[dateKey]);
+                            installmentUpdated = true;
+                        }
+                    }
+
+                    if (installmentUpdated) {
+                        results.installmentDatesUpdated++;
+                        updated = true;
+                    }
+                }
+
+                if (updated) {
+                    results.processed++;
+                    addDateUpdateLog(`✅ تم تحديث الوحدة: ${update.record['رقم  الوحدة ']}`);
+                } else {
+                    results.skipped++;
+                    addDateUpdateLog(`⏭️ تم تخطي الوحدة: ${update.record['رقم  الوحدة ']} (لا توجد تحديثات مطلوبة)`);
+                }
+            }
+
+        } catch (error) {
+            console.error(`❌ خطأ في معالجة الوحدة ${update.record['رقم  الوحدة ']}:`, error);
+            results.errors++;
+            addDateUpdateLog(`❌ خطأ في الوحدة ${update.record['رقم  الوحدة ']}: ${error.message}`);
+        }
+    }
+
+    return results;
+}
+
+// Helper functions for date update
+function formatDateForStorage(dateStr) {
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+            return dateStr; // Return original if invalid
+        }
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    } catch (error) {
+        console.warn('خطأ في تنسيق التاريخ:', dateStr, error);
+        return dateStr;
+    }
+}
+
+function updateDateProgress(percentage, message) {
+    const progressFill = document.getElementById('dateProgressFill');
+    const progressText = document.getElementById('dateProgressText');
+
+    if (progressFill) {
+        progressFill.style.width = percentage + '%';
+    }
+    if (progressText) {
+        progressText.textContent = message;
+    }
+}
+
+function addDateUpdateLog(message) {
+    const logContainer = document.getElementById('dateUpdateLog');
+    if (logContainer) {
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.innerHTML = `<span class="log-time">${new Date().toLocaleTimeString('ar-SA')}</span> ${message}`;
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+}
+
+async function createDateBackup() {
+    const backupData = {
+        timestamp: new Date().toISOString(),
+        type: 'date_update_backup',
+        data: JSON.parse(JSON.stringify(properties))
+    };
+
+    const backupKey = `backup_dates_${Date.now()}`;
+    localStorage.setItem(backupKey, JSON.stringify(backupData));
+
+    console.log('💾 تم إنشاء نسخة احتياطية:', backupKey);
+}
+
+function displayDateUpdateResults(results) {
+    const resultsContainer = document.getElementById('dateUpdateResultsContent');
+
+    resultsContainer.innerHTML = `
+        <div class="results-summary">
+            <div class="result-stats">
+                <div class="stat-item success">
+                    <div class="stat-number">${results.processed}</div>
+                    <div class="stat-label">وحدات محدثة</div>
+                </div>
+                <div class="stat-item info">
+                    <div class="stat-number">${results.contractDatesUpdated}</div>
+                    <div class="stat-label">تواريخ عقود</div>
+                </div>
+                <div class="stat-item warning">
+                    <div class="stat-number">${results.installmentDatesUpdated}</div>
+                    <div class="stat-label">تواريخ أقساط</div>
+                </div>
+                <div class="stat-item muted">
+                    <div class="stat-number">${results.skipped}</div>
+                    <div class="stat-label">متخطاة</div>
+                </div>
+                <div class="stat-item error">
+                    <div class="stat-number">${results.errors}</div>
+                    <div class="stat-label">أخطاء</div>
+                </div>
+            </div>
+
+            <div class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <h3>تم تحديث التواريخ بنجاح!</h3>
+                <p>تم معالجة ${results.processed} وحدة وتحديث تواريخها</p>
+            </div>
+        </div>
+    `;
+}
+
+function changeDateFile() {
+    document.getElementById('dateFileUploadArea').style.display = 'block';
+    document.getElementById('dateFileInfo').style.display = 'none';
+    document.getElementById('datePreviewSection').style.display = 'none';
+    document.getElementById('dateUpdateOptions').style.display = 'none';
+    document.getElementById('dateNextBtn').style.display = 'none';
+    document.getElementById('dateUpdateBtn').style.display = 'none';
+
+    // Reset file input
+    document.getElementById('dateFileInput').value = '';
+    dateUpdateData = null;
+}
+
+function showDateUpdateError(message) {
+    const errorModal = document.createElement('div');
+    errorModal.className = 'modal-overlay';
+    errorModal.style.display = 'flex';
+    errorModal.innerHTML = `
+        <div class="error-modal">
+            <div class="error-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>خطأ في تحديث التواريخ</h3>
+                <p>${message}</p>
+                <button class="btn-primary" onclick="this.closest('.modal-overlay').remove()">
+                    حسناً
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(errorModal);
+}
+
+function closeDateUpdateModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+
+    // Reset global variables
+    dateUpdateData = null;
+}
+
+function finishDateUpdate() {
+    // Refresh the main interface
+    renderData();
+    updateTotalStats();
+
+    // Close modal
+    closeDateUpdateModal();
+
+    // Show success notification
+    showSuccessMessage('تم تحديث التواريخ بنجاح', 'تم تحديث جميع التواريخ المحددة في النظام');
+}
+
+// Global variable to store date update data
+let dateUpdateData = null;
+
 // ==================== نظام إدارة العقارات ====================
 
 // تحرير وحدة في نظام إدارة العقارات
