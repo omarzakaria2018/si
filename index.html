@@ -53,6 +53,12 @@
         <button id="dateUpdateBtn" class="export-btn hideable-header-btn" onclick="openDateUpdateModal()" style="background:linear-gradient(to left,#6f42c1,#5a2d91);margin-right:8px;">
           <i class="fas fa-calendar-edit"></i> تحديث التواريخ
         </button>
+        <button id="dataImportBtn" class="export-btn hideable-header-btn" onclick="showDataImportModal()" style="background:linear-gradient(to left,#fd7e14,#e55a4e);margin-right:8px;">
+          <i class="fas fa-file-import"></i> استيراد البيانات
+        </button>
+        <button id="cleanStorageBtn" class="export-btn hideable-header-btn" onclick="showStorageCleanupModal()" style="background:linear-gradient(to left,#6c757d,#495057);margin-right:8px;">
+          <i class="fas fa-broom"></i> تنظيف التخزين
+        </button>
 
 
 
@@ -143,6 +149,11 @@
         <li>
           <button id="mobile-date-update-btn" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; openDateUpdateModal();">
             <i class="fas fa-calendar-edit"></i> تحديث التواريخ
+          </button>
+        </li>
+        <li>
+          <button id="mobile-data-import-btn" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; showDataImportModal();">
+            <i class="fas fa-file-import"></i> استيراد البيانات
           </button>
         </li>
       </ol>

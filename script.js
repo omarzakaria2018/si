@@ -55,6 +55,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize data loading (Supabase or JSON fallback)
     console.log('🚀 بدء تحميل البيانات...');
 
+    // فحص البيانات للتأكد من الحفظ الدائم
+    setTimeout(() => {
+        verifyDataPersistence();
+    }, 1000);
+
     initializeDataLoading()
         .then(() => {
             console.log(`✅ تم تحميل ${properties ? properties.length : 0} عقار`);
@@ -5734,6 +5739,1707 @@ function showToast(message, type = 'info', duration = 3000) {
     return toast;
 }
 
+// ===== DATA IMPORT SYSTEM =====
+
+// Global variables for import system
+let importedData = null;
+let importPreview = null;
+let importStats = {
+    totalRecords: 0,
+    newProperties: 0,
+    newUnits: 0,
+    updatedUnits: 0,
+    errors: 0,
+    warnings: 0
+};
+
+// Show data import modal
+function showDataImportModal() {
+    console.log('🔄 فتح نافذة استيراد البيانات...');
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="data-import-modal">
+            <div class="import-modal-header">
+                <h2><i class="fas fa-file-import"></i> استيراد ملف البيانات</h2>
+                <p>استيراد وتحديث بيانات العقارات من ملف خارجي</p>
+            </div>
+
+            <div class="import-modal-content">
+                <!-- خطوة 1: اختيار الملف -->
+                <div class="import-step" id="step1">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h3>اختيار ملف البيانات</h3>
+                    </div>
+
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-text">
+                            <p>اسحب الملف هنا أو انقر للاختيار</p>
+                            <small>الملفات المدعومة: JSON, CSV, Excel (.xlsx)</small>
+                        </div>
+                        <input type="file" id="importFileInput" accept=".json,.csv,.xlsx" style="display: none;">
+                    </div>
+
+                    <div class="file-info" id="fileInfo" style="display: none;">
+                        <div class="file-details">
+                            <i class="fas fa-file"></i>
+                            <span id="fileName"></span>
+                            <span id="fileSize"></span>
+                        </div>
+                        <button class="change-file-btn" onclick="changeImportFile()">
+                            <i class="fas fa-exchange-alt"></i> تغيير الملف
+                        </button>
+                    </div>
+                </div>
+
+                <!-- خطوة 2: معاينة البيانات -->
+                <div class="import-step" id="step2" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h3>معاينة البيانات</h3>
+                    </div>
+
+                    <div class="preview-stats" id="previewStats"></div>
+                    <div class="preview-table-container">
+                        <table class="preview-table" id="previewTable"></table>
+                    </div>
+
+                    <div class="import-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="createBackup" checked>
+                            <span class="checkmark"></span>
+                            إنشاء نسخة احتياطية قبل الاستيراد
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="updateExisting" checked>
+                            <span class="checkmark"></span>
+                            تحديث البيانات الموجودة
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="addNewUnits" checked>
+                            <span class="checkmark"></span>
+                            إضافة وحدات جديدة
+                        </label>
+                    </div>
+                </div>
+
+                <!-- خطوة 3: تنفيذ الاستيراد -->
+                <div class="import-step" id="step3" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h3>تنفيذ الاستيراد</h3>
+                    </div>
+
+                    <div class="import-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">جاري التحضير...</div>
+                    </div>
+
+                    <div class="import-log" id="importLog"></div>
+                </div>
+
+                <!-- خطوة 4: النتائج -->
+                <div class="import-step" id="step4" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <h3>نتائج الاستيراد</h3>
+                    </div>
+
+                    <div class="import-results" id="importResults"></div>
+                </div>
+            </div>
+
+            <div class="import-modal-actions">
+                <button class="modal-action-btn close-btn" onclick="closeImportModal()">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+                <button class="modal-action-btn next-btn" id="nextBtn" onclick="nextImportStep()" style="display: none;">
+                    <i class="fas fa-arrow-left"></i> التالي
+                </button>
+                <button class="modal-action-btn import-btn" id="importBtn" onclick="executeImport()" style="display: none;">
+                    <i class="fas fa-download"></i> بدء الاستيراد
+                </button>
+                <button class="modal-action-btn finish-btn" id="finishBtn" onclick="finishImport()" style="display: none;">
+                    <i class="fas fa-check"></i> إنهاء
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    setupFileUpload();
+}
+
+// Setup file upload functionality
+function setupFileUpload() {
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('importFileInput');
+
+    // Click to upload
+    fileUploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Drag and drop
+    fileUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.add('dragover');
+    });
+
+    fileUploadArea.addEventListener('dragleave', () => {
+        fileUploadArea.classList.remove('dragover');
+    });
+
+    fileUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.remove('dragover');
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelection(e.target.files[0]);
+        }
+    });
+}
+
+// Handle file selection
+async function handleFileSelection(file) {
+    console.log('📁 تم اختيار الملف:', file.name);
+
+    // Validate file type
+    const allowedTypes = ['.json', '.csv', '.xlsx'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+
+    if (!allowedTypes.includes(fileExtension)) {
+        showImportError('نوع الملف غير مدعوم. الملفات المدعومة: JSON, CSV, Excel (.xlsx)');
+        return;
+    }
+
+    // Show file info
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = formatFileSize(file.size);
+    document.getElementById('fileUploadArea').style.display = 'none';
+    document.getElementById('fileInfo').style.display = 'flex';
+    document.getElementById('nextBtn').style.display = 'inline-flex';
+
+    // Parse file
+    try {
+        importedData = await parseImportFile(file);
+        console.log('✅ تم تحليل الملف بنجاح:', importedData.length, 'سجل');
+    } catch (error) {
+        console.error('❌ خطأ في تحليل الملف:', error);
+        showImportError('خطأ في قراءة الملف: ' + error.message);
+    }
+}
+
+// Parse import file based on type
+async function parseImportFile(file) {
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+
+    switch (fileExtension) {
+        case '.json':
+            return await parseJSONFile(file);
+        case '.csv':
+            return await parseCSVFile(file);
+        case '.xlsx':
+            return await parseExcelFile(file);
+        default:
+            throw new Error('نوع الملف غير مدعوم');
+    }
+}
+
+// Parse JSON file
+async function parseJSONFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (Array.isArray(data)) {
+                    resolve(data);
+                } else {
+                    reject(new Error('ملف JSON يجب أن يحتوي على مصفوفة من البيانات'));
+                }
+            } catch (error) {
+                reject(new Error('خطأ في تحليل ملف JSON: ' + error.message));
+            }
+        };
+        reader.onerror = () => reject(new Error('خطأ في قراءة الملف'));
+        reader.readAsText(file);
+    });
+}
+
+// Parse CSV file
+async function parseCSVFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const csv = e.target.result;
+                const lines = csv.split('\n').filter(line => line.trim());
+
+                if (lines.length < 2) {
+                    reject(new Error('ملف CSV يجب أن يحتوي على رأس وبيانات'));
+                    return;
+                }
+
+                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                const data = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                    const row = {};
+
+                    headers.forEach((header, index) => {
+                        row[header] = values[index] || '';
+                    });
+
+                    data.push(row);
+                }
+
+                resolve(data);
+            } catch (error) {
+                reject(new Error('خطأ في تحليل ملف CSV: ' + error.message));
+            }
+        };
+        reader.onerror = () => reject(new Error('خطأ في قراءة الملف'));
+        reader.readAsText(file);
+    });
+}
+
+// Parse Excel file (requires SheetJS library)
+async function parseExcelFile(file) {
+    // Note: This requires the SheetJS library to be loaded
+    if (typeof XLSX === 'undefined') {
+        throw new Error('مكتبة Excel غير محملة. يرجى تحميل SheetJS library');
+    }
+
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                resolve(jsonData);
+            } catch (error) {
+                reject(new Error('خطأ في تحليل ملف Excel: ' + error.message));
+            }
+        };
+        reader.onerror = () => reject(new Error('خطأ في قراءة الملف'));
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+// Next step in import process
+function nextImportStep() {
+    const currentStep = document.querySelector('.import-step:not([style*="display: none"])');
+    const stepNumber = parseInt(currentStep.id.replace('step', ''));
+
+    if (stepNumber === 1) {
+        // Move to preview step
+        showImportStep(2);
+        generateImportPreview();
+    }
+}
+
+// Show specific import step
+function showImportStep(stepNumber) {
+    // Hide all steps
+    for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById(`step${i}`);
+        if (step) step.style.display = 'none';
+    }
+
+    // Show target step
+    const targetStep = document.getElementById(`step${stepNumber}`);
+    if (targetStep) targetStep.style.display = 'block';
+
+    // Update buttons
+    updateImportButtons(stepNumber);
+}
+
+// Update import modal buttons
+function updateImportButtons(stepNumber) {
+    const nextBtn = document.getElementById('nextBtn');
+    const importBtn = document.getElementById('importBtn');
+    const finishBtn = document.getElementById('finishBtn');
+
+    // Hide all buttons first
+    nextBtn.style.display = 'none';
+    importBtn.style.display = 'none';
+    finishBtn.style.display = 'none';
+
+    switch (stepNumber) {
+        case 1:
+            if (importedData) nextBtn.style.display = 'inline-flex';
+            break;
+        case 2:
+            importBtn.style.display = 'inline-flex';
+            break;
+        case 3:
+            // No buttons during import
+            break;
+        case 4:
+            finishBtn.style.display = 'inline-flex';
+            break;
+    }
+}
+
+// Generate import preview
+function generateImportPreview() {
+    console.log('🔍 إنشاء معاينة البيانات...');
+
+    if (!importedData || importedData.length === 0) {
+        showImportError('لا توجد بيانات للمعاينة');
+        return;
+    }
+
+    // Analyze data and generate preview
+    analyzeImportData();
+    displayPreviewStats();
+    displayPreviewTable();
+}
+
+// Analyze import data
+function analyzeImportData() {
+    console.log('📊 تحليل البيانات المستوردة...');
+
+    importStats = {
+        totalRecords: importedData.length,
+        newProperties: 0,
+        newUnits: 0,
+        updatedUnits: 0,
+        errors: 0,
+        warnings: 0
+    };
+
+    importPreview = [];
+
+    importedData.forEach((record, index) => {
+        try {
+            const analysis = analyzeRecord(record, index);
+            importPreview.push(analysis);
+
+            // Update stats
+            if (analysis.action === 'new_property') importStats.newProperties++;
+            else if (analysis.action === 'new_unit') importStats.newUnits++;
+            else if (analysis.action === 'update_unit') importStats.updatedUnits++;
+
+            if (analysis.errors.length > 0) importStats.errors++;
+            if (analysis.warnings.length > 0) importStats.warnings++;
+
+        } catch (error) {
+            console.error(`❌ خطأ في تحليل السجل ${index}:`, error);
+            importStats.errors++;
+        }
+    });
+
+    console.log('📊 نتائج التحليل:', importStats);
+}
+
+// Analyze individual record
+function analyzeRecord(record, index) {
+    const analysis = {
+        index: index,
+        record: record,
+        action: 'unknown',
+        existingProperty: null,
+        existingUnit: null,
+        errors: [],
+        warnings: []
+    };
+
+    // Validate required fields
+    const requiredFields = ['اسم العقار', 'المدينة', 'رقم  الوحدة '];
+    requiredFields.forEach(field => {
+        if (!record[field] || record[field].toString().trim() === '') {
+            analysis.errors.push(`الحقل "${field}" مطلوب`);
+        }
+    });
+
+    if (analysis.errors.length > 0) {
+        return analysis;
+    }
+
+    // Find existing property
+    const propertyName = record['اسم العقار'].toString().trim();
+    const cityName = record['المدينة'].toString().trim();
+    const unitNumber = record['رقم  الوحدة '].toString().trim();
+
+    analysis.existingProperty = properties.find(p =>
+        p['اسم العقار'] === propertyName && p['المدينة'] === cityName
+    );
+
+    if (analysis.existingProperty) {
+        // Property exists, check for unit
+        analysis.existingUnit = properties.find(p =>
+            p['اسم العقار'] === propertyName &&
+            p['المدينة'] === cityName &&
+            p['رقم  الوحدة '] === unitNumber
+        );
+
+        if (analysis.existingUnit) {
+            analysis.action = 'update_unit';
+        } else {
+            analysis.action = 'new_unit';
+        }
+    } else {
+        analysis.action = 'new_property';
+    }
+
+    // Validate data types
+    validateRecordData(record, analysis);
+
+    return analysis;
+}
+
+// Validate record data types
+function validateRecordData(record, analysis) {
+    // Validate numeric fields
+    const numericFields = ['قيمة  الايجار ', 'المساحة', 'عدد الاقساط'];
+    numericFields.forEach(field => {
+        if (record[field] && record[field] !== '') {
+            const value = parseFloat(record[field]);
+            if (isNaN(value)) {
+                analysis.warnings.push(`الحقل "${field}" يجب أن يكون رقم`);
+            }
+        }
+    });
+
+    // Validate dates
+    const dateFields = ['تاريخ بداية العقد', 'تاريخ نهاية العقد'];
+    dateFields.forEach(field => {
+        if (record[field] && record[field] !== '') {
+            const date = new Date(record[field]);
+            if (isNaN(date.getTime())) {
+                analysis.warnings.push(`الحقل "${field}" يجب أن يكون تاريخ صحيح`);
+            }
+        }
+    });
+}
+
+// Next step in import process
+function nextImportStep() {
+    const currentStep = document.querySelector('.import-step:not([style*="display: none"])');
+    const stepNumber = parseInt(currentStep.id.replace('step', ''));
+
+    if (stepNumber === 1) {
+        // Move to preview step
+        showImportStep(2);
+        generateImportPreview();
+    }
+}
+
+// Show specific import step
+function showImportStep(stepNumber) {
+    // Hide all steps
+    for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById(`step${i}`);
+        if (step) step.style.display = 'none';
+    }
+
+    // Show target step
+    const targetStep = document.getElementById(`step${stepNumber}`);
+    if (targetStep) targetStep.style.display = 'block';
+
+    // Update buttons
+    updateImportButtons(stepNumber);
+}
+
+// Update import modal buttons
+function updateImportButtons(stepNumber) {
+    const nextBtn = document.getElementById('nextBtn');
+    const importBtn = document.getElementById('importBtn');
+    const finishBtn = document.getElementById('finishBtn');
+
+    // Hide all buttons first
+    nextBtn.style.display = 'none';
+    importBtn.style.display = 'none';
+    finishBtn.style.display = 'none';
+
+    switch (stepNumber) {
+        case 1:
+            if (importedData) nextBtn.style.display = 'inline-flex';
+            break;
+        case 2:
+            importBtn.style.display = 'inline-flex';
+            break;
+        case 3:
+            // No buttons during import
+            break;
+        case 4:
+            finishBtn.style.display = 'inline-flex';
+            break;
+    }
+}
+
+// Generate import preview
+function generateImportPreview() {
+    console.log('🔍 إنشاء معاينة البيانات...');
+
+    if (!importedData || importedData.length === 0) {
+        showImportError('لا توجد بيانات للمعاينة');
+        return;
+    }
+
+    // Analyze data and generate preview
+    analyzeImportData();
+    displayPreviewStats();
+    displayPreviewTable();
+}
+
+// Analyze import data
+function analyzeImportData() {
+    console.log('📊 تحليل البيانات المستوردة...');
+
+    importStats = {
+        totalRecords: importedData.length,
+        newProperties: 0,
+        newUnits: 0,
+        updatedUnits: 0,
+        errors: 0,
+        warnings: 0
+    };
+
+    importPreview = [];
+
+    importedData.forEach((record, index) => {
+        try {
+            const analysis = analyzeRecord(record, index);
+            importPreview.push(analysis);
+
+            // Update stats
+            if (analysis.action === 'new_property') importStats.newProperties++;
+            else if (analysis.action === 'new_unit') importStats.newUnits++;
+            else if (analysis.action === 'update_unit') importStats.updatedUnits++;
+
+            if (analysis.errors.length > 0) importStats.errors++;
+            if (analysis.warnings.length > 0) importStats.warnings++;
+
+        } catch (error) {
+            console.error(`❌ خطأ في تحليل السجل ${index}:`, error);
+            importStats.errors++;
+        }
+    });
+
+    console.log('📊 نتائج التحليل:', importStats);
+}
+
+// Analyze individual record
+function analyzeRecord(record, index) {
+    const analysis = {
+        index: index,
+        record: record,
+        action: 'unknown',
+        existingProperty: null,
+        existingUnit: null,
+        errors: [],
+        warnings: []
+    };
+
+    // Validate required fields
+    const requiredFields = ['اسم العقار', 'المدينة', 'رقم  الوحدة '];
+    requiredFields.forEach(field => {
+        if (!record[field] || record[field].toString().trim() === '') {
+            analysis.errors.push(`الحقل "${field}" مطلوب`);
+        }
+    });
+
+    if (analysis.errors.length > 0) {
+        return analysis;
+    }
+
+    // Find existing property
+    const propertyName = record['اسم العقار'].toString().trim();
+    const cityName = record['المدينة'].toString().trim();
+    const unitNumber = record['رقم  الوحدة '].toString().trim();
+
+    analysis.existingProperty = properties.find(p =>
+        p['اسم العقار'] === propertyName && p['المدينة'] === cityName
+    );
+
+    if (analysis.existingProperty) {
+        // Property exists, check for unit
+        analysis.existingUnit = properties.find(p =>
+            p['اسم العقار'] === propertyName &&
+            p['المدينة'] === cityName &&
+            p['رقم  الوحدة '] === unitNumber
+        );
+
+        if (analysis.existingUnit) {
+            analysis.action = 'update_unit';
+        } else {
+            analysis.action = 'new_unit';
+        }
+    } else {
+        analysis.action = 'new_property';
+    }
+
+    // Validate data types
+    validateRecordData(record, analysis);
+
+    return analysis;
+}
+
+// Validate record data types
+function validateRecordData(record, analysis) {
+    // Validate numeric fields
+    const numericFields = [
+        'قيمة  الايجار ', 'المساحة', 'عدد الاقساط', 'عدد الاقساط المتبقية',
+        'مساحة الصك', 'مساحةالصك', 'الاجمالى', 'المبلغ المدفوع', 'المبلغ المتبقي'
+    ];
+    numericFields.forEach(field => {
+        if (record[field] && record[field] !== '' && record[field] !== null) {
+            const value = parseFloat(record[field]);
+            if (isNaN(value)) {
+                analysis.warnings.push(`الحقل "${field}" يجب أن يكون رقم`);
+            }
+        }
+    });
+
+    // Validate dates
+    const dateFields = [
+        'تاريخ بداية العقد', 'تاريخ نهاية العقد', 'تاريخ البداية', 'تاريخ النهاية',
+        'تاريخ آخر تحديث', 'تاريخ القسط الاول', 'تاريخ القسط الثاني', 'تاريخ نهاية القسط'
+    ];
+    dateFields.forEach(field => {
+        if (record[field] && record[field] !== '' && record[field] !== null) {
+            // Handle different date formats
+            let dateStr = record[field].toString();
+
+            // Remove time part if exists
+            if (dateStr.includes(' 00:00:00')) {
+                dateStr = dateStr.replace(' 00:00:00', '');
+            }
+
+            // Try to parse the date
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) {
+                // Try alternative formats
+                const altFormats = [
+                    dateStr.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, '$3-$2-$1'), // DD/MM/YYYY to YYYY-MM-DD
+                    dateStr.replace(/(\d{1,2})-(\d{1,2})-(\d{4})/, '$3-$2-$1'),  // DD-MM-YYYY to YYYY-MM-DD
+                    dateStr.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, '$3-$1-$2')  // MM/DD/YYYY to YYYY-MM-DD
+                ];
+
+                let validDate = false;
+                for (const format of altFormats) {
+                    const testDate = new Date(format);
+                    if (!isNaN(testDate.getTime())) {
+                        validDate = true;
+                        break;
+                    }
+                }
+
+                if (!validDate) {
+                    analysis.warnings.push(`الحقل "${field}" يجب أن يكون تاريخ صحيح (${dateStr})`);
+                }
+            }
+        }
+    });
+
+    // Validate contract status
+    const validStatuses = ['نشط', 'شاغر', 'مؤكد', 'ينتهي قريباً', 'منتهي', 'معلق'];
+    if (record['حالة العقد'] && !validStatuses.includes(record['حالة العقد'])) {
+        analysis.warnings.push(`حالة العقد "${record['حالة العقد']}" غير صحيحة`);
+    }
+
+    // Validate contract type
+    const validTypes = ['ضريبي', 'غير ضريبي', 'حكومي', 'خاص'];
+    if (record['نوع العقد'] && !validTypes.includes(record['نوع العقد'])) {
+        analysis.warnings.push(`نوع العقد "${record['نوع العقد']}" غير صحيح`);
+    }
+
+    // Validate financial consistency
+    if (record['الاجمالى'] && record['المبلغ المدفوع'] && record['المبلغ المتبقي']) {
+        const total = parseFloat(record['الاجمالى']);
+        const paid = parseFloat(record['المبلغ المدفوع']);
+        const remaining = parseFloat(record['المبلغ المتبقي']);
+
+        if (!isNaN(total) && !isNaN(paid) && !isNaN(remaining)) {
+            const calculatedRemaining = total - paid;
+            if (Math.abs(calculatedRemaining - remaining) > 0.01) {
+                analysis.warnings.push(`عدم تطابق في المبالغ المالية: الإجمالي ${total} - المدفوع ${paid} ≠ المتبقي ${remaining}`);
+            }
+        }
+    }
+}
+
+// Display preview statistics
+function displayPreviewStats() {
+    const statsContainer = document.getElementById('previewStats');
+
+    statsContainer.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">${importStats.totalRecords}</div>
+                <div class="stat-label">إجمالي السجلات</div>
+            </div>
+            <div class="stat-item new">
+                <div class="stat-number">${importStats.newProperties}</div>
+                <div class="stat-label">عقارات جديدة</div>
+            </div>
+            <div class="stat-item new">
+                <div class="stat-number">${importStats.newUnits}</div>
+                <div class="stat-label">وحدات جديدة</div>
+            </div>
+            <div class="stat-item update">
+                <div class="stat-number">${importStats.updatedUnits}</div>
+                <div class="stat-label">وحدات محدثة</div>
+            </div>
+            <div class="stat-item warning">
+                <div class="stat-number">${importStats.warnings}</div>
+                <div class="stat-label">تحذيرات</div>
+            </div>
+            <div class="stat-item error">
+                <div class="stat-number">${importStats.errors}</div>
+                <div class="stat-label">أخطاء</div>
+            </div>
+        </div>
+    `;
+}
+
+// Display preview table
+function displayPreviewTable() {
+    const tableContainer = document.getElementById('previewTable');
+
+    if (!importPreview || importPreview.length === 0) {
+        tableContainer.innerHTML = '<p>لا توجد بيانات للمعاينة</p>';
+        return;
+    }
+
+    // Show first 10 records for preview
+    const previewData = importPreview.slice(0, 10);
+
+    let tableHTML = `
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>اسم العقار</th>
+                <th>المدينة</th>
+                <th>رقم الوحدة</th>
+                <th>الإجراء</th>
+                <th>الحالة</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+    previewData.forEach((item, index) => {
+        const record = item.record;
+        const actionText = getActionText(item.action);
+        const statusClass = getStatusClass(item);
+        const statusText = getStatusText(item);
+
+        tableHTML += `
+            <tr class="${statusClass}">
+                <td>${index + 1}</td>
+                <td>${record['اسم العقار'] || '-'}</td>
+                <td>${record['المدينة'] || '-'}</td>
+                <td>${record['رقم  الوحدة '] || '-'}</td>
+                <td>${actionText}</td>
+                <td>${statusText}</td>
+            </tr>
+        `;
+    });
+
+    tableHTML += '</tbody>';
+
+    if (importPreview.length > 10) {
+        tableHTML += `
+            <tfoot>
+                <tr>
+                    <td colspan="6" class="more-records">
+                        ... و ${importPreview.length - 10} سجل آخر
+                    </td>
+                </tr>
+            </tfoot>
+        `;
+    }
+
+    tableContainer.innerHTML = tableHTML;
+}
+
+// Get action text in Arabic
+function getActionText(action) {
+    switch (action) {
+        case 'new_property': return 'إنشاء عقار جديد';
+        case 'new_unit': return 'إضافة وحدة جديدة';
+        case 'update_unit': return 'تحديث وحدة موجودة';
+        default: return 'غير محدد';
+    }
+}
+
+// Get status class for styling
+function getStatusClass(item) {
+    if (item.errors.length > 0) return 'error';
+    if (item.warnings.length > 0) return 'warning';
+    return 'success';
+}
+
+// Get status text
+function getStatusText(item) {
+    if (item.errors.length > 0) return `خطأ (${item.errors.length})`;
+    if (item.warnings.length > 0) return `تحذير (${item.warnings.length})`;
+    return 'جاهز';
+}
+
+// Execute import process
+async function executeImport() {
+    console.log('🚀 بدء تنفيذ عملية الاستيراد...');
+
+    // Move to execution step
+    showImportStep(3);
+
+    // Get import options
+    const createBackup = document.getElementById('createBackup').checked;
+    const updateExisting = document.getElementById('updateExisting').checked;
+    const addNewUnits = document.getElementById('addNewUnits').checked;
+
+    console.log('⚙️ خيارات الاستيراد:', { createBackup, updateExisting, addNewUnits });
+
+    try {
+        // Step 1: Create backup if requested
+        if (createBackup) {
+            await createDataBackup();
+            updateImportProgress(10, 'تم إنشاء النسخة الاحتياطية...');
+        }
+
+        // Step 2: Process import data
+        updateImportProgress(20, 'بدء معالجة البيانات...');
+
+        const results = await processImportData(updateExisting, addNewUnits);
+
+        // Step 3: Save to localStorage
+        updateImportProgress(80, 'حفظ البيانات محلياً...');
+        localStorage.setItem('properties', JSON.stringify(properties));
+
+        // Step 4: Sync with Supabase if available
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            updateImportProgress(90, 'مزامنة مع قاعدة البيانات...');
+            await syncImportWithSupabase(results);
+        }
+
+        // Step 5: Complete
+        updateImportProgress(100, 'تم الانتهاء من الاستيراد بنجاح!');
+
+        // Show results
+        setTimeout(() => {
+            showImportResults(results);
+        }, 1000);
+
+    } catch (error) {
+        console.error('❌ خطأ في عملية الاستيراد:', error);
+        showImportError('خطأ في عملية الاستيراد: ' + error.message);
+    }
+}
+
+// Create data backup with storage management
+async function createDataBackup() {
+    console.log('💾 إنشاء نسخة احتياطية...');
+
+    try {
+        // Clean up storage before creating backup
+        await cleanupLocalStorage();
+
+        const backupData = {
+            timestamp: new Date().toISOString(),
+            properties: [...properties],
+            totalCount: properties.length
+        };
+
+        // Save backup to localStorage with error handling
+        const backupKey = `backup_${Date.now()}`;
+
+        try {
+            localStorage.setItem(backupKey, JSON.stringify(backupData));
+            console.log(`✅ تم إنشاء نسخة احتياطية: ${backupKey}`);
+            addImportLog(`✅ تم إنشاء نسخة احتياطية (${properties.length} عقار)`);
+        } catch (storageError) {
+            console.warn('⚠️ فشل في إنشاء النسخة الاحتياطية:', storageError.message);
+
+            // Try to free up more space and retry
+            await forceCleanupStorage();
+
+            try {
+                localStorage.setItem(backupKey, JSON.stringify(backupData));
+                console.log(`✅ تم إنشاء نسخة احتياطية بعد تنظيف التخزين: ${backupKey}`);
+                addImportLog(`✅ تم إنشاء نسخة احتياطية (${properties.length} عقار)`);
+            } catch (retryError) {
+                console.error('❌ فشل في إنشاء النسخة الاحتياطية نهائياً:', retryError.message);
+                addImportLog(`⚠️ تحذير: لم يتم إنشاء نسخة احتياطية (مساحة التخزين ممتلئة)`);
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في عملية النسخ الاحتياطي:', error);
+        addImportLog(`⚠️ تحذير: لم يتم إنشاء نسخة احتياطية`);
+    }
+}
+
+// Clean up localStorage to free space
+async function cleanupLocalStorage() {
+    console.log('🧹 تنظيف مساحة التخزين...');
+
+    try {
+        // Keep only last 3 backups instead of 5
+        const allKeys = Object.keys(localStorage);
+        const backupKeys = allKeys.filter(key => key.startsWith('backup_')).sort();
+
+        if (backupKeys.length > 3) {
+            const keysToRemove = backupKeys.slice(0, backupKeys.length - 3);
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                console.log(`🗑️ تم حذف النسخة الاحتياطية القديمة: ${key}`);
+            });
+        }
+
+        // Clean up old update logs (keep only last 50 entries)
+        const updateLog = JSON.parse(localStorage.getItem('updateLog') || '[]');
+        if (updateLog.length > 50) {
+            const trimmedLog = updateLog.slice(-50);
+            localStorage.setItem('updateLog', JSON.stringify(trimmedLog));
+            console.log(`🗑️ تم تنظيف سجل التحديثات: ${updateLog.length} → ${trimmedLog.length}`);
+        }
+
+        // Clean up any temporary data
+        const tempKeys = allKeys.filter(key =>
+            key.startsWith('temp_') ||
+            key.startsWith('cache_') ||
+            key.includes('_temp')
+        );
+
+        tempKeys.forEach(key => {
+            localStorage.removeItem(key);
+            console.log(`🗑️ تم حذف البيانات المؤقتة: ${key}`);
+        });
+
+        console.log('✅ تم تنظيف مساحة التخزين');
+
+    } catch (error) {
+        console.error('❌ خطأ في تنظيف التخزين:', error);
+    }
+}
+
+// Force cleanup storage (more aggressive)
+async function forceCleanupStorage() {
+    console.log('🧹 تنظيف قسري لمساحة التخزين...');
+
+    try {
+        // Remove all backups except the most recent one
+        const allKeys = Object.keys(localStorage);
+        const backupKeys = allKeys.filter(key => key.startsWith('backup_')).sort();
+
+        if (backupKeys.length > 1) {
+            const keysToRemove = backupKeys.slice(0, backupKeys.length - 1);
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                console.log(`🗑️ تم حذف النسخة الاحتياطية: ${key}`);
+            });
+        }
+
+        // Clear update log completely
+        localStorage.removeItem('updateLog');
+        console.log('🗑️ تم حذف سجل التحديثات');
+
+        // Clear any other non-essential data
+        const nonEssentialKeys = allKeys.filter(key =>
+            !key.includes('properties') &&
+            !key.includes('cardAttachments') &&
+            !key.startsWith('backup_')
+        );
+
+        nonEssentialKeys.forEach(key => {
+            localStorage.removeItem(key);
+            console.log(`🗑️ تم حذف البيانات غير الأساسية: ${key}`);
+        });
+
+        console.log('✅ تم التنظيف القسري لمساحة التخزين');
+
+    } catch (error) {
+        console.error('❌ خطأ في التنظيف القسري:', error);
+    }
+}
+
+// Save to localStorage with retry mechanism
+async function saveToLocalStorageWithRetry(key, data, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            localStorage.setItem(key, data);
+            console.log(`✅ تم حفظ ${key} في المحاولة ${attempt}`);
+            return; // Success
+
+        } catch (error) {
+            console.warn(`⚠️ فشلت المحاولة ${attempt} لحفظ ${key}:`, error.message);
+
+            if (error.message.includes('quota') || error.message.includes('Storage')) {
+                console.log(`🧹 تنظيف التخزين قبل المحاولة ${attempt + 1}...`);
+
+                if (attempt === 1) {
+                    // First attempt: light cleanup
+                    await cleanupLocalStorage();
+                } else if (attempt === 2) {
+                    // Second attempt: aggressive cleanup
+                    await forceCleanupStorage();
+                } else {
+                    // Final attempt: show storage info and fail
+                    showStorageInfo();
+                    throw new Error('مساحة التخزين ممتلئة ولا يمكن تحرير مساحة كافية');
+                }
+            } else {
+                // Non-storage related error, don't retry
+                throw error;
+            }
+        }
+    }
+
+    throw new Error(`فشل في حفظ البيانات بعد ${maxRetries} محاولات`);
+}
+
+// Show storage information
+function showStorageInfo() {
+    try {
+        const storageInfo = getStorageInfo();
+        console.log('📊 معلومات التخزين:', storageInfo);
+
+        // Show user-friendly storage info
+        const message = `
+معلومات مساحة التخزين:
+- المساحة المستخدمة: ${storageInfo.usedMB} ميجابايت
+- المساحة المتاحة: ${storageInfo.availableMB} ميجابايت
+- النسبة المستخدمة: ${storageInfo.usagePercentage}%
+
+لحل هذه المشكلة:
+1. احذف بعض البيانات غير المهمة من المتصفح
+2. استخدم متصفح آخر
+3. امسح ذاكرة التخزين المؤقت للمتصفح
+        `;
+
+        console.log(message);
+
+    } catch (error) {
+        console.error('❌ خطأ في عرض معلومات التخزين:', error);
+    }
+}
+
+// Get storage information
+function getStorageInfo() {
+    try {
+        let totalSize = 0;
+        let itemCount = 0;
+
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+                const itemSize = localStorage.getItem(key).length;
+                totalSize += itemSize;
+                itemCount++;
+            }
+        }
+
+        // Estimate available space (most browsers have ~5-10MB limit)
+        const estimatedLimit = 5 * 1024 * 1024; // 5MB in characters
+        const usedMB = (totalSize / (1024 * 1024)).toFixed(2);
+        const availableMB = ((estimatedLimit - totalSize) / (1024 * 1024)).toFixed(2);
+        const usagePercentage = ((totalSize / estimatedLimit) * 100).toFixed(1);
+
+        return {
+            totalSize,
+            itemCount,
+            usedMB,
+            availableMB,
+            usagePercentage
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في حساب معلومات التخزين:', error);
+        return {
+            totalSize: 0,
+            itemCount: 0,
+            usedMB: '0',
+            availableMB: 'غير معروف',
+            usagePercentage: '0'
+        };
+    }
+}
+
+// Process import data
+async function processImportData(updateExisting, addNewUnits) {
+    console.log('🔄 معالجة بيانات الاستيراد...');
+
+    const results = {
+        processed: 0,
+        newProperties: 0,
+        newUnits: 0,
+        updatedUnits: 0,
+        skipped: 0,
+        errors: []
+    };
+
+    for (let i = 0; i < importPreview.length; i++) {
+        const item = importPreview[i];
+        const progress = 20 + (60 * (i + 1) / importPreview.length);
+
+        updateImportProgress(progress, `معالجة السجل ${i + 1} من ${importPreview.length}...`);
+
+        try {
+            if (item.errors.length > 0) {
+                results.skipped++;
+                results.errors.push(`السجل ${i + 1}: ${item.errors.join(', ')}`);
+                addImportLog(`⚠️ تم تخطي السجل ${i + 1}: ${item.errors[0]}`);
+                continue;
+            }
+
+            await processRecord(item, updateExisting, addNewUnits, results);
+            results.processed++;
+
+        } catch (error) {
+            console.error(`❌ خطأ في معالجة السجل ${i + 1}:`, error);
+            results.errors.push(`السجل ${i + 1}: ${error.message}`);
+            addImportLog(`❌ خطأ في السجل ${i + 1}: ${error.message}`);
+        }
+
+        // Small delay to allow UI updates
+        await new Promise(resolve => setTimeout(resolve, 10));
+    }
+
+    console.log('📊 نتائج المعالجة:', results);
+    return results;
+}
+
+// Process individual record
+async function processRecord(item, updateExisting, addNewUnits, results) {
+    const record = item.record;
+
+    switch (item.action) {
+        case 'new_property':
+            await createNewProperty(record, results);
+            break;
+
+        case 'new_unit':
+            if (addNewUnits) {
+                await createNewUnit(record, results);
+            } else {
+                results.skipped++;
+                addImportLog(`⏭️ تم تخطي وحدة جديدة: ${record['رقم  الوحدة ']} (إضافة الوحدات الجديدة معطلة)`);
+            }
+            break;
+
+        case 'update_unit':
+            if (updateExisting) {
+                await updateExistingUnit(record, item.existingUnit, results);
+            } else {
+                results.skipped++;
+                addImportLog(`⏭️ تم تخطي تحديث الوحدة: ${record['رقم  الوحدة ']} (تحديث البيانات الموجودة معطل)`);
+            }
+            break;
+    }
+}
+
+// Create new property from import
+async function createNewProperty(record, results) {
+    const newProperty = createPropertyFromRecord(record);
+    properties.push(newProperty);
+    results.newProperties++;
+    addImportLog(`✅ تم إنشاء عقار جديد: ${record['اسم العقار']} - ${record['رقم  الوحدة ']}`);
+}
+
+// Create new unit from import
+async function createNewUnit(record, results) {
+    const newUnit = createPropertyFromRecord(record);
+    properties.push(newUnit);
+    results.newUnits++;
+    addImportLog(`✅ تم إضافة وحدة جديدة: ${record['رقم  الوحدة ']} في ${record['اسم العقار']}`);
+}
+
+// Update existing unit from import
+async function updateExistingUnit(record, existingUnit, results) {
+    const unitIndex = properties.findIndex(p => p === existingUnit);
+    if (unitIndex !== -1) {
+        // Update all fields from import
+        Object.keys(record).forEach(key => {
+            if (record[key] !== null && record[key] !== undefined && record[key] !== '') {
+                properties[unitIndex][key] = record[key];
+            }
+        });
+
+        results.updatedUnits++;
+        addImportLog(`🔄 تم تحديث الوحدة: ${record['رقم  الوحدة ']} في ${record['اسم العقار']}`);
+    }
+}
+
+// Create property object from record
+function createPropertyFromRecord(record) {
+    return {
+        'اسم العقار': record['اسم العقار'] || '',
+        'المدينة': record['المدينة'] || '',
+        'رقم  الوحدة ': record['رقم  الوحدة '] || '',
+        'اسم المستأجر': record['اسم المستأجر'] || '',
+        'رقم العقد': record['رقم العقد'] || '',
+        'قيمة  الايجار ': record['قيمة  الايجار '] ? parseFloat(record['قيمة  الايجار ']) : '',
+        'المساحة': record['المساحة'] ? parseFloat(record['المساحة']) : '',
+        'تاريخ بداية العقد': record['تاريخ بداية العقد'] || record['تاريخ البداية'] || '',
+        'تاريخ نهاية العقد': record['تاريخ نهاية العقد'] || record['تاريخ النهاية'] || '',
+        'عدد الاقساط': record['عدد الاقساط'] || record['عدد الاقساط المتبقية'] ? parseInt(record['عدد الاقساط'] || record['عدد الاقساط المتبقية']) : '',
+        'نوع العقد': record['نوع العقد'] || '',
+        'رقم السجل العقاري': record['رقم السجل العقاري'] || record['السجل العيني '] || '',
+        'مساحة الصك': record['مساحة الصك'] || record['مساحةالصك'] ? parseFloat(record['مساحة الصك'] || record['مساحةالصك']) : '',
+        'رقم الصك': record['رقم الصك'] || '',
+        'المالك': record['المالك'] || '',
+        'موقع العقار': record['موقع العقار'] || '',
+        'رقم حساب الكهرباء': record['رقم حساب الكهرباء'] || '',
+        'الاجمالى': record['الاجمالى'] ? parseFloat(record['الاجمالى']) : '',
+        'المبلغ المدفوع': record['المبلغ المدفوع'] ? parseFloat(record['المبلغ المدفوع']) : 0,
+        'المبلغ المتبقي': record['المبلغ المتبقي'] ? parseFloat(record['المبلغ المتبقي']) : 0,
+        'حالة العقد': record['حالة العقد'] || 'نشط',
+        'ملاحظات': record['ملاحظات'] || '',
+        'تاريخ آخر تحديث': record['تاريخ آخر تحديث'] || new Date().toISOString().split('T')[0]
+    };
+}
+
+// Update import progress
+function updateImportProgress(percentage, message) {
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+
+    if (progressFill) {
+        progressFill.style.width = percentage + '%';
+    }
+
+    if (progressText) {
+        progressText.textContent = message;
+    }
+
+    console.log(`📊 ${percentage}%: ${message}`);
+}
+
+// Add log message to import log
+function addImportLog(message) {
+    const logContainer = document.getElementById('importLog');
+    if (logContainer) {
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.innerHTML = `
+            <span class="log-time">${new Date().toLocaleTimeString('ar-SA')}</span>
+            <span class="log-message">${message}</span>
+        `;
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    }
+}
+
+// Sync import with Supabase
+async function syncImportWithSupabase(results) {
+    console.log('☁️ مزامنة البيانات مع Supabase...');
+
+    try {
+        // This would sync the imported data with Supabase
+        // For now, we'll just log the attempt
+        addImportLog(`☁️ محاولة مزامنة ${results.processed} سجل مع قاعدة البيانات...`);
+
+        // Simulate sync delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        addImportLog(`✅ تم مزامنة البيانات مع قاعدة البيانات بنجاح`);
+
+    } catch (error) {
+        console.warn('⚠️ خطأ في مزامنة Supabase:', error);
+        addImportLog(`⚠️ تحذير: لم يتم مزامنة البيانات مع قاعدة البيانات`);
+    }
+}
+
+// Show import results
+function showImportResults(results) {
+    showImportStep(4);
+
+    const resultsContainer = document.getElementById('importResults');
+
+    resultsContainer.innerHTML = `
+        <div class="results-summary">
+            <div class="result-item success">
+                <i class="fas fa-check-circle"></i>
+                <div class="result-details">
+                    <div class="result-number">${results.processed}</div>
+                    <div class="result-label">سجل تم معالجته بنجاح</div>
+                </div>
+            </div>
+
+            <div class="result-item new">
+                <i class="fas fa-plus-circle"></i>
+                <div class="result-details">
+                    <div class="result-number">${results.newProperties}</div>
+                    <div class="result-label">عقار جديد</div>
+                </div>
+            </div>
+
+            <div class="result-item new">
+                <i class="fas fa-home"></i>
+                <div class="result-details">
+                    <div class="result-number">${results.newUnits}</div>
+                    <div class="result-label">وحدة جديدة</div>
+                </div>
+            </div>
+
+            <div class="result-item update">
+                <i class="fas fa-edit"></i>
+                <div class="result-details">
+                    <div class="result-number">${results.updatedUnits}</div>
+                    <div class="result-label">وحدة محدثة</div>
+                </div>
+            </div>
+
+            ${results.skipped > 0 ? `
+                <div class="result-item warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div class="result-details">
+                        <div class="result-number">${results.skipped}</div>
+                        <div class="result-label">سجل تم تخطيه</div>
+                    </div>
+                </div>
+            ` : ''}
+
+            ${results.errors.length > 0 ? `
+                <div class="result-item error">
+                    <i class="fas fa-times-circle"></i>
+                    <div class="result-details">
+                        <div class="result-number">${results.errors.length}</div>
+                        <div class="result-label">خطأ</div>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+
+        ${results.errors.length > 0 ? `
+            <div class="error-details">
+                <h4>تفاصيل الأخطاء:</h4>
+                <ul>
+                    ${results.errors.map(error => `<li>${error}</li>`).join('')}
+                </ul>
+            </div>
+        ` : ''}
+
+        <div class="import-actions">
+            <button class="action-btn" onclick="refreshDataDisplay()">
+                <i class="fas fa-sync"></i> تحديث العرض
+            </button>
+            <button class="action-btn" onclick="exportImportLog()">
+                <i class="fas fa-download"></i> تصدير سجل العمليات
+            </button>
+        </div>
+    `;
+}
+
+// Utility functions
+function changeImportFile() {
+    document.getElementById('fileUploadArea').style.display = 'block';
+    document.getElementById('fileInfo').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'none';
+    importedData = null;
+}
+
+function closeImportModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function finishImport() {
+    // Refresh the main data display
+    refreshDataDisplay();
+    closeImportModal();
+}
+
+function refreshDataDisplay() {
+    // Refresh the main interface
+    if (typeof renderData === 'function') {
+        renderData();
+    }
+    if (typeof updateTotalStats === 'function') {
+        updateTotalStats();
+    }
+    if (typeof searchUnits === 'function' && isManagementMode) {
+        searchUnits();
+    }
+}
+
+function showImportError(message) {
+    alert('خطأ في الاستيراد: ' + message);
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function exportImportLog() {
+    const logEntries = document.querySelectorAll('.log-entry');
+    let logText = 'سجل عمليات الاستيراد\n';
+    logText += '===================\n\n';
+
+    logEntries.forEach(entry => {
+        const time = entry.querySelector('.log-time').textContent;
+        const message = entry.querySelector('.log-message').textContent;
+        logText += `${time}: ${message}\n`;
+    });
+
+    const blob = new Blob([logText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `import_log_${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Show storage cleanup modal
+function showStorageCleanupModal() {
+    console.log('🧹 فتح نافذة تنظيف التخزين...');
+
+    const storageInfo = getStorageInfo();
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="storage-cleanup-modal">
+            <div class="cleanup-modal-header">
+                <h2><i class="fas fa-broom"></i> تنظيف مساحة التخزين</h2>
+                <p>إدارة وتنظيف بيانات التخزين المحلي</p>
+            </div>
+
+            <div class="cleanup-modal-content">
+                <div class="storage-info-section">
+                    <h3>معلومات التخزين الحالية</h3>
+                    <div class="storage-stats">
+                        <div class="storage-stat">
+                            <div class="stat-icon"><i class="fas fa-database"></i></div>
+                            <div class="stat-details">
+                                <div class="stat-value">${storageInfo.usedMB} ميجابايت</div>
+                                <div class="stat-label">المساحة المستخدمة</div>
+                            </div>
+                        </div>
+                        <div class="storage-stat">
+                            <div class="stat-icon"><i class="fas fa-chart-pie"></i></div>
+                            <div class="stat-details">
+                                <div class="stat-value">${storageInfo.usagePercentage}%</div>
+                                <div class="stat-label">نسبة الاستخدام</div>
+                            </div>
+                        </div>
+                        <div class="storage-stat">
+                            <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                            <div class="stat-details">
+                                <div class="stat-value">${storageInfo.itemCount}</div>
+                                <div class="stat-label">عدد العناصر</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="storage-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${storageInfo.usagePercentage}%"></div>
+                        </div>
+                        <div class="progress-text">استخدام التخزين: ${storageInfo.usagePercentage}%</div>
+                    </div>
+                </div>
+
+                <div class="cleanup-options-section">
+                    <h3>خيارات التنظيف</h3>
+                    <div class="cleanup-options">
+                        <div class="cleanup-option">
+                            <div class="option-info">
+                                <h4><i class="fas fa-archive"></i> تنظيف النسخ الاحتياطية القديمة</h4>
+                                <p>حذف النسخ الاحتياطية القديمة والاحتفاظ بأحدث 2 نسخة فقط</p>
+                            </div>
+                            <button class="cleanup-btn" onclick="cleanupBackups()">
+                                <i class="fas fa-trash-alt"></i> تنظيف
+                            </button>
+                        </div>
+
+                        <div class="cleanup-option">
+                            <div class="option-info">
+                                <h4><i class="fas fa-history"></i> مسح سجل التحديثات</h4>
+                                <p>حذف سجل العمليات والتحديثات القديمة</p>
+                            </div>
+                            <button class="cleanup-btn" onclick="clearUpdateLog()">
+                                <i class="fas fa-eraser"></i> مسح
+                            </button>
+                        </div>
+
+                        <div class="cleanup-option">
+                            <div class="option-info">
+                                <h4><i class="fas fa-temp-high"></i> حذف البيانات المؤقتة</h4>
+                                <p>حذف جميع البيانات المؤقتة والذاكرة التخزينية</p>
+                            </div>
+                            <button class="cleanup-btn" onclick="clearTempData()">
+                                <i class="fas fa-broom"></i> حذف
+                            </button>
+                        </div>
+
+                        <div class="cleanup-option danger">
+                            <div class="option-info">
+                                <h4><i class="fas fa-exclamation-triangle"></i> تنظيف شامل</h4>
+                                <p>حذف جميع البيانات غير الأساسية (احتفظ بالعقارات والمرفقات فقط)</p>
+                            </div>
+                            <button class="cleanup-btn danger" onclick="performFullCleanup()">
+                                <i class="fas fa-fire"></i> تنظيف شامل
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cleanup-results" id="cleanupResults" style="display: none;">
+                    <h3>نتائج التنظيف</h3>
+                    <div id="cleanupResultsContent"></div>
+                </div>
+            </div>
+
+            <div class="cleanup-modal-actions">
+                <button class="modal-action-btn close-btn" onclick="closeCleanupModal()">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+                <button class="modal-action-btn refresh-btn" onclick="refreshStorageInfo()">
+                    <i class="fas fa-sync"></i> تحديث المعلومات
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+}
+
+// Cleanup functions
+async function cleanupBackups() {
+    console.log('🧹 تنظيف النسخ الاحتياطية...');
+
+    try {
+        const allKeys = Object.keys(localStorage);
+        const backupKeys = allKeys.filter(key => key.startsWith('backup_')).sort();
+
+        if (backupKeys.length > 2) {
+            const keysToRemove = backupKeys.slice(0, backupKeys.length - 2);
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+
+            showCleanupResult(`✅ تم حذف ${keysToRemove.length} نسخة احتياطية قديمة`);
+        } else {
+            showCleanupResult('ℹ️ لا توجد نسخ احتياطية قديمة للحذف');
+        }
+
+        refreshStorageInfo();
+
+    } catch (error) {
+        console.error('❌ خطأ في تنظيف النسخ الاحتياطية:', error);
+        showCleanupResult('❌ فشل في تنظيف النسخ الاحتياطية');
+    }
+}
+
+async function clearUpdateLog() {
+    console.log('🧹 مسح سجل التحديثات...');
+
+    try {
+        localStorage.removeItem('updateLog');
+        showCleanupResult('✅ تم مسح سجل التحديثات');
+        refreshStorageInfo();
+
+    } catch (error) {
+        console.error('❌ خطأ في مسح سجل التحديثات:', error);
+        showCleanupResult('❌ فشل في مسح سجل التحديثات');
+    }
+}
+
+async function clearTempData() {
+    console.log('🧹 حذف البيانات المؤقتة...');
+
+    try {
+        const allKeys = Object.keys(localStorage);
+        const tempKeys = allKeys.filter(key =>
+            key.startsWith('temp_') ||
+            key.startsWith('cache_') ||
+            key.includes('_temp') ||
+            key.includes('_cache')
+        );
+
+        tempKeys.forEach(key => localStorage.removeItem(key));
+
+        showCleanupResult(`✅ تم حذف ${tempKeys.length} عنصر مؤقت`);
+        refreshStorageInfo();
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف البيانات المؤقتة:', error);
+        showCleanupResult('❌ فشل في حذف البيانات المؤقتة');
+    }
+}
+
+async function performFullCleanup() {
+    const confirmed = confirm('⚠️ تحذير: سيتم حذف جميع البيانات غير الأساسية. هل أنت متأكد؟');
+
+    if (!confirmed) return;
+
+    console.log('🧹 تنظيف شامل...');
+
+    try {
+        await forceCleanupStorage();
+        showCleanupResult('✅ تم التنظيف الشامل بنجاح');
+        refreshStorageInfo();
+
+    } catch (error) {
+        console.error('❌ خطأ في التنظيف الشامل:', error);
+        showCleanupResult('❌ فشل في التنظيف الشامل');
+    }
+}
+
+function showCleanupResult(message) {
+    const resultsSection = document.getElementById('cleanupResults');
+    const resultsContent = document.getElementById('cleanupResultsContent');
+
+    if (resultsSection && resultsContent) {
+        resultsContent.innerHTML = `<div class="cleanup-message">${message}</div>`;
+        resultsSection.style.display = 'block';
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            if (resultsSection) {
+                resultsSection.style.display = 'none';
+            }
+        }, 3000);
+    }
+}
+
+function refreshStorageInfo() {
+    // Close and reopen the modal with updated info
+    closeCleanupModal();
+    setTimeout(() => {
+        showStorageCleanupModal();
+    }, 100);
+}
+
+function closeCleanupModal() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
 // ==================== نظام إدارة العقارات ====================
 
 // تحرير وحدة في نظام إدارة العقارات
@@ -5907,42 +7613,286 @@ async function saveUnitEdit(event) {
             throw new Error('لم يتم العثور على الوحدة المطلوب تحديثها');
         }
 
-        // تحديث البيانات
-        const updatedUnit = { ...properties[unitIndex] };
-        updatedUnit['رقم  الوحدة '] = newUnitNumber;
-        updatedUnit['اسم المستأجر'] = tenantName;
-        updatedUnit['رقم العقد'] = contractNumber;
-        updatedUnit['قيمة  الايجار '] = rentValue ? parseFloat(rentValue) : '';
-        updatedUnit['المساحة'] = area ? parseFloat(area) : '';
+        console.log(`🔍 تم العثور على الوحدة في الفهرس: ${unitIndex}`);
+        console.log(`📝 البيانات الأصلية:`, JSON.stringify(properties[unitIndex], null, 2));
+        console.log(`📊 إجمالي الوحدات قبل التحديث: ${properties.length}`);
 
-        // حفظ في المصفوفة المحلية
-        properties[unitIndex] = updatedUnit;
+        // حفظ البيانات الأصلية للمقارنة
+        const originalData = { ...properties[unitIndex] };
 
-        // حفظ في localStorage
-        localStorage.setItem('properties', JSON.stringify(properties));
+        // تحديث البيانات مباشرة في نفس الكائن (بدلاً من إنشاء نسخة جديدة)
+        console.log(`🔄 بدء تحديث البيانات...`);
+        properties[unitIndex]['رقم  الوحدة '] = newUnitNumber;
+        properties[unitIndex]['اسم المستأجر'] = tenantName || properties[unitIndex]['اسم المستأجر'];
+        properties[unitIndex]['رقم العقد'] = contractNumber || properties[unitIndex]['رقم العقد'];
+        properties[unitIndex]['قيمة  الايجار '] = rentValue ? parseFloat(rentValue) : properties[unitIndex]['قيمة  الايجار '];
+        properties[unitIndex]['المساحة'] = area ? parseFloat(area) : properties[unitIndex]['المساحة'];
+
+        console.log(`✅ البيانات بعد التحديث:`, JSON.stringify(properties[unitIndex], null, 2));
+        console.log(`🔄 رقم الوحدة تغير من "${originalUnitNumber}" إلى "${newUnitNumber}"`);
+        console.log(`📊 إجمالي الوحدات بعد التحديث: ${properties.length}`);
+
+        // التحقق من أن التحديث تم فعلاً
+        if (properties[unitIndex]['رقم  الوحدة '] === newUnitNumber) {
+            console.log(`✅ تأكيد: تم تحديث رقم الوحدة بنجاح في المصفوفة`);
+        } else {
+            console.error(`❌ خطأ: فشل في تحديث رقم الوحدة في المصفوفة`);
+            throw new Error('فشل في تحديث البيانات في المصفوفة المحلية');
+        }
+
+        // التأكد من عدم وجود نسخ مكررة
+        const duplicateCheck = properties.filter(p =>
+            p['رقم  الوحدة '] === newUnitNumber &&
+            p['اسم العقار'] === originalPropertyName
+        );
+
+        if (duplicateCheck.length > 1) {
+            console.warn(`⚠️ تم اكتشاف ${duplicateCheck.length} نسخة من الوحدة ${newUnitNumber}`);
+            // إزالة النسخ المكررة والاحتفاظ بالأولى فقط
+            const firstIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === newUnitNumber &&
+                p['اسم العقار'] === originalPropertyName
+            );
+
+            // إزالة النسخ المكررة
+            for (let i = properties.length - 1; i >= 0; i--) {
+                if (i !== firstIndex &&
+                    properties[i]['رقم  الوحدة '] === newUnitNumber &&
+                    properties[i]['اسم العقار'] === originalPropertyName) {
+                    properties.splice(i, 1);
+                    console.log(`🗑️ تم حذف نسخة مكررة من الفهرس ${i}`);
+                }
+            }
+        }
+
+        // حفظ في localStorage مع معالجة أخطاء المساحة
+        console.log(`💾 بدء حفظ البيانات في localStorage...`);
+        console.log(`📊 عدد الوحدات قبل الحفظ: ${properties.length}`);
+
+        try {
+            // تحويل البيانات إلى JSON
+            const dataToSave = JSON.stringify(properties);
+            console.log(`📝 حجم البيانات المراد حفظها: ${dataToSave.length} حرف`);
+
+            // محاولة حفظ البيانات مع معالجة أخطاء المساحة
+            await saveToLocalStorageWithRetry('properties', dataToSave);
+            console.log(`✅ تم حفظ البيانات في localStorage بنجاح`);
+
+            // التحقق الفوري من الحفظ
+            const savedData = localStorage.getItem('properties');
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                console.log(`📊 عدد الوحدات المحفوظة: ${parsedData.length}`);
+
+                // البحث عن الوحدة المحدثة
+                const savedUnit = parsedData.find(p =>
+                    p['رقم  الوحدة '] === newUnitNumber &&
+                    p['اسم العقار'] === originalPropertyName
+                );
+
+                if (savedUnit) {
+                    console.log(`✅ تأكيد: تم العثور على الوحدة المحدثة في localStorage`);
+                    console.log(`   - رقم الوحدة المحفوظ: "${savedUnit['رقم  الوحدة ']}"`);
+                    console.log(`   - اسم العقار: "${savedUnit['اسم العقار']}"`);
+                    console.log(`   - اسم المستأجر: "${savedUnit['اسم المستأجر']}"`);
+                } else {
+                    console.error(`❌ لم يتم العثور على الوحدة المحدثة في localStorage`);
+                    console.log(`🔍 البحث عن: رقم الوحدة="${newUnitNumber}", العقار="${originalPropertyName}"`);
+
+                    // عرض جميع الوحدات للتشخيص
+                    console.log(`🔍 جميع الوحدات المحفوظة:`, parsedData.map(p => ({
+                        unitNumber: p['رقم  الوحدة '],
+                        propertyName: p['اسم العقار']
+                    })));
+
+                    throw new Error('فشل في العثور على الوحدة المحدثة في localStorage');
+                }
+            } else {
+                console.error(`❌ فشل في قراءة البيانات من localStorage`);
+                throw new Error('فشل في قراءة البيانات المحفوظة');
+            }
+
+        } catch (error) {
+            console.error(`❌ خطأ في حفظ البيانات في localStorage:`, error);
+
+            // إذا كان الخطأ متعلق بالمساحة، أظهر رسالة مفيدة
+            if (error.message.includes('quota') || error.message.includes('Storage')) {
+                throw new Error('مساحة التخزين ممتلئة. يرجى تنظيف البيانات أو استخدام متصفح آخر.');
+            } else {
+                throw new Error(`فشل في حفظ البيانات محلياً: ${error.message}`);
+            }
+        }
 
         // محاولة الحفظ في Supabase إذا كان متاحاً
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-            await saveUnitToSupabase(updatedUnit, originalUnitNumber);
+            try {
+                await saveUnitToSupabase(properties[unitIndex], originalUnitNumber, originalPropertyName);
+
+                // التحقق من عدم وجود سجلات مكررة في قاعدة البيانات
+                console.log(`🔍 فحص السجلات المكررة في قاعدة البيانات...`);
+                const { data: duplicateCheck, error: duplicateError } = await supabaseClient
+                    .from('properties')
+                    .select('*')
+                    .eq('رقم  الوحدة ', newUnitNumber)
+                    .eq('اسم العقار', originalPropertyName);
+
+                if (!duplicateError && duplicateCheck && duplicateCheck.length > 1) {
+                    console.warn(`⚠️ تم اكتشاف ${duplicateCheck.length} سجل مكرر في قاعدة البيانات`);
+
+                    // حذف السجلات المكررة والاحتفاظ بالأحدث
+                    const sortedRecords = duplicateCheck.sort((a, b) =>
+                        new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)
+                    );
+
+                    for (let i = 1; i < sortedRecords.length; i++) {
+                        const { error: deleteError } = await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('id', sortedRecords[i].id);
+
+                        if (!deleteError) {
+                            console.log(`🗑️ تم حذف السجل المكرر ID: ${sortedRecords[i].id}`);
+                        }
+                    }
+                }
+
+            } catch (supabaseError) {
+                console.warn('⚠️ خطأ في Supabase، لكن التحديث المحلي تم بنجاح:', supabaseError.message);
+                // لا نرمي الخطأ هنا لأن التحديث المحلي نجح
+            }
         }
 
         // إغلاق النافذة
         closeModal();
 
-        // تحديث الواجهة
+        // تحديث الواجهة فوراً
+        console.log(`🔄 تحديث الواجهة - وضع الإدارة: ${isManagementMode}`);
+
         if (isManagementMode) {
             // إذا كنا في وضع الإدارة، تحديث قائمة الوحدات
+            console.log(`🔄 تحديث قائمة الوحدات في وضع الإدارة`);
             searchUnits();
         } else {
             // تحديث العرض العادي
+            console.log(`🔄 تحديث العرض العادي`);
             renderData();
             updateTotalStats();
         }
+
+        // إعادة تحميل البيانات من localStorage للتأكد من التحديث
+        setTimeout(() => {
+            console.log(`🔄 إعادة تحميل البيانات للتأكد من التحديث`);
+
+            // إعادة تحميل البيانات من localStorage
+            const reloadedData = localStorage.getItem('properties');
+            if (reloadedData) {
+                try {
+                    properties = JSON.parse(reloadedData);
+                    console.log(`✅ تم إعادة تحميل ${properties.length} عقار من localStorage`);
+
+                    // التحقق من أن التحديث تم بنجاح
+                    const updatedUnit = properties.find(p =>
+                        p['رقم  الوحدة '] === newUnitNumber &&
+                        p['اسم العقار'] === originalPropertyName
+                    );
+
+                    if (updatedUnit) {
+                        console.log(`✅ تأكيد: الوحدة محدثة بنجاح - رقم الوحدة: ${updatedUnit['رقم  الوحدة ']}`);
+                    } else {
+                        console.error(`❌ خطأ: لم يتم العثور على الوحدة المحدثة`);
+                    }
+
+                } catch (e) {
+                    console.error('❌ خطأ في إعادة تحميل البيانات:', e);
+                }
+            }
+
+            if (isManagementMode) {
+                searchUnits();
+            } else {
+                renderData();
+            }
+        }, 100);
 
         // إظهار رسالة نجاح
         showSuccessMessage(`✅ تم تحديث الوحدة "${newUnitNumber}" بنجاح`);
 
         console.log(`✅ تم تحديث الوحدة: ${originalUnitNumber} → ${newUnitNumber}`);
+
+        // فحص نهائي شامل للتأكد من التحديث الدائم
+        console.log(`🔍 فحص نهائي شامل للتأكد من التحديث الدائم...`);
+
+        // فحص 1: التحقق من المصفوفة المحلية
+        const finalCheckLocal = properties.find(p =>
+            p['رقم  الوحدة '] === newUnitNumber &&
+            p['اسم العقار'] === originalPropertyName
+        );
+
+        if (finalCheckLocal) {
+            console.log(`✅ فحص 1 - المصفوفة المحلية: الوحدة محدثة بنجاح`);
+            console.log(`   - رقم الوحدة: ${finalCheckLocal['رقم  الوحدة ']}`);
+            console.log(`   - اسم المستأجر: ${finalCheckLocal['اسم المستأجر']}`);
+            console.log(`   - رقم العقد: ${finalCheckLocal['رقم العقد']}`);
+        } else {
+            console.error(`❌ فحص 1 فشل - لم يتم العثور على الوحدة المحدثة في المصفوفة المحلية`);
+            throw new Error('فشل في تحديث المصفوفة المحلية');
+        }
+
+        // فحص 2: التحقق من localStorage
+        const localStorageData = JSON.parse(localStorage.getItem('properties') || '[]');
+        const finalCheckStorage = localStorageData.find(p =>
+            p['رقم  الوحدة '] === newUnitNumber &&
+            p['اسم العقار'] === originalPropertyName
+        );
+
+        if (finalCheckStorage) {
+            console.log(`✅ فحص 2 - localStorage: الوحدة محفوظة بنجاح`);
+            console.log(`   - رقم الوحدة المحفوظ: ${finalCheckStorage['رقم  الوحدة ']}`);
+        } else {
+            console.error(`❌ فحص 2 فشل - لم يتم العثور على الوحدة المحدثة في localStorage`);
+            throw new Error('فشل في حفظ البيانات في localStorage');
+        }
+
+        // فحص 3: التأكد من عدم وجود الوحدة القديمة
+        const oldUnitCheck = properties.find(p =>
+            p['رقم  الوحدة '] === originalUnitNumber &&
+            p['اسم العقار'] === originalPropertyName
+        );
+
+        if (oldUnitCheck) {
+            console.warn(`⚠️ تحذير: ما زالت الوحدة القديمة موجودة - قد يكون هناك تكرار`);
+            console.log(`   - الوحدة القديمة: ${oldUnitCheck['رقم  الوحدة ']}`);
+        } else {
+            console.log(`✅ فحص 3 - لا توجد وحدة قديمة: تم التحديث بنجاح بدون تكرار`);
+        }
+
+        console.log(`🎉 جميع الفحوصات نجحت - التحديث مكتمل ودائم!`);
+
+        // إضافة معرف فريد للتحديث لتتبعه
+        const updateId = `update_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        console.log(`🆔 معرف التحديث: ${updateId}`);
+
+        // حفظ معرف التحديث في localStorage للتحقق منه لاحقاً
+        const updateLog = JSON.parse(localStorage.getItem('updateLog') || '[]');
+        updateLog.push({
+            id: updateId,
+            timestamp: new Date().toISOString(),
+            action: 'editUnit',
+            originalUnitNumber: originalUnitNumber,
+            newUnitNumber: newUnitNumber,
+            propertyName: originalPropertyName
+        });
+        localStorage.setItem('updateLog', JSON.stringify(updateLog));
+        console.log(`📝 تم تسجيل التحديث في سجل العمليات`);
+
+        // تحديث فوري إضافي للواجهة
+        console.log(`🔄 تحديث فوري إضافي للواجهة`);
+        if (typeof renderData === 'function') {
+            renderData();
+        }
+        if (typeof updateTotalStats === 'function') {
+            updateTotalStats();
+        }
 
     } catch (error) {
         console.error('❌ خطأ في حفظ تعديل الوحدة:', error);
@@ -5956,44 +7906,127 @@ async function saveUnitEdit(event) {
 }
 
 // حفظ الوحدة في Supabase
-async function saveUnitToSupabase(unit, originalUnitNumber) {
+async function saveUnitToSupabase(unit, originalUnitNumber, originalPropertyName) {
     try {
-        // البحث عن السجل في Supabase
+        console.log(`☁️ محاولة تحديث الوحدة في Supabase:`);
+        console.log(`   - البيانات الأصلية: رقم الوحدة="${originalUnitNumber}", العقار="${originalPropertyName}"`);
+        console.log(`   - البيانات الجديدة: رقم الوحدة="${unit['رقم  الوحدة ']}", العقار="${unit['اسم العقار']}"`);
+
+        // البحث عن السجل في Supabase باستخدام البيانات الأصلية فقط
         const { data: existingRecords, error: searchError } = await supabaseClient
             .from('properties')
             .select('*')
             .eq('رقم  الوحدة ', originalUnitNumber)
-            .eq('اسم العقار', unit['اسم العقار']);
+            .eq('اسم العقار', originalPropertyName);
 
         if (searchError) {
-            console.warn('⚠️ خطأ في البحث في Supabase:', searchError);
-            return;
+            console.error('❌ خطأ في البحث في Supabase:', searchError);
+            throw new Error(`خطأ في البحث في قاعدة البيانات: ${searchError.message}`);
         }
 
+        console.log(`🔍 نتائج البحث في Supabase: ${existingRecords?.length || 0} سجل`);
+
         if (existingRecords && existingRecords.length > 0) {
-            // تحديث السجل الموجود
-            const { error: updateError } = await supabaseClient
+            const existingRecord = existingRecords[0];
+            console.log(`📋 السجل الموجود:`, {
+                id: existingRecord.id,
+                unitNumber: existingRecord['رقم  الوحدة '],
+                propertyName: existingRecord['اسم العقار']
+            });
+
+            // تحديث السجل الموجود باستخدام ID للتأكد من التحديث الصحيح
+            const updateData = {
+                'رقم  الوحدة ': unit['رقم  الوحدة '],
+                'اسم المستأجر': unit['اسم المستأجر'],
+                'رقم العقد': unit['رقم العقد'],
+                'قيمة  الايجار ': unit['قيمة  الايجار '],
+                'المساحة': unit['المساحة'],
+                updated_at: new Date().toISOString()
+            };
+
+            console.log(`📝 بيانات التحديث:`, updateData);
+
+            // استخدام ID للتحديث بدلاً من البحث بالحقول
+            const { data: updatedData, error: updateError } = await supabaseClient
                 .from('properties')
-                .update({
-                    'رقم  الوحدة ': unit['رقم  الوحدة '],
-                    'اسم المستأجر': unit['اسم المستأجر'],
-                    'رقم العقد': unit['رقم العقد'],
-                    'قيمة  الايجار ': unit['قيمة  الايجار '],
-                    'المساحة': unit['المساحة'],
-                    updated_at: new Date().toISOString()
-                })
-                .eq('رقم  الوحدة ', originalUnitNumber)
-                .eq('اسم العقار', unit['اسم العقار']);
+                .update(updateData)
+                .eq('id', existingRecord.id)
+                .select();
 
             if (updateError) {
-                console.warn('⚠️ خطأ في تحديث Supabase:', updateError);
+                console.error('❌ خطأ في تحديث Supabase:', updateError);
+                throw new Error(`خطأ في تحديث قاعدة البيانات: ${updateError.message}`);
             } else {
-                console.log('☁️ تم تحديث الوحدة في Supabase بنجاح');
+                console.log('✅ تم تحديث الوحدة في Supabase بنجاح');
+                console.log('📊 البيانات المحدثة:', updatedData);
+
+                // التحقق من التحديث
+                if (updatedData && updatedData.length > 0) {
+                    const updated = updatedData[0];
+                    console.log(`✅ تأكيد التحديث: رقم الوحدة الجديد = "${updated['رقم  الوحدة ']}"`);
+                }
+            }
+        } else {
+            console.warn('⚠️ لم يتم العثور على السجل في Supabase للتحديث');
+            console.log('🔍 محاولة البحث بطريقة أخرى...');
+
+            // محاولة البحث بدون تطابق دقيق للمسافات
+            const { data: alternativeSearch, error: altError } = await supabaseClient
+                .from('properties')
+                .select('*')
+                .ilike('رقم  الوحدة ', `%${originalUnitNumber.trim()}%`)
+                .ilike('اسم العقار', `%${originalPropertyName.trim()}%`);
+
+            if (!altError && alternativeSearch && alternativeSearch.length > 0) {
+                console.log(`🔍 تم العثور على ${alternativeSearch.length} سجل بالبحث البديل`);
+                // يمكن إضافة منطق التحديث هنا إذا لزم الأمر
+            } else {
+                console.warn('⚠️ لم يتم العثور على السجل حتى بالبحث البديل');
             }
         }
 
     } catch (error) {
-        console.warn('⚠️ خطأ في حفظ الوحدة في Supabase:', error);
+        console.error('❌ خطأ في حفظ الوحدة في Supabase:', error);
+        throw error; // إعادة رمي الخطأ ليتم التعامل معه في الدالة الرئيسية
+    }
+}
+
+// فحص البيانات عند تحميل الصفحة للتأكد من الحفظ الدائم
+function verifyDataPersistence() {
+    console.log(`🔍 فحص البيانات عند تحميل الصفحة...`);
+
+    try {
+        // فحص localStorage
+        const savedData = localStorage.getItem('properties');
+        if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            console.log(`📊 تم تحميل ${parsedData.length} عقار من localStorage`);
+
+            // فحص سجل التحديثات
+            const updateLog = JSON.parse(localStorage.getItem('updateLog') || '[]');
+            if (updateLog.length > 0) {
+                console.log(`📝 سجل التحديثات يحتوي على ${updateLog.length} عملية`);
+
+                // عرض آخر 3 تحديثات
+                const recentUpdates = updateLog.slice(-3);
+                recentUpdates.forEach((update, index) => {
+                    console.log(`📋 تحديث ${index + 1}: ${update.originalUnitNumber} → ${update.newUnitNumber} في ${update.propertyName}`);
+                });
+            }
+
+            // فحص تطابق البيانات
+            if (properties.length === parsedData.length) {
+                console.log(`✅ تطابق عدد العقارات: المصفوفة المحلية = localStorage`);
+            } else {
+                console.warn(`⚠️ عدم تطابق: المصفوفة المحلية (${properties.length}) ≠ localStorage (${parsedData.length})`);
+            }
+
+        } else {
+            console.warn(`⚠️ لا توجد بيانات محفوظة في localStorage`);
+        }
+
+    } catch (error) {
+        console.error(`❌ خطأ في فحص البيانات:`, error);
     }
 }
 

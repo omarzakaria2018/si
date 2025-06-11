@@ -8,45 +8,241 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Initialize Supabase client
 let supabaseClient = null;
 
-// Initialize Supabase
+// Initialize Supabase with error handling
 function initSupabase() {
     try {
+        // Check if Supabase should be disabled (for debugging)
+        const urlParams = new URLSearchParams(window.location.search);
+        const disableSupabase = urlParams.get('disable_supabase') === 'true';
+
+        if (disableSupabase) {
+            console.log('⚠️ Supabase disabled via URL parameter');
+            supabaseClient = null;
+            return false;
+        }
+
         if (typeof supabase !== 'undefined') {
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             console.log('✅ Supabase client initialized successfully');
             console.log('🔗 Supabase URL:', SUPABASE_URL);
 
-            // Test connection immediately
-            testSupabaseConnection();
+            // Test connection with timeout
+            setTimeout(() => {
+                testSupabaseConnection();
+            }, 1000);
 
             return true;
         } else {
-            console.error('Supabase library not loaded. Make sure @supabase/supabase-js is loaded.');
+            console.warn('⚠️ Supabase library not loaded. Running in local-only mode.');
+            supabaseClient = null;
             return false;
         }
     } catch (error) {
-        console.error('Error initializing Supabase:', error);
+        console.error('❌ Error initializing Supabase:', error);
+        console.log('🔄 Falling back to local-only mode');
+        supabaseClient = null;
         return false;
     }
 }
 
-// Test Supabase connection
+// Test Supabase connection with comprehensive setup
 async function testSupabaseConnection() {
     try {
         console.log('🔄 Testing Supabase connection...');
-        const { data, error } = await supabaseClient
+
+        // Step 1: Test basic connection
+        const { data: healthCheck, error: healthError } = await supabaseClient
             .from('properties')
             .select('count', { count: 'exact', head: true });
 
-        if (error) {
-            console.error('❌ Connection test failed:', error);
-            console.error('Error details:', error.message);
+        if (healthError) {
+            console.warn('⚠️ Properties table not accessible:', healthError.message);
+
+            // If table doesn't exist, try to set up the database
+            if (healthError.message.includes('relation "public.properties" does not exist')) {
+                console.log('🔧 Setting up database tables...');
+                await setupSupabaseDatabase();
+                return;
+            }
         } else {
-            console.log('✅ Supabase connection successful');
-            console.log('Database accessible');
+            console.log('✅ Properties table accessible');
         }
+
+        // Step 2: Test storage bucket
+        try {
+            const { data: buckets, error: bucketError } = await supabaseClient.storage.listBuckets();
+
+            if (bucketError) {
+                console.warn('⚠️ Storage not accessible:', bucketError.message);
+            } else {
+                const attachmentsBucket = buckets.find(b => b.name === 'attachments');
+                if (!attachmentsBucket) {
+                    console.log('🪣 Creating attachments bucket...');
+                    await createAttachmentsBucket();
+                } else {
+                    console.log('✅ Attachments bucket exists');
+                }
+            }
+        } catch (storageError) {
+            console.warn('⚠️ Storage test failed:', storageError.message);
+        }
+
+        console.log('✅ Supabase connection test completed');
+
     } catch (error) {
         console.error('❌ Connection test error:', error);
+        console.log('🔧 Attempting to fix common issues...');
+        await setupSupabaseDatabase();
+    }
+}
+
+// Setup Supabase database with all required tables
+async function setupSupabaseDatabase() {
+    console.log('🔧 Setting up Supabase database...');
+
+    try {
+        // Show setup instructions to user
+        const setupInstructions = `
+🔧 إعداد قاعدة البيانات مطلوب
+
+يرجى تنفيذ الكود التالي في Supabase SQL Editor:
+
+-- إنشاء جدول العقارات
+CREATE TABLE IF NOT EXISTS properties (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    "رقم  الوحدة " TEXT,
+    "اسم العقار" TEXT,
+    "المدينة" TEXT,
+    "اسم المستأجر" TEXT,
+    "رقم العقد" TEXT,
+    "قيمة  الايجار " NUMERIC,
+    "المساحة" NUMERIC,
+    "تاريخ بداية العقد" DATE,
+    "تاريخ نهاية العقد" DATE,
+    "عدد الاقساط" INTEGER,
+    "نوع العقد" TEXT,
+    "رقم السجل العقاري" TEXT,
+    "مساحة الصك" NUMERIC,
+    "رقم الصك" TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- إنشاء جدول المرفقات
+CREATE TABLE IF NOT EXISTS attachments (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    property_key TEXT NOT NULL,
+    file_name TEXT NOT NULL,
+    file_type TEXT,
+    file_size BIGINT,
+    file_url TEXT,
+    file_path TEXT,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- إنشاء جدول سجل الأنشطة
+CREATE TABLE IF NOT EXISTS activity_log (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+    action_type TEXT NOT NULL,
+    description TEXT,
+    old_values JSONB,
+    new_values JSONB,
+    user_id TEXT DEFAULT 'system',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- تفعيل Row Level Security
+ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attachments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
+
+-- إنشاء سياسات الأمان (السماح للجميع مؤقتاً)
+CREATE POLICY "Enable all access for properties" ON properties FOR ALL USING (true);
+CREATE POLICY "Enable all access for attachments" ON attachments FOR ALL USING (true);
+CREATE POLICY "Enable all access for activity_log" ON activity_log FOR ALL USING (true);
+
+-- إنشاء bucket للمرفقات
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('attachments', 'attachments', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- سياسات التخزين
+CREATE POLICY "Enable all access for attachments bucket" ON storage.objects
+FOR ALL USING (bucket_id = 'attachments');
+        `;
+
+        console.log(setupInstructions);
+
+        // Try to create basic structure if possible
+        await createBasicTables();
+
+    } catch (error) {
+        console.error('❌ خطأ في إعداد قاعدة البيانات:', error);
+    }
+}
+
+// Create basic tables if possible
+async function createBasicTables() {
+    try {
+        // Try to create a simple test to see if we have admin access
+        const { error } = await supabaseClient
+            .from('properties')
+            .insert([{
+                "رقم  الوحدة ": "TEST_SETUP",
+                "اسم العقار": "TEST_PROPERTY",
+                "المدينة": "TEST_CITY"
+            }]);
+
+        if (!error) {
+            // If successful, delete the test record
+            await supabaseClient
+                .from('properties')
+                .delete()
+                .eq("رقم  الوحدة ", "TEST_SETUP");
+
+            console.log('✅ قاعدة البيانات جاهزة للاستخدام');
+        } else {
+            console.warn('⚠️ يرجى إعداد قاعدة البيانات يدوياً:', error.message);
+        }
+
+    } catch (error) {
+        console.warn('⚠️ لا يمكن إنشاء الجداول تلقائياً:', error.message);
+    }
+}
+
+// Create attachments bucket
+async function createAttachmentsBucket() {
+    try {
+        console.log('🪣 Creating attachments storage bucket...');
+
+        const { data, error } = await supabaseClient.storage.createBucket('attachments', {
+            public: true,
+            allowedMimeTypes: [
+                'image/*',
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/*',
+                'video/*',
+                'audio/*'
+            ],
+            fileSizeLimit: 50 * 1024 * 1024 // 50MB
+        });
+
+        if (error) {
+            console.warn('⚠️ Could not create bucket automatically:', error.message);
+            console.log('📋 Please create the bucket manually in Supabase Dashboard');
+        } else {
+            console.log('✅ Attachments bucket created successfully');
+        }
+
+    } catch (error) {
+        console.error('❌ Error creating attachments bucket:', error);
     }
 }
 
