@@ -630,6 +630,9 @@ function initPropertyList(selectedCountry = null) {
     // استخراج أسماء العقارات الفريدة من العقارات المفلترة
     const propertyNames = [...new Set(filteredProperties.map(property => property['اسم العقار']))];
 
+    // ترتيب العقارات من أسفل لأعلى (الأحدث أولاً)
+    propertyNames.reverse();
+
     // تحديث قائمة العقارات في الـ sidebar
     const container = document.getElementById('propertyList');
     container.innerHTML = '';
@@ -1306,9 +1309,11 @@ function renderMobileTotals(data) {
     addTotalItem(container, 'إجمالي تجاري بعد الضريبة', `<i class="fas fa-coins" style="color:#05940e;"></i> ${afterTaxCommercial.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'after-taxonly-stat');
     addTotalItem(container, 'إجمالي سكني', `<i class="fas fa-home" style="color:#f59e42;"></i> ${totalResidential.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'residential-stat');
 
-    // إضافة معلومات الصك للشاشات الكبيرة فقط
-    if (!isMobileDevice()) {
-        // 🆕 إضافة تفاصيل الصك للإحصائيات في الشاشات الكبيرة فقط
+    // إضافة معلومات الصك للشاشات الكبيرة دائماً، وللجوال عند اختيار عقار محدد
+    const shouldShowDeedInfo = !isMobileDevice() || currentProperty;
+
+    if (shouldShowDeedInfo) {
+        // 🆕 إضافة تفاصيل الصك للإحصائيات
         const uniqueContractsList = {};
         data.forEach(property => {
             if (property['رقم العقد'] && property['اسم العقار']) {
@@ -1321,21 +1326,25 @@ function renderMobileTotals(data) {
         // إضافة رقم الصك إذا وُجد في البيانات المعروضة
         const firstDeedNumber = uniqueList.find(p => p['رقم الصك'] && p['رقم الصك'].toString().trim() !== '');
         if (firstDeedNumber && firstDeedNumber['رقم الصك']) {
-            addTotalItem(container, 'رقم الصك', `<i class="fas fa-file-contract" style="color:#dc3545;"></i> ${firstDeedNumber['رقم الصك']}`, 'deed-number-stat desktop-deed-info');
+            const cssClass = isMobileDevice() ? 'deed-number-stat mobile-deed-info' : 'deed-number-stat desktop-deed-info';
+            addTotalItem(container, 'رقم الصك', `<i class="fas fa-file-contract" style="color:#dc3545;"></i> ${firstDeedNumber['رقم الصك']}`, cssClass);
         }
 
         // إضافة مساحة الصك إذا وُجدت في البيانات المعروضة
         const firstDeedArea = uniqueList.find(p => p['مساحةالصك'] && !isNaN(parseFloat(p['مساحةالصك'])));
         if (firstDeedArea && firstDeedArea['مساحةالصك']) {
-            addTotalItem(container, 'مساحة الصك', `<i class="fas fa-ruler-combined" style="color:#fd7e14;"></i> ${parseFloat(firstDeedArea['مساحةالصك']).toLocaleString()} م²`, 'deed-area-stat desktop-deed-info');
+            const cssClass = isMobileDevice() ? 'deed-area-stat mobile-deed-info' : 'deed-area-stat desktop-deed-info';
+            addTotalItem(container, 'مساحة الصك', `<i class="fas fa-ruler-combined" style="color:#fd7e14;"></i> ${parseFloat(firstDeedArea['مساحةالصك']).toLocaleString()} م²`, cssClass);
         }
 
         // إضافة السجل العيني إذا وُجد في البيانات المعروضة
         const firstSijil = uniqueList.find(p => p['السجل العيني '] && p['السجل العيني '].toString().trim() !== '');
         if (firstSijil && firstSijil['السجل العيني ']) {
-            addTotalItem(container, 'السجل العيني', `<i class="fas fa-clipboard-list" style="color:#28a745;"></i> ${firstSijil['السجل العيني '].toString().trim()}`, 'registry-stat desktop-deed-info');
+            const cssClass = isMobileDevice() ? 'registry-stat mobile-deed-info' : 'registry-stat desktop-deed-info';
+            addTotalItem(container, 'السجل العيني', `<i class="fas fa-clipboard-list" style="color:#28a745;"></i> ${firstSijil['السجل العيني '].toString().trim()}`, cssClass);
         }
     }
+
     // ملاحظة: في الجوال، معلومات الصك تظهر فقط عند تحديد عقار محدد
 }
 
