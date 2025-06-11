@@ -8824,32 +8824,49 @@ function enterManagementMode() {
     managementPage.id = 'managementPage';
     managementPage.className = 'management-page';
     managementPage.innerHTML = `
-        <!-- الهيدر الثابت -->
+        <!-- الهيدر الثابت مع زر القائمة للجوال -->
         <div class="management-fixed-header">
             <div class="header-content">
+                <!-- زر القائمة للجوال فقط -->
+                <button class="mobile-menu-toggle" id="managementMobileMenuToggle" onclick="toggleManagementSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
                 <div class="header-center">
                     <h1><i class="fas fa-building"></i> إدارة العقارات</h1>
                     <p>إضافة وتحرير العقارات والوحدات</p>
                 </div>
+
+                <!-- زر الخروج للجوال -->
+                <button class="mobile-exit-btn" onclick="exitManagementMode()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
         </div>
 
-        <!-- السايد بار الثابت -->
-        <div class="management-sidebar">
+        <!-- طبقة التغطية للجوال -->
+        <div class="management-overlay" id="managementOverlay" onclick="closeManagementSidebar()"></div>
+
+        <!-- السايد بار مع دعم الجوال -->
+        <div class="management-sidebar" id="managementSidebar">
             <div class="sidebar-content">
+                <!-- رأس السايد بار مع زر الإغلاق للجوال -->
                 <div class="sidebar-header">
                     <h3><i class="fas fa-cogs"></i> التنقل السريع</h3>
+                    <button class="mobile-sidebar-close" onclick="closeManagementSidebar()">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
                 <nav class="sidebar-nav">
-                    <button class="nav-btn active" onclick="showPropertyTab('properties')" data-tab="properties">
+                    <button class="nav-btn active" onclick="showPropertyTabMobile('properties')" data-tab="properties">
                         <i class="fas fa-building"></i>
                         <span>العقارات</span>
                     </button>
-                    <button class="nav-btn" onclick="showPropertyTab('units')" data-tab="units">
+                    <button class="nav-btn" onclick="showPropertyTabMobile('units')" data-tab="units">
                         <i class="fas fa-home"></i>
                         <span>الوحدات</span>
                     </button>
-                    <button class="nav-btn" onclick="showPropertyTab('merge')" data-tab="merge">
+                    <button class="nav-btn" onclick="showPropertyTabMobile('merge')" data-tab="merge">
                         <i class="fas fa-layer-group"></i>
                         <span>دمج الوحدات</span>
                     </button>
@@ -8909,7 +8926,125 @@ function enterManagementMode() {
     // تهيئة قائمة تصفية المدن
     setTimeout(() => {
         initializeCityFilter();
+        initializeManagementMobile();
     }, 100);
+}
+
+// ===== وظائف السايد بار للجوال في إدارة العقارات =====
+
+// تهيئة وظائف الجوال لإدارة العقارات
+function initializeManagementMobile() {
+    console.log('📱 تهيئة وظائف الجوال لإدارة العقارات...');
+
+    // إخفاء السايد بار في الجوال بشكل افتراضي
+    if (isMobileDevice()) {
+        const sidebar = document.getElementById('managementSidebar');
+        const overlay = document.getElementById('managementOverlay');
+
+        if (sidebar) {
+            sidebar.classList.remove('active');
+        }
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+
+        console.log('✅ تم إخفاء السايد بار في الجوال');
+    }
+}
+
+// تبديل عرض السايد بار في الجوال
+function toggleManagementSidebar() {
+    console.log('🔄 تبديل عرض السايد بار...');
+
+    const sidebar = document.getElementById('managementSidebar');
+    const overlay = document.getElementById('managementOverlay');
+    const menuToggle = document.getElementById('managementMobileMenuToggle');
+
+    if (!sidebar || !overlay) {
+        console.error('❌ لم يتم العثور على عناصر السايد بار');
+        return;
+    }
+
+    const isActive = sidebar.classList.contains('active');
+
+    if (isActive) {
+        // إخفاء السايد بار
+        closeManagementSidebar();
+    } else {
+        // إظهار السايد بار
+        openManagementSidebar();
+    }
+}
+
+// فتح السايد بار
+function openManagementSidebar() {
+    console.log('📂 فتح السايد بار...');
+
+    const sidebar = document.getElementById('managementSidebar');
+    const overlay = document.getElementById('managementOverlay');
+    const menuToggle = document.getElementById('managementMobileMenuToggle');
+
+    if (sidebar) {
+        sidebar.classList.add('active');
+    }
+    if (overlay) {
+        overlay.classList.add('active');
+    }
+    if (menuToggle) {
+        menuToggle.classList.add('active');
+        // تغيير الأيقونة إلى X
+        const icon = menuToggle.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-times';
+        }
+    }
+
+    // منع التمرير في الخلفية
+    document.body.style.overflow = 'hidden';
+
+    console.log('✅ تم فتح السايد بار');
+}
+
+// إغلاق السايد بار
+function closeManagementSidebar() {
+    console.log('📁 إغلاق السايد بار...');
+
+    const sidebar = document.getElementById('managementSidebar');
+    const overlay = document.getElementById('managementOverlay');
+    const menuToggle = document.getElementById('managementMobileMenuToggle');
+
+    if (sidebar) {
+        sidebar.classList.remove('active');
+    }
+    if (overlay) {
+        overlay.classList.remove('active');
+    }
+    if (menuToggle) {
+        menuToggle.classList.remove('active');
+        // إعادة الأيقونة إلى القائمة
+        const icon = menuToggle.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-bars';
+        }
+    }
+
+    // السماح بالتمرير مرة أخرى
+    document.body.style.overflow = '';
+
+    console.log('✅ تم إغلاق السايد بار');
+}
+
+// تحديث وظيفة showPropertyTab لإغلاق السايد بار في الجوال
+function showPropertyTabMobile(tabName) {
+    // استدعاء الوظيفة الأصلية
+    showPropertyTab(tabName);
+
+    // إغلاق السايد بار في الجوال بعد اختيار التبويب
+    if (isMobileDevice()) {
+        setTimeout(() => {
+            closeManagementSidebar();
+        }, 300);
+    }
 }
 
 // الخروج من وضع الإدارة
