@@ -11833,17 +11833,59 @@ function mergeSelectedUnits() {
         return;
     }
 
+    console.log('🔄 بدء عملية دمج الوحدات...');
+    console.log(`📋 الوحدات المحددة للدمج: ${selectedUnits.join(', ')}`);
+    console.log(`📄 رقم العقد الجديد: ${contractNumber}`);
+
     // تحديث الوحدات المحددة برقم العقد الجديد
+    let mergedCount = 0;
     selectedUnits.forEach(unitNumber => {
         const unit = properties.find(p =>
             p['اسم العقار'] === propertyName && p['رقم  الوحدة '] === unitNumber
         );
         if (unit) {
+            console.log(`🔗 دمج الوحدة ${unitNumber} تحت العقد ${contractNumber}`);
             unit['رقم العقد'] = contractNumber;
+            mergedCount++;
+        } else {
+            console.warn(`⚠️ لم يتم العثور على الوحدة ${unitNumber}`);
         }
     });
 
-    alert(`تم دمج ${selectedUnits.length} وحدات تحت العقد رقم ${contractNumber}`);
+    if (mergedCount === 0) {
+        alert('فشل في دمج الوحدات - لم يتم العثور على أي وحدة');
+        return;
+    }
+
+    // حفظ البيانات في localStorage
+    console.log('💾 حفظ البيانات بعد الدمج...');
+    try {
+        localStorage.setItem('properties', JSON.stringify(properties));
+        console.log('✅ تم حفظ البيانات محلياً بنجاح');
+    } catch (error) {
+        console.error('❌ خطأ في حفظ البيانات محلياً:', error);
+        alert('تم الدمج ولكن فشل في الحفظ المحلي');
+    }
+
+    // حفظ في Supabase إذا كان متوفراً
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        console.log('☁️ حفظ البيانات في Supabase...');
+        try {
+            selectedUnits.forEach(async (unitNumber) => {
+                const unit = properties.find(p =>
+                    p['اسم العقار'] === propertyName && p['رقم  الوحدة '] === unitNumber
+                );
+                if (unit && typeof savePropertyToSupabase === 'function') {
+                    await savePropertyToSupabase(unit);
+                }
+            });
+            console.log('✅ تم حفظ البيانات في Supabase');
+        } catch (error) {
+            console.error('❌ خطأ في حفظ البيانات في Supabase:', error);
+        }
+    }
+
+    alert(`تم دمج ${mergedCount} وحدات تحت العقد رقم ${contractNumber} بنجاح!`);
 
     // تنظيف النموذج
     document.getElementById('mergePropertyName').value = '';
@@ -11851,8 +11893,254 @@ function mergeSelectedUnits() {
     document.getElementById('availableUnitsForMerge').innerHTML = '';
 
     // تحديث العرض
-    document.getElementById('mergedUnitsDisplay').innerHTML = renderMergedUnits();
-    initializeApp();
+    const mergedDisplay = document.getElementById('mergedUnitsDisplay');
+    if (mergedDisplay) {
+        mergedDisplay.innerHTML = renderMergedUnits();
+    }
+
+    // إعادة تحميل البيانات لضمان التحديث
+    setTimeout(() => {
+        renderData();
+        initializeApp();
+    }, 500);
+
+    console.log('🎉 تمت عملية الدمج بنجاح');
+}
+
+// ===== وظائف فصل وتحرير الوحدات المدموجة =====
+
+// فصل الوحدات المدموجة
+function splitMergedContract(contractNumber, propertyName) {
+    console.log(`🔓 بدء فصل الوحدات للعقد ${contractNumber} في العقار ${propertyName}`);
+
+    // التأكد من رغبة المستخدم في الفصل
+    if (!confirm(`هل أنت متأكد من فصل جميع الوحدات في العقد رقم ${contractNumber}؟\nسيتم إزالة رقم العقد من جميع الوحدات المرتبطة به.`)) {
+        return;
+    }
+
+    // البحث عن جميع الوحدات المرتبطة بهذا العقد
+    const contractUnits = properties.filter(p =>
+        p['رقم العقد'] === contractNumber &&
+        p['اسم العقار'] === propertyName
+    );
+
+    if (contractUnits.length === 0) {
+        alert('لم يتم العثور على وحدات مرتبطة بهذا العقد');
+        return;
+    }
+
+    console.log(`📋 تم العثور على ${contractUnits.length} وحدة مرتبطة بالعقد`);
+
+    // إزالة رقم العقد من جميع الوحدات
+    let splitCount = 0;
+    contractUnits.forEach(unit => {
+        console.log(`🔓 فصل الوحدة ${unit['رقم  الوحدة ']} من العقد ${contractNumber}`);
+        unit['رقم العقد'] = ''; // إزالة رقم العقد
+        splitCount++;
+    });
+
+    // حفظ البيانات في localStorage
+    console.log('💾 حفظ البيانات بعد الفصل...');
+    try {
+        localStorage.setItem('properties', JSON.stringify(properties));
+        console.log('✅ تم حفظ البيانات محلياً بنجاح');
+    } catch (error) {
+        console.error('❌ خطأ في حفظ البيانات محلياً:', error);
+        alert('تم الفصل ولكن فشل في الحفظ المحلي');
+    }
+
+    // حفظ في Supabase إذا كان متوفراً
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        console.log('☁️ حفظ البيانات في Supabase...');
+        try {
+            contractUnits.forEach(async (unit) => {
+                if (typeof savePropertyToSupabase === 'function') {
+                    await savePropertyToSupabase(unit);
+                }
+            });
+            console.log('✅ تم حفظ البيانات في Supabase');
+        } catch (error) {
+            console.error('❌ خطأ في حفظ البيانات في Supabase:', error);
+        }
+    }
+
+    alert(`تم فصل ${splitCount} وحدات من العقد رقم ${contractNumber} بنجاح!`);
+
+    // تحديث العرض
+    const mergedDisplay = document.getElementById('mergedUnitsDisplay');
+    if (mergedDisplay) {
+        mergedDisplay.innerHTML = renderMergedUnits();
+    }
+
+    // إعادة تحميل البيانات لضمان التحديث
+    setTimeout(() => {
+        renderData();
+        initializeApp();
+    }, 500);
+
+    console.log('🎉 تمت عملية الفصل بنجاح');
+}
+
+// تحرير العقد المدموج
+function editMergedContract(contractNumber, propertyName) {
+    console.log(`✏️ تحرير العقد ${contractNumber} في العقار ${propertyName}`);
+
+    // البحث عن جميع الوحدات المرتبطة بهذا العقد
+    const contractUnits = properties.filter(p =>
+        p['رقم العقد'] === contractNumber &&
+        p['اسم العقار'] === propertyName
+    );
+
+    if (contractUnits.length === 0) {
+        alert('لم يتم العثور على وحدات مرتبطة بهذا العقد');
+        return;
+    }
+
+    // إنشاء نافذة التحرير
+    const editModal = document.createElement('div');
+    editModal.className = 'modal-overlay';
+    editModal.innerHTML = `
+        <div class="modal-box" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> تحرير العقد المدموج</h3>
+                <button class="close-modal" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label><strong>رقم العقد الحالي:</strong></label>
+                    <input type="text" id="editContractNumber" value="${contractNumber}"
+                           style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; margin-bottom: 15px;">
+                </div>
+
+                <div class="form-group">
+                    <label><strong>العقار:</strong></label>
+                    <input type="text" value="${propertyName}" readonly
+                           style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; margin-bottom: 15px; background: #f5f5f5;">
+                </div>
+
+                <div class="form-group">
+                    <label><strong>الوحدات المرتبطة (${contractUnits.length} وحدة):</strong></label>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f9f9f9;">
+                        ${contractUnits.map(unit => `
+                            <div style="padding: 5px 0; border-bottom: 1px solid #eee;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" name="editUnits" value="${unit['رقم  الوحدة ']}" checked
+                                           style="margin-left: 10px;">
+                                    <span>وحدة ${unit['رقم  الوحدة ']} - ${unit['اسم المستأجر'] || 'فارغ'}</span>
+                                </label>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <small style="color: #666; margin-top: 5px; display: block;">
+                        <i class="fas fa-info-circle"></i> يمكنك إلغاء تحديد الوحدات التي تريد فصلها من العقد
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="saveEditedContract('${contractNumber}', '${propertyName}')">
+                    <i class="fas fa-save"></i> حفظ التغييرات
+                </button>
+                <button class="btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(editModal);
+}
+
+// حفظ تعديلات العقد
+function saveEditedContract(oldContractNumber, propertyName) {
+    const newContractNumber = document.getElementById('editContractNumber').value.trim();
+    const selectedUnits = Array.from(document.querySelectorAll('input[name="editUnits"]:checked'))
+        .map(checkbox => checkbox.value);
+
+    if (!newContractNumber) {
+        alert('يرجى إدخال رقم العقد');
+        return;
+    }
+
+    console.log(`💾 حفظ تعديلات العقد ${oldContractNumber} -> ${newContractNumber}`);
+    console.log(`📋 الوحدات المحددة: ${selectedUnits.join(', ')}`);
+
+    // البحث عن جميع الوحدات المرتبطة بالعقد القديم
+    const allContractUnits = properties.filter(p =>
+        p['رقم العقد'] === oldContractNumber &&
+        p['اسم العقار'] === propertyName
+    );
+
+    let updatedCount = 0;
+    let removedCount = 0;
+
+    // تحديث الوحدات
+    allContractUnits.forEach(unit => {
+        const unitNumber = unit['رقم  الوحدة '];
+
+        if (selectedUnits.includes(unitNumber)) {
+            // الوحدة محددة - تحديث رقم العقد
+            unit['رقم العقد'] = newContractNumber;
+            updatedCount++;
+            console.log(`✅ تحديث الوحدة ${unitNumber} للعقد ${newContractNumber}`);
+        } else {
+            // الوحدة غير محددة - إزالة رقم العقد
+            unit['رقم العقد'] = '';
+            removedCount++;
+            console.log(`🔓 فصل الوحدة ${unitNumber} من العقد`);
+        }
+    });
+
+    // حفظ البيانات
+    try {
+        localStorage.setItem('properties', JSON.stringify(properties));
+        console.log('✅ تم حفظ البيانات محلياً بنجاح');
+    } catch (error) {
+        console.error('❌ خطأ في حفظ البيانات محلياً:', error);
+        alert('فشل في حفظ البيانات محلياً');
+        return;
+    }
+
+    // حفظ في Supabase إذا كان متوفراً
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        console.log('☁️ حفظ البيانات في Supabase...');
+        try {
+            allContractUnits.forEach(async (unit) => {
+                if (typeof savePropertyToSupabase === 'function') {
+                    await savePropertyToSupabase(unit);
+                }
+            });
+            console.log('✅ تم حفظ البيانات في Supabase');
+        } catch (error) {
+            console.error('❌ خطأ في حفظ البيانات في Supabase:', error);
+        }
+    }
+
+    // إغلاق النافذة
+    document.querySelector('.modal-overlay').remove();
+
+    // رسالة النجاح
+    let message = `تم تحديث العقد بنجاح!\n`;
+    if (updatedCount > 0) {
+        message += `- تم تحديث ${updatedCount} وحدة للعقد رقم ${newContractNumber}\n`;
+    }
+    if (removedCount > 0) {
+        message += `- تم فصل ${removedCount} وحدة من العقد`;
+    }
+    alert(message);
+
+    // تحديث العرض
+    const mergedDisplay = document.getElementById('mergedUnitsDisplay');
+    if (mergedDisplay) {
+        mergedDisplay.innerHTML = renderMergedUnits();
+    }
+
+    // إعادة تحميل البيانات لضمان التحديث
+    setTimeout(() => {
+        renderData();
+        initializeApp();
+    }, 500);
+
+    console.log('🎉 تمت عملية التحرير بنجاح');
 }
 
 // البحث في الوحدات
