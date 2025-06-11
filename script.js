@@ -135,7 +135,10 @@ function createSampleData() {
             'تاريخ القسط الثاني': '01/05/2024',
             'مبلغ القسط الثاني': 19166.67,
             'تاريخ القسط الثالث': '01/09/2024',
-            'مبلغ القسط الثالث': 19166.66
+            'مبلغ القسط الثالث': 19166.66,
+            'رقم الصك': '123456789',
+            'مساحةالصك': '500',
+            'السجل العيني ': 'REG-001-2024'
         },
         {
             'رقم  الوحدة ': 'SAMPLE_002',
@@ -153,7 +156,10 @@ function createSampleData() {
             'تاريخ القسط الاول': '01/02/2024',
             'مبلغ القسط الاول': 23000,
             'تاريخ القسط الثاني': '01/08/2024',
-            'مبلغ القسط الثاني': 23000
+            'مبلغ القسط الثاني': 23000,
+            'رقم الصك': '987654321',
+            'مساحةالصك': '300',
+            'السجل العيني ': 'REG-002-2024'
         },
         {
             'رقم  الوحدة ': 'SAMPLE_003',
@@ -175,7 +181,10 @@ function createSampleData() {
             'تاريخ القسط الثالث': '01/09/2024',
             'مبلغ القسط الثالث': 15000,
             'تاريخ القسط الرابع': '01/12/2024',
-            'مبلغ القسط الرابع': 15000
+            'مبلغ القسط الرابع': 15000,
+            'رقم الصك': '456789123',
+            'مساحةالصك': '800',
+            'السجل العيني ': 'REG-003-2024'
         }
     ];
 
@@ -1311,6 +1320,8 @@ function renderMobileTotals(data) {
 
     // إضافة معلومات الصك للشاشات الكبيرة دائماً، وللجوال عند اختيار عقار محدد
     const shouldShowDeedInfo = !isMobileDevice() || currentProperty;
+
+    console.log(`📱 معلومات الصك - الجهاز: ${isMobileDevice() ? 'جوال' : 'شاشة كبيرة'}, العقار المختار: ${currentProperty || 'لا يوجد'}, سيتم العرض: ${shouldShowDeedInfo}`);
 
     if (shouldShowDeedInfo) {
         // 🆕 إضافة تفاصيل الصك للإحصائيات
@@ -5724,6 +5735,311 @@ function showToast(message, type = 'info', duration = 3000) {
 }
 
 // ==================== نظام إدارة العقارات ====================
+
+// تحرير وحدة في نظام إدارة العقارات
+function editUnit(unitNumber, propertyName) {
+    console.log(`🔧 تحرير الوحدة: ${unitNumber} في العقار: ${propertyName}`);
+
+    // البحث عن الوحدة
+    const unit = properties.find(p =>
+        p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName
+    );
+
+    if (!unit) {
+        alert('❌ لم يتم العثور على الوحدة المطلوبة');
+        return;
+    }
+
+    // إظهار نافذة تحرير الوحدة
+    showUnitEditModal(unit);
+}
+
+// إظهار نافذة تحرير الوحدة
+function showUnitEditModal(unit) {
+    const modalHTML = `
+        <div class="modal-overlay" style="display:flex;">
+            <div class="modal-box unit-edit-modal">
+                <button class="close-modal" onclick="closeModal()">×</button>
+
+                <div class="edit-modal-header">
+                    <h2><i class="fas fa-edit"></i> تحرير الوحدة</h2>
+                    <p>تحرير بيانات الوحدة: ${unit['رقم  الوحدة ']}</p>
+                </div>
+
+                <div class="edit-modal-content">
+                    <form id="unitEditForm" onsubmit="saveUnitEdit(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editUnitNumber">رقم الوحدة <span class="required">*</span></label>
+                                <input type="text" id="editUnitNumber" name="unitNumber"
+                                       value="${unit['رقم  الوحدة '] || ''}"
+                                       required class="form-control"
+                                       placeholder="أدخل رقم الوحدة الجديد">
+                                <small class="form-text">رقم الوحدة يجب أن يكون فريداً</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editPropertyName">اسم العقار</label>
+                                <input type="text" id="editPropertyName" name="propertyName"
+                                       value="${unit['اسم العقار'] || ''}"
+                                       readonly class="form-control"
+                                       style="background-color: #f8f9fa;">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editTenantName">اسم المستأجر</label>
+                                <input type="text" id="editTenantName" name="tenantName"
+                                       value="${unit['اسم المستأجر'] || ''}"
+                                       class="form-control"
+                                       placeholder="اسم المستأجر">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editContractNumber">رقم العقد</label>
+                                <input type="text" id="editContractNumber" name="contractNumber"
+                                       value="${unit['رقم العقد'] || ''}"
+                                       class="form-control"
+                                       placeholder="رقم العقد">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editRentValue">قيمة الإيجار</label>
+                                <input type="number" id="editRentValue" name="rentValue"
+                                       value="${unit['قيمة  الايجار '] || ''}"
+                                       class="form-control"
+                                       placeholder="قيمة الإيجار بالريال">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editArea">المساحة</label>
+                                <input type="number" id="editArea" name="area"
+                                       value="${unit['المساحة'] || ''}"
+                                       class="form-control"
+                                       placeholder="المساحة بالمتر المربع">
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="originalUnitNumber" value="${unit['رقم  الوحدة '] || ''}">
+                        <input type="hidden" id="originalPropertyName" value="${unit['اسم العقار'] || ''}">
+
+                        <div class="modal-actions">
+                            <button type="button" class="modal-action-btn close-btn" onclick="closeModal()">
+                                <i class="fas fa-times"></i> إلغاء
+                            </button>
+                            <button type="submit" class="modal-action-btn save-btn">
+                                <i class="fas fa-save"></i> حفظ التغييرات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // إضافة حدث إغلاق للمودال
+    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+
+    // تركيز على حقل رقم الوحدة
+    setTimeout(() => {
+        document.getElementById('editUnitNumber').focus();
+    }, 100);
+}
+
+// حفظ تعديل الوحدة
+async function saveUnitEdit(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+
+    // الحصول على البيانات
+    const newUnitNumber = formData.get('unitNumber').trim();
+    const originalUnitNumber = document.getElementById('originalUnitNumber').value;
+    const originalPropertyName = document.getElementById('originalPropertyName').value;
+    const tenantName = formData.get('tenantName').trim();
+    const contractNumber = formData.get('contractNumber').trim();
+    const rentValue = formData.get('rentValue');
+    const area = formData.get('area');
+
+    // التحقق من صحة البيانات
+    if (!newUnitNumber) {
+        alert('❌ رقم الوحدة مطلوب');
+        return;
+    }
+
+    // التحقق من عدم تكرار رقم الوحدة (إذا تم تغييره)
+    if (newUnitNumber !== originalUnitNumber) {
+        const existingUnit = properties.find(p =>
+            p['رقم  الوحدة '] === newUnitNumber &&
+            p['اسم العقار'] === originalPropertyName
+        );
+
+        if (existingUnit) {
+            alert(`❌ رقم الوحدة "${newUnitNumber}" موجود بالفعل في هذا العقار`);
+            return;
+        }
+    }
+
+    try {
+        // إظهار مؤشر التحميل
+        const saveBtn = form.querySelector('.save-btn');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+        saveBtn.disabled = true;
+
+        // البحث عن الوحدة وتحديثها
+        const unitIndex = properties.findIndex(p =>
+            p['رقم  الوحدة '] === originalUnitNumber &&
+            p['اسم العقار'] === originalPropertyName
+        );
+
+        if (unitIndex === -1) {
+            throw new Error('لم يتم العثور على الوحدة المطلوب تحديثها');
+        }
+
+        // تحديث البيانات
+        const updatedUnit = { ...properties[unitIndex] };
+        updatedUnit['رقم  الوحدة '] = newUnitNumber;
+        updatedUnit['اسم المستأجر'] = tenantName;
+        updatedUnit['رقم العقد'] = contractNumber;
+        updatedUnit['قيمة  الايجار '] = rentValue ? parseFloat(rentValue) : '';
+        updatedUnit['المساحة'] = area ? parseFloat(area) : '';
+
+        // حفظ في المصفوفة المحلية
+        properties[unitIndex] = updatedUnit;
+
+        // حفظ في localStorage
+        localStorage.setItem('properties', JSON.stringify(properties));
+
+        // محاولة الحفظ في Supabase إذا كان متاحاً
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            await saveUnitToSupabase(updatedUnit, originalUnitNumber);
+        }
+
+        // إغلاق النافذة
+        closeModal();
+
+        // تحديث الواجهة
+        if (isManagementMode) {
+            // إذا كنا في وضع الإدارة، تحديث قائمة الوحدات
+            searchUnits();
+        } else {
+            // تحديث العرض العادي
+            renderData();
+            updateTotalStats();
+        }
+
+        // إظهار رسالة نجاح
+        showSuccessMessage(`✅ تم تحديث الوحدة "${newUnitNumber}" بنجاح`);
+
+        console.log(`✅ تم تحديث الوحدة: ${originalUnitNumber} → ${newUnitNumber}`);
+
+    } catch (error) {
+        console.error('❌ خطأ في حفظ تعديل الوحدة:', error);
+        alert(`❌ حدث خطأ أثناء حفظ التعديلات: ${error.message}`);
+
+        // إعادة تفعيل الزر
+        const saveBtn = form.querySelector('.save-btn');
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> حفظ التغييرات';
+        saveBtn.disabled = false;
+    }
+}
+
+// حفظ الوحدة في Supabase
+async function saveUnitToSupabase(unit, originalUnitNumber) {
+    try {
+        // البحث عن السجل في Supabase
+        const { data: existingRecords, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('رقم  الوحدة ', originalUnitNumber)
+            .eq('اسم العقار', unit['اسم العقار']);
+
+        if (searchError) {
+            console.warn('⚠️ خطأ في البحث في Supabase:', searchError);
+            return;
+        }
+
+        if (existingRecords && existingRecords.length > 0) {
+            // تحديث السجل الموجود
+            const { error: updateError } = await supabaseClient
+                .from('properties')
+                .update({
+                    'رقم  الوحدة ': unit['رقم  الوحدة '],
+                    'اسم المستأجر': unit['اسم المستأجر'],
+                    'رقم العقد': unit['رقم العقد'],
+                    'قيمة  الايجار ': unit['قيمة  الايجار '],
+                    'المساحة': unit['المساحة'],
+                    updated_at: new Date().toISOString()
+                })
+                .eq('رقم  الوحدة ', originalUnitNumber)
+                .eq('اسم العقار', unit['اسم العقار']);
+
+            if (updateError) {
+                console.warn('⚠️ خطأ في تحديث Supabase:', updateError);
+            } else {
+                console.log('☁️ تم تحديث الوحدة في Supabase بنجاح');
+            }
+        }
+
+    } catch (error) {
+        console.warn('⚠️ خطأ في حفظ الوحدة في Supabase:', error);
+    }
+}
+
+// إظهار رسالة نجاح
+function showSuccessMessage(message) {
+    // إنشاء عنصر الرسالة
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'success-message';
+    messageDiv.innerHTML = `
+        <div class="success-content">
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    // إضافة الأنماط
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        z-index: 10000;
+        font-size: 1rem;
+        font-weight: 500;
+        animation: slideInRight 0.3s ease-out;
+        max-width: 400px;
+        word-wrap: break-word;
+    `;
+
+    // إضافة الرسالة للصفحة
+    document.body.appendChild(messageDiv);
+
+    // إزالة الرسالة بعد 3 ثوان
+    setTimeout(() => {
+        messageDiv.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 300);
+    }, 3000);
+}
 
 // عرض صفحة إدارة العقارات
 function showPropertyManager() {
