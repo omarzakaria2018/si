@@ -3971,19 +3971,18 @@ footer {
     z-index: 1500;
   }
 
-  .hide-sidebar-btn {
-    
+.hide-sidebar-btn {
     position: absolute;
-    top: 5px;
-    right: 17px;
+    top: -2px;
+    right: 0px;
     background-color: var(--primary-color);
     color: white;
     border: none;
     border-radius: 5px;
-    padding: 8px 12px;
+    padding: 6px 6px;
     cursor: pointer;
-    font-size: 1rem;
-  }
+    font-size: .8rem;
+}
 
   /* تعديل البطاقات لتأخذ عرض الشاشة كاملاً */
   .cards-container {
