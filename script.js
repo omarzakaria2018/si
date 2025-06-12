@@ -9144,6 +9144,20 @@ function enterManagementMode() {
         initializeCityFilter();
         initializeManagementMobile();
         setupSidebarProtection();
+
+        // إعادة تطبيق الحماية عند تحديث المحتوى
+        const observer = new MutationObserver(() => {
+            setupSidebarProtection();
+            protectSearchFields();
+        });
+
+        const sidebar = document.getElementById('managementSidebar');
+        if (sidebar) {
+            observer.observe(sidebar, {
+                childList: true,
+                subtree: true
+            });
+        }
     }, 100);
 }
 
@@ -9257,24 +9271,37 @@ function showPropertyTabMobile(tabName) {
     showPropertyTab(tabName);
 
     // إخفاء السايد بار في الجوال فقط عند تغيير التبويب
-    // ولكن ليس عند التفاعل مع النماذج
+    // ولكن ليس عند التفاعل مع النماذج أو البحث
     if (isMobileDevice() || window.innerWidth <= 768) {
         // تأخير قصير للسماح بتحديث المحتوى أولاً
         setTimeout(() => {
-            // التحقق من أن المستخدم لم ينقر على حقل نموذج
+            // التحقق من أن المستخدم لم ينقر على حقل نموذج أو بحث
             const activeElement = document.activeElement;
             const isFormElement = activeElement && (
                 activeElement.tagName === 'INPUT' ||
                 activeElement.tagName === 'SELECT' ||
                 activeElement.tagName === 'TEXTAREA' ||
-                activeElement.classList.contains('form-control')
+                activeElement.classList.contains('form-control') ||
+                activeElement.type === 'search' ||
+                activeElement.hasAttribute('data-prevent-sidebar-close') ||
+                activeElement.placeholder?.includes('بحث') ||
+                activeElement.placeholder?.includes('اسم العقار') ||
+                activeElement.placeholder?.includes('رقم الوحدة')
             );
 
-            // إخفاء السايد بار فقط إذا لم يكن المستخدم يتفاعل مع نموذج
-            if (!isFormElement) {
+            // التحقق من وجود حقول بحث نشطة
+            const activeSearchFields = document.querySelectorAll('input[data-prevent-sidebar-close="true"]');
+            const hasActiveSearch = activeSearchFields.length > 0;
+
+            // التحقق من حالة البحث النشط في السايد بار
+            const sidebar = document.getElementById('managementSidebar');
+            const sidebarSearchActive = sidebar && sidebar.hasAttribute('data-search-active');
+
+            // إخفاء السايد بار فقط إذا لم يكن المستخدم يتفاعل مع نموذج أو بحث
+            if (!isFormElement && !hasActiveSearch && !sidebarSearchActive) {
                 closeManagementSidebar();
             }
-        }, 500);
+        }, 300);
     }
 }
 
@@ -9297,7 +9324,8 @@ function setupSidebarProtection() {
     const protectedElements = [
         'input', 'select', 'textarea', 'button.city-option',
         '.city-filter-list', '.form-control', '.form-group',
-        '.property-form', '.section-header'
+        '.property-form', '.section-header', '.search-container',
+        '.property-search', '.unit-search', '.merge-search'
     ];
 
     protectedElements.forEach(selector => {
@@ -9314,29 +9342,75 @@ function setupSidebarProtection() {
             element.addEventListener('touchstart', function(e) {
                 e.stopPropagation();
             });
+
+            element.addEventListener('touchend', function(e) {
+                e.stopPropagation();
+            });
         });
     });
 
-    // إضافة معالج خاص لحقول البحث في المحتوى الرئيسي
-    const searchInputs = document.querySelectorAll('#propertySearch, #unitSearch, input[type="search"], input[placeholder*="بحث"]');
-    searchInputs.forEach(input => {
-        input.addEventListener('focus', function(e) {
-            e.stopPropagation();
-            // منع إخفاء السايد بار عند التركيز على البحث
-            this.setAttribute('data-prevent-sidebar-close', 'true');
+    // حماية خاصة لحقول البحث في جميع التبويبات
+    const searchSelectors = [
+        '#propertySearch', '#unitSearch', '#mergeSearch',
+        'input[type="search"]', 'input[placeholder*="بحث"]',
+        'input[placeholder*="اسم العقار"]', 'input[placeholder*="رقم الوحدة"]',
+        'input[placeholder*="رقم العقد"]', '.search-input',
+        '#unitSearchInput', '#propertySearchInput', '#mergeSearchInput'
+    ];
+
+    searchSelectors.forEach(selector => {
+        // البحث في السايد بار
+        const sidebarInputs = sidebar.querySelectorAll(selector);
+        sidebarInputs.forEach(input => {
+            addSearchProtection(input);
         });
 
-        input.addEventListener('blur', function(e) {
-            // إزالة الحماية عند فقدان التركيز
-            this.removeAttribute('data-prevent-sidebar-close');
-        });
-
-        input.addEventListener('input', function(e) {
-            e.stopPropagation();
+        // البحث في المحتوى الرئيسي أيضاً
+        const mainInputs = document.querySelectorAll(selector);
+        mainInputs.forEach(input => {
+            addSearchProtection(input);
         });
     });
 
     console.log('✅ تم إعداد حماية السايد بار من الإخفاء غير المرغوب فيه');
+}
+
+// إضافة حماية لحقل البحث
+function addSearchProtection(input) {
+    if (!input) return;
+
+    // منع جميع الأحداث التي قد تؤدي لإخفاء السايد بار
+    const events = ['click', 'focus', 'touchstart', 'touchend', 'input', 'keyup', 'keydown', 'mousedown', 'mouseup'];
+
+    events.forEach(eventType => {
+        input.addEventListener(eventType, function(e) {
+            e.stopPropagation();
+            // وضع علامة حماية
+            this.setAttribute('data-prevent-sidebar-close', 'true');
+
+            // حماية إضافية للجوال
+            if (isMobileDevice() || window.innerWidth <= 768) {
+                // منع إخفاء السايد بار عند التفاعل مع البحث
+                const sidebar = document.getElementById('managementSidebar');
+                if (sidebar) {
+                    sidebar.setAttribute('data-search-active', 'true');
+                }
+            }
+        });
+    });
+
+    // إزالة الحماية عند فقدان التركيز
+    input.addEventListener('blur', function() {
+        setTimeout(() => {
+            this.removeAttribute('data-prevent-sidebar-close');
+
+            // إزالة الحماية من السايد بار
+            const sidebar = document.getElementById('managementSidebar');
+            if (sidebar) {
+                sidebar.removeAttribute('data-search-active');
+            }
+        }, 200);
+    });
 }
 
 // الخروج من وضع الإدارة
@@ -9741,6 +9815,35 @@ function showPropertyTab(tabName) {
             mergedDisplay.innerHTML = renderMergedUnits();
         }
     }
+
+    // إعادة تطبيق حماية حقول البحث بعد تحديث المحتوى
+    setTimeout(() => {
+        protectSearchFields();
+    }, 100);
+}
+
+// حماية خاصة لحقول البحث
+function protectSearchFields() {
+    const searchFields = document.querySelectorAll('#propertySearch, #unitSearch, #mergeSearch, input[type="search"], input[placeholder*="بحث"]');
+
+    searchFields.forEach(field => {
+        if (field && !field.hasAttribute('data-protected')) {
+            field.setAttribute('data-protected', 'true');
+            addSearchProtection(field);
+
+            // حماية إضافية للجوال
+            if (isMobileDevice() || window.innerWidth <= 768) {
+                field.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                    this.setAttribute('data-prevent-sidebar-close', 'true');
+                });
+
+                field.addEventListener('touchend', function(e) {
+                    e.stopPropagation();
+                });
+            }
+        }
+    });
 }
 
 // إضافة عقار جديد
@@ -12337,7 +12440,7 @@ function mergeSelectedUnits() {
 // ===== وظائف فصل وتحرير الوحدات المدموجة =====
 
 // فصل الوحدات المدموجة
-function splitMergedContract(contractNumber, propertyName) {
+async function splitMergedContract(contractNumber, propertyName) {
     console.log(`🔓 بدء فصل الوحدات للعقد ${contractNumber} في العقار ${propertyName}`);
 
     // التأكد من رغبة المستخدم في الفصل
@@ -12377,21 +12480,53 @@ function splitMergedContract(contractNumber, propertyName) {
     }
 
     // حفظ في Supabase إذا كان متوفراً
-    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+    if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof savePropertyToSupabase === 'function') {
         console.log('☁️ حفظ البيانات في Supabase...');
+        let supabaseErrors = 0;
+
         try {
-            contractUnits.forEach(async (unit) => {
-                if (typeof savePropertyToSupabase === 'function') {
-                    await savePropertyToSupabase(unit);
+            // استخدام Promise.all للحفظ المتزامن
+            const savePromises = contractUnits.map(async (unit) => {
+                try {
+                    const result = await savePropertyToSupabase(unit);
+                    if (result) {
+                        console.log(`✅ تم حفظ فصل الوحدة ${unit['رقم  الوحدة ']} في Supabase`);
+                        return true;
+                    } else {
+                        console.error(`❌ فشل حفظ فصل الوحدة ${unit['رقم  الوحدة ']} في Supabase`);
+                        supabaseErrors++;
+                        return false;
+                    }
+                } catch (error) {
+                    console.error(`❌ خطأ في حفظ فصل الوحدة ${unit['رقم  الوحدة ']}:`, error);
+                    supabaseErrors++;
+                    return false;
                 }
             });
-            console.log('✅ تم حفظ البيانات في Supabase');
+
+            await Promise.all(savePromises);
+
+            if (supabaseErrors === 0) {
+                console.log('✅ تم حفظ جميع البيانات في Supabase بنجاح');
+            } else {
+                console.warn(`⚠️ فشل حفظ ${supabaseErrors} وحدة في Supabase`);
+            }
         } catch (error) {
-            console.error('❌ خطأ في حفظ البيانات في Supabase:', error);
+            console.error('❌ خطأ عام في حفظ البيانات في Supabase:', error);
+            supabaseErrors = contractUnits.length;
         }
     }
 
-    alert(`تم فصل ${splitCount} وحدات من العقد رقم ${contractNumber} بنجاح!`);
+    // إظهار رسالة النجاح مع تفاصيل الحفظ
+    let message = `تم فصل ${splitCount} وحدة من العقد رقم ${contractNumber} بنجاح!`;
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        if (supabaseErrors === 0) {
+            message += `\n✅ تم حفظ جميع التغييرات في قاعدة البيانات السحابية`;
+        } else if (supabaseErrors > 0) {
+            message += `\n⚠️ تحذير: فشل حفظ ${supabaseErrors} وحدة في قاعدة البيانات السحابية`;
+        }
+    }
+    alert(message);
 
     // تحديث العرض
     const mergedDisplay = document.getElementById('mergedUnitsDisplay');
@@ -12478,7 +12613,7 @@ function editMergedContract(contractNumber, propertyName) {
 }
 
 // حفظ تعديلات العقد
-function saveEditedContract(oldContractNumber, propertyName) {
+async function saveEditedContract(oldContractNumber, propertyName) {
     const newContractNumber = document.getElementById('editContractNumber').value.trim();
     const selectedUnits = Array.from(document.querySelectorAll('input[name="editUnits"]:checked'))
         .map(checkbox => checkbox.value);
@@ -12528,31 +12663,63 @@ function saveEditedContract(oldContractNumber, propertyName) {
     }
 
     // حفظ في Supabase إذا كان متوفراً
-    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+    if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof savePropertyToSupabase === 'function') {
         console.log('☁️ حفظ البيانات في Supabase...');
+        let supabaseErrors = 0;
+
         try {
-            allContractUnits.forEach(async (unit) => {
-                if (typeof savePropertyToSupabase === 'function') {
-                    await savePropertyToSupabase(unit);
+            // استخدام Promise.all للحفظ المتزامن
+            const savePromises = allContractUnits.map(async (unit) => {
+                try {
+                    const result = await savePropertyToSupabase(unit);
+                    if (result) {
+                        console.log(`✅ تم حفظ تحديث الوحدة ${unit['رقم  الوحدة ']} في Supabase`);
+                        return true;
+                    } else {
+                        console.error(`❌ فشل حفظ تحديث الوحدة ${unit['رقم  الوحدة ']} في Supabase`);
+                        supabaseErrors++;
+                        return false;
+                    }
+                } catch (error) {
+                    console.error(`❌ خطأ في حفظ تحديث الوحدة ${unit['رقم  الوحدة ']}:`, error);
+                    supabaseErrors++;
+                    return false;
                 }
             });
-            console.log('✅ تم حفظ البيانات في Supabase');
+
+            await Promise.all(savePromises);
+
+            if (supabaseErrors === 0) {
+                console.log('✅ تم حفظ جميع البيانات في Supabase بنجاح');
+            } else {
+                console.warn(`⚠️ فشل حفظ ${supabaseErrors} وحدة في Supabase`);
+            }
         } catch (error) {
-            console.error('❌ خطأ في حفظ البيانات في Supabase:', error);
+            console.error('❌ خطأ عام في حفظ البيانات في Supabase:', error);
+            supabaseErrors = allContractUnits.length;
         }
     }
 
     // إغلاق النافذة
     document.querySelector('.modal-overlay').remove();
 
-    // رسالة النجاح
+    // رسالة النجاح مع تفاصيل الحفظ
     let message = `تم تحديث العقد بنجاح!\n`;
     if (updatedCount > 0) {
         message += `- تم تحديث ${updatedCount} وحدة للعقد رقم ${newContractNumber}\n`;
     }
     if (removedCount > 0) {
-        message += `- تم فصل ${removedCount} وحدة من العقد`;
+        message += `- تم فصل ${removedCount} وحدة من العقد\n`;
     }
+
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        if (supabaseErrors === 0) {
+            message += `✅ تم حفظ جميع التغييرات في قاعدة البيانات السحابية`;
+        } else if (supabaseErrors > 0) {
+            message += `⚠️ تحذير: فشل حفظ ${supabaseErrors} وحدة في قاعدة البيانات السحابية`;
+        }
+    }
+
     alert(message);
 
     // تحديث العرض
@@ -14050,7 +14217,7 @@ function formatDateForInput(dateStr) {
 }
 
 // حفظ تعديلات العقار
-function savePropertyEdit(event) {
+async function savePropertyEdit(event) {
     event.preventDefault();
 
     const form = event.target;
@@ -14196,8 +14363,19 @@ function savePropertyEdit(event) {
     }
 
     // حفظ في Supabase إذا كان متوفراً
+    let supabaseSuccess = false;
     if (typeof savePropertyToSupabase === 'function') {
-        savePropertyToSupabase(updatedProperty);
+        try {
+            const result = await savePropertyToSupabase(updatedProperty);
+            if (result) {
+                console.log(`✅ تم حفظ تعديلات العقار في Supabase`);
+                supabaseSuccess = true;
+            } else {
+                console.error(`❌ فشل حفظ تعديلات العقار في Supabase`);
+            }
+        } catch (error) {
+            console.error(`❌ خطأ في حفظ تعديلات العقار:`, error);
+        }
     }
 
     // حفظ البيانات محلياً
@@ -14206,9 +14384,19 @@ function savePropertyEdit(event) {
     // إعادة حساب الحالات
     initializeApp();
 
-    // إغلاق النافذة وإظهار رسالة نجاح
+    // إغلاق النافذة وإظهار رسالة نجاح مع تفاصيل الحفظ
     closeModal();
-    alert('تم حفظ التغييرات بنجاح!');
+
+    let message = 'تم حفظ التغييرات بنجاح!';
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        if (supabaseSuccess) {
+            message += '\n✅ تم حفظ التغييرات في قاعدة البيانات السحابية';
+        } else {
+            message += '\n⚠️ تحذير: فشل حفظ التغييرات في قاعدة البيانات السحابية';
+        }
+    }
+
+    alert(message);
 }
 
 // ==================== وظائف مساعدة إضافية ====================
@@ -14380,7 +14568,7 @@ function linkUnitToContract(unitNumber, propertyName, contractNumber) {
 }
 
 // فصل وحدة من العقد
-function unlinkUnit(unitNumber, propertyName, contractNumber) {
+async function unlinkUnit(unitNumber, propertyName, contractNumber) {
     if (!confirm(`هل أنت متأكد من فصل الوحدة ${unitNumber} من العقد؟`)) return;
 
     const unitIndex = properties.findIndex(p =>
@@ -14390,13 +14578,46 @@ function unlinkUnit(unitNumber, propertyName, contractNumber) {
     );
 
     if (unitIndex !== -1) {
-        properties[unitIndex]['رقم العقد'] = null;
-        properties[unitIndex]['اسم المستأجر'] = null;
+        // فصل الوحدة محلياً
+        properties[unitIndex]['رقم العقد'] = '';
+        properties[unitIndex]['اسم المستأجر'] = '';
+
+        // حفظ التغييرات في Supabase
+        let supabaseSuccess = false;
+        if (typeof savePropertyToSupabase === 'function') {
+            try {
+                const result = await savePropertyToSupabase(properties[unitIndex]);
+                if (result) {
+                    console.log(`✅ تم حفظ فصل الوحدة ${unitNumber} في Supabase`);
+                    supabaseSuccess = true;
+                } else {
+                    console.error(`❌ فشل حفظ فصل الوحدة ${unitNumber} في Supabase`);
+                }
+            } catch (error) {
+                console.error(`❌ خطأ في حفظ فصل الوحدة ${unitNumber}:`, error);
+            }
+        }
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
 
         // تحديث العرض
         updateLinkedUnitsDisplay(propertyName, contractNumber);
         updateAvailableUnitsDisplay(propertyName, contractNumber, unitNumber);
-        alert(`تم فصل الوحدة ${unitNumber} من العقد`);
+
+        // إعادة حساب الحالات
+        initializeApp();
+
+        // رسالة النجاح مع تفاصيل الحفظ
+        let message = `تم فصل الوحدة ${unitNumber} من العقد`;
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            if (supabaseSuccess) {
+                message += `\n✅ تم حفظ التغييرات في قاعدة البيانات السحابية`;
+            } else {
+                message += `\n⚠️ تحذير: فشل حفظ التغييرات في قاعدة البيانات السحابية`;
+            }
+        }
+        alert(message);
     }
 }
 
