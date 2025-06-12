@@ -8860,7 +8860,7 @@ function enterManagementMode() {
                 <nav class="sidebar-nav" style="flex: 1 !important; padding: 20px !important; display: flex !important; flex-direction: column !important; gap: 15px !important; overflow-y: auto !important; background: transparent !important; justify-content: flex-start !important;">
 
                     <!-- زر العقارات -->
-                    <button class="nav-btn active" onclick="showPropertyTabMobile('properties'); hideSidebarOnMobile();" data-tab="properties"
+                    <button class="nav-btn active" onclick="showPropertyTabMobile('properties');" data-tab="properties"
                             style="
                                 width: 100% !important;
                                 background: linear-gradient(135deg, #007bff, #0056b3) !important;
@@ -8898,7 +8898,7 @@ function enterManagementMode() {
                     </button>
 
                     <!-- زر الوحدات -->
-                    <button class="nav-btn" onclick="showPropertyTabMobile('units'); hideSidebarOnMobile();" data-tab="units"
+                    <button class="nav-btn" onclick="showPropertyTabMobile('units');" data-tab="units"
                             style="
                                 width: 100% !important;
                                 background: #ffffff !important;
@@ -9143,6 +9143,7 @@ function enterManagementMode() {
     setTimeout(() => {
         initializeCityFilter();
         initializeManagementMobile();
+        setupSidebarProtection();
     }, 100);
 }
 
@@ -9254,9 +9255,30 @@ function closeManagementSidebar() {
 function showPropertyTabMobile(tabName) {
     // استدعاء الوظيفة الأصلية
     showPropertyTab(tabName);
+
+    // إخفاء السايد بار في الجوال فقط عند تغيير التبويب
+    // ولكن ليس عند التفاعل مع النماذج
+    if (isMobileDevice() || window.innerWidth <= 768) {
+        // تأخير قصير للسماح بتحديث المحتوى أولاً
+        setTimeout(() => {
+            // التحقق من أن المستخدم لم ينقر على حقل نموذج
+            const activeElement = document.activeElement;
+            const isFormElement = activeElement && (
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'SELECT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.classList.contains('form-control')
+            );
+
+            // إخفاء السايد بار فقط إذا لم يكن المستخدم يتفاعل مع نموذج
+            if (!isFormElement) {
+                closeManagementSidebar();
+            }
+        }, 500);
+    }
 }
 
-// إخفاء السايد بار في الجوال عند النقر على الأزرار
+// إخفاء السايد بار في الجوال عند النقر على الأزرار (للاستخدام المحدد)
 function hideSidebarOnMobile() {
     // التحقق من أن الجهاز جوال
     if (isMobileDevice() || window.innerWidth <= 768) {
@@ -9264,6 +9286,57 @@ function hideSidebarOnMobile() {
             closeManagementSidebar();
         }, 200);
     }
+}
+
+// إعداد حماية السايد بار من الإخفاء غير المرغوب فيه
+function setupSidebarProtection() {
+    const sidebar = document.getElementById('managementSidebar');
+    if (!sidebar) return;
+
+    // منع إخفاء السايد بار عند النقر على عناصر النماذج
+    const protectedElements = [
+        'input', 'select', 'textarea', 'button.city-option',
+        '.city-filter-list', '.form-control', '.form-group',
+        '.property-form', '.section-header'
+    ];
+
+    protectedElements.forEach(selector => {
+        const elements = sidebar.querySelectorAll(selector);
+        elements.forEach(element => {
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            element.addEventListener('focus', function(e) {
+                e.stopPropagation();
+            });
+
+            element.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+            });
+        });
+    });
+
+    // إضافة معالج خاص لحقول البحث في المحتوى الرئيسي
+    const searchInputs = document.querySelectorAll('#propertySearch, #unitSearch, input[type="search"], input[placeholder*="بحث"]');
+    searchInputs.forEach(input => {
+        input.addEventListener('focus', function(e) {
+            e.stopPropagation();
+            // منع إخفاء السايد بار عند التركيز على البحث
+            this.setAttribute('data-prevent-sidebar-close', 'true');
+        });
+
+        input.addEventListener('blur', function(e) {
+            // إزالة الحماية عند فقدان التركيز
+            this.removeAttribute('data-prevent-sidebar-close');
+        });
+
+        input.addEventListener('input', function(e) {
+            e.stopPropagation();
+        });
+    });
+
+    console.log('✅ تم إعداد حماية السايد بار من الإخفاء غير المرغوب فيه');
 }
 
 // الخروج من وضع الإدارة

@@ -5274,6 +5274,17 @@ footer {
         font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
     }
 
+    /* منع إخفاء السايد بار عند التفاعل مع عناصر النماذج */
+    .management-sidebar input,
+    .management-sidebar select,
+    .management-sidebar textarea,
+    .management-sidebar .form-control,
+    .management-sidebar .city-filter-list,
+    .management-sidebar .city-option {
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+    }
+
     .management-sidebar .sidebar-header {
         background: linear-gradient(135deg, #007bff, #0056b3) !important;
         padding: 25px 20px !important;
@@ -11893,8 +11904,7 @@ td .remaining-installments {
 }
 
 .cities-list {
-display: flex
-;
+    display: flex;
     flex-wrap: wrap;
     gap: 8px;
     flex-direction: column;
