@@ -323,6 +323,12 @@ aside.active {
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+    position: relative;
+    z-index: 1600; /* أعلى من السايدبار */
+    background: white;
+    touch-action: manipulation; /* منع التداخل مع اللمس */
 }
 
 #propertyList {
@@ -682,6 +688,43 @@ main {
     top: 0 !important;
     right: 0 !important;
     z-index: 1500 !important;
+    position: fixed !important;
+    background: white !important;
+    overflow-y: auto !important;
+  }
+
+  /* حماية منطقة البحث من الإغلاق */
+  aside.active #propertySearch {
+    pointer-events: auto !important;
+    z-index: 1600 !important;
+    position: relative !important;
+    background: white !important;
+    border: 2px solid #007bff !important;
+  }
+
+  /* حماية قائمة العقارات */
+  aside.active #propertyList {
+    pointer-events: auto !important;
+    z-index: 1550 !important;
+    position: relative !important;
+  }
+
+  /* حماية إضافية عند البحث النشط */
+  aside.search-active {
+    pointer-events: auto !important;
+    transform: translateX(0) !important;
+  }
+
+  aside.search-active #propertySearch {
+    border-color: #007bff !important;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3) !important;
+  }
+
+  /* منع إغلاق السايدبار عند التفاعل مع البحث */
+  aside.active #propertySearch:focus,
+  aside.active #propertySearch:active {
+    pointer-events: auto !important;
+    z-index: 1700 !important;
   }
 }
 
@@ -950,7 +993,7 @@ main {
   /* التأكد من أن الـ sidebar لا يتأثر بأي تعريفات أخرى */
   aside#sidebar {
     position: fixed !important;
-    top: 99px !important;
+    top: 90px !important;
     right: 0 !important;
     width: 280px !important;
     height: calc(100vh - 70px) !important;
@@ -3214,13 +3257,13 @@ button {
 #countryButtons button {
   background: linear-gradient(to left, #3a5db0, #2a4b9b);
   color: white;
-  margin: 3px;
-  padding: 8px 15px;
-  border-radius: 20px;
-  font-size: 1rem;
-  font-weight: 700;
-  transition: all 0.3s ease;
-  white-space: nowrap;
+    margin: 3px 3px 0;
+    padding: 8px 15px;
+    border-radius: 9px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 #countryButtons button:first-child {
@@ -13791,4 +13834,206 @@ textarea.mobile-friendly:focus {
         flex-direction: column;
         padding: 20px;
     }
+}
+
+/* ===== أزرار الهيدر الجديدة للشاشات الكبيرة ===== */
+.desktop-header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.mobile-header-buttons {
+  display: none;
+}
+
+/* أزرار الهيدر الرئيسية */
+.header-main-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  white-space: nowrap;
+  min-height: 40px;
+}
+
+.header-main-btn:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+}
+
+.header-main-btn:active {
+  transform: translateY(0);
+}
+
+/* ألوان مميزة لكل مجموعة أزرار */
+.filters-btn {
+  background: linear-gradient(135deg, #28a745, #20c997) !important;
+}
+
+.filters-btn:hover {
+  background: linear-gradient(135deg, #20c997, #17a2b8) !important;
+}
+
+.display-btn {
+  background: linear-gradient(135deg, #17a2b8, #138496) !important;
+}
+
+.display-btn:hover {
+  background: linear-gradient(135deg, #138496, #117a8b) !important;
+}
+
+.management-btn {
+  background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+  color: #212529 !important;
+}
+
+.management-btn:hover {
+  background: linear-gradient(135deg, #e0a800, #d39e00) !important;
+}
+
+.settings-btn {
+  background: linear-gradient(135deg, #6c757d, #495057) !important;
+}
+
+.settings-btn:hover {
+  background: linear-gradient(135deg, #495057, #343a40) !important;
+}
+
+/* أزرار القوائم المنسدلة */
+.header-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle .dropdown-arrow {
+  margin-left: 5px;
+  transition: transform 0.3s ease;
+}
+
+.dropdown-toggle.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* القوائم المنسدلة */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  min-width: 220px;
+  z-index: 1001;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.dropdown-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  padding: 12px 16px;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  color: #007bff;
+}
+
+.dropdown-item i {
+  width: 16px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.dropdown-item:hover i {
+  color: #007bff;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e9ecef;
+  margin: 5px 0;
+}
+
+/* تجاوب الهيدر */
+@media (min-width: 769px) {
+  /* إخفاء الأزرار القديمة في الشاشات الكبيرة */
+  .mobile-header-buttons {
+    display: none !important;
+  }
+
+  /* إظهار الأزرار الجديدة في الشاشات الكبيرة */
+  .desktop-header-buttons {
+    display: flex !important;
+  }
+
+  /* إخفاء الأزرار القديمة الفردية بشكل مباشر */
+  .mobile-header-buttons .view-toggle,
+  .mobile-header-buttons #exportExcel,
+  .mobile-header-buttons #contractTypeFilterBtn,
+  .mobile-header-buttons #monthFilterBtn,
+  .mobile-header-buttons #multiPropertyFilterBtn,
+  .mobile-header-buttons #attachmentsManagerBtn,
+  .mobile-header-buttons #propertyManagerBtn,
+  .mobile-header-buttons #dataImportBtn,
+  .mobile-header-buttons #cleanStorageBtn,
+  .mobile-header-buttons #updateDatesBtn,
+  .mobile-header-buttons .export-btn,
+  .mobile-header-buttons .hideable-header-btn {
+    display: none !important;
+  }
+
+  /* إخفاء أي أزرار قديمة خارج المجموعة الجديدة */
+  .header-actions .view-toggle:not(.desktop-header-buttons .view-toggle),
+  .header-actions .export-btn:not(.desktop-header-buttons .export-btn),
+  .header-actions .hideable-header-btn:not(.desktop-header-buttons) {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* إخفاء الأزرار الجديدة في الشاشات الصغيرة */
+  .desktop-header-buttons {
+    display: none !important;
+  }
+
+  /* إظهار الأزرار القديمة في الشاشات الصغيرة */
+  .mobile-header-buttons {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }

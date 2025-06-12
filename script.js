@@ -697,10 +697,33 @@ function initGlobalSearch() {
 // تهيئة البحث في العقارات
 function initPropertySearch() {
     const searchInput = document.getElementById('propertySearch');
-    searchInput.addEventListener('input', function() {
+    if (!searchInput) return;
+
+    // منع إغلاق السايدبار عند التفاعل مع البحث
+    searchInput.addEventListener('focus', function(e) {
+        e.stopPropagation();
+        // إضافة كلاس حماية للسايدبار
+        const sidebar = document.querySelector('aside');
+        if (sidebar) {
+            sidebar.classList.add('search-active');
+        }
+    });
+
+    searchInput.addEventListener('blur', function(e) {
+        // إزالة كلاس الحماية بعد تأخير قصير
+        setTimeout(() => {
+            const sidebar = document.querySelector('aside');
+            if (sidebar) {
+                sidebar.classList.remove('search-active');
+            }
+        }, 300);
+    });
+
+    searchInput.addEventListener('input', function(e) {
+        e.stopPropagation(); // منع انتشار الحدث
         const searchTerm = this.value.toLowerCase();
         const propertyItems = document.querySelectorAll('#propertyList div');
-        
+
         propertyItems.forEach(item => {
             const propertyName = item.textContent.toLowerCase();
             if (propertyName.includes(searchTerm)) {
@@ -709,6 +732,15 @@ function initPropertySearch() {
                 item.style.display = 'none';
             }
         });
+    });
+
+    // منع إغلاق السايدبار عند النقر على البحث
+    searchInput.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+
+    searchInput.addEventListener('touchstart', function(e) {
+        e.stopPropagation();
     });
 }
 
@@ -778,9 +810,18 @@ function toggleView(view) {
 // تبديل عرض الشريط الجانبي
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
+    const searchInput = document.getElementById('propertySearch');
 
     // في الشاشات الصغيرة فقط
     if (window.innerWidth <= 900) {
+        // التحقق من حالة البحث النشط
+        if (sidebar.classList.contains('search-active') ||
+            (searchInput && document.activeElement === searchInput)) {
+            // لا تغلق السايدبار إذا كان البحث نشطاً
+            console.log('🔒 منع إغلاق السايدبار - البحث نشط');
+            return;
+        }
+
         sidebar.classList.toggle('active');
     }
     // في الشاشات الكبيرة الـ sidebar دائماً ظاهر
@@ -866,6 +907,44 @@ function initializeSidebar() {
 // مستمع لتغيير حجم الشاشة
 window.addEventListener('resize', function() {
     initializeSidebar();
+});
+
+// حماية السايدبار من الإغلاق أثناء البحث
+document.addEventListener('click', function(e) {
+    const sidebar = document.getElementById('sidebar');
+    const searchInput = document.getElementById('propertySearch');
+
+    // إذا كان النقر خارج السايدبار وليس على زر التبديل
+    if (sidebar && !sidebar.contains(e.target) &&
+        !e.target.closest('.toggle-sidebar-btn') &&
+        !e.target.closest('#mobile-property-btn') &&
+        window.innerWidth <= 900) {
+
+        // التحقق من حالة البحث النشط
+        if (sidebar.classList.contains('search-active') ||
+            (searchInput && document.activeElement === searchInput)) {
+            // لا تغلق السايدبار إذا كان البحث نشطاً
+            console.log('🔒 منع إغلاق السايدبار - البحث نشط');
+            return;
+        }
+
+        // إغلاق السايدبار فقط إذا لم يكن البحث نشطاً
+        sidebar.classList.remove('active');
+    }
+});
+
+// حماية إضافية للبحث من أحداث اللمس
+document.addEventListener('touchstart', function(e) {
+    const sidebar = document.getElementById('sidebar');
+    const searchInput = document.getElementById('propertySearch');
+
+    // إذا كان اللمس على البحث، منع إغلاق السايدبار
+    if (searchInput && (e.target === searchInput || searchInput.contains(e.target))) {
+        e.stopPropagation();
+        if (sidebar) {
+            sidebar.classList.add('search-active');
+        }
+    }
 });
 
 // تهيئة فلتر التاريخ
@@ -16139,6 +16218,241 @@ function populateCitiesList() {
 
         citiesContainer.appendChild(cityElement);
     });
+}
+
+// ==================== وظائف الهيدر الجديد ====================
+
+// تبديل القوائم المنسدلة في الهيدر
+function toggleHeaderDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId + 'Dropdown');
+    const button = dropdown.previousElementSibling;
+
+    // إغلاق جميع القوائم الأخرى
+    closeAllDropdowns();
+
+    // تبديل القائمة الحالية
+    if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+        button.classList.remove('active');
+    } else {
+        dropdown.classList.add('show');
+        button.classList.add('active');
+    }
+}
+
+// إغلاق جميع القوائم المنسدلة
+function closeAllDropdowns() {
+    const dropdowns = document.querySelectorAll('.dropdown-menu');
+    const buttons = document.querySelectorAll('.dropdown-toggle');
+
+    dropdowns.forEach(dropdown => {
+        dropdown.classList.remove('show');
+    });
+
+    buttons.forEach(button => {
+        button.classList.remove('active');
+    });
+}
+
+// إغلاق القوائم عند النقر خارجها
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.header-dropdown')) {
+        closeAllDropdowns();
+    }
+});
+
+// دوال الفلاتر والإعدادات
+function showMonthFilter() {
+    // استدعاء نفس الوظيفة المستخدمة في الزر القديم
+    if (typeof showMonthFilterModal === 'function') {
+        showMonthFilterModal();
+    } else {
+        // البحث عن الزر القديم وتشغيله
+        const oldBtn = document.getElementById('monthFilterBtn');
+        if (oldBtn && oldBtn.onclick) {
+            oldBtn.onclick();
+        }
+    }
+}
+
+function showMultiPropertyFilter() {
+    // استدعاء نفس الوظيفة المستخدمة في الزر القديم
+    if (typeof showMultiPropertyCityFilter === 'function') {
+        showMultiPropertyCityFilter();
+    } else {
+        const oldBtn = document.getElementById('multiPropertyFilterBtn');
+        if (oldBtn && oldBtn.onclick) {
+            oldBtn.onclick();
+        }
+    }
+}
+
+function showContractTypeFilterFromDropdown() {
+    // استدعاء وظيفة فلتر نوع العقد الأصلية
+    const originalFunction = window.showContractTypeFilter;
+    if (originalFunction && typeof originalFunction === 'function') {
+        originalFunction();
+    } else {
+        // تشغيل نفس منطق الزر القديم
+        const oldBtn = document.getElementById('contractTypeFilterBtn');
+        if (oldBtn) {
+            oldBtn.click();
+        }
+    }
+}
+
+function showStatusFilterFromDropdown() {
+    // استدعاء وظيفة فلتر الحالة الأصلية مباشرة
+    try {
+        showStatusFilter();
+    } catch (error) {
+        console.error('خطأ في استدعاء فلتر الحالة:', error);
+        // إنشاء فلتر الحالة يدوياً كبديل
+        const filterContainer = document.getElementById('headerFilters');
+        if (filterContainer) {
+            filterContainer.innerHTML = `
+                <div class="status-filter-container">
+                    <select id="statusFilter" onchange="setStatusFilter(this.value === '' ? null : this.value)" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                        <option value="">جميع الحالات</option>
+                        <option value="جاري">جاري</option>
+                        <option value="منتهى">منتهى</option>
+                        <option value="على وشك">على وشك</option>
+                        <option value="فارغ">فارغ</option>
+                    </select>
+                </div>
+            `;
+        }
+    }
+}
+
+function showAttachmentsManagerFromDropdown() {
+    // استدعاء وظيفة إدارة المرفقات الأصلية
+    const originalFunction = window.showAttachmentsManager;
+    if (originalFunction && typeof originalFunction === 'function') {
+        originalFunction();
+    } else {
+        const oldBtn = document.getElementById('attachmentsManagerBtn');
+        if (oldBtn) {
+            oldBtn.click();
+        }
+    }
+}
+
+function switchToTableView() {
+    // تشغيل نفس وظيفة التبديل للجدول
+    if (typeof toggleView === 'function') {
+        toggleView('table');
+    }
+}
+
+function switchToCardView() {
+    // تشغيل نفس وظيفة التبديل للبطاقات
+    if (typeof toggleView === 'function') {
+        toggleView('cards');
+    }
+}
+
+function showPropertyManagerFromDropdown() {
+    // استدعاء وظيفة إدارة العقارات الأصلية
+    const originalFunction = window.showPropertyManager;
+    if (originalFunction && typeof originalFunction === 'function') {
+        originalFunction();
+    } else {
+        const oldBtn = document.getElementById('propertyManagerBtn');
+        if (oldBtn) {
+            oldBtn.click();
+        }
+    }
+}
+
+function updateDateSettings() {
+    // تشغيل نفس وظيفة تحديث التواريخ
+    if (typeof showDateUpdateModal === 'function') {
+        showDateUpdateModal();
+    } else {
+        const oldBtn = document.getElementById('updateDatesBtn');
+        if (oldBtn && oldBtn.onclick) {
+            oldBtn.onclick();
+        }
+    }
+}
+
+function cleanStorage() {
+    // تشغيل نفس وظيفة تنظيف التخزين
+    if (typeof showStorageCleanupModal === 'function') {
+        showStorageCleanupModal();
+    } else {
+        const oldBtn = document.getElementById('cleanStorageBtn');
+        if (oldBtn && oldBtn.onclick) {
+            oldBtn.onclick();
+        }
+    }
+}
+
+function importData() {
+    // تشغيل نفس وظيفة استيراد البيانات
+    if (typeof showDataImportModal === 'function') {
+        showDataImportModal();
+    } else {
+        const oldBtn = document.getElementById('dataImportBtn');
+        if (oldBtn && oldBtn.onclick) {
+            oldBtn.onclick();
+        }
+    }
+}
+
+function saveAllData() {
+    // حفظ جميع البيانات محلياً
+    try {
+        if (typeof saveDataLocally === 'function') {
+            saveDataLocally();
+        } else {
+            // حفظ البيانات في localStorage
+            localStorage.setItem('properties', JSON.stringify(properties));
+            localStorage.setItem('attachments', JSON.stringify(attachments));
+            localStorage.setItem('cardAttachments', JSON.stringify(cardAttachments));
+        }
+        alert('✅ تم حفظ البيانات محلياً بنجاح!');
+    } catch (error) {
+        console.error('خطأ في حفظ البيانات:', error);
+        alert('❌ حدث خطأ أثناء حفظ البيانات');
+    }
+}
+
+function repairAllData() {
+    // إصلاح البيانات
+    if (confirm('هل أنت متأكد من إصلاح البيانات؟ قد يستغرق هذا بعض الوقت.')) {
+        try {
+            // إعادة حساب الإجماليات
+            if (typeof recalculateAllTotals === 'function') {
+                recalculateAllTotals();
+            }
+
+            // حفظ البيانات
+            saveAllData();
+
+            // إعادة تحميل التطبيق
+            if (typeof initializeApp === 'function') {
+                initializeApp();
+            }
+
+            alert('✅ تم إصلاح البيانات بنجاح!');
+        } catch (error) {
+            console.error('خطأ في إصلاح البيانات:', error);
+            alert('❌ حدث خطأ أثناء إصلاح البيانات');
+        }
+    }
+}
+
+function updateSupabaseData() {
+    // تحديث بيانات Supabase
+    if (typeof updateAllSupabaseData === 'function') {
+        updateAllSupabaseData();
+    } else if (typeof syncToSupabase === 'function') {
+        syncToSupabase();
+    } else {
+        alert('⚠️ وظيفة تحديث Supabase غير متوفرة حالياً');
+    }
 }
 
 // ==================== وظائف إخفاء/إظهار أزرار الهيدر ====================
