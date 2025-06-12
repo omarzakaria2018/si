@@ -12277,13 +12277,14 @@ textarea.mobile-friendly:focus {
     width: 40px;
     height: 40px;
     border: none;
-    background: rgba(0,0,0,0.1);
+    background: white;
     border-radius: 50%;
-    font-size: 1.2rem;
-    color: #495057;
+    font-size: 5.2rem;
+    color: #e02508;
     cursor: pointer;
     transition: all 0.3s ease;
-    display: flex;
+    display: flex
+;
     align-items: center;
     justify-content: center;
     z-index: 10;
@@ -13988,6 +13989,212 @@ textarea.mobile-friendly:focus {
   margin: 5px 0;
 }
 
+/* ===== نافذة تحديث الإجماليات ===== */
+.update-totals-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.update-totals-modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.update-totals-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  transform: translateY(-20px);
+  transition: transform 0.3s ease;
+}
+
+.update-totals-modal.show .update-totals-content {
+  transform: translateY(0);
+}
+
+.update-totals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.update-totals-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.update-totals-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.update-totals-close:hover {
+  background: #f8f9fa;
+  color: #dc3545;
+}
+
+/* منطقة رفع الملفات */
+.totals-upload-zone {
+  border: 3px dashed #007bff;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: #f8f9ff;
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.totals-upload-zone:hover,
+.totals-upload-zone.dragover {
+  border-color: #0056b3;
+  background: #e3f2fd;
+  transform: translateY(-2px);
+}
+
+.totals-upload-icon {
+  font-size: 3rem;
+  color: #007bff;
+  margin-bottom: 1rem;
+}
+
+.totals-upload-text {
+  font-size: 1.1rem;
+  color: #495057;
+  margin-bottom: 0.5rem;
+}
+
+.totals-upload-hint {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.totals-file-input {
+  display: none;
+}
+
+/* معاينة البيانات */
+.totals-preview {
+  margin-bottom: 2rem;
+  display: none;
+}
+
+.totals-preview.show {
+  display: block;
+}
+
+.totals-preview-header {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.totals-preview-content {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.totals-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.totals-preview-table th,
+.totals-preview-table td {
+  padding: 0.75rem;
+  text-align: right;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.totals-preview-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+}
+
+/* أزرار العمليات */
+.totals-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.totals-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.totals-btn-primary {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+}
+
+.totals-btn-primary:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-2px);
+}
+
+.totals-btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.totals-btn-secondary:hover {
+  background: #5a6268;
+}
+
+.totals-btn-success {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+
+.totals-btn-success:hover {
+  background: linear-gradient(135deg, #20c997, #17a2b8);
+  transform: translateY(-2px);
+}
+
 /* تجاوب الهيدر */
 @media (min-width: 769px) {
   /* إخفاء الأزرار القديمة في الشاشات الكبيرة */
@@ -14035,5 +14242,42 @@ textarea.mobile-friendly:focus {
     display: flex !important;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  /* تجاوب نافذة تحديث الإجماليات */
+  .update-totals-content {
+    padding: 1.5rem;
+    margin: 1rem;
+    width: calc(100% - 2rem);
+  }
+
+  .update-totals-title {
+    font-size: 1.2rem;
+  }
+
+  .totals-upload-zone {
+    padding: 2rem 1rem;
+  }
+
+  .totals-upload-icon {
+    font-size: 2.5rem;
+  }
+
+  .totals-actions {
+    flex-direction: column;
+  }
+
+  .totals-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .totals-preview-table {
+    font-size: 0.9rem;
+  }
+
+  .totals-preview-table th,
+  .totals-preview-table td {
+    padding: 0.5rem;
   }
 }

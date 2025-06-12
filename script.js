@@ -16455,6 +16455,599 @@ function updateSupabaseData() {
     }
 }
 
+// ==================== وظائف تحديث الإجماليات ====================
+
+// متغيرات عامة لتحديث الإجماليات
+let updateTotalsData = null;
+let updateTotalsPreview = [];
+
+// إظهار نافذة تحديث الإجماليات
+function showUpdateTotalsModal() {
+    const modalHtml = `
+        <div class="update-totals-modal" id="updateTotalsModal">
+            <div class="update-totals-content">
+                <div class="update-totals-header">
+                    <h2 class="update-totals-title">
+                        <i class="fas fa-calculator"></i>
+                        تحديث الإجماليات
+                    </h2>
+                    <button class="update-totals-close" onclick="closeUpdateTotalsModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="totals-upload-zone" onclick="document.getElementById('totalsFileInput').click()">
+                    <div class="totals-upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="totals-upload-text">
+                        اسحب الملف هنا أو انقر للاختيار
+                    </div>
+                    <div class="totals-upload-hint">
+                        يدعم: JSON, Excel (.xlsx, .xls), CSV<br>
+                        <small style="color: #6c757d; font-size: 0.8rem;">
+                            مثال JSON: [{"رقم الوحدة": 101, "الإجمالي": 50000}]<br>
+                            مثال CSV: رقم الوحدة,الإجمالي<br>101,50000
+                        </small>
+                    </div>
+                    <input type="file" id="totalsFileInput" class="totals-file-input"
+                           accept=".json,.xlsx,.xls,.csv" onchange="handleTotalsFileUpload(this.files[0])">
+                </div>
+
+                <div class="totals-preview" id="totalsPreview">
+                    <div class="totals-preview-header">
+                        <h4>معاينة البيانات</h4>
+                        <span id="totalsPreviewCount"></span>
+                    </div>
+                    <div class="totals-preview-content">
+                        <table class="totals-preview-table" id="totalsPreviewTable">
+                            <thead>
+                                <tr>
+                                    <th>رقم الوحدة</th>
+                                    <th>الإجمالي الجديد</th>
+                                    <th>الإجمالي الحالي</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="totalsPreviewBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="totals-actions">
+                    <div>
+                        <button class="totals-btn totals-btn-secondary" onclick="closeUpdateTotalsModal()">
+                            <i class="fas fa-times"></i>
+                            إلغاء
+                        </button>
+                    </div>
+                    <div>
+                        <button class="totals-btn totals-btn-success" id="applyTotalsBtn"
+                                onclick="applyTotalsUpdate()" disabled>
+                            <i class="fas fa-check"></i>
+                            تطبيق التحديثات
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // إظهار النافذة مع تأثير
+    setTimeout(() => {
+        document.getElementById('updateTotalsModal').classList.add('show');
+    }, 100);
+
+    // إعداد drag & drop
+    setupTotalsDragAndDrop();
+}
+
+// إغلاق نافذة تحديث الإجماليات
+function closeUpdateTotalsModal() {
+    const modal = document.getElementById('updateTotalsModal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.remove();
+            updateTotalsData = null;
+            updateTotalsPreview = [];
+        }, 300);
+    }
+}
+
+// إعداد drag & drop لتحديث الإجماليات
+function setupTotalsDragAndDrop() {
+    const uploadZone = document.querySelector('.totals-upload-zone');
+    if (!uploadZone) return;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        uploadZone.classList.add('dragover');
+    }
+
+    function unhighlight() {
+        uploadZone.classList.remove('dragover');
+    }
+
+    uploadZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        if (files.length > 0) {
+            handleTotalsFileUpload(files[0]);
+        }
+    }
+}
+
+// معالجة رفع ملف تحديث الإجماليات
+async function handleTotalsFileUpload(file) {
+    if (!file) return;
+
+    console.log('📁 بدء معالجة ملف تحديث الإجماليات:', file.name);
+
+    // التحقق من نوع الملف
+    const allowedTypes = [
+        'application/json',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'text/csv'
+    ];
+
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    const allowedExtensions = ['json', 'xlsx', 'xls', 'csv'];
+
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+        alert('❌ نوع الملف غير مدعوم. يرجى اختيار ملف JSON أو Excel أو CSV');
+        return;
+    }
+
+    try {
+        // إظهار مؤشر التحميل
+        const uploadZone = document.querySelector('.totals-upload-zone');
+        uploadZone.innerHTML = `
+            <div class="totals-upload-icon">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <div class="totals-upload-text">
+                جاري معالجة الملف...
+            </div>
+        `;
+
+        let data = null;
+
+        if (fileExtension === 'json') {
+            data = await parseJSONFile(file);
+        } else if (fileExtension === 'csv') {
+            data = await parseCSVFile(file);
+        } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+            data = await parseExcelFile(file);
+        }
+
+        if (data && data.length > 0) {
+            updateTotalsData = data;
+            await generateTotalsPreview(data);
+
+            // إعادة تعيين منطقة الرفع
+            uploadZone.innerHTML = `
+                <div class="totals-upload-icon">
+                    <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                </div>
+                <div class="totals-upload-text" style="color: #28a745;">
+                    تم تحميل الملف بنجاح
+                </div>
+                <div class="totals-upload-hint">
+                    ${data.length} عنصر تم العثور عليه
+                </div>
+            `;
+        } else {
+            throw new Error('لم يتم العثور على بيانات صالحة في الملف');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في معالجة الملف:', error);
+        alert('❌ خطأ في معالجة الملف: ' + error.message);
+
+        // إعادة تعيين منطقة الرفع
+        const uploadZone = document.querySelector('.totals-upload-zone');
+        uploadZone.innerHTML = `
+            <div class="totals-upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="totals-upload-text">
+                اسحب الملف هنا أو انقر للاختيار
+            </div>
+            <div class="totals-upload-hint">
+                يدعم: JSON, Excel (.xlsx, .xls), CSV
+            </div>
+        `;
+    }
+}
+
+// تحليل ملف JSON
+async function parseJSONFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+
+                // التحقق من صيغة البيانات
+                if (Array.isArray(data)) {
+                    resolve(data);
+                } else if (data && typeof data === 'object') {
+                    // إذا كان كائن، حاول استخراج المصفوفة
+                    const keys = Object.keys(data);
+                    const arrayKey = keys.find(key => Array.isArray(data[key]));
+                    if (arrayKey) {
+                        resolve(data[arrayKey]);
+                    } else {
+                        resolve([data]);
+                    }
+                } else {
+                    reject(new Error('صيغة ملف JSON غير صحيحة'));
+                }
+            } catch (error) {
+                reject(new Error('خطأ في تحليل ملف JSON: ' + error.message));
+            }
+        };
+        reader.onerror = () => reject(new Error('خطأ في قراءة الملف'));
+        reader.readAsText(file);
+    });
+}
+
+// تحليل ملف CSV
+async function parseCSVFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(line => line.trim());
+
+                if (lines.length < 2) {
+                    reject(new Error('ملف CSV يجب أن يحتوي على رأس وبيانات'));
+                    return;
+                }
+
+                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                const data = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                    const row = {};
+
+                    headers.forEach((header, index) => {
+                        row[header] = values[index] || '';
+                    });
+
+                    data.push(row);
+                }
+
+                resolve(data);
+            } catch (error) {
+                reject(new Error('خطأ في تحليل ملف CSV: ' + error.message));
+            }
+        };
+        reader.onerror = () => reject(new Error('خطأ في قراءة الملف'));
+        reader.readAsText(file);
+    });
+}
+
+// تحليل ملف Excel (يتطلب مكتبة خارجية أو تحويل إلى CSV)
+async function parseExcelFile(file) {
+    // للبساطة، سنطلب من المستخدم تحويل Excel إلى CSV
+    // في التطبيق الحقيقي، يمكن استخدام مكتبة مثل SheetJS
+    console.log('📊 محاولة تحليل ملف Excel:', file.name);
+    throw new Error('يرجى تحويل ملف Excel إلى CSV أو JSON أولاً');
+}
+
+// إنشاء معاينة البيانات
+async function generateTotalsPreview(data) {
+    console.log('🔍 إنشاء معاينة البيانات...', data.length, 'عنصر');
+
+    updateTotalsPreview = [];
+    const previewBody = document.getElementById('totalsPreviewBody');
+    const previewCount = document.getElementById('totalsPreviewCount');
+    const applyBtn = document.getElementById('applyTotalsBtn');
+
+    if (!previewBody) return;
+
+    previewBody.innerHTML = '';
+
+    let validUpdates = 0;
+    let newProperties = 0;
+    let errors = 0;
+
+    for (const item of data) {
+        // البحث عن المفاتيح المحتملة لرقم الوحدة
+        const unitNumberKeys = ['رقم الوحدة', 'unit_number', 'unitNumber', 'رقم_الوحدة', 'Unit Number'];
+        const totalKeys = ['الإجمالي', 'total', 'Total', 'إجمالي', 'المبلغ', 'amount', 'Amount'];
+
+        let unitNumber = null;
+        let newTotal = null;
+
+        // البحث عن رقم الوحدة
+        for (const key of unitNumberKeys) {
+            if (item[key] !== undefined && item[key] !== null && item[key] !== '') {
+                // التعامل مع الأرقام والنصوص
+                if (typeof item[key] === 'number') {
+                    unitNumber = item[key].toString();
+                } else {
+                    unitNumber = item[key].toString().trim();
+                }
+
+                // التحقق من وجود قيمة صالحة
+                if (unitNumber && unitNumber !== 'undefined' && unitNumber !== 'null') {
+                    break;
+                } else {
+                    unitNumber = null;
+                }
+            }
+        }
+
+        // البحث عن الإجمالي
+        for (const key of totalKeys) {
+            if (item[key] !== undefined && item[key] !== null && item[key] !== '') {
+                // التعامل مع الأرقام المباشرة في JSON والنصوص
+                if (typeof item[key] === 'number') {
+                    newTotal = item[key];
+                } else {
+                    newTotal = parseFloat(item[key].toString().replace(/[^\d.-]/g, ''));
+                }
+
+                // التحقق من صحة الرقم
+                if (!isNaN(newTotal) && newTotal > 0) {
+                    break;
+                } else {
+                    newTotal = null;
+                }
+            }
+        }
+
+        if (!unitNumber || isNaN(newTotal)) {
+            console.warn('⚠️ تخطي عنصر غير صالح:', {
+                unitNumber,
+                newTotal,
+                originalItem: item
+            });
+            errors++;
+            continue;
+        }
+
+        console.log('✅ عنصر صالح:', {
+            unitNumber,
+            newTotal,
+            type: typeof newTotal
+        });
+
+        // البحث عن العقار في النظام
+        const existingProperty = properties.find(p =>
+            p['رقم الوحدة'] && p['رقم الوحدة'].toString().trim() === unitNumber
+        );
+
+        let currentTotal = 0;
+        let status = '';
+        let statusClass = '';
+
+        if (existingProperty) {
+            // حساب الإجمالي الحالي
+            const smartTotal = calculateSmartTotal(existingProperty);
+            currentTotal = smartTotal.amount;
+
+            if (currentTotal === newTotal) {
+                status = 'لا تغيير';
+                statusClass = 'text-muted';
+            } else {
+                status = 'تحديث';
+                statusClass = 'text-primary';
+                validUpdates++;
+            }
+        } else {
+            status = 'جديد';
+            statusClass = 'text-success';
+            newProperties++;
+        }
+
+        updateTotalsPreview.push({
+            unitNumber,
+            newTotal,
+            currentTotal,
+            status,
+            statusClass,
+            existingProperty
+        });
+
+        // إضافة صف في الجدول
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${unitNumber}</td>
+            <td>${newTotal.toLocaleString('ar-SA')} ريال</td>
+            <td>${currentTotal.toLocaleString('ar-SA')} ريال</td>
+            <td class="${statusClass}">${status}</td>
+        `;
+        previewBody.appendChild(row);
+    }
+
+    // تحديث العداد
+    previewCount.textContent = `${data.length} عنصر | ${validUpdates} تحديث | ${newProperties} جديد | ${errors} خطأ`;
+
+    // إظهار المعاينة
+    document.getElementById('totalsPreview').classList.add('show');
+
+    // تفعيل زر التطبيق إذا كان هناك تحديثات صالحة
+    if (validUpdates > 0 || newProperties > 0) {
+        applyBtn.disabled = false;
+        applyBtn.innerHTML = `
+            <i class="fas fa-check"></i>
+            تطبيق ${validUpdates + newProperties} تحديث
+        `;
+    } else {
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            لا توجد تحديثات للتطبيق
+        `;
+    }
+}
+
+// تطبيق تحديثات الإجماليات
+async function applyTotalsUpdate() {
+    if (!updateTotalsPreview || updateTotalsPreview.length === 0) {
+        alert('❌ لا توجد بيانات للتطبيق');
+        return;
+    }
+
+    // تأكيد من المستخدم
+    const validUpdates = updateTotalsPreview.filter(item =>
+        item.status === 'تحديث' || item.status === 'جديد'
+    ).length;
+
+    if (!confirm(`هل أنت متأكد من تطبيق ${validUpdates} تحديث؟\n\nهذا الإجراء سيؤثر على البيانات الموجودة.`)) {
+        return;
+    }
+
+    try {
+        // إظهار مؤشر التحميل
+        const applyBtn = document.getElementById('applyTotalsBtn');
+        const originalText = applyBtn.innerHTML;
+        applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التطبيق...';
+        applyBtn.disabled = true;
+
+        let updatedCount = 0;
+        let addedCount = 0;
+        let errors = [];
+
+        for (const item of updateTotalsPreview) {
+            if (item.status === 'لا تغيير') continue;
+
+            try {
+                if (item.existingProperty) {
+                    // تحديث عقار موجود
+                    await updatePropertyTotal(item.existingProperty, item.newTotal);
+                    updatedCount++;
+                } else {
+                    // إضافة عقار جديد (اختياري - قد نحتاج لمعلومات إضافية)
+                    console.log('⚠️ تخطي إضافة عقار جديد - يتطلب معلومات إضافية:', item.unitNumber);
+                    // addedCount++;
+                }
+            } catch (error) {
+                console.error('❌ خطأ في تحديث العقار:', item.unitNumber, error);
+                errors.push(`${item.unitNumber}: ${error.message}`);
+            }
+        }
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
+
+        // مزامنة مع Supabase إذا كان متاحاً
+        if (typeof syncToSupabase === 'function') {
+            try {
+                await syncToSupabase();
+                console.log('✅ تم مزامنة البيانات مع Supabase');
+            } catch (error) {
+                console.error('⚠️ خطأ في مزامنة Supabase:', error);
+            }
+        }
+
+        // إعادة تحميل البيانات
+        renderData();
+        updateTotalStats();
+
+        // إظهار نتائج العملية
+        let message = `✅ تم تطبيق التحديثات بنجاح!\n\n`;
+        message += `📊 العقارات المحدثة: ${updatedCount}\n`;
+        if (addedCount > 0) message += `➕ العقارات المضافة: ${addedCount}\n`;
+        if (errors.length > 0) {
+            message += `\n⚠️ أخطاء (${errors.length}):\n${errors.slice(0, 3).join('\n')}`;
+            if (errors.length > 3) message += `\n... و ${errors.length - 3} أخطاء أخرى`;
+        }
+
+        alert(message);
+
+        // إغلاق النافذة
+        closeUpdateTotalsModal();
+
+    } catch (error) {
+        console.error('❌ خطأ في تطبيق التحديثات:', error);
+        alert('❌ حدث خطأ أثناء تطبيق التحديثات: ' + error.message);
+
+        // إعادة تعيين الزر
+        const applyBtn = document.getElementById('applyTotalsBtn');
+        if (applyBtn) {
+            applyBtn.innerHTML = originalText;
+            applyBtn.disabled = false;
+        }
+    }
+}
+
+// تحديث إجمالي عقار محدد
+async function updatePropertyTotal(property, newTotal) {
+    console.log('🔄 تحديث إجمالي العقار:', property['رقم الوحدة'], 'إلى', newTotal);
+
+    // البحث عن العقار في المصفوفة
+    const propertyIndex = properties.findIndex(p =>
+        p['رقم الوحدة'] && p['رقم الوحدة'].toString().trim() === property['رقم الوحدة'].toString().trim()
+    );
+
+    if (propertyIndex === -1) {
+        throw new Error('لم يتم العثور على العقار في النظام');
+    }
+
+    // تحديث الإجمالي بطريقة ذكية
+    // نحاول تحديد أي حقل إجمالي موجود ونحدثه
+    const totalFields = [
+        'الإجمالي',
+        'إجمالي المبلغ',
+        'المبلغ الإجمالي',
+        'إجمالي العقد',
+        'قيمة العقد'
+    ];
+
+    let updated = false;
+
+    // البحث عن حقل الإجمالي الموجود وتحديثه
+    for (const field of totalFields) {
+        if (properties[propertyIndex][field] !== undefined) {
+            properties[propertyIndex][field] = newTotal;
+            updated = true;
+            console.log(`✅ تم تحديث ${field} إلى ${newTotal}`);
+            break;
+        }
+    }
+
+    // إذا لم يتم العثور على حقل إجمالي، أضف واحد جديد
+    if (!updated) {
+        properties[propertyIndex]['الإجمالي'] = newTotal;
+        console.log(`✅ تم إضافة حقل الإجمالي الجديد: ${newTotal}`);
+    }
+
+    // تحديث تاريخ آخر تعديل
+    properties[propertyIndex]['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+
+    return true;
+}
+
 // ==================== وظائف إخفاء/إظهار أزرار الهيدر ====================
 
 // تبديل إظهار/إخفاء أزرار الهيدر
