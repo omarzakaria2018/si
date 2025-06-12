@@ -51,6 +51,10 @@
                 <i class="fas fa-info-circle"></i>
                 فلتر الحالة
               </div>
+              <div class="dropdown-item" onclick="showLastUpdatesFilter(); closeAllDropdowns();">
+                <i class="fas fa-history"></i>
+                آخر تحديثات الوحدات
+              </div>
               <div class="dropdown-divider"></div>
               <div class="dropdown-item" onclick="showAttachmentsManagerFromDropdown(); closeAllDropdowns();">
                 <i class="fas fa-paperclip"></i>
@@ -315,5 +319,42 @@
   <script src="date-updater.js"></script>
   <!-- Main Application -->
   <script src="script.js"></script>
+
+  <!-- نافذة تسجيل الدخول -->
+  <div class="login-modal" id="loginModal">
+    <div class="login-content">
+      <div class="login-header">
+        <h2>تسجيل الدخول</h2>
+        <p>يرجى إدخال بيانات المستخدم للوصول للنظام</p>
+      </div>
+
+      <form class="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="username">اسم المستخدم:</label>
+          <input type="text" id="username" name="username" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">كلمة المرور:</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+
+        <button type="submit" class="login-btn">
+          <i class="fas fa-sign-in-alt"></i>
+          دخول
+        </button>
+      </form>
+
+      <div class="login-info">
+        <h4>معلومات المستخدمين:</h4>
+        <ul>
+          <li><strong>المدير (عمر):</strong> صلاحيات كاملة</li>
+          <li><strong>المدير المساعد (محمد):</strong> صلاحيات كاملة</li>
+          <li><strong>مستخدم محدود:</strong> عرض فقط</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

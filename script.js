@@ -9051,6 +9051,45 @@ function enterManagementMode() {
                             opacity: 1 !important;
                         ">دمج الوحدات</span>
                     </button>
+
+                    <!-- زر نقل الوحدات -->
+                    <button class="nav-btn" onclick="showUnitTransferModal(); hideSidebarOnMobile();"
+                            style="
+                                width: 100% !important;
+                                background: #ffffff !important;
+                                color: #2c3e50 !important;
+                                border: 3px solid #e9ecef !important;
+                                margin: 0 0 12px 0 !important;
+                                padding: 18px 25px !important;
+                                border-radius: 12px !important;
+                                min-height: 60px !important;
+                                font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                gap: 20px !important;
+                                cursor: pointer !important;
+                                transition: all 0.3s ease !important;
+                                text-align: right !important;
+                                direction: rtl !important;
+                            ">
+                        <i class="fas fa-exchange-alt" style="color: #34495e !important; font-size: 1.4rem !important; width: 30px !important; text-align: center !important; font-weight: 900 !important; flex-shrink: 0 !important;"></i>
+                        <span style="
+                            color: #2c3e50 !important;
+                            font-size: 1.2rem !important;
+                            font-weight: 800 !important;
+                            flex: 1 !important;
+                            text-align: right !important;
+                            font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                            letter-spacing: 0.5px !important;
+                            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+                            line-height: 1.2 !important;
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                        ">نقل الوحدات</span>
+                    </button>
+
                     <!-- زر تصفية حسب المدينة -->
                     <button class="nav-btn filter-btn" onclick="toggleCityFilter()" id="cityFilterBtn"
                             style="
@@ -14221,15 +14260,25 @@ function showCardEditModal(contractNumber, propertyName, unitNumber) {
                     <input type="hidden" name="originalUnitNumber" value="${unitNumber || ''}">
 
                     <div class="edit-modal-actions">
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-save"></i> حفظ التغييرات
-                        </button>
-                        <button type="button" onclick="emptyUnit('${contractNumber || ''}', '${propertyName}', '${unitNumber || ''}')" class="btn-danger">
-                            <i class="fas fa-broom"></i> إفراغ الوحدة
-                        </button>
-                        <button type="button" onclick="closeModal()" class="btn-secondary">
-                            <i class="fas fa-times"></i> إلغاء
-                        </button>
+                        <div class="action-group primary-actions">
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i> حفظ التغييرات
+                            </button>
+                            <button type="button" onclick="setNewClient('${contractNumber || ''}', '${propertyName}', '${unitNumber || ''}')" class="btn-success">
+                                <i class="fas fa-user-plus"></i> عميل جديد
+                            </button>
+                            <button type="button" onclick="renewContract('${contractNumber || ''}', '${propertyName}', '${unitNumber || ''}')" class="btn-info">
+                                <i class="fas fa-sync-alt"></i> تجديد العقد
+                            </button>
+                        </div>
+                        <div class="action-group secondary-actions">
+                            <button type="button" onclick="emptyUnit('${contractNumber || ''}', '${propertyName}', '${unitNumber || ''}')" class="btn-danger">
+                                <i class="fas fa-broom"></i> إفراغ الوحدة
+                            </button>
+                            <button type="button" onclick="closeModal()" class="btn-secondary">
+                                <i class="fas fa-times"></i> إلغاء
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -17048,6 +17097,1430 @@ async function updatePropertyTotal(property, newTotal) {
     return true;
 }
 
+// ==================== نظام نقل الوحدات ====================
+
+// متغيرات عامة لنقل الوحدات
+let transferSourceCity = null;
+let transferSourceProperty = null;
+let transferSelectedUnits = [];
+let transferDestinationProperty = null;
+
+// إظهار نافذة نقل الوحدات
+function showUnitTransferModal() {
+    const modalHtml = `
+        <div class="unit-transfer-modal" id="unitTransferModal">
+            <div class="unit-transfer-content">
+                <div class="unit-transfer-header">
+                    <h2 class="unit-transfer-title">
+                        <i class="fas fa-exchange-alt"></i>
+                        نقل الوحدات بين العقارات
+                    </h2>
+                    <button class="unit-transfer-close" onclick="closeUnitTransferModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- القسم الأول: اختيار المصدر -->
+                <div class="transfer-section" id="sourceSection">
+                    <h3 class="section-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        اختيار العقار المصدر
+                    </h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>المدينة:</label>
+                            <select id="sourceCitySelect" onchange="loadSourceProperties(this.value)">
+                                <option value="">اختر المدينة</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>العقار:</label>
+                            <select id="sourcePropertySelect" onchange="loadSourceUnits(this.value)" disabled>
+                                <option value="">اختر العقار</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- جدول الوحدات -->
+                    <div class="units-table-container" id="sourceUnitsContainer" style="display: none;">
+                        <h4>الوحدات المتاحة:</h4>
+                        <div class="units-table-wrapper">
+                            <table class="units-table" id="sourceUnitsTable">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <input type="checkbox" id="selectAllUnits" onchange="toggleAllUnits(this.checked)">
+                                        </th>
+                                        <th>رقم الوحدة</th>
+                                        <th>اسم المستأجر</th>
+                                        <th>رقم العقد</th>
+                                        <th>الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sourceUnitsBody">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="transfer-actions">
+                            <button class="transfer-btn transfer-btn-primary" onclick="showDestinationSection()" disabled id="proceedBtn">
+                                <i class="fas fa-arrow-left"></i>
+                                المتابعة لاختيار الوجهة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- القسم الثاني: اختيار الوجهة -->
+                <div class="transfer-section" id="destinationSection" style="display: none;">
+                    <h3 class="section-title">
+                        <i class="fas fa-bullseye"></i>
+                        اختيار العقار الوجهة
+                    </h3>
+
+                    <div class="form-group">
+                        <label>العقار الوجهة (في نفس المدينة):</label>
+                        <select id="destinationPropertySelect" onchange="setDestinationProperty(this.value)">
+                            <option value="">اختر العقار الوجهة</option>
+                        </select>
+                    </div>
+
+                    <div class="transfer-summary" id="transferSummary" style="display: none;">
+                        <h4>ملخص عملية النقل:</h4>
+                        <div class="summary-content">
+                            <p><strong>من:</strong> <span id="summarySource"></span></p>
+                            <p><strong>إلى:</strong> <span id="summaryDestination"></span></p>
+                            <p><strong>عدد الوحدات:</strong> <span id="summaryCount"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="transfer-actions">
+                        <button class="transfer-btn transfer-btn-secondary" onclick="backToSourceSection()">
+                            <i class="fas fa-arrow-right"></i>
+                            العودة
+                        </button>
+                        <button class="transfer-btn transfer-btn-success" onclick="confirmUnitTransfer()" disabled id="confirmTransferBtn">
+                            <i class="fas fa-check"></i>
+                            تأكيد النقل
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // إظهار النافذة مع تأثير
+    setTimeout(() => {
+        document.getElementById('unitTransferModal').classList.add('show');
+    }, 100);
+
+    // تحميل المدن
+    loadTransferCities();
+}
+
+// إغلاق نافذة نقل الوحدات
+function closeUnitTransferModal() {
+    const modal = document.getElementById('unitTransferModal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.remove();
+            // إعادة تعيين المتغيرات
+            transferSourceCity = null;
+            transferSourceProperty = null;
+            transferSelectedUnits = [];
+            transferDestinationProperty = null;
+        }, 300);
+    }
+}
+
+// تحميل المدن في قائمة المصدر
+function loadTransferCities() {
+    const citySelect = document.getElementById('sourceCitySelect');
+    if (!citySelect) return;
+
+    const cities = getUniqueCountries();
+    citySelect.innerHTML = '<option value="">اختر المدينة</option>';
+
+    cities.forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        option.textContent = city;
+        citySelect.appendChild(option);
+    });
+}
+
+// تحميل العقارات عند اختيار المدينة
+function loadSourceProperties(cityName) {
+    const propertySelect = document.getElementById('sourcePropertySelect');
+    const unitsContainer = document.getElementById('sourceUnitsContainer');
+
+    if (!cityName) {
+        propertySelect.innerHTML = '<option value="">اختر العقار</option>';
+        propertySelect.disabled = true;
+        unitsContainer.style.display = 'none';
+        return;
+    }
+
+    transferSourceCity = cityName;
+
+    // الحصول على العقارات في المدينة المختارة
+    const cityProperties = properties.filter(p => p.المدينة === cityName);
+    const uniqueProperties = [...new Set(cityProperties.map(p => p['اسم العقار']))];
+
+    propertySelect.innerHTML = '<option value="">اختر العقار</option>';
+    uniqueProperties.forEach(propertyName => {
+        const option = document.createElement('option');
+        option.value = propertyName;
+        option.textContent = propertyName;
+        propertySelect.appendChild(option);
+    });
+
+    propertySelect.disabled = false;
+    unitsContainer.style.display = 'none';
+}
+
+// تحميل الوحدات عند اختيار العقار
+function loadSourceUnits(propertyName) {
+    const unitsContainer = document.getElementById('sourceUnitsContainer');
+    const unitsBody = document.getElementById('sourceUnitsBody');
+
+    if (!propertyName) {
+        unitsContainer.style.display = 'none';
+        return;
+    }
+
+    transferSourceProperty = propertyName;
+
+    // الحصول على وحدات العقار المختار
+    const propertyUnits = properties.filter(p =>
+        p.المدينة === transferSourceCity && p['اسم العقار'] === propertyName
+    );
+
+    unitsBody.innerHTML = '';
+    transferSelectedUnits = [];
+
+    propertyUnits.forEach(unit => {
+        const status = calculateStatus(unit);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <input type="checkbox" value="${unit['رقم الوحدة']}"
+                       onchange="toggleUnitSelection(this, '${unit['رقم الوحدة']}')">
+            </td>
+            <td>${unit['رقم الوحدة'] || 'غير محدد'}</td>
+            <td>${unit['اسم المستأجر'] || 'فارغ'}</td>
+            <td>${unit['رقم العقد'] || 'غير محدد'}</td>
+            <td>
+                <span class="status-badge status-${status.final.replace(' ', '-')}">${status.final}</span>
+            </td>
+        `;
+        unitsBody.appendChild(row);
+    });
+
+    unitsContainer.style.display = 'block';
+    updateProceedButton();
+}
+
+// تبديل تحديد الوحدة
+function toggleUnitSelection(checkbox, unitNumber) {
+    if (checkbox.checked) {
+        if (!transferSelectedUnits.includes(unitNumber)) {
+            transferSelectedUnits.push(unitNumber);
+        }
+    } else {
+        transferSelectedUnits = transferSelectedUnits.filter(u => u !== unitNumber);
+    }
+
+    updateProceedButton();
+    updateSelectAllCheckbox();
+}
+
+// تبديل تحديد جميع الوحدات
+function toggleAllUnits(checked) {
+    const checkboxes = document.querySelectorAll('#sourceUnitsBody input[type="checkbox"]');
+    transferSelectedUnits = [];
+
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = checked;
+        if (checked) {
+            transferSelectedUnits.push(checkbox.value);
+        }
+    });
+
+    updateProceedButton();
+}
+
+// تحديث حالة checkbox "تحديد الكل"
+function updateSelectAllCheckbox() {
+    const selectAllCheckbox = document.getElementById('selectAllUnits');
+    const unitCheckboxes = document.querySelectorAll('#sourceUnitsBody input[type="checkbox"]');
+    const checkedBoxes = document.querySelectorAll('#sourceUnitsBody input[type="checkbox"]:checked');
+
+    if (checkedBoxes.length === 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkedBoxes.length === unitCheckboxes.length) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    }
+}
+
+// تحديث زر المتابعة
+function updateProceedButton() {
+    const proceedBtn = document.getElementById('proceedBtn');
+    if (proceedBtn) {
+        proceedBtn.disabled = transferSelectedUnits.length === 0;
+        proceedBtn.innerHTML = `
+            <i class="fas fa-arrow-left"></i>
+            المتابعة لاختيار الوجهة (${transferSelectedUnits.length} وحدة)
+        `;
+    }
+}
+
+// إظهار قسم اختيار الوجهة
+function showDestinationSection() {
+    if (transferSelectedUnits.length === 0) {
+        alert('يرجى اختيار وحدة واحدة على الأقل');
+        return;
+    }
+
+    // إخفاء قسم المصدر وإظهار قسم الوجهة
+    document.getElementById('sourceSection').style.display = 'none';
+    document.getElementById('destinationSection').style.display = 'block';
+
+    // تحميل العقارات في نفس المدينة (باستثناء العقار المصدر)
+    loadDestinationProperties();
+}
+
+// تحميل عقارات الوجهة
+function loadDestinationProperties() {
+    const destinationSelect = document.getElementById('destinationPropertySelect');
+
+    // الحصول على العقارات في نفس المدينة باستثناء العقار المصدر
+    const cityProperties = properties.filter(p => p.المدينة === transferSourceCity);
+    const uniqueProperties = [...new Set(cityProperties.map(p => p['اسم العقار']))]
+        .filter(name => name !== transferSourceProperty);
+
+    destinationSelect.innerHTML = '<option value="">اختر العقار الوجهة</option>';
+    uniqueProperties.forEach(propertyName => {
+        const option = document.createElement('option');
+        option.value = propertyName;
+        option.textContent = propertyName;
+        destinationSelect.appendChild(option);
+    });
+}
+
+// تعيين العقار الوجهة
+function setDestinationProperty(propertyName) {
+    transferDestinationProperty = propertyName;
+
+    const summaryDiv = document.getElementById('transferSummary');
+    const confirmBtn = document.getElementById('confirmTransferBtn');
+
+    if (propertyName) {
+        // إظهار ملخص العملية
+        document.getElementById('summarySource').textContent =
+            `${transferSourceProperty} (${transferSourceCity})`;
+        document.getElementById('summaryDestination').textContent =
+            `${propertyName} (${transferSourceCity})`;
+        document.getElementById('summaryCount').textContent = transferSelectedUnits.length;
+
+        summaryDiv.style.display = 'block';
+        confirmBtn.disabled = false;
+    } else {
+        summaryDiv.style.display = 'none';
+        confirmBtn.disabled = true;
+    }
+}
+
+// العودة لقسم المصدر
+function backToSourceSection() {
+    document.getElementById('destinationSection').style.display = 'none';
+    document.getElementById('sourceSection').style.display = 'block';
+}
+
+// تأكيد نقل الوحدات
+async function confirmUnitTransfer() {
+    if (!transferDestinationProperty || transferSelectedUnits.length === 0) {
+        alert('يرجى التأكد من اختيار العقار الوجهة والوحدات المراد نقلها');
+        return;
+    }
+
+    const confirmMessage = `هل أنت متأكد من نقل ${transferSelectedUnits.length} وحدة من "${transferSourceProperty}" إلى "${transferDestinationProperty}"؟\n\nهذا الإجراء لا يمكن التراجع عنه.`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    try {
+        // إظهار مؤشر التحميل
+        const confirmBtn = document.getElementById('confirmTransferBtn');
+        const originalText = confirmBtn.innerHTML;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري النقل...';
+        confirmBtn.disabled = true;
+
+        let transferredCount = 0;
+        let errors = [];
+
+        // نقل كل وحدة محددة
+        for (const unitNumber of transferSelectedUnits) {
+            try {
+                await transferSingleUnit(unitNumber, transferSourceProperty, transferDestinationProperty);
+                transferredCount++;
+            } catch (error) {
+                console.error(`❌ خطأ في نقل الوحدة ${unitNumber}:`, error);
+                errors.push(`${unitNumber}: ${error.message}`);
+            }
+        }
+
+        // حفظ البيانات
+        saveDataLocally();
+
+        // مزامنة مع Supabase إذا متاح
+        if (typeof syncToSupabase === 'function') {
+            try {
+                await syncToSupabase();
+                console.log('✅ تم مزامنة البيانات مع Supabase');
+            } catch (error) {
+                console.error('⚠️ خطأ في مزامنة Supabase:', error);
+            }
+        }
+
+        // إعادة تحميل البيانات
+        renderData();
+        updateTotalStats();
+
+        // إظهار نتائج العملية
+        let message = `✅ تم نقل ${transferredCount} وحدة بنجاح!\n\n`;
+        message += `من: ${transferSourceProperty}\n`;
+        message += `إلى: ${transferDestinationProperty}\n`;
+
+        if (errors.length > 0) {
+            message += `\n⚠️ أخطاء (${errors.length}):\n${errors.slice(0, 3).join('\n')}`;
+            if (errors.length > 3) message += `\n... و ${errors.length - 3} أخطاء أخرى`;
+        }
+
+        alert(message);
+
+        // إغلاق النافذة
+        closeUnitTransferModal();
+
+    } catch (error) {
+        console.error('❌ خطأ في عملية النقل:', error);
+        alert('❌ حدث خطأ أثناء نقل الوحدات: ' + error.message);
+
+        // إعادة تعيين الزر
+        const confirmBtn = document.getElementById('confirmTransferBtn');
+        if (confirmBtn) {
+            confirmBtn.innerHTML = originalText;
+            confirmBtn.disabled = false;
+        }
+    }
+}
+
+// نقل وحدة واحدة
+async function transferSingleUnit(unitNumber, sourceProperty, destinationProperty) {
+    console.log(`🔄 نقل الوحدة ${unitNumber} من ${sourceProperty} إلى ${destinationProperty}`);
+
+    // البحث عن الوحدة في المصفوفة
+    const unitIndex = properties.findIndex(p =>
+        p['رقم الوحدة'] === unitNumber && p['اسم العقار'] === sourceProperty
+    );
+
+    if (unitIndex === -1) {
+        throw new Error(`لم يتم العثور على الوحدة ${unitNumber} في العقار ${sourceProperty}`);
+    }
+
+    // نسخ بيانات الوحدة وتحديث اسم العقار
+    const unit = { ...properties[unitIndex] };
+    unit['اسم العقار'] = destinationProperty;
+    unit['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+    unit['نوع التحديث'] = 'نقل وحدة';
+    unit['المسؤول عن التحديث'] = getCurrentUser();
+
+    // إزالة الوحدة من موقعها الأصلي
+    properties.splice(unitIndex, 1);
+
+    // إضافة الوحدة في موقعها الجديد
+    properties.push(unit);
+
+    console.log(`✅ تم نقل الوحدة ${unitNumber} بنجاح`);
+    return true;
+}
+
+// الحصول على المستخدم الحالي (سيتم تطويرها في نظام الصلاحيات)
+function getCurrentUser() {
+    // مؤقتاً نعيد "النظام" حتى يتم تطبيق نظام الصلاحيات
+    return 'النظام';
+}
+
+// ==================== فلتر آخر تحديثات الوحدات ====================
+
+// إظهار نافذة فلتر آخر التحديثات
+function showLastUpdatesFilter() {
+    const modalHtml = `
+        <div class="last-updates-modal" id="lastUpdatesModal">
+            <div class="last-updates-content">
+                <div class="last-updates-header">
+                    <h2 class="last-updates-title">
+                        <i class="fas fa-history"></i>
+                        آخر تحديثات الوحدات
+                    </h2>
+                    <button class="last-updates-close" onclick="closeLastUpdatesModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- نموذج الفلترة -->
+                <div class="updates-filter-form">
+                    <div class="updates-form-group required">
+                        <label>السنة:</label>
+                        <select id="updatesYearSelect">
+                            <option value="">اختر السنة</option>
+                        </select>
+                    </div>
+
+                    <div class="updates-form-group required">
+                        <label>الشهر:</label>
+                        <select id="updatesMonthSelect" disabled>
+                            <option value="">اختر الشهر</option>
+                        </select>
+                    </div>
+
+                    <div class="updates-form-group">
+                        <label>اليوم:</label>
+                        <select id="updatesDaySelect" disabled>
+                            <option value="">جميع الأيام</option>
+                        </select>
+                    </div>
+
+                    <div class="updates-form-group">
+                        <label>الأسبوع:</label>
+                        <select id="updatesWeekSelect" disabled>
+                            <option value="">جميع الأسابيع</option>
+                            <option value="1">الأسبوع الأول</option>
+                            <option value="2">الأسبوع الثاني</option>
+                            <option value="3">الأسبوع الثالث</option>
+                            <option value="4">الأسبوع الرابع</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="updates-filter-actions">
+                    <button class="updates-btn updates-btn-secondary" onclick="clearUpdatesFilter()">
+                        <i class="fas fa-eraser"></i>
+                        مسح الفلتر
+                    </button>
+                    <button class="updates-btn updates-btn-primary" onclick="applyUpdatesFilter()">
+                        <i class="fas fa-search"></i>
+                        البحث عن التحديثات
+                    </button>
+                </div>
+
+                <!-- نتائج البحث -->
+                <div class="updates-results" id="updatesResults">
+                    <div class="updates-results-header">
+                        <h4>نتائج البحث</h4>
+                        <span id="updatesResultsCount">0 تحديث</span>
+                    </div>
+                    <div class="updates-results-content" id="updatesResultsContent">
+                        <!-- سيتم ملء النتائج هنا -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // إظهار النافذة مع تأثير
+    setTimeout(() => {
+        document.getElementById('lastUpdatesModal').classList.add('show');
+    }, 100);
+
+    // تهيئة النموذج
+    initializeUpdatesFilter();
+}
+
+// إغلاق نافذة فلتر آخر التحديثات
+function closeLastUpdatesModal() {
+    const modal = document.getElementById('lastUpdatesModal');
+    if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+    }
+}
+
+// تهيئة نموذج فلتر التحديثات
+function initializeUpdatesFilter() {
+    // تحميل السنوات المتاحة
+    loadAvailableYears();
+
+    // ربط الأحداث
+    document.getElementById('updatesYearSelect').addEventListener('change', function() {
+        loadAvailableMonths(this.value);
+    });
+
+    document.getElementById('updatesMonthSelect').addEventListener('change', function() {
+        const year = document.getElementById('updatesYearSelect').value;
+        if (year && this.value) {
+            loadAvailableDays(year, this.value);
+        }
+    });
+}
+
+// تحميل السنوات المتاحة
+function loadAvailableYears() {
+    const yearSelect = document.getElementById('updatesYearSelect');
+    const currentYear = new Date().getFullYear();
+    const years = [];
+
+    // إضافة السنوات من السنة الحالية إلى 5 سنوات سابقة
+    for (let i = 0; i <= 5; i++) {
+        years.push(currentYear - i);
+    }
+
+    yearSelect.innerHTML = '<option value="">اختر السنة</option>';
+    years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+    });
+}
+
+// تحميل الشهور المتاحة
+function loadAvailableMonths(year) {
+    const monthSelect = document.getElementById('updatesMonthSelect');
+    const daySelect = document.getElementById('updatesDaySelect');
+    const weekSelect = document.getElementById('updatesWeekSelect');
+
+    if (!year) {
+        monthSelect.disabled = true;
+        daySelect.disabled = true;
+        weekSelect.disabled = true;
+        return;
+    }
+
+    const months = [
+        { value: '01', name: 'يناير' },
+        { value: '02', name: 'فبراير' },
+        { value: '03', name: 'مارس' },
+        { value: '04', name: 'أبريل' },
+        { value: '05', name: 'مايو' },
+        { value: '06', name: 'يونيو' },
+        { value: '07', name: 'يوليو' },
+        { value: '08', name: 'أغسطس' },
+        { value: '09', name: 'سبتمبر' },
+        { value: '10', name: 'أكتوبر' },
+        { value: '11', name: 'نوفمبر' },
+        { value: '12', name: 'ديسمبر' }
+    ];
+
+    monthSelect.innerHTML = '<option value="">اختر الشهر</option>';
+    months.forEach(month => {
+        const option = document.createElement('option');
+        option.value = month.value;
+        option.textContent = month.name;
+        monthSelect.appendChild(option);
+    });
+
+    monthSelect.disabled = false;
+    daySelect.disabled = true;
+    weekSelect.disabled = true;
+}
+
+// تحميل الأيام المتاحة
+function loadAvailableDays(year, month) {
+    const daySelect = document.getElementById('updatesDaySelect');
+    const weekSelect = document.getElementById('updatesWeekSelect');
+
+    // الحصول على عدد أيام الشهر
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    daySelect.innerHTML = '<option value="">جميع الأيام</option>';
+    for (let day = 1; day <= daysInMonth; day++) {
+        const option = document.createElement('option');
+        option.value = day.toString().padStart(2, '0');
+        option.textContent = day;
+        daySelect.appendChild(option);
+    }
+
+    daySelect.disabled = false;
+    weekSelect.disabled = false;
+}
+
+// مسح فلتر التحديثات
+function clearUpdatesFilter() {
+    document.getElementById('updatesYearSelect').value = '';
+    document.getElementById('updatesMonthSelect').value = '';
+    document.getElementById('updatesMonthSelect').disabled = true;
+    document.getElementById('updatesDaySelect').value = '';
+    document.getElementById('updatesDaySelect').disabled = true;
+    document.getElementById('updatesWeekSelect').value = '';
+    document.getElementById('updatesWeekSelect').disabled = true;
+
+    // إخفاء النتائج
+    document.getElementById('updatesResults').classList.remove('show');
+}
+
+// تطبيق فلتر التحديثات
+function applyUpdatesFilter() {
+    const year = document.getElementById('updatesYearSelect').value;
+    const month = document.getElementById('updatesMonthSelect').value;
+    const day = document.getElementById('updatesDaySelect').value;
+    const week = document.getElementById('updatesWeekSelect').value;
+
+    if (!year || !month) {
+        alert('يرجى اختيار السنة والشهر على الأقل');
+        return;
+    }
+
+    console.log('🔍 البحث عن التحديثات:', { year, month, day, week });
+
+    // البحث عن الوحدات المحدثة
+    const filteredUpdates = findUpdatedUnits(year, month, day, week);
+
+    // عرض النتائج
+    displayUpdatesResults(filteredUpdates);
+}
+
+// البحث عن الوحدات المحدثة
+function findUpdatedUnits(year, month, day, week) {
+    const updates = [];
+
+    properties.forEach(property => {
+        const updateDate = property['تاريخ آخر تحديث'];
+        const updateType = property['نوع التحديث'];
+        const updatedBy = property['المسؤول عن التحديث'];
+
+        if (updateDate && isDateInRange(updateDate, year, month, day, week)) {
+            updates.push({
+                property,
+                updateDate,
+                updateType: updateType || 'تعديل',
+                updatedBy: updatedBy || 'غير محدد',
+                timestamp: parseArabicDate(updateDate)
+            });
+        }
+    });
+
+    // ترتيب حسب التاريخ (الأحدث أولاً)
+    updates.sort((a, b) => b.timestamp - a.timestamp);
+
+    return updates;
+}
+
+// التحقق من وجود التاريخ في النطاق المحدد
+function isDateInRange(dateString, year, month, day, week) {
+    try {
+        const date = parseArabicDate(dateString);
+        if (!date) return false;
+
+        const dateYear = date.getFullYear().toString();
+        const dateMonth = (date.getMonth() + 1).toString().padStart(2, '0');
+        const dateDay = date.getDate().toString().padStart(2, '0');
+
+        // التحقق من السنة والشهر
+        if (dateYear !== year || dateMonth !== month) {
+            return false;
+        }
+
+        // التحقق من اليوم إذا تم تحديده
+        if (day && dateDay !== day) {
+            return false;
+        }
+
+        // التحقق من الأسبوع إذا تم تحديده
+        if (week) {
+            const dayOfMonth = date.getDate();
+            const weekNumber = Math.ceil(dayOfMonth / 7);
+            if (weekNumber.toString() !== week) {
+                return false;
+            }
+        }
+
+        return true;
+    } catch (error) {
+        console.error('خطأ في تحليل التاريخ:', dateString, error);
+        return false;
+    }
+}
+
+// تحليل التاريخ العربي
+function parseArabicDate(dateString) {
+    try {
+        // تحويل التاريخ العربي إلى تاريخ قابل للقراءة
+        // مثال: "٢٠٢٤/١٢/١٥" أو "2024/12/15"
+        const normalizedDate = dateString
+            .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+            .replace(/\//g, '-');
+
+        return new Date(normalizedDate);
+    } catch (error) {
+        // محاولة تحليل التاريخ كما هو
+        return new Date(dateString);
+    }
+}
+
+// عرض نتائج التحديثات
+function displayUpdatesResults(updates) {
+    const resultsDiv = document.getElementById('updatesResults');
+    const resultsContent = document.getElementById('updatesResultsContent');
+    const resultsCount = document.getElementById('updatesResultsCount');
+
+    resultsCount.textContent = `${updates.length} تحديث`;
+
+    if (updates.length === 0) {
+        resultsContent.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #6c757d;">
+                <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>لم يتم العثور على تحديثات في الفترة المحددة</p>
+            </div>
+        `;
+    } else {
+        resultsContent.innerHTML = updates.map(update => `
+            <div class="update-item">
+                <div class="update-header">
+                    <div class="update-unit-info">
+                        الوحدة ${update.property['رقم الوحدة']} - ${update.property['اسم العقار']}
+                    </div>
+                    <div class="update-timestamp">
+                        ${update.updateDate}
+                    </div>
+                </div>
+                <div class="update-details">
+                    <div><strong>المستأجر:</strong> ${update.property['اسم المستأجر'] || 'فارغ'}</div>
+                    <div><strong>رقم العقد:</strong> ${update.property['رقم العقد'] || 'غير محدد'}</div>
+                    <div><strong>المدينة:</strong> ${update.property['المدينة'] || 'غير محدد'}</div>
+                    <div><strong>المسؤول:</strong> ${update.updatedBy}</div>
+                </div>
+                <span class="update-type ${getUpdateTypeClass(update.updateType)}">
+                    ${update.updateType}
+                </span>
+            </div>
+        `).join('');
+    }
+
+    resultsDiv.classList.add('show');
+}
+
+// الحصول على كلاس نوع التحديث
+function getUpdateTypeClass(updateType) {
+    switch (updateType) {
+        case 'تعديل':
+        case 'تحرير':
+            return 'edit';
+        case 'إفراغ':
+            return 'empty';
+        case 'عميل جديد':
+        case 'تجديد العقد':
+            return 'new';
+        case 'نقل وحدة':
+            return 'transfer';
+        default:
+            return 'edit';
+    }
+}
+
+// ==================== نظام الصلاحيات ====================
+
+// متغيرات نظام الصلاحيات
+let currentUser = null;
+let userPermissions = null;
+
+// بيانات المستخدمين
+const users = {
+    'عمر': {
+        password: '159',
+        role: 'admin',
+        fullName: 'المدير - عمر',
+        permissions: {
+            viewData: true,
+            editData: true,
+            deleteData: true,
+            manageProperties: true,
+            manageAttachments: true,
+            exportData: true,
+            importData: true,
+            manageSettings: true
+        }
+    },
+    'محمد': {
+        password: 'm12345',
+        role: 'assistant_admin',
+        fullName: 'المدير المساعد - محمد',
+        permissions: {
+            viewData: true,
+            editData: true,
+            deleteData: true,
+            manageProperties: true,
+            manageAttachments: true,
+            exportData: true,
+            importData: true,
+            manageSettings: true
+        }
+    },
+    'sa12345': {
+        password: 'sa12345',
+        role: 'limited',
+        fullName: 'مستخدم محدود الصلاحيات',
+        permissions: {
+            viewData: true,
+            editData: false,
+            deleteData: false,
+            manageProperties: false,
+            manageAttachments: false,
+            exportData: false,
+            importData: false,
+            manageSettings: false
+        }
+    }
+};
+
+// تهيئة نظام الصلاحيات عند تحميل الصفحة
+function initializePermissionSystem() {
+    // التحقق من وجود جلسة مستخدم محفوظة
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            if (users[userData.username] && userData.loginTime) {
+                // التحقق من انتهاء صلاحية الجلسة (24 ساعة)
+                const loginTime = new Date(userData.loginTime);
+                const now = new Date();
+                const hoursDiff = (now - loginTime) / (1000 * 60 * 60);
+
+                if (hoursDiff < 24) {
+                    // الجلسة صالحة
+                    setCurrentUser(userData.username);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('خطأ في قراءة بيانات المستخدم المحفوظة:', error);
+        }
+    }
+
+    // إظهار نافذة تسجيل الدخول
+    showLoginModal();
+}
+
+// إظهار نافذة تسجيل الدخول
+function showLoginModal() {
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) {
+        loginModal.classList.add('show');
+
+        // منع التفاعل مع باقي الصفحة
+        document.body.style.overflow = 'hidden';
+
+        // التركيز على حقل اسم المستخدم
+        setTimeout(() => {
+            const usernameInput = document.getElementById('username');
+            if (usernameInput) {
+                usernameInput.focus();
+            }
+        }, 300);
+    }
+}
+
+// إخفاء نافذة تسجيل الدخول
+function hideLoginModal() {
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) {
+        loginModal.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+
+// معالجة تسجيل الدخول
+function handleLogin(event) {
+    event.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) {
+        alert('يرجى إدخال اسم المستخدم وكلمة المرور');
+        return;
+    }
+
+    // التحقق من بيانات المستخدم
+    if (users[username] && users[username].password === password) {
+        // تسجيل دخول ناجح
+        setCurrentUser(username);
+
+        // حفظ الجلسة
+        const userData = {
+            username: username,
+            loginTime: new Date().toISOString()
+        };
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+
+        // إخفاء نافذة تسجيل الدخول
+        hideLoginModal();
+
+        // إظهار رسالة ترحيب
+        showWelcomeMessage(users[username].fullName);
+
+        // مسح النموذج
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+
+    } else {
+        // تسجيل دخول فاشل
+        alert('اسم المستخدم أو كلمة المرور غير صحيحة');
+
+        // التركيز على حقل كلمة المرور
+        document.getElementById('password').focus();
+        document.getElementById('password').select();
+    }
+}
+
+// تعيين المستخدم الحالي
+function setCurrentUser(username) {
+    if (users[username]) {
+        currentUser = username;
+        userPermissions = users[username].permissions;
+
+        // تطبيق الصلاحيات على الواجهة
+        applyUserPermissions();
+
+        // تفعيل مراقب المرفقات للمستخدم محدود الصلاحيات
+        if (users[username].role === 'limited') {
+            setTimeout(() => {
+                setupAttachmentsPermissionObserver();
+            }, 500);
+        }
+
+        console.log(`✅ تم تسجيل دخول المستخدم: ${users[username].fullName}`);
+    }
+}
+
+// تطبيق صلاحيات المستخدم على الواجهة
+function applyUserPermissions() {
+    if (!userPermissions) return;
+
+    const body = document.body;
+
+    // إزالة جميع كلاسات الصلاحيات السابقة
+    body.classList.remove('limited-user', 'admin-user', 'assistant-admin-user');
+
+    // إضافة كلاس حسب نوع المستخدم
+    if (users[currentUser].role === 'limited') {
+        body.classList.add('limited-user');
+        hideLimitedUserElements();
+    } else {
+        body.classList.add('admin-user');
+    }
+
+    // تحديث وظيفة getCurrentUser
+    window.getCurrentUser = function() {
+        return users[currentUser]?.fullName || currentUser || 'النظام';
+    };
+}
+
+// إخفاء العناصر للمستخدم محدود الصلاحيات
+function hideLimitedUserElements() {
+    // إخفاء زر إدارة العقارات
+    const propertyManagerBtns = document.querySelectorAll('#propertyManagerBtn, .property-manager-btn');
+    propertyManagerBtns.forEach(btn => {
+        if (btn) btn.style.display = 'none';
+    });
+
+    // إخفاء أزرار التحرير والحذف في البطاقات
+    const editBtns = document.querySelectorAll('.edit-btn, .delete-btn, .add-btn');
+    editBtns.forEach(btn => {
+        if (btn) btn.style.display = 'none';
+    });
+
+    // إخفاء عناصر الإدارة في القوائم المنسدلة
+    const managementItems = document.querySelectorAll('[onclick*="showPropertyManager"], [onclick*="showDataImport"], [onclick*="cleanStorage"]');
+    managementItems.forEach(item => {
+        if (item) item.style.display = 'none';
+    });
+
+    // تطبيق قيود المرفقات
+    applyAttachmentsRestrictions();
+
+    console.log('🔒 تم تطبيق قيود المستخدم محدود الصلاحيات');
+}
+
+// تطبيق قيود المرفقات للمستخدم محدود الصلاحيات
+function applyAttachmentsRestrictions() {
+    console.log('📎 تطبيق قيود المرفقات للمستخدم محدود الصلاحيات...');
+
+    // إخفاء مناطق الرفع
+    const uploadElements = document.querySelectorAll(`
+        .upload-area, .upload-section, .upload-dropzone, .upload-zone,
+        .file-upload-area, .totals-upload-zone, .enhanced-upload,
+        .upload-notes-sidebar, .mobile-upload-section
+    `);
+    uploadElements.forEach(element => {
+        if (element) element.style.display = 'none';
+    });
+
+    // إخفاء أزرار الحذف والمزامنة
+    const deleteElements = document.querySelectorAll(`
+        .btn-delete, .delete-btn, .mobile-action-btn.delete,
+        .attachment-btn.delete-btn, .btn-enhanced.btn-delete,
+        .sync-btn, .attachment-btn.sync-btn
+    `);
+    deleteElements.forEach(element => {
+        if (element) element.style.display = 'none';
+    });
+
+    // إعادة تخطيط المحتوى
+    const contentLayouts = document.querySelectorAll('.content-layout-new');
+    contentLayouts.forEach(layout => {
+        if (layout) {
+            layout.style.gridTemplateColumns = '1fr';
+        }
+    });
+
+    const attachmentLists = document.querySelectorAll('.attachments-list');
+    attachmentLists.forEach(list => {
+        if (list) {
+            list.style.width = '100%';
+            list.style.maxWidth = '100%';
+        }
+    });
+
+    // إضافة معالجات أحداث لمنع الرفع
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        if (input.id && (input.id.includes('Upload') || input.id.includes('File'))) {
+            input.disabled = true;
+            input.style.display = 'none';
+        }
+    });
+
+    // منع أحداث السحب والإفلات
+    const dragElements = document.querySelectorAll('.upload-area, .upload-dropzone, .enhanced-upload');
+    dragElements.forEach(element => {
+        if (element) {
+            element.style.pointerEvents = 'none';
+            element.style.cursor = 'not-allowed';
+            element.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showNoPermissionMessage();
+                return false;
+            };
+        }
+    });
+
+    console.log('✅ تم تطبيق قيود المرفقات');
+}
+
+// إضافة رسالة إعلامية للمستخدم محدود الصلاحيات في نوافذ المرفقات
+function addLimitedUserNoticeToAttachments() {
+    if (!userPermissions || userPermissions.manageAttachments) return;
+
+    // البحث عن نوافذ المرفقات المفتوحة
+    const attachmentModals = document.querySelectorAll('.attachments-modal, .card-attachments-modal, .mobile-attachments-modal');
+
+    attachmentModals.forEach(modal => {
+        // التحقق من عدم وجود الرسالة مسبقاً
+        if (modal.querySelector('.limited-user-attachments-notice')) return;
+
+        // إنشاء الرسالة الإعلامية
+        const notice = document.createElement('div');
+        notice.className = 'limited-user-attachments-notice';
+        notice.innerHTML = `
+            <i class="fas fa-info-circle"></i>
+            وضع العرض فقط - يمكنك مشاهدة وتحميل المرفقات ولكن لا يمكنك رفع أو حذف ملفات
+        `;
+
+        // إدراج الرسالة في بداية محتوى النافذة
+        const modalContent = modal.querySelector('.attachments-modal-content, .card-modal-content, .mobile-attachments-content');
+        if (modalContent) {
+            modalContent.insertBefore(notice, modalContent.firstChild);
+        }
+    });
+}
+
+// تحديث وظائف إظهار نوافذ المرفقات لتطبيق القيود
+const originalShowAttachmentsModal = window.showAttachmentsModal;
+window.showAttachmentsModal = function(city, propertyName) {
+    if (originalShowAttachmentsModal) {
+        originalShowAttachmentsModal(city, propertyName);
+
+        // تطبيق القيود بعد إظهار النافذة
+        setTimeout(() => {
+            if (users[currentUser]?.role === 'limited') {
+                applyAttachmentsRestrictions();
+                addLimitedUserNoticeToAttachments();
+            }
+        }, 100);
+    }
+};
+
+const originalShowCardAttachmentsModal = window.showCardAttachmentsModal;
+window.showCardAttachmentsModal = function(city, propertyName, contractNumber, unitNumber) {
+    if (originalShowCardAttachmentsModal) {
+        originalShowCardAttachmentsModal(city, propertyName, contractNumber, unitNumber);
+
+        // تطبيق القيود بعد إظهار النافذة
+        setTimeout(() => {
+            if (users[currentUser]?.role === 'limited') {
+                applyAttachmentsRestrictions();
+                addLimitedUserNoticeToAttachments();
+            }
+        }, 100);
+    }
+};
+
+// التحقق من صلاحية المستخدم لعملية معينة
+function checkPermission(action) {
+    if (!userPermissions) {
+        showNoPermissionMessage();
+        return false;
+    }
+
+    const hasPermission = userPermissions[action] === true;
+
+    if (!hasPermission) {
+        showNoPermissionMessage();
+    }
+
+    return hasPermission;
+}
+
+// إظهار رسالة عدم وجود صلاحيات
+function showNoPermissionMessage() {
+    // إزالة أي رسالة سابقة
+    const existingMessage = document.querySelector('.no-permission-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    // إنشاء رسالة جديدة
+    const message = document.createElement('div');
+    message.className = 'no-permission-message';
+    message.innerHTML = `
+        <i class="fas fa-lock" style="margin-left: 8px;"></i>
+        ليس لديك صلاحية للقيام بهذا الإجراء
+    `;
+
+    document.body.appendChild(message);
+
+    // إزالة الرسالة بعد 3 ثوان
+    setTimeout(() => {
+        if (message.parentNode) {
+            message.remove();
+        }
+    }, 3000);
+}
+
+// إظهار رسالة ترحيب
+function showWelcomeMessage(fullName) {
+    const message = document.createElement('div');
+    message.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        z-index: 2500;
+        font-weight: 600;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+
+    message.innerHTML = `
+        <i class="fas fa-check-circle" style="margin-left: 8px;"></i>
+        مرحباً ${fullName}
+    `;
+
+    document.body.appendChild(message);
+
+    // إظهار الرسالة
+    setTimeout(() => {
+        message.style.transform = 'translateX(0)';
+    }, 100);
+
+    // إخفاء الرسالة بعد 4 ثوان
+    setTimeout(() => {
+        message.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (message.parentNode) {
+                message.remove();
+            }
+        }, 300);
+    }, 4000);
+}
+
+// تسجيل الخروج
+function logout() {
+    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+        // مسح بيانات الجلسة
+        localStorage.removeItem('currentUser');
+
+        // إعادة تعيين المتغيرات
+        currentUser = null;
+        userPermissions = null;
+
+        // إعادة تحميل الصفحة
+        location.reload();
+    }
+}
+
+// إضافة زر تسجيل الخروج للمستخدمين المسجلين
+function addLogoutButton() {
+    if (!currentUser) return;
+
+    // البحث عن مكان مناسب لإضافة زر تسجيل الخروج
+    const header = document.querySelector('.header-section.header-actions');
+    if (header && !document.getElementById('logoutBtn')) {
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logoutBtn';
+        logoutBtn.className = 'header-btn logout-btn';
+        logoutBtn.innerHTML = `
+            <i class="fas fa-sign-out-alt"></i>
+            خروج (${users[currentUser].fullName})
+        `;
+        logoutBtn.onclick = logout;
+        logoutBtn.style.cssText = `
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 1rem;
+        `;
+
+        header.appendChild(logoutBtn);
+    }
+}
+
+// تحديث وظائف التحرير والحذف للتحقق من الصلاحيات
+const originalEditCard = window.editCard;
+window.editCard = function(index) {
+    if (!checkPermission('editData')) return;
+    if (originalEditCard) originalEditCard(index);
+};
+
+const originalDeleteCard = window.deleteCard;
+window.deleteCard = function(index) {
+    if (!checkPermission('deleteData')) return;
+    if (originalDeleteCard) originalDeleteCard(index);
+};
+
+const originalShowPropertyManager = window.showPropertyManager;
+window.showPropertyManager = function() {
+    if (!checkPermission('manageProperties')) return;
+    if (originalShowPropertyManager) originalShowPropertyManager();
+};
+
+// حماية وظائف المرفقات
+const originalDeletePropertyAttachment = window.deletePropertyAttachment;
+window.deletePropertyAttachment = function(propertyKey, fileIndex) {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalDeletePropertyAttachment) originalDeletePropertyAttachment(propertyKey, fileIndex);
+};
+
+const originalDeletePropertyAttachmentFromSupabase = window.deletePropertyAttachmentFromSupabase;
+window.deletePropertyAttachmentFromSupabase = function(attachmentId, propertyKey) {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalDeletePropertyAttachmentFromSupabase) originalDeletePropertyAttachmentFromSupabase(attachmentId, propertyKey);
+};
+
+const originalDeleteCardAttachment = window.deleteCardAttachment;
+window.deleteCardAttachment = function(cardKey, fileName) {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalDeleteCardAttachment) originalDeleteCardAttachment(cardKey, fileName);
+};
+
+const originalDeleteCardAttachmentFromSupabase = window.deleteCardAttachmentFromSupabase;
+window.deleteCardAttachmentFromSupabase = function(attachmentId, cardKey) {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalDeleteCardAttachmentFromSupabase) originalDeleteCardAttachmentFromSupabase(attachmentId, cardKey);
+};
+
+const originalDeleteAttachment = window.deleteAttachment;
+window.deleteAttachment = function(propertyKey, fileName, city, propertyName) {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalDeleteAttachment) originalDeleteAttachment(propertyKey, fileName, city, propertyName);
+};
+
+const originalDeleteAttachmentFromSupabase = window.deleteAttachmentFromSupabase;
+window.deleteAttachmentFromSupabase = function(attachmentId, propertyKey) {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalDeleteAttachmentFromSupabase) originalDeleteAttachmentFromSupabase(attachmentId, propertyKey);
+};
+
+// حماية وظائف رفع الملفات
+const originalHandleFileUploadEnhanced = window.handleFileUploadEnhanced;
+window.handleFileUploadEnhanced = function(event, city, propertyName) {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalHandleFileUploadEnhanced) originalHandleFileUploadEnhanced(event, city, propertyName);
+};
+
+const originalHandleCardFileUpload = window.handleCardFileUpload;
+window.handleCardFileUpload = function(event, cardKey) {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalHandleCardFileUpload) originalHandleCardFileUpload(event, cardKey);
+};
+
+// حماية وظائف المزامنة
+const originalSyncLocalAttachment = window.syncLocalAttachment;
+window.syncLocalAttachment = function(propertyKey, fileName) {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalSyncLocalAttachment) originalSyncLocalAttachment(propertyKey, fileName);
+};
+
+// حماية وظائف إدارة المرفقات العامة
+const originalShowAttachmentsManagerFromDropdown = window.showAttachmentsManagerFromDropdown;
+window.showAttachmentsManagerFromDropdown = function() {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalShowAttachmentsManagerFromDropdown) originalShowAttachmentsManagerFromDropdown();
+};
+
+// حماية وظائف تحديث الإجماليات (تحتوي على رفع ملفات)
+const originalShowUpdateTotalsModal = window.showUpdateTotalsModal;
+window.showUpdateTotalsModal = function() {
+    if (!checkPermission('manageAttachments')) return;
+    if (originalShowUpdateTotalsModal) originalShowUpdateTotalsModal();
+};
+
+const originalShowDataImportModal = window.showDataImportModal;
+window.showDataImportModal = function() {
+    if (!checkPermission('importData')) return;
+    if (originalShowDataImportModal) originalShowDataImportModal();
+};
+
+// تهيئة نظام الصلاحيات عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    // تأخير قصير للتأكد من تحميل جميع العناصر
+    setTimeout(() => {
+        initializePermissionSystem();
+
+        // إضافة زر تسجيل الخروج إذا كان المستخدم مسجل دخول
+        if (currentUser) {
+            addLogoutButton();
+        }
+    }, 1000);
+});
+
 // ==================== وظائف إخفاء/إظهار أزرار الهيدر ====================
 
 // تبديل إظهار/إخفاء أزرار الهيدر
@@ -17241,3 +18714,297 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
     }
 });
+
+// مراقب DOM لتطبيق قيود المرفقات تلقائياً
+function setupAttachmentsPermissionObserver() {
+    if (!currentUser || users[currentUser]?.role !== 'limited') return;
+
+    // إنشاء مراقب للتغييرات في DOM
+    const observer = new MutationObserver(function(mutations) {
+        let shouldApplyRestrictions = false;
+
+        mutations.forEach(function(mutation) {
+            // التحقق من إضافة عقد جديدة
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        // التحقق من وجود عناصر مرفقات جديدة
+                        if (node.classList && (
+                            node.classList.contains('attachments-modal') ||
+                            node.classList.contains('card-attachments-modal') ||
+                            node.classList.contains('mobile-attachments-modal') ||
+                            node.querySelector && (
+                                node.querySelector('.upload-area') ||
+                                node.querySelector('.delete-btn') ||
+                                node.querySelector('.btn-delete')
+                            )
+                        )) {
+                            shouldApplyRestrictions = true;
+                        }
+                    }
+                });
+            }
+        });
+
+        if (shouldApplyRestrictions) {
+            setTimeout(() => {
+                applyAttachmentsRestrictions();
+                addLimitedUserNoticeToAttachments();
+            }, 100);
+        }
+    });
+
+    // بدء مراقبة التغييرات
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    console.log('👁️ تم تفعيل مراقب قيود المرفقات');
+}
+
+// تحديث وظيفة setCurrentUser لتشمل مراقب المرفقات
+// (تم دمجها مع الوظيفة الأصلية بدلاً من إعادة تعريفها)
+
+// ==================== وظائف عميل جديد وتجديد العقد ====================
+
+// تعيين عميل جديد
+function setNewClient(contractNumber, propertyName, unitNumber) {
+    if (!checkPermission('editData')) return;
+
+    const confirmMessage = 'هل أنت متأكد من تعيين عميل جديد لهذه الوحدة؟\n\nسيتم مسح بيانات العميل الحالي وإعداد الوحدة لعميل جديد.';
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    try {
+        // البحث عن الوحدة
+        const propertyIndex = properties.findIndex(p => {
+            if (contractNumber && propertyName) {
+                return p['رقم العقد'] === contractNumber && p['اسم العقار'] === propertyName;
+            } else if (unitNumber && propertyName) {
+                return p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName;
+            }
+            return false;
+        });
+
+        if (propertyIndex === -1) {
+            alert('❌ لم يتم العثور على الوحدة المطلوبة');
+            return;
+        }
+
+        // مسح بيانات العميل الحالي
+        const property = properties[propertyIndex];
+        const fieldsToKeep = [
+            'المدينة', 'اسم العقار', 'رقم  الوحدة ', 'نوع الوحدة',
+            'المساحة', 'عدد الغرف', 'عدد دورات المياه', 'الطابق',
+            'موقع الوحدة', 'حالة الوحدة', 'ملاحظات الوحدة'
+        ];
+
+        // إنشاء كائن جديد يحتوي على البيانات الأساسية فقط
+        const newProperty = {};
+        fieldsToKeep.forEach(field => {
+            if (property[field] !== undefined) {
+                newProperty[field] = property[field];
+            }
+        });
+
+        // إضافة معلومات التحديث
+        newProperty['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+        newProperty['نوع التحديث'] = 'عميل جديد';
+        newProperty['المسؤول عن التحديث'] = getCurrentUser();
+        newProperty['حالة الوحدة'] = 'فارغ';
+
+        // استبدال البيانات القديمة
+        properties[propertyIndex] = newProperty;
+
+        // حفظ البيانات
+        saveDataLocally();
+
+        // مزامنة مع Supabase إذا متاح
+        if (typeof syncToSupabase === 'function') {
+            syncToSupabase().catch(error => {
+                console.error('⚠️ خطأ في مزامنة Supabase:', error);
+            });
+        }
+
+        // إعادة تحميل البيانات
+        renderData();
+        updateTotalStats();
+
+        // إغلاق النافذة
+        closeModal();
+
+        alert('✅ تم تعيين الوحدة لعميل جديد بنجاح!\n\nتم مسح بيانات العميل السابق والاحتفاظ بالمعلومات الأساسية للوحدة فقط.');
+
+    } catch (error) {
+        console.error('❌ خطأ في تعيين عميل جديد:', error);
+        alert('❌ حدث خطأ أثناء تعيين عميل جديد: ' + error.message);
+    }
+}
+
+// تجديد العقد
+function renewContract(contractNumber, propertyName, unitNumber) {
+    if (!checkPermission('editData')) return;
+
+    // البحث عن الوحدة
+    const property = properties.find(p => {
+        if (contractNumber && propertyName) {
+            return p['رقم العقد'] === contractNumber && p['اسم العقار'] === propertyName;
+        } else if (unitNumber && propertyName) {
+            return p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName;
+        }
+        return false;
+    });
+
+    if (!property) {
+        alert('❌ لم يتم العثور على الوحدة المطلوبة');
+        return;
+    }
+
+    // إنشاء نافذة تجديد العقد
+    const renewalModalHtml = `
+        <div class="modal-overlay" style="display:flex;">
+            <div class="modal-box renewal-modal">
+                <button class="close-modal" onclick="closeModal()">×</button>
+                <div class="modal-header">
+                    <h2><i class="fas fa-sync-alt"></i> تجديد العقد</h2>
+                    <p>تجديد عقد الوحدة: ${property['رقم  الوحدة ']} - ${propertyName}</p>
+                </div>
+                <div class="modal-content">
+                    <div class="current-contract-info">
+                        <h3>معلومات العقد الحالي:</h3>
+                        <div class="info-grid">
+                            <div><strong>المستأجر:</strong> ${property['اسم المستأجر'] || 'غير محدد'}</div>
+                            <div><strong>رقم العقد:</strong> ${property['رقم العقد'] || 'غير محدد'}</div>
+                            <div><strong>تاريخ البداية:</strong> ${property['تاريخ بداية العقد'] || 'غير محدد'}</div>
+                            <div><strong>تاريخ النهاية:</strong> ${property['تاريخ نهاية العقد'] || 'غير محدد'}</div>
+                            <div><strong>قيمة الإيجار:</strong> ${property['قيمة  الايجار '] ? parseFloat(property['قيمة  الايجار ']).toLocaleString() + ' ريال' : 'غير محدد'}</div>
+                        </div>
+                    </div>
+
+                    <form id="renewalForm" onsubmit="processContractRenewal(event, '${contractNumber}', '${propertyName}', '${unitNumber}')">
+                        <div class="renewal-section">
+                            <h3>بيانات التجديد:</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>رقم العقد الجديد:</label>
+                                    <input type="text" name="newContractNumber" value="${property['رقم العقد'] || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>تاريخ بداية العقد الجديد:</label>
+                                    <input type="date" name="newStartDate" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>تاريخ نهاية العقد الجديد:</label>
+                                    <input type="date" name="newEndDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>قيمة الإيجار الجديدة:</label>
+                                    <input type="number" name="newRentAmount" value="${property['قيمة  الايجار '] || ''}" step="0.01" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>ملاحظات التجديد:</label>
+                                <textarea name="renewalNotes" rows="3" placeholder="أي ملاحظات خاصة بالتجديد..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-check"></i> تأكيد التجديد
+                            </button>
+                            <button type="button" onclick="closeModal()" class="btn-secondary">
+                                <i class="fas fa-times"></i> إلغاء
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', renewalModalHtml);
+}
+
+// معالجة تجديد العقد
+function processContractRenewal(event, contractNumber, propertyName, unitNumber) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const renewalData = {
+        newContractNumber: formData.get('newContractNumber'),
+        newStartDate: formData.get('newStartDate'),
+        newEndDate: formData.get('newEndDate'),
+        newRentAmount: formData.get('newRentAmount'),
+        renewalNotes: formData.get('renewalNotes')
+    };
+
+    if (!renewalData.newContractNumber || !renewalData.newStartDate || !renewalData.newEndDate) {
+        alert('يرجى ملء جميع الحقول المطلوبة');
+        return;
+    }
+
+    try {
+        // البحث عن الوحدة وتحديثها
+        const propertyIndex = properties.findIndex(p => {
+            if (contractNumber && propertyName) {
+                return p['رقم العقد'] === contractNumber && p['اسم العقار'] === propertyName;
+            } else if (unitNumber && propertyName) {
+                return p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName;
+            }
+            return false;
+        });
+
+        if (propertyIndex === -1) {
+            alert('❌ لم يتم العثور على الوحدة المطلوبة');
+            return;
+        }
+
+        // تحديث بيانات العقد
+        const property = properties[propertyIndex];
+        property['رقم العقد'] = renewalData.newContractNumber;
+        property['تاريخ بداية العقد'] = renewalData.newStartDate;
+        property['تاريخ نهاية العقد'] = renewalData.newEndDate;
+
+        if (renewalData.newRentAmount) {
+            property['قيمة  الايجار '] = parseFloat(renewalData.newRentAmount);
+        }
+
+        if (renewalData.renewalNotes) {
+            property['ملاحظات التجديد'] = renewalData.renewalNotes;
+        }
+
+        // إضافة معلومات التحديث
+        property['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+        property['نوع التحديث'] = 'تجديد العقد';
+        property['المسؤول عن التحديث'] = getCurrentUser();
+        property['تاريخ التجديد'] = new Date().toLocaleDateString('ar-SA');
+
+        // حفظ البيانات
+        saveDataLocally();
+
+        // مزامنة مع Supabase إذا متاح
+        if (typeof syncToSupabase === 'function') {
+            syncToSupabase().catch(error => {
+                console.error('⚠️ خطأ في مزامنة Supabase:', error);
+            });
+        }
+
+        // إعادة تحميل البيانات
+        renderData();
+        updateTotalStats();
+
+        // إغلاق النافذة
+        closeModal();
+
+        alert('✅ تم تجديد العقد بنجاح!\n\nتم تحديث جميع بيانات العقد الجديد.');
+
+    } catch (error) {
+        console.error('❌ خطأ في تجديد العقد:', error);
+        alert('❌ حدث خطأ أثناء تجديد العقد: ' + error.message);
+    }
+}
