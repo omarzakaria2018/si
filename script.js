@@ -17969,12 +17969,12 @@ function initializePermissionSystem() {
         try {
             const userData = JSON.parse(savedUser);
             if (users[userData.username] && userData.loginTime) {
-                // التحقق من انتهاء صلاحية الجلسة (24 ساعة)
+                // التحقق من انتهاء صلاحية الجلسة (24 /10 دقايق ساعة)
                 const loginTime = new Date(userData.loginTime);
                 const now = new Date();
                 const hoursDiff = (now - loginTime) / (1000 * 60 * 60);
 
-                if (hoursDiff < 24) {
+                if (hoursDiff < .10) {
                     // الجلسة صالحة
                     setCurrentUser(userData.username);
                     return;
@@ -18046,6 +18046,11 @@ function handleLogin(event) {
 
         // إظهار رسالة ترحيب
         showWelcomeMessage(users[username].fullName);
+
+        // تحديث قسم المستخدم في الهاتف
+        setTimeout(() => {
+            updateMobileUserSection();
+        }, 100);
 
         // مسح النموذج
         document.getElementById('username').value = '';
@@ -18341,6 +18346,9 @@ function showWelcomeMessage(fullName) {
 // تسجيل الخروج
 function logout() {
     if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+        // إخفاء قسم المستخدم في الهاتف
+        hideMobileUserSection();
+
         // مسح بيانات الجلسة
         localStorage.removeItem('currentUser');
 
@@ -18357,7 +18365,7 @@ function logout() {
 function addLogoutButton() {
     if (!currentUser) return;
 
-    // البحث عن مكان مناسب لإضافة زر تسجيل الخروج
+    // إضافة زر تسجيل الخروج في الشاشات الكبيرة
     const header = document.querySelector('.header-section.header-actions');
     if (header && !document.getElementById('logoutBtn')) {
         const logoutBtn = document.createElement('button');
@@ -18382,6 +18390,67 @@ function addLogoutButton() {
         `;
 
         header.appendChild(logoutBtn);
+    }
+
+    // إضافة معلومات المستخدم في القائمة المحمولة
+    updateMobileUserSection();
+}
+
+// تحديث قسم المستخدم في الهاتف
+function updateMobileUserSection() {
+    const mobileUserSection = document.getElementById('mobileUserSection');
+    const mobileUserName = document.getElementById('mobileUserName');
+    const mobileUserRole = document.getElementById('mobileUserRole');
+
+    if (!mobileUserSection || !mobileUserName || !mobileUserRole) return;
+
+    if (currentUser && users[currentUser]) {
+        // إظهار قسم المستخدم
+        mobileUserSection.style.display = 'block';
+        mobileUserSection.classList.remove('hidden');
+
+        // تحديث معلومات المستخدم
+        mobileUserName.textContent = users[currentUser].fullName;
+
+        // تحديد دور المستخدم
+        let roleText = '';
+        let roleColor = '';
+
+        switch (users[currentUser].role) {
+            case 'admin':
+                roleText = 'مدير النظام';
+                roleColor = '#28a745';
+                break;
+            case 'assistant_admin':
+                roleText = 'مدير مساعد';
+                roleColor = '#17a2b8';
+                break;
+            case 'limited':
+                roleText = 'مستخدم محدود';
+                roleColor = '#ffc107';
+                break;
+            default:
+                roleText = 'مستخدم';
+                roleColor = '#6c757d';
+        }
+
+        mobileUserRole.textContent = roleText;
+        mobileUserRole.style.color = roleColor;
+
+        console.log('📱 تم تحديث قسم المستخدم في الهاتف');
+    } else {
+        // إخفاء قسم المستخدم
+        mobileUserSection.style.display = 'none';
+        mobileUserSection.classList.add('hidden');
+    }
+}
+
+// إخفاء قسم المستخدم عند تسجيل الخروج
+function hideMobileUserSection() {
+    const mobileUserSection = document.getElementById('mobileUserSection');
+    if (mobileUserSection) {
+        mobileUserSection.style.display = 'none';
+        mobileUserSection.classList.add('hidden');
     }
 }
 
@@ -18490,6 +18559,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // إضافة زر تسجيل الخروج إذا كان المستخدم مسجل دخول
         if (currentUser) {
             addLogoutButton();
+            updateMobileUserSection();
         }
     }, 1000);
 });

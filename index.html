@@ -217,6 +217,23 @@
       </button>
     </div>
     <div class="mobile-menu-content">
+      <!-- قسم معلومات المستخدم وتسجيل الخروج -->
+      <div class="mobile-user-section" id="mobileUserSection" style="display: none;">
+        <div class="mobile-user-info">
+          <div class="mobile-user-avatar">
+            <i class="fas fa-user-circle"></i>
+          </div>
+          <div class="mobile-user-details">
+            <span class="mobile-user-name" id="mobileUserName">مستخدم</span>
+            <span class="mobile-user-role" id="mobileUserRole">دور المستخدم</span>
+          </div>
+        </div>
+        <button class="mobile-logout-btn" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i>
+          تسجيل الخروج
+        </button>
+      </div>
+
       <ol class="mobile-dropdown-list">
         <li>
           <button id="mobile-country-btn"><i class="fas fa-globe"></i> المدن <span class="badge" id="countryCount"></span></button>
@@ -268,6 +285,7 @@
           </button>
         </li>
       </ol>
+
       <div id="mobileTotals" class="mobile-totals"></div>
     </div>
   </div>

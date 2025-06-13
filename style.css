@@ -15209,3 +15209,87 @@ textarea.mobile-friendly:focus {
     padding: 1rem;
   }
 }
+
+/* ===== قسم المستخدم في الهاتف ===== */
+.mobile-user-section {
+  border-top: 1px solid #e9ecef;
+  padding: 1rem;
+  margin-top: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.mobile-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.mobile-user-avatar {
+  font-size: 2.5rem;
+  color: #007bff;
+  flex-shrink: 0;
+}
+
+.mobile-user-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.mobile-user-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+}
+
+.mobile-user-role {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.mobile-logout-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  color: white;
+  border: none;
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.mobile-logout-btn:hover {
+  background: linear-gradient(135deg, #c82333, #a71e2a);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.mobile-logout-btn:active {
+  transform: translateY(0);
+}
+
+/* تحسينات للقائمة المحمولة */
+.mobile-menu-content {
+  padding-bottom: 1rem;
+}
+
+/* إخفاء قسم المستخدم للمستخدم غير المسجل */
+.mobile-user-section.hidden {
+  display: none !important;
+}
