@@ -15212,12 +15212,12 @@ textarea.mobile-friendly:focus {
 
 /* ===== قسم المستخدم في الهاتف ===== */
 .mobile-user-section {
-  border-top: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
   padding: 1rem;
-  margin-top: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
   margin-bottom: 1rem;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .mobile-user-info {

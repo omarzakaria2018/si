@@ -16863,9 +16863,10 @@ async function generateTotalsPreview(data) {
             type: typeof newTotal
         });
 
-        // البحث عن العقار في النظام
+        // البحث عن العقار في النظام (مع التحقق من كلا الصيغتين لرقم الوحدة)
         const existingProperty = properties.find(p =>
-            p['رقم الوحدة'] && p['رقم الوحدة'].toString().trim() === unitNumber
+            (p['رقم الوحدة'] && p['رقم الوحدة'].toString().trim() === unitNumber) ||
+            (p['رقم  الوحدة '] && p['رقم  الوحدة '].toString().trim() === unitNumber)
         );
 
         let currentTotal = 0;
@@ -17025,11 +17026,13 @@ async function applyTotalsUpdate() {
 
 // تحديث إجمالي عقار محدد
 async function updatePropertyTotal(property, newTotal) {
-    console.log('🔄 تحديث إجمالي العقار:', property['رقم الوحدة'], 'إلى', newTotal);
+    const unitNumber = property['رقم الوحدة'] || property['رقم  الوحدة '];
+    console.log('🔄 تحديث إجمالي العقار:', unitNumber, 'إلى', newTotal);
 
-    // البحث عن العقار في المصفوفة
+    // البحث عن العقار في المصفوفة (مع التحقق من كلا الصيغتين لرقم الوحدة)
     const propertyIndex = properties.findIndex(p =>
-        p['رقم الوحدة'] && p['رقم الوحدة'].toString().trim() === property['رقم الوحدة'].toString().trim()
+        (p['رقم الوحدة'] && p['رقم الوحدة'].toString().trim() === unitNumber.toString().trim()) ||
+        (p['رقم  الوحدة '] && p['رقم  الوحدة '].toString().trim() === unitNumber.toString().trim())
     );
 
     if (propertyIndex === -1) {
@@ -17279,13 +17282,14 @@ function loadSourceUnits(propertyName) {
 
     propertyUnits.forEach(unit => {
         const status = calculateStatus(unit);
+        const unitNumber = unit['رقم الوحدة'] || unit['رقم  الوحدة '] || 'غير محدد';
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>
-                <input type="checkbox" value="${unit['رقم الوحدة']}"
-                       onchange="toggleUnitSelection(this, '${unit['رقم الوحدة']}')">
+                <input type="checkbox" value="${unitNumber}"
+                       onchange="toggleUnitSelection(this, '${unitNumber}')">
             </td>
-            <td>${unit['رقم الوحدة'] || 'غير محدد'}</td>
+            <td>${unitNumber}</td>
             <td>${unit['اسم المستأجر'] || 'فارغ'}</td>
             <td>${unit['رقم العقد'] || 'غير محدد'}</td>
             <td>
@@ -17434,30 +17438,81 @@ async function confirmUnitTransfer() {
     }
 
     try {
+        // التحقق من حالة الاتصال بـ Supabase
+        let supabaseAvailable = false;
+        if (typeof checkSupabaseAvailability === 'function') {
+            try {
+                supabaseAvailable = await checkSupabaseAvailability();
+                if (!supabaseAvailable) {
+                    console.warn('⚠️ Supabase غير متاح، سيتم النقل محلياً فقط');
+
+                    // إظهار تحذير للمستخدم
+                    const proceedWithoutCloud = confirm(
+                        '⚠️ تحذير: قاعدة البيانات السحابية غير متاحة حالياً.\n\n' +
+                        'سيتم نقل الوحدات محلياً فقط وقد تفقد التغييرات عند إعادة تحميل الصفحة.\n\n' +
+                        'هل تريد المتابعة؟'
+                    );
+
+                    if (!proceedWithoutCloud) {
+                        return; // إلغاء العملية
+                    }
+                }
+            } catch (error) {
+                console.error('❌ خطأ في فحص Supabase:', error);
+            }
+        }
+
         // إظهار مؤشر التحميل
         const confirmBtn = document.getElementById('confirmTransferBtn');
-        const originalText = confirmBtn.innerHTML;
         confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري النقل...';
         confirmBtn.disabled = true;
 
         let transferredCount = 0;
+        let supabaseSuccessCount = 0;
         let errors = [];
 
         // نقل كل وحدة محددة
         for (const unitNumber of transferSelectedUnits) {
             try {
-                await transferSingleUnit(unitNumber, transferSourceProperty, transferDestinationProperty);
-                transferredCount++;
+                const result = await transferSingleUnit(unitNumber, transferSourceProperty, transferDestinationProperty);
+                if (result.success) {
+                    transferredCount++;
+                    if (result.supabaseSuccess) {
+                        supabaseSuccessCount++;
+                    }
+                }
             } catch (error) {
                 console.error(`❌ خطأ في نقل الوحدة ${unitNumber}:`, error);
                 errors.push(`${unitNumber}: ${error.message}`);
             }
         }
 
-        // حفظ البيانات
+        // حفظ البيانات محلياً
         saveDataLocally();
 
-        // مزامنة مع Supabase إذا متاح
+        // مزامنة إضافية مع Supabase للتأكد من الحفظ
+        if (supabaseSuccessCount < transferredCount) {
+            console.log('🔄 محاولة مزامنة إضافية للوحدات غير المحفوظة...');
+
+            // محاولة حفظ الوحدات التي لم يتم حفظها في Supabase
+            for (const unitNumber of transferSelectedUnits) {
+                const unit = properties.find(p =>
+                    (p['رقم الوحدة'] === unitNumber || p['رقم  الوحدة '] === unitNumber) &&
+                    p['اسم العقار'] === transferDestinationProperty
+                );
+
+                if (unit && typeof savePropertyToSupabase === 'function') {
+                    try {
+                        await savePropertyToSupabase(unit);
+                        console.log(`✅ مزامنة إضافية ناجحة للوحدة ${unitNumber}`);
+                    } catch (error) {
+                        console.error(`❌ فشل في المزامنة الإضافية للوحدة ${unitNumber}:`, error);
+                    }
+                }
+            }
+        }
+
+        // مزامنة عامة مع Supabase إذا متاح
         if (typeof syncToSupabase === 'function') {
             try {
                 await syncToSupabase();
@@ -17475,9 +17530,15 @@ async function confirmUnitTransfer() {
         let message = `✅ تم نقل ${transferredCount} وحدة بنجاح!\n\n`;
         message += `من: ${transferSourceProperty}\n`;
         message += `إلى: ${transferDestinationProperty}\n`;
+        message += `💾 تم حفظ ${supabaseSuccessCount} وحدة في قاعدة البيانات السحابية\n`;
+
+        if (supabaseSuccessCount < transferredCount) {
+            const localOnlyCount = transferredCount - supabaseSuccessCount;
+            message += `⚠️ ${localOnlyCount} وحدة تم نقلها محلياً فقط (مشاكل في الاتصال)\n`;
+        }
 
         if (errors.length > 0) {
-            message += `\n⚠️ أخطاء (${errors.length}):\n${errors.slice(0, 3).join('\n')}`;
+            message += `\n❌ أخطاء (${errors.length}):\n${errors.slice(0, 3).join('\n')}`;
             if (errors.length > 3) message += `\n... و ${errors.length - 3} أخطاء أخرى`;
         }
 
@@ -17503,12 +17564,22 @@ async function confirmUnitTransfer() {
 async function transferSingleUnit(unitNumber, sourceProperty, destinationProperty) {
     console.log(`🔄 نقل الوحدة ${unitNumber} من ${sourceProperty} إلى ${destinationProperty}`);
 
-    // البحث عن الوحدة في المصفوفة
+    // البحث عن الوحدة في المصفوفة (مع التحقق من كلا الصيغتين لرقم الوحدة)
     const unitIndex = properties.findIndex(p =>
-        p['رقم الوحدة'] === unitNumber && p['اسم العقار'] === sourceProperty
+        (p['رقم الوحدة'] === unitNumber || p['رقم  الوحدة '] === unitNumber) &&
+        p['اسم العقار'] === sourceProperty
     );
 
     if (unitIndex === -1) {
+        console.error(`❌ لم يتم العثور على الوحدة ${unitNumber} في العقار ${sourceProperty}`);
+        console.log('🔍 البحث في جميع العقارات للوحدة:', unitNumber);
+
+        // البحث في جميع العقارات لتشخيص المشكلة
+        const allUnitsWithSameNumber = properties.filter(p =>
+            p['رقم الوحدة'] === unitNumber || p['رقم  الوحدة '] === unitNumber
+        );
+        console.log('🔍 الوحدات الموجودة برقم', unitNumber, ':', allUnitsWithSameNumber);
+
         throw new Error(`لم يتم العثور على الوحدة ${unitNumber} في العقار ${sourceProperty}`);
     }
 
@@ -17519,14 +17590,47 @@ async function transferSingleUnit(unitNumber, sourceProperty, destinationPropert
     unit['نوع التحديث'] = 'نقل وحدة';
     unit['المسؤول عن التحديث'] = getCurrentUser();
 
-    // إزالة الوحدة من موقعها الأصلي
-    properties.splice(unitIndex, 1);
+    // حفظ التغييرات في Supabase أولاً
+    let supabaseSuccess = false;
+    if (typeof savePropertyToSupabase === 'function') {
+        try {
+            console.log(`💾 حفظ الوحدة المنقولة ${unitNumber} في Supabase...`);
 
-    // إضافة الوحدة في موقعها الجديد
+            // حفظ الوحدة بالبيانات الجديدة
+            const result = await savePropertyToSupabase(unit);
+            if (result) {
+                supabaseSuccess = true;
+                console.log(`✅ تم حفظ الوحدة ${unitNumber} في Supabase بنجاح`);
+
+                // حذف السجل القديم إذا كان موجوداً (بالعقار القديم)
+                const originalUnit = properties[unitIndex];
+                if (originalUnit && originalUnit.id && typeof deletePropertyFromSupabase === 'function') {
+                    try {
+                        await deletePropertyFromSupabase(originalUnit.id);
+                        console.log(`🗑️ تم حذف السجل القديم للوحدة ${unitNumber} من Supabase`);
+                    } catch (deleteError) {
+                        console.warn(`⚠️ لم يتم حذف السجل القديم للوحدة ${unitNumber}:`, deleteError);
+                    }
+                }
+            } else {
+                console.error(`❌ فشل حفظ الوحدة ${unitNumber} في Supabase`);
+            }
+        } catch (error) {
+            console.error(`❌ خطأ في حفظ الوحدة ${unitNumber} في Supabase:`, error);
+        }
+    }
+
+    // إذا فشل حفظ Supabase، إظهار تحذير ولكن استمر بالعملية محلياً
+    if (!supabaseSuccess) {
+        console.warn(`⚠️ لم يتم حفظ الوحدة ${unitNumber} في Supabase، سيتم الحفظ محلياً فقط`);
+    }
+
+    // تحديث البيانات محلياً
+    properties.splice(unitIndex, 1);
     properties.push(unit);
 
     console.log(`✅ تم نقل الوحدة ${unitNumber} بنجاح`);
-    return true;
+    return { success: true, supabaseSuccess };
 }
 
 // الحصول على المستخدم الحالي (سيتم تطويرها في نظام الصلاحيات)
