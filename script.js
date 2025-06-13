@@ -2416,34 +2416,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function showPasswordModal() {
-    // أضف طبقة البلور والمودال
-    const blurDiv = document.createElement('div');
-    blurDiv.id = 'blur-overlay';
-    blurDiv.innerHTML = `
-      <div class="password-modal">
-        <h2>الرجاء إدخال كلمة المرور</h2>
-        <input type="password" id="passwordInput" placeholder="كلمة المرور" autocomplete="off" />
-        <br>
-        <button onclick="checkPassword()">دخول</button>
-        <div class="error" id="passwordError"></div>
-      </div>
-    `;
-    document.body.appendChild(blurDiv);
 
-    // منع التفاعل مع الصفحة
-    document.body.style.overflow = 'hidden';
-
-    // إدخال تلقائي بالفوكس
-    setTimeout(() => {
-        document.getElementById('passwordInput').focus();
-    }, 100);
-
-    // إدخال بالإنتر
-    document.getElementById('passwordInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') checkPassword();
-    });
-}
 
 function checkPassword() {
     const input = document.getElementById('passwordInput');
