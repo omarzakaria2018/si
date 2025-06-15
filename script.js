@@ -9708,6 +9708,27 @@ function renderPropertiesTab() {
                     }
                 </div>
             </div>
+
+            <!-- خانة البحث في العقارات -->
+            <div class="properties-search-section">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text"
+                               id="propertiesSearchInput"
+                               placeholder="البحث في العقارات بالاسم أو المدينة..."
+                               class="properties-search-input"
+                               oninput="searchProperties(this.value)"
+                               autocomplete="off">
+                        <button class="clear-search-btn" onclick="clearPropertiesSearch()" style="display: none;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="search-results-count" id="propertiesSearchCount" style="display: none;">
+                        <span id="searchResultsText"></span>
+                    </div>
+                </div>
+            </div>
             <div class="existing-properties">
                 ${existingProperties.length > 0 ?
                     existingProperties.map(property => {
@@ -15559,8 +15580,10 @@ function editPropertyData(propertyName) {
     });
 }
 
-// حفظ تغييرات العقار
-function savePropertyChanges(originalPropertyName) {
+// حفظ تغييرات العقار مع المزامنة المحسنة
+async function savePropertyChanges(originalPropertyName) {
+    console.log(`💾 بدء حفظ تغييرات العقار: ${originalPropertyName}`);
+
     const newName = document.getElementById('editPropertyName').value.trim();
     const newCity = document.getElementById('editPropertyCity').value;
     const newDeed = document.getElementById('editPropertyDeed').value.trim();
@@ -15570,7 +15593,7 @@ function savePropertyChanges(originalPropertyName) {
     const newLocation = document.getElementById('editPropertyLocation').value.trim();
 
     if (!newName || !newCity) {
-        alert('يرجى إدخال اسم العقار واختيار المدينة');
+        showToast('يرجى إدخال اسم العقار واختيار المدينة', 'error');
         return;
     }
 
@@ -15580,37 +15603,204 @@ function savePropertyChanges(originalPropertyName) {
             p['اسم العقار'] === newName && p['المدينة'] === newCity
         );
         if (existingProperty) {
-            alert('يوجد عقار آخر بنفس الاسم في هذه المدينة');
+            showToast('يوجد عقار آخر بنفس الاسم في هذه المدينة', 'error');
             return;
         }
     }
 
-    // تحديث جميع الوحدات المرتبطة بهذا العقار
-    const relatedProperties = properties.filter(p => p['اسم العقار'] === originalPropertyName);
+    // إظهار مؤشر التحميل
+    const loadingModal = document.createElement('div');
+    loadingModal.className = 'modal-overlay';
+    loadingModal.style.display = 'flex';
+    loadingModal.style.zIndex = '10001';
+    loadingModal.innerHTML = `
+        <div class="modal-box loading-modal">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <h3>جاري حفظ التغييرات...</h3>
+                <p>يرجى الانتظار حتى يتم حفظ البيانات في السحابة</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingModal);
 
-    relatedProperties.forEach(property => {
-        property['اسم العقار'] = newName;
-        property['المدينة'] = newCity;
-        property['رقم الصك'] = newDeed || null;
-        property['مساحةالصك'] = newArea || null;
-        property['السجل العيني '] = newRegistry || null;
-        property['المالك'] = newOwner || null;
-        property['موقع العقار'] = newLocation || null;
-    });
+    try {
+        // الحصول على البيانات الأصلية للمقارنة
+        const relatedProperties = properties.filter(p => p['اسم العقار'] === originalPropertyName);
+        const originalData = relatedProperties[0] ? { ...relatedProperties[0] } : {};
 
-    alert('تم حفظ التغييرات بنجاح!');
+        // تحضير التغييرات للتتبع
+        const changes = {};
 
-    // إغلاق النافذة
-    closeModal();
+        if (newName !== originalPropertyName) {
+            changes['اسم العقار'] = {
+                fieldName: 'اسم العقار',
+                old: originalPropertyName,
+                new: newName
+            };
+        }
 
-    // إعادة تحميل البيانات
-    initializeApp();
+        if (newCity !== originalData['المدينة']) {
+            changes['المدينة'] = {
+                fieldName: 'المدينة',
+                old: originalData['المدينة'] || '',
+                new: newCity
+            };
+        }
 
-    // تحديث محتوى تبويب العقارات
-    const propertiesTab = document.getElementById('properties-tab');
-    if (propertiesTab) {
-        propertiesTab.innerHTML = renderPropertiesTab();
+        if (newDeed !== (originalData['رقم الصك'] || '')) {
+            changes['رقم الصك'] = {
+                fieldName: 'رقم الصك',
+                old: originalData['رقم الصك'] || '',
+                new: newDeed
+            };
+        }
+
+        if (newArea !== (originalData['مساحةالصك'] || '')) {
+            changes['مساحةالصك'] = {
+                fieldName: 'مساحة الصك',
+                old: originalData['مساحةالصك'] || '',
+                new: newArea
+            };
+        }
+
+        if (newRegistry !== (originalData['السجل العيني '] || '')) {
+            changes['السجل العيني '] = {
+                fieldName: 'السجل العيني',
+                old: originalData['السجل العيني '] || '',
+                new: newRegistry
+            };
+        }
+
+        if (newOwner !== (originalData['المالك'] || '')) {
+            changes['المالك'] = {
+                fieldName: 'المالك',
+                old: originalData['المالك'] || '',
+                new: newOwner
+            };
+        }
+
+        if (newLocation !== (originalData['موقع العقار'] || '')) {
+            changes['موقع العقار'] = {
+                fieldName: 'موقع العقار',
+                old: originalData['موقع العقار'] || '',
+                new: newLocation
+            };
+        }
+
+        // تحديث جميع الوحدات المرتبطة بهذا العقار
+        relatedProperties.forEach(property => {
+            property['اسم العقار'] = newName;
+            property['المدينة'] = newCity;
+            property['رقم الصك'] = newDeed || null;
+            property['مساحةالصك'] = newArea || null;
+            property['السجل العيني '] = newRegistry || null;
+            property['المالك'] = newOwner || null;
+            property['موقع العقار'] = newLocation || null;
+            property['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+        });
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
+
+        // تسجيل التغيير في سجل التتبع
+        if (Object.keys(changes).length > 0) {
+            const changeLog = createChangeLog(
+                OPERATION_TYPES.EDIT_DATA,
+                {
+                    'رقم  الوحدة ': relatedProperties[0]['رقم  الوحدة '] || 'متعدد',
+                    'اسم العقار': newName,
+                    'اسم المستأجر': relatedProperties[0]['اسم المستأجر'] || ''
+                },
+                changes,
+                {
+                    affectedUnits: relatedProperties.length,
+                    originalPropertyName: originalPropertyName
+                }
+            );
+
+            changeTrackingLogs.push(changeLog);
+
+            // حفظ سجل التتبع محلياً
+            try {
+                localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
+            } catch (error) {
+                console.warn('⚠️ لم يتم حفظ سجل التتبع محلياً:', error);
+            }
+
+            // حفظ سجل التتبع في Supabase
+            await saveChangeLogToSupabase(changeLog);
+        }
+
+        // مزامنة مع Supabase
+        const syncResult = await syncToSupabase(false);
+
+        // إزالة مؤشر التحميل
+        loadingModal.remove();
+
+        if (syncResult.success) {
+            showToast('تم حفظ التغييرات بنجاح في السحابة', 'success');
+            console.log('✅ تم حفظ تغييرات العقار بنجاح');
+        } else {
+            showToast('تم حفظ التغييرات محلياً، ستتم المزامنة لاحقاً', 'warning');
+            console.warn('⚠️ تم الحفظ محلياً فقط:', syncResult.message);
+        }
+
+        // إغلاق النافذة
+        closeModal();
+
+        // تحديث العرض
+        renderData();
+        updateTotalStats();
+
+        // تحديث محتوى تبويب العقارات
+        const propertiesTab = document.getElementById('properties-tab');
+        if (propertiesTab) {
+            propertiesTab.innerHTML = renderPropertiesTab();
+        }
+
+        // مسح نتائج البحث لإعادة عرض جميع العقارات
+        clearPropertiesSearch();
+
+    } catch (error) {
+        console.error('❌ خطأ في حفظ تغييرات العقار:', error);
+
+        // إزالة مؤشر التحميل
+        loadingModal.remove();
+
+        // إظهار رسالة خطأ مع إمكانية إعادة المحاولة
+        const errorModal = document.createElement('div');
+        errorModal.className = 'modal-overlay';
+        errorModal.style.display = 'flex';
+        errorModal.style.zIndex = '10002';
+        errorModal.innerHTML = `
+            <div class="modal-box error-modal">
+                <div class="error-header">
+                    <h3><i class="fas fa-exclamation-triangle"></i> خطأ في حفظ التغييرات</h3>
+                </div>
+                <div class="error-content">
+                    <p><strong>حدث خطأ أثناء حفظ التغييرات:</strong></p>
+                    <div class="error-details">${error.message || 'خطأ غير معروف'}</div>
+                    <p><i class="fas fa-info-circle"></i> تم حفظ التغييرات محلياً</p>
+                </div>
+                <div class="error-actions">
+                    <button onclick="retrySavePropertyChanges('${originalPropertyName}')" class="retry-btn">
+                        <i class="fas fa-redo"></i> إعادة المحاولة
+                    </button>
+                    <button onclick="closeModal()" class="close-btn">
+                        <i class="fas fa-times"></i> إغلاق
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(errorModal);
     }
+}
+
+// إعادة محاولة حفظ تغييرات العقار
+async function retrySavePropertyChanges(originalPropertyName) {
+    closeModal(); // إغلاق نافذة الخطأ
+    await savePropertyChanges(originalPropertyName);
 }
 
 // عرض إحصائيات العقار
@@ -17176,15 +17366,8 @@ async function applyTotalsUpdate() {
         // حفظ البيانات محلياً
         saveDataLocally();
 
-        // مزامنة مع Supabase إذا كان متاحاً
-        if (typeof syncToSupabase === 'function') {
-            try {
-                await syncToSupabase();
-                console.log('✅ تم مزامنة البيانات مع Supabase');
-            } catch (error) {
-                console.error('⚠️ خطأ في مزامنة Supabase:', error);
-            }
-        }
+        // مزامنة تلقائية مع Supabase
+        autoSyncAfterEdit('تحديث الإجماليات');
 
         // إعادة تحميل البيانات
         renderData();
@@ -17705,15 +17888,8 @@ async function confirmUnitTransfer() {
             }
         }
 
-        // مزامنة عامة مع Supabase إذا متاح
-        if (typeof syncToSupabase === 'function') {
-            try {
-                await syncToSupabase();
-                console.log('✅ تم مزامنة البيانات مع Supabase');
-            } catch (error) {
-                console.error('⚠️ خطأ في مزامنة Supabase:', error);
-            }
-        }
+        // مزامنة تلقائية مع Supabase
+        autoSyncAfterEdit('تحديث البيانات');
 
         // إعادة تحميل البيانات
         renderData();
@@ -18264,19 +18440,34 @@ const OPERATION_TYPES = {
     DELETE_PROPERTY: 'حذف عقار'
 };
 
-// هيكل سجل التتبع
+// هيكل سجل التتبع المحسن
 function createChangeLog(operationType, unitData, changes = {}, additionalInfo = {}) {
+    const now = new Date();
+    const hijriDate = getHijriDate(now);
+    const gregorianDate = now.toLocaleDateString('ar-SA');
+    const dayName = getDayName(now);
+
     return {
         id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        timestamp: new Date().toISOString(),
-        date: new Date().toLocaleDateString('ar-SA'),
-        time: new Date().toLocaleTimeString('ar-SA'),
+        timestamp: now.toISOString(),
+        date: gregorianDate,
+        hijriDate: hijriDate,
+        time: now.toLocaleTimeString('ar-SA', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        }),
+        dayName: dayName,
+        year: now.getFullYear(),
+        month: now.getMonth() + 1,
         operationType: operationType,
         user: getCurrentUser(),
         unitNumber: unitData['رقم  الوحدة '] || unitData['رقم الوحدة'] || 'غير محدد',
         propertyName: unitData['اسم العقار'] || 'غير محدد',
         city: unitData['المدينة'] || 'غير محدد',
         contractNumber: unitData['رقم العقد'] || 'غير محدد',
+        tenantName: unitData['اسم المستأجر'] || unitData['المستأجر'] || '',
         changes: changes,
         originalData: additionalInfo.originalData || null,
         newData: additionalInfo.newData || null,
@@ -18288,6 +18479,55 @@ function createChangeLog(operationType, unitData, changes = {}, additionalInfo =
         sourceProperty: additionalInfo.sourceProperty || null,
         destinationProperty: additionalInfo.destinationProperty || null
     };
+}
+
+// الحصول على التاريخ الهجري المحسن
+function getHijriDate(date) {
+    try {
+        // استخدام Intl.DateTimeFormat للحصول على التاريخ الهجري
+        const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).format(date);
+
+        return hijri;
+    } catch (error) {
+        // في حالة عدم دعم التاريخ الهجري، استخدام تقريب محسن
+        console.warn('لا يمكن الحصول على التاريخ الهجري، سيتم استخدام تقريب');
+        return approximateHijriDate(date);
+    }
+}
+
+// تحسين التاريخ الهجري التقريبي
+function approximateHijriDate(date) {
+    const hijriMonths = [
+        'محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الثانية',
+        'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
+    ];
+
+    // تحسين التقريب: استخدام معادلة أكثر دقة
+    const gregorianYear = date.getFullYear();
+    const gregorianMonth = date.getMonth();
+    const gregorianDay = date.getDate();
+
+    // تقريب محسن للسنة الهجرية
+    const hijriYear = Math.floor(gregorianYear - 621.5 + (gregorianMonth * 30.44 + gregorianDay) / 354.37);
+
+    // تقريب للشهر الهجري
+    const dayOfYear = Math.floor((date - new Date(gregorianYear, 0, 0)) / (1000 * 60 * 60 * 24));
+    const hijriMonthIndex = Math.floor((dayOfYear % 354) / 29.5) % 12;
+    const hijriDay = Math.floor((dayOfYear % 354) % 29.5) + 1;
+
+    return `${hijriDay} ${hijriMonths[hijriMonthIndex]} ${hijriYear}هـ`;
+}
+
+// إزالة الوظيفة المكررة - تم دمجها في الوظيفة أعلاه
+
+// الحصول على اسم اليوم
+function getDayName(date) {
+    const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    return days[date.getDay()];
 }
 
 // حفظ سجل التتبع في Supabase
@@ -18480,12 +18720,8 @@ function addTrackingFieldsToExistingData() {
 
         saveDataLocally();
 
-        // مزامنة مع Supabase إذا متاح
-        if (typeof syncToSupabase === 'function') {
-            syncToSupabase().catch(error => {
-                console.error('⚠️ خطأ في مزامنة البيانات المحدثة:', error);
-            });
-        }
+        // مزامنة تلقائية مع Supabase
+        autoSyncAfterEdit('تحديث البيانات');
     }
 }
 
@@ -18693,8 +18929,11 @@ async function showChangeTrackingModal() {
             <div class="tracking-filters">
                 <div class="filter-group">
                     <label>فلتر بالتاريخ:</label>
-                    <input type="date" id="trackingDateFrom" placeholder="من تاريخ">
-                    <input type="date" id="trackingDateTo" placeholder="إلى تاريخ">
+                    <input type="date" id="trackingDateFilter" placeholder="اختر تاريخ">
+                </div>
+                <div class="filter-group">
+                    <label>فلتر بالشهر والسنة:</label>
+                    <input type="month" id="trackingMonthFilter" placeholder="اختر شهر وسنة">
                 </div>
                 <div class="filter-group">
                     <label>نوع العملية:</label>
@@ -18707,10 +18946,13 @@ async function showChangeTrackingModal() {
                 </div>
                 <div class="filter-group">
                     <label>البحث:</label>
-                    <input type="text" id="trackingSearch" placeholder="بحث في الوحدات أو العقارات...">
+                    <input type="text" id="trackingSearch" placeholder="بحث في الوحدات، العقارات، أو المستأجرين...">
                 </div>
                 <button onclick="filterTrackingLogs()" class="filter-btn">
                     <i class="fas fa-filter"></i> تطبيق الفلتر
+                </button>
+                <button onclick="clearTrackingFilters()" class="clear-filter-btn">
+                    <i class="fas fa-times"></i> مسح الفلاتر
                 </button>
             </div>
 
@@ -18910,8 +19152,11 @@ async function showTrackingManagementModal() {
                     <div class="filter-row">
                         <div class="filter-group">
                             <label>فلتر بالتاريخ:</label>
-                            <input type="date" id="mgmtDateFrom" placeholder="من تاريخ">
-                            <input type="date" id="mgmtDateTo" placeholder="إلى تاريخ">
+                            <input type="date" id="mgmtDateFilter" placeholder="اختر تاريخ">
+                        </div>
+                        <div class="filter-group">
+                            <label>فلتر بالشهر والسنة:</label>
+                            <input type="month" id="mgmtMonthFilter" placeholder="اختر شهر وسنة">
                         </div>
                         <div class="filter-group">
                             <label>نوع العملية:</label>
@@ -19420,26 +19665,33 @@ async function deleteAllLogs() {
     }
 }
 
-// تطبيق فلاتر الإدارة
+// تطبيق فلاتر الإدارة المحسنة
 function applyManagementFilters() {
-    const dateFrom = document.getElementById('mgmtDateFrom').value;
-    const dateTo = document.getElementById('mgmtDateTo').value;
+    const dateFilter = document.getElementById('mgmtDateFilter').value;
+    const monthFilter = document.getElementById('mgmtMonthFilter').value;
     const operationType = document.getElementById('mgmtOperationType').value;
     const userFilter = document.getElementById('mgmtUserFilter').value;
     const searchTerm = document.getElementById('mgmtSearch').value.toLowerCase();
 
     let filteredLogs = window.currentManagementLogs || [];
 
-    // فلترة بالتاريخ
-    if (dateFrom) {
-        const fromDate = new Date(dateFrom);
-        filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) >= fromDate);
+    // فلترة بالتاريخ المحدد
+    if (dateFilter) {
+        const filterDate = new Date(dateFilter);
+        filteredLogs = filteredLogs.filter(log => {
+            const logDate = new Date(log.timestamp);
+            return logDate.toDateString() === filterDate.toDateString();
+        });
     }
 
-    if (dateTo) {
-        const toDate = new Date(dateTo);
-        toDate.setHours(23, 59, 59, 999); // نهاية اليوم
-        filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) <= toDate);
+    // فلترة بالشهر والسنة
+    if (monthFilter) {
+        const [filterYear, filterMonth] = monthFilter.split('-');
+        filteredLogs = filteredLogs.filter(log => {
+            const logDate = new Date(log.timestamp);
+            return logDate.getFullYear() === parseInt(filterYear) &&
+                   (logDate.getMonth() + 1) === parseInt(filterMonth);
+        });
     }
 
     // فلترة بنوع العملية
@@ -19476,8 +19728,8 @@ function applyManagementFilters() {
 
 // مسح فلاتر الإدارة
 function clearManagementFilters() {
-    document.getElementById('mgmtDateFrom').value = '';
-    document.getElementById('mgmtDateTo').value = '';
+    document.getElementById('mgmtDateFilter').value = '';
+    document.getElementById('mgmtMonthFilter').value = '';
     document.getElementById('mgmtOperationType').value = '';
     document.getElementById('mgmtUserFilter').value = '';
     document.getElementById('mgmtSearch').value = '';
@@ -19619,6 +19871,800 @@ function viewLogDetails(logId) {
 
 // ===== نهاية نظام إدارة سجلات التتبع =====
 
+// ===== نظام البحث في العقارات =====
+
+// متغير لحفظ نتائج البحث
+let currentPropertiesSearchResults = [];
+let originalPropertiesList = [];
+
+// البحث المباشر في العقارات
+function searchProperties(searchTerm) {
+    console.log('🔍 البحث في العقارات:', searchTerm);
+
+    const searchInput = document.getElementById('propertiesSearchInput');
+    const clearBtn = document.querySelector('.clear-search-btn');
+    const searchCount = document.getElementById('propertiesSearchCount');
+    const searchResultsText = document.getElementById('searchResultsText');
+
+    // إظهار/إخفاء زر المسح
+    if (searchTerm.length > 0) {
+        clearBtn.style.display = 'flex';
+    } else {
+        clearBtn.style.display = 'none';
+    }
+
+    // الحصول على جميع العقارات
+    let allProperties = getUniqueProperties();
+
+    // تطبيق فلتر المدينة إذا كان محدداً
+    if (selectedCityFilter !== 'all') {
+        allProperties = allProperties.filter(propertyName => {
+            const property = properties.find(p => p['اسم العقار'] === propertyName);
+            return property && property['المدينة'] === selectedCityFilter;
+        });
+    }
+
+    // حفظ القائمة الأصلية إذا لم تكن محفوظة
+    if (originalPropertiesList.length === 0) {
+        originalPropertiesList = [...allProperties];
+    }
+
+    // تطبيق البحث
+    if (searchTerm.trim() === '') {
+        // إذا كان البحث فارغاً، عرض جميع العقارات
+        currentPropertiesSearchResults = [...allProperties];
+        searchCount.style.display = 'none';
+    } else {
+        // البحث في اسم العقار والمدينة
+        const searchTermLower = searchTerm.toLowerCase();
+        currentPropertiesSearchResults = allProperties.filter(propertyName => {
+            const property = properties.find(p => p['اسم العقار'] === propertyName);
+            if (!property) return false;
+
+            const propertyNameMatch = propertyName.toLowerCase().includes(searchTermLower);
+            const cityMatch = (property['المدينة'] || '').toLowerCase().includes(searchTermLower);
+
+            return propertyNameMatch || cityMatch;
+        });
+
+        // إظهار عدد النتائج
+        searchCount.style.display = 'block';
+        searchResultsText.textContent = `تم العثور على ${currentPropertiesSearchResults.length} عقار من أصل ${allProperties.length}`;
+    }
+
+    // تحديث عرض العقارات
+    updatePropertiesDisplay();
+
+    console.log(`✅ نتائج البحث: ${currentPropertiesSearchResults.length} عقار`);
+}
+
+// مسح البحث في العقارات
+function clearPropertiesSearch() {
+    console.log('🧹 مسح البحث في العقارات');
+
+    const searchInput = document.getElementById('propertiesSearchInput');
+    const clearBtn = document.querySelector('.clear-search-btn');
+    const searchCount = document.getElementById('propertiesSearchCount');
+
+    // مسح النص
+    if (searchInput) {
+        searchInput.value = '';
+    }
+
+    // إخفاء زر المسح وعداد النتائج
+    if (clearBtn) {
+        clearBtn.style.display = 'none';
+    }
+    if (searchCount) {
+        searchCount.style.display = 'none';
+    }
+
+    // إعادة تعيين النتائج
+    currentPropertiesSearchResults = [];
+
+    // تحديث العرض
+    updatePropertiesDisplay();
+
+    console.log('✅ تم مسح البحث وإعادة عرض جميع العقارات');
+}
+
+// تحديث عرض العقارات مع مراعاة نتائج البحث
+function updatePropertiesDisplay() {
+    const propertiesContainer = document.querySelector('.existing-properties');
+    if (!propertiesContainer) return;
+
+    // تحديد العقارات المراد عرضها
+    let propertiesToShow;
+    if (currentPropertiesSearchResults.length > 0 || document.getElementById('propertiesSearchInput')?.value) {
+        propertiesToShow = currentPropertiesSearchResults;
+    } else {
+        // عرض العقارات حسب فلتر المدينة
+        propertiesToShow = getUniqueProperties();
+        if (selectedCityFilter !== 'all') {
+            propertiesToShow = propertiesToShow.filter(propertyName => {
+                const property = properties.find(p => p['اسم العقار'] === propertyName);
+                return property && property['المدينة'] === selectedCityFilter;
+            });
+        }
+    }
+
+    // تحديث المحتوى
+    if (propertiesToShow.length > 0) {
+        propertiesContainer.innerHTML = propertiesToShow.map(property => {
+            const propertyData = properties.find(p => p['اسم العقار'] === property);
+            const cityName = propertyData ? propertyData['المدينة'] : 'غير محدد';
+            return `
+                <div class="property-item">
+                    <div class="property-info">
+                        <div class="property-name">${property}</div>
+                        <div class="property-city">المدينة: ${cityName}</div>
+                    </div>
+                    <div class="property-actions">
+                        <button onclick="showPropertyStatistics('${property}')" class="stats-btn">
+                            <i class="fas fa-chart-bar"></i> إحصائيات
+                        </button>
+                        <button onclick="deleteProperty('${property}')" class="delete-btn">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        const searchTerm = document.getElementById('propertiesSearchInput')?.value || '';
+        if (searchTerm) {
+            propertiesContainer.innerHTML = `
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <h4>لا توجد نتائج</h4>
+                    <p>لم يتم العثور على عقارات تطابق "${searchTerm}"</p>
+                    <button onclick="clearPropertiesSearch()" class="clear-search-btn-large">
+                        <i class="fas fa-times"></i> مسح البحث
+                    </button>
+                </div>
+            `;
+        } else {
+            propertiesContainer.innerHTML = `
+                <div class="no-properties">
+                    <i class="fas fa-building"></i>
+                    <p>لا توجد عقارات في هذه المدينة</p>
+                </div>
+            `;
+        }
+    }
+
+    // تحديث معلومات الفلتر
+    updateFilterInfo(propertiesToShow.length);
+}
+
+// تحديث معلومات الفلتر
+function updateFilterInfo(count) {
+    const filterInfo = document.querySelector('.filter-info');
+    if (!filterInfo) return;
+
+    const searchTerm = document.getElementById('propertiesSearchInput')?.value || '';
+
+    if (searchTerm) {
+        filterInfo.innerHTML = `<span class="filter-badge search">نتائج البحث: ${count} عقار</span>`;
+    } else if (selectedCityFilter === 'all') {
+        filterInfo.innerHTML = `<span class="filter-badge all">جميع المدن (${count} عقار)</span>`;
+    } else {
+        filterInfo.innerHTML = `<span class="filter-badge filtered">مدينة ${selectedCityFilter} (${count} عقار)</span>`;
+    }
+}
+
+// ===== نهاية نظام البحث في العقارات =====
+
+// ===== نظام مزامنة محسن مع Supabase =====
+
+// متغيرات حالة المزامنة
+let isSyncing = false;
+let lastSyncTime = null;
+let syncRetryCount = 0;
+const MAX_SYNC_RETRIES = 3;
+
+// وظيفة المزامنة الرئيسية مع Supabase
+async function syncToSupabase(showProgress = true) {
+    if (isSyncing) {
+        console.log('⏳ عملية مزامنة جارية بالفعل...');
+        return { success: false, message: 'عملية مزامنة جارية بالفعل' };
+    }
+
+    console.log('🔄 بدء مزامنة البيانات مع Supabase...');
+    isSyncing = true;
+
+    let progressModal = null;
+
+    try {
+        // إظهار مؤشر التقدم
+        if (showProgress) {
+            progressModal = showSyncProgress();
+        }
+
+        // التحقق من اتصال Supabase
+        if (!supabaseClient) {
+            throw new Error('عميل Supabase غير متاح');
+        }
+
+        // تحديث مؤشر التقدم
+        updateSyncProgress(progressModal, 'جاري تحضير البيانات...', 10);
+
+        // تحضير البيانات للمزامنة
+        const dataToSync = prepareDataForSync();
+
+        // مزامنة البيانات الأساسية
+        updateSyncProgress(progressModal, 'جاري مزامنة البيانات الأساسية...', 30);
+        const mainDataResult = await syncMainData(dataToSync.properties);
+
+        // مزامنة سجلات التتبع
+        updateSyncProgress(progressModal, 'جاري مزامنة سجلات التتبع...', 60);
+        const logsResult = await syncTrackingLogs(dataToSync.trackingLogs);
+
+        // مزامنة المرفقات
+        updateSyncProgress(progressModal, 'جاري مزامنة المرفقات...', 80);
+        const attachmentsResult = await syncAttachments(dataToSync.attachments);
+
+        // إنهاء المزامنة
+        updateSyncProgress(progressModal, 'تم إنهاء المزامنة بنجاح', 100);
+
+        // تحديث وقت آخر مزامنة
+        lastSyncTime = new Date();
+        syncRetryCount = 0;
+
+        // إغلاق مؤشر التقدم بعد ثانيتين
+        if (progressModal) {
+            setTimeout(() => {
+                progressModal.remove();
+            }, 2000);
+        }
+
+        console.log('✅ تم إنهاء مزامنة البيانات بنجاح');
+
+        // إظهار رسالة نجاح
+        showToast('تم حفظ البيانات في السحابة بنجاح', 'success');
+
+        return {
+            success: true,
+            message: 'تم إنهاء المزامنة بنجاح',
+            results: {
+                mainData: mainDataResult,
+                logs: logsResult,
+                attachments: attachmentsResult
+            }
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في مزامنة Supabase:', error);
+
+        // إغلاق مؤشر التقدم
+        if (progressModal) {
+            progressModal.remove();
+        }
+
+        // زيادة عداد المحاولات
+        syncRetryCount++;
+
+        // إظهار رسالة خطأ مع إمكانية إعادة المحاولة
+        showSyncError(error, syncRetryCount < MAX_SYNC_RETRIES);
+
+        return {
+            success: false,
+            message: error.message || 'حدث خطأ في المزامنة',
+            error: error
+        };
+
+    } finally {
+        isSyncing = false;
+    }
+}
+
+// تحضير البيانات للمزامنة
+function prepareDataForSync() {
+    return {
+        properties: properties || [],
+        trackingLogs: changeTrackingLogs || [],
+        attachments: {
+            property: JSON.parse(localStorage.getItem('propertyAttachments') || '{}'),
+            card: JSON.parse(localStorage.getItem('cardAttachments') || '{}')
+        }
+    };
+}
+
+// مزامنة البيانات الأساسية
+async function syncMainData(propertiesData) {
+    console.log('📊 مزامنة البيانات الأساسية...');
+
+    if (!propertiesData || propertiesData.length === 0) {
+        console.log('ℹ️ لا توجد بيانات أساسية للمزامنة');
+        return { success: true, count: 0 };
+    }
+
+    try {
+        // حذف البيانات القديمة
+        const { error: deleteError } = await supabaseClient
+            .from('properties')
+            .delete()
+            .neq('id', '');
+
+        if (deleteError) {
+            console.warn('⚠️ تحذير في حذف البيانات القديمة:', deleteError);
+        }
+
+        // إدراج البيانات الجديدة
+        const { data, error } = await supabaseClient
+            .from('properties')
+            .insert(propertiesData.map((property, index) => ({
+                id: property.id || `prop_${Date.now()}_${index}`,
+                data: property,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            })));
+
+        if (error) {
+            throw error;
+        }
+
+        console.log(`✅ تم مزامنة ${propertiesData.length} عقار`);
+        return { success: true, count: propertiesData.length };
+
+    } catch (error) {
+        console.error('❌ خطأ في مزامنة البيانات الأساسية:', error);
+        throw error;
+    }
+}
+
+// مزامنة سجلات التتبع
+async function syncTrackingLogs(logsData) {
+    console.log('📋 مزامنة سجلات التتبع...');
+
+    if (!logsData || logsData.length === 0) {
+        console.log('ℹ️ لا توجد سجلات تتبع للمزامنة');
+        return { success: true, count: 0 };
+    }
+
+    try {
+        // الحصول على السجلات الموجودة
+        const { data: existingLogs } = await supabaseClient
+            .from('change_logs')
+            .select('id');
+
+        const existingIds = new Set(existingLogs?.map(log => log.id) || []);
+
+        // فلترة السجلات الجديدة فقط
+        const newLogs = logsData.filter(log => !existingIds.has(log.id));
+
+        if (newLogs.length > 0) {
+            const { error } = await supabaseClient
+                .from('change_logs')
+                .insert(newLogs);
+
+            if (error) {
+                throw error;
+            }
+
+            console.log(`✅ تم مزامنة ${newLogs.length} سجل تتبع جديد`);
+        } else {
+            console.log('ℹ️ جميع سجلات التتبع محدثة');
+        }
+
+        return { success: true, count: newLogs.length };
+
+    } catch (error) {
+        console.error('❌ خطأ في مزامنة سجلات التتبع:', error);
+        throw error;
+    }
+}
+
+// مزامنة المرفقات
+async function syncAttachments(attachmentsData) {
+    console.log('📎 مزامنة المرفقات...');
+
+    try {
+        let syncCount = 0;
+
+        // مزامنة مرفقات العقارات
+        if (attachmentsData.property && Object.keys(attachmentsData.property).length > 0) {
+            const { error: propError } = await supabaseClient
+                .from('attachments')
+                .upsert({
+                    id: 'property_attachments',
+                    type: 'property',
+                    data: attachmentsData.property,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (propError) {
+                console.warn('⚠️ خطأ في مزامنة مرفقات العقارات:', propError);
+            } else {
+                syncCount++;
+            }
+        }
+
+        // مزامنة مرفقات البطاقات
+        if (attachmentsData.card && Object.keys(attachmentsData.card).length > 0) {
+            const { error: cardError } = await supabaseClient
+                .from('attachments')
+                .upsert({
+                    id: 'card_attachments',
+                    type: 'card',
+                    data: attachmentsData.card,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (cardError) {
+                console.warn('⚠️ خطأ في مزامنة مرفقات البطاقات:', cardError);
+            } else {
+                syncCount++;
+            }
+        }
+
+        console.log(`✅ تم مزامنة ${syncCount} نوع من المرفقات`);
+        return { success: true, count: syncCount };
+
+    } catch (error) {
+        console.error('❌ خطأ في مزامنة المرفقات:', error);
+        throw error;
+    }
+}
+
+// إظهار مؤشر تقدم المزامنة
+function showSyncProgress() {
+    const progressModal = document.createElement('div');
+    progressModal.className = 'modal-overlay';
+    progressModal.style.display = 'flex';
+    progressModal.style.zIndex = '10001';
+
+    progressModal.innerHTML = `
+        <div class="modal-box sync-progress-modal">
+            <div class="sync-progress-header">
+                <h3><i class="fas fa-cloud-upload-alt"></i> مزامنة البيانات</h3>
+            </div>
+
+            <div class="sync-progress-content">
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="syncProgressFill"></div>
+                    </div>
+                    <div class="progress-percentage" id="syncProgressPercentage">0%</div>
+                </div>
+
+                <div class="progress-status" id="syncProgressStatus">
+                    جاري تحضير البيانات...
+                </div>
+
+                <div class="sync-details">
+                    <div class="sync-step">
+                        <i class="fas fa-database"></i>
+                        <span>البيانات الأساسية</span>
+                        <i class="fas fa-clock sync-step-status" id="mainDataStatus"></i>
+                    </div>
+                    <div class="sync-step">
+                        <i class="fas fa-history"></i>
+                        <span>سجلات التتبع</span>
+                        <i class="fas fa-clock sync-step-status" id="logsStatus"></i>
+                    </div>
+                    <div class="sync-step">
+                        <i class="fas fa-paperclip"></i>
+                        <span>المرفقات</span>
+                        <i class="fas fa-clock sync-step-status" id="attachmentsStatus"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(progressModal);
+    return progressModal;
+}
+
+// تحديث مؤشر تقدم المزامنة
+function updateSyncProgress(progressModal, status, percentage) {
+    if (!progressModal) return;
+
+    const progressFill = progressModal.querySelector('#syncProgressFill');
+    const progressPercentage = progressModal.querySelector('#syncProgressPercentage');
+    const progressStatus = progressModal.querySelector('#syncProgressStatus');
+
+    if (progressFill) {
+        progressFill.style.width = `${percentage}%`;
+    }
+
+    if (progressPercentage) {
+        progressPercentage.textContent = `${percentage}%`;
+    }
+
+    if (progressStatus) {
+        progressStatus.textContent = status;
+    }
+
+    // تحديث حالة الخطوات
+    if (percentage >= 30) {
+        const mainDataStatus = progressModal.querySelector('#mainDataStatus');
+        if (mainDataStatus) {
+            mainDataStatus.className = 'fas fa-check sync-step-status completed';
+        }
+    }
+
+    if (percentage >= 60) {
+        const logsStatus = progressModal.querySelector('#logsStatus');
+        if (logsStatus) {
+            logsStatus.className = 'fas fa-check sync-step-status completed';
+        }
+    }
+
+    if (percentage >= 80) {
+        const attachmentsStatus = progressModal.querySelector('#attachmentsStatus');
+        if (attachmentsStatus) {
+            attachmentsStatus.className = 'fas fa-check sync-step-status completed';
+        }
+    }
+}
+
+// إظهار خطأ المزامنة مع إمكانية إعادة المحاولة
+function showSyncError(error, canRetry = true) {
+    const errorModal = document.createElement('div');
+    errorModal.className = 'modal-overlay';
+    errorModal.style.display = 'flex';
+    errorModal.style.zIndex = '10002';
+
+    errorModal.innerHTML = `
+        <div class="modal-box sync-error-modal">
+            <div class="sync-error-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> خطأ في المزامنة</h3>
+            </div>
+
+            <div class="sync-error-content">
+                <div class="error-message">
+                    <p><strong>حدث خطأ أثناء مزامنة البيانات مع السحابة:</strong></p>
+                    <div class="error-details">
+                        ${error.message || 'خطأ غير معروف'}
+                    </div>
+                </div>
+
+                <div class="error-info">
+                    <p><i class="fas fa-info-circle"></i> تم حفظ البيانات محلياً وستتم المزامنة عند استعادة الاتصال</p>
+                </div>
+
+                <div class="sync-error-actions">
+                    ${canRetry ? `
+                        <button onclick="retrySyncToSupabase()" class="retry-btn">
+                            <i class="fas fa-redo"></i> إعادة المحاولة
+                        </button>
+                    ` : ''}
+                    <button onclick="closeSyncError()" class="close-error-btn">
+                        <i class="fas fa-times"></i> إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(errorModal);
+
+    // حفظ مرجع للنافذة
+    window.currentSyncErrorModal = errorModal;
+}
+
+// إعادة محاولة المزامنة
+async function retrySyncToSupabase() {
+    // إغلاق نافذة الخطأ
+    closeSyncError();
+
+    // إعادة محاولة المزامنة
+    await syncToSupabase(true);
+}
+
+// إغلاق نافذة خطأ المزامنة
+function closeSyncError() {
+    if (window.currentSyncErrorModal) {
+        window.currentSyncErrorModal.remove();
+        window.currentSyncErrorModal = null;
+    }
+}
+
+// مزامنة تلقائية عند تعديل البيانات
+function autoSyncAfterEdit(operation = 'تعديل البيانات') {
+    console.log(`🔄 بدء المزامنة التلقائية بعد ${operation}...`);
+
+    // تأخير قصير للسماح بحفظ البيانات محلياً أولاً
+    setTimeout(async () => {
+        try {
+            const result = await syncToSupabase(false); // بدون إظهار مؤشر التقدم
+
+            if (result.success) {
+                console.log('✅ تم إنهاء المزامنة التلقائية بنجاح');
+                showToast('تم حفظ التعديلات في السحابة', 'success');
+            } else {
+                console.warn('⚠️ فشلت المزامنة التلقائية:', result.message);
+                showToast('تم حفظ التعديلات محلياً، ستتم المزامنة لاحقاً', 'warning');
+            }
+        } catch (error) {
+            console.error('❌ خطأ في المزامنة التلقائية:', error);
+            showToast('تم حفظ التعديلات محلياً فقط', 'warning');
+        }
+    }, 1000);
+}
+
+// فحص حالة الاتصال مع Supabase
+async function checkSupabaseConnection() {
+    try {
+        if (!supabaseClient) {
+            return { connected: false, error: 'عميل Supabase غير متاح' };
+        }
+
+        // اختبار بسيط للاتصال
+        const { data, error } = await supabaseClient
+            .from('properties')
+            .select('count')
+            .limit(1);
+
+        if (error) {
+            return { connected: false, error: error.message };
+        }
+
+        return { connected: true };
+
+    } catch (error) {
+        return { connected: false, error: error.message };
+    }
+}
+
+// ===== نهاية نظام مزامنة محسن مع Supabase =====
+
+// ===== وظيفة اختبار تحرير العقارات =====
+
+// اختبار شامل لوظيفة تحرير العقارات
+async function testPropertyEditFunction() {
+    console.log('🧪 بدء اختبار وظيفة تحرير العقارات...');
+
+    try {
+        // البحث عن عقار للاختبار
+        const testProperty = properties.find(p => p['اسم العقار'] && p['اسم العقار'].trim() !== '');
+
+        if (!testProperty) {
+            console.log('❌ لا توجد عقارات للاختبار');
+            showToast('لا توجد عقارات للاختبار', 'error');
+            return;
+        }
+
+        const originalPropertyName = testProperty['اسم العقار'];
+        console.log(`🏢 اختبار العقار: ${originalPropertyName}`);
+
+        // إنشاء بيانات اختبار
+        const testData = {
+            name: originalPropertyName + ' - محدث',
+            city: testProperty['المدينة'] || 'الرياض',
+            deed: 'TEST_DEED_' + Date.now(),
+            area: '500',
+            registry: 'TEST_REG_' + Date.now(),
+            owner: 'مالك اختبار',
+            location: 'https://maps.google.com/test'
+        };
+
+        console.log('📝 بيانات الاختبار:', testData);
+
+        // محاكاة تحرير العقار
+        const originalData = { ...testProperty };
+
+        // تحديث البيانات
+        const relatedProperties = properties.filter(p => p['اسم العقار'] === originalPropertyName);
+        relatedProperties.forEach(property => {
+            property['اسم العقار'] = testData.name;
+            property['المدينة'] = testData.city;
+            property['رقم الصك'] = testData.deed;
+            property['مساحةالصك'] = testData.area;
+            property['السجل العيني '] = testData.registry;
+            property['المالك'] = testData.owner;
+            property['موقع العقار'] = testData.location;
+            property['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+        });
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
+
+        // تسجيل التغيير في سجل التتبع
+        const changes = {
+            'اسم العقار': {
+                fieldName: 'اسم العقار',
+                old: originalPropertyName,
+                new: testData.name
+            },
+            'رقم الصك': {
+                fieldName: 'رقم الصك',
+                old: originalData['رقم الصك'] || '',
+                new: testData.deed
+            },
+            'مساحةالصك': {
+                fieldName: 'مساحة الصك',
+                old: originalData['مساحةالصك'] || '',
+                new: testData.area
+            }
+        };
+
+        const changeLog = createChangeLog(
+            OPERATION_TYPES.EDIT_DATA,
+            {
+                'رقم  الوحدة ': testProperty['رقم  الوحدة '] || 'اختبار',
+                'اسم العقار': testData.name,
+                'اسم المستأجر': testProperty['اسم المستأجر'] || ''
+            },
+            changes,
+            {
+                affectedUnits: relatedProperties.length,
+                originalPropertyName: originalPropertyName,
+                testMode: true
+            }
+        );
+
+        changeTrackingLogs.push(changeLog);
+
+        // حفظ سجل التتبع محلياً
+        try {
+            localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
+            console.log('✅ تم حفظ سجل التتبع محلياً');
+        } catch (error) {
+            console.warn('⚠️ لم يتم حفظ سجل التتبع محلياً:', error);
+        }
+
+        // اختبار المزامنة مع Supabase
+        console.log('🔄 اختبار المزامنة مع Supabase...');
+        const syncResult = await syncToSupabase(true);
+
+        if (syncResult.success) {
+            console.log('✅ نجح اختبار المزامنة مع Supabase');
+            showToast('نجح اختبار تحرير العقار والمزامنة', 'success');
+        } else {
+            console.warn('⚠️ فشل اختبار المزامنة:', syncResult.message);
+            showToast('نجح التحرير محلياً، فشلت المزامنة', 'warning');
+        }
+
+        // إعادة تعيين البيانات الأصلية
+        setTimeout(() => {
+            console.log('🔄 إعادة تعيين البيانات الأصلية...');
+            relatedProperties.forEach(property => {
+                property['اسم العقار'] = originalPropertyName;
+                property['المدينة'] = originalData['المدينة'];
+                property['رقم الصك'] = originalData['رقم الصك'];
+                property['مساحةالصك'] = originalData['مساحةالصك'];
+                property['السجل العيني '] = originalData['السجل العيني '];
+                property['المالك'] = originalData['المالك'];
+                property['موقع العقار'] = originalData['موقع العقار'];
+            });
+
+            saveDataLocally();
+            renderData();
+            console.log('✅ تم إعادة تعيين البيانات الأصلية');
+        }, 5000);
+
+        // تحديث العرض
+        renderData();
+        updateTotalStats();
+
+        console.log('🎉 انتهى اختبار تحرير العقارات بنجاح');
+
+        return {
+            success: true,
+            message: 'نجح اختبار تحرير العقارات',
+            syncResult: syncResult
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في اختبار تحرير العقارات:', error);
+        showToast('فشل اختبار تحرير العقارات: ' + error.message, 'error');
+
+        return {
+            success: false,
+            message: error.message,
+            error: error
+        };
+    }
+}
+
+// إضافة زر اختبار في وحدة التحكم
+window.testPropertyEdit = testPropertyEditFunction;
+
+// ===== نهاية وظيفة اختبار تحرير العقارات =====
+
 // عرض سجلات التتبع
 function renderTrackingLogs(logs) {
     if (logs.length === 0) {
@@ -19630,8 +20676,23 @@ function renderTrackingLogs(logs) {
             <div class="change-log-header">
                 <div class="change-log-operation">${log.operationType}</div>
                 <div class="change-log-timestamp">
-                    ${log.date} - ${log.time}
-                    <br><small>بواسطة: ${log.user}</small>
+                    <div class="timestamp-main">
+                        <strong>${log.dayName || getDayName(new Date(log.timestamp))}</strong>
+                    </div>
+                    <div class="timestamp-dates">
+                        <div class="gregorian-date">
+                            <i class="fas fa-calendar"></i>
+                            ${log.date} - ${log.time}
+                        </div>
+                        <div class="hijri-date">
+                            <i class="fas fa-moon"></i>
+                            ${log.hijriDate || getHijriDate(new Date(log.timestamp))}
+                        </div>
+                    </div>
+                    <div class="timestamp-user">
+                        <i class="fas fa-user"></i>
+                        ${log.user}
+                    </div>
                 </div>
             </div>
 
@@ -19648,6 +20709,11 @@ function renderTrackingLogs(logs) {
                     <div class="change-detail-label">المدينة:</div>
                     <div class="change-detail-value">${log.city}</div>
                 </div>
+                ${log.tenantName ? `
+                <div class="change-detail-item">
+                    <div class="change-detail-label">المستأجر:</div>
+                    <div class="change-detail-value">${log.tenantName}</div>
+                </div>` : ''}
                 ${log.contractNumber ? `
                 <div class="change-detail-item">
                     <div class="change-detail-label">رقم العقد:</div>
@@ -19690,12 +20756,16 @@ function renderChangeDetails(log) {
     `).join('');
 }
 
-// فلترة سجلات التتبع
+// فلترة سجلات التتبع المحسنة والمصححة
 async function filterTrackingLogs() {
-    const dateFrom = document.getElementById('trackingDateFrom').value;
-    const dateTo = document.getElementById('trackingDateTo').value;
-    const operationType = document.getElementById('trackingOperationType').value;
-    const searchTerm = document.getElementById('trackingSearch').value.toLowerCase();
+    console.log('🔍 بدء فلترة سجلات التتبع...');
+
+    const dateFilter = document.getElementById('trackingDateFilter')?.value;
+    const monthFilter = document.getElementById('trackingMonthFilter')?.value;
+    const operationType = document.getElementById('trackingOperationType')?.value;
+    const searchTerm = document.getElementById('trackingSearch')?.value?.toLowerCase() || '';
+
+    console.log('📋 معايير الفلترة:', { dateFilter, monthFilter, operationType, searchTerm });
 
     // تحميل جميع السجلات
     const cloudLogs = await loadChangeLogsFromSupabase(1000);
@@ -19706,14 +20776,38 @@ async function filterTrackingLogs() {
         index === self.findIndex(l => l.id === log.id)
     );
 
+    console.log(`📊 إجمالي السجلات قبل الفلترة: ${uniqueLogs.length}`);
+
     // تطبيق الفلاتر
     let filteredLogs = uniqueLogs.filter(log => {
-        // فلتر التاريخ
-        if (dateFrom && new Date(log.date.split('/').reverse().join('-')) < new Date(dateFrom)) {
+        // التأكد من وجود timestamp صحيح
+        if (!log.timestamp) {
+            console.warn('⚠️ سجل بدون timestamp:', log.id);
             return false;
         }
-        if (dateTo && new Date(log.date.split('/').reverse().join('-')) > new Date(dateTo)) {
-            return false;
+
+        const logDate = new Date(log.timestamp);
+
+        // فلتر التاريخ المحدد
+        if (dateFilter) {
+            const filterDate = new Date(dateFilter);
+            const logDateString = logDate.toISOString().split('T')[0];
+            const filterDateString = filterDate.toISOString().split('T')[0];
+
+            if (logDateString !== filterDateString) {
+                return false;
+            }
+        }
+
+        // فلتر الشهر والسنة
+        if (monthFilter) {
+            const [filterYear, filterMonth] = monthFilter.split('-');
+            const logYear = logDate.getFullYear();
+            const logMonth = logDate.getMonth() + 1;
+
+            if (logYear !== parseInt(filterYear) || logMonth !== parseInt(filterMonth)) {
+                return false;
+            }
         }
 
         // فلتر نوع العملية
@@ -19721,23 +20815,100 @@ async function filterTrackingLogs() {
             return false;
         }
 
-        // فلتر البحث
-        if (searchTerm &&
-            !log.unitNumber.toLowerCase().includes(searchTerm) &&
-            !log.propertyName.toLowerCase().includes(searchTerm) &&
-            !log.city.toLowerCase().includes(searchTerm) &&
-            !(log.contractNumber && log.contractNumber.toLowerCase().includes(searchTerm))) {
-            return false;
+        // فلتر البحث المحسن
+        if (searchTerm) {
+            const searchFields = [
+                log.unitNumber || '',
+                log.propertyName || '',
+                log.city || '',
+                log.contractNumber || '',
+                log.tenantName || '',
+                log.newTenant || '',
+                log.previousTenant || '',
+                log.user || ''
+            ];
+
+            const matchFound = searchFields.some(field =>
+                field.toString().toLowerCase().includes(searchTerm)
+            );
+
+            if (!matchFound) {
+                return false;
+            }
         }
 
         return true;
     });
 
-    // ترتيب حسب التاريخ
+    // ترتيب حسب التاريخ (الأحدث أولاً)
     filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
+    console.log(`✅ تم العثور على ${filteredLogs.length} سجل بعد الفلترة`);
+
     // تحديث العرض
-    document.getElementById('trackingLogsContainer').innerHTML = renderTrackingLogs(filteredLogs);
+    const container = document.getElementById('trackingLogsContainer');
+    if (container) {
+        container.innerHTML = renderTrackingLogs(filteredLogs);
+    }
+
+    // تحديث إحصائيات الفلترة
+    const resultsCount = filteredLogs.length;
+    const totalCount = uniqueLogs.length;
+
+    const statsElement = document.querySelector('.tracking-stats');
+    if (statsElement) {
+        if (resultsCount === totalCount) {
+            statsElement.textContent = `إجمالي السجلات: ${totalCount}`;
+        } else {
+            statsElement.textContent = `عرض ${resultsCount} من أصل ${totalCount} سجل`;
+        }
+    }
+
+    // إظهار رسالة إذا لم توجد نتائج
+    if (resultsCount === 0 && (dateFilter || monthFilter || operationType || searchTerm)) {
+        const container = document.getElementById('trackingLogsContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="no-logs">
+                    <i class="fas fa-search"></i>
+                    <h3>لا توجد نتائج</h3>
+                    <p>لم يتم العثور على سجلات تطابق معايير البحث المحددة</p>
+                    <button onclick="clearTrackingFilters()" class="clear-filters-btn">
+                        <i class="fas fa-times"></i> مسح الفلاتر
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    console.log(`🔍 انتهت عملية الفلترة: ${resultsCount}/${totalCount} سجل`);
+}
+
+// مسح فلاتر التتبع المحسن
+function clearTrackingFilters() {
+    console.log('🧹 مسح جميع فلاتر التتبع...');
+
+    // مسح جميع حقول الفلترة
+    const dateFilter = document.getElementById('trackingDateFilter');
+    const monthFilter = document.getElementById('trackingMonthFilter');
+    const operationType = document.getElementById('trackingOperationType');
+    const searchInput = document.getElementById('trackingSearch');
+
+    if (dateFilter) dateFilter.value = '';
+    if (monthFilter) monthFilter.value = '';
+    if (operationType) operationType.value = '';
+    if (searchInput) searchInput.value = '';
+
+    // إعادة تطبيق الفلتر لعرض جميع السجلات
+    filterTrackingLogs();
+
+    // إعادة تعيين إحصائيات العرض
+    const statsElement = document.querySelector('.tracking-stats');
+    if (statsElement) {
+        // سيتم تحديثها في filterTrackingLogs()
+    }
+
+    console.log('✅ تم مسح جميع فلاتر التتبع وإعادة عرض جميع السجلات');
 }
 
 // تصدير سجلات التتبع إلى Excel
