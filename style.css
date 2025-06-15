@@ -15293,3 +15293,1143 @@ textarea.mobile-friendly:focus {
 .mobile-user-section.hidden {
   display: none !important;
 }
+
+/* ===== تصميم نظام تتبع التغييرات ===== */
+
+/* قسم نوع العملية */
+.operation-type-section {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 2px solid #007bff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+}
+
+.operation-type-section h3 {
+  color: #007bff;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.operation-type-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  background: white;
+  transition: all 0.3s ease;
+  color: #495057;
+}
+
+.operation-type-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  outline: none;
+}
+
+.operation-type-select:required:invalid {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.field-note {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: block;
+  font-style: italic;
+}
+
+/* تحسينات للنافذة المودال */
+.property-edit-modal {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.edit-modal-header {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 12px 12px 0 0;
+  margin: -1.5rem -1.5rem 2rem -1.5rem;
+}
+
+.edit-modal-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.edit-modal-header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 1rem;
+}
+
+/* تحسينات للأزرار */
+.save-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.save-btn:hover {
+  background: linear-gradient(135deg, #218838, #1e7e34);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+}
+
+.save-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* تحسينات للحقول */
+.form-group label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  border: 2px solid #dee2e6;
+  border-radius: 6px;
+  padding: 10px 12px;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  outline: none;
+}
+
+/* تصميم سجلات التتبع */
+.change-log-entry {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.change-log-entry:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.change-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.change-log-operation {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #007bff;
+}
+
+.change-log-timestamp {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.change-log-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.change-detail-item {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-right: 4px solid #007bff;
+}
+
+.change-detail-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.25rem;
+}
+
+.change-detail-value {
+  color: #6c757d;
+}
+
+.change-detail-old {
+  color: #dc3545;
+  text-decoration: line-through;
+}
+
+.change-detail-new {
+  color: #28a745;
+  font-weight: 600;
+}
+
+/* تصميم نافذة سجل التتبع */
+.change-tracking-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #6f42c1, #5a2d91);
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.modal-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 1rem;
+}
+
+/* فلاتر التتبع */
+.tracking-filters {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 8px 12px;
+  border: 2px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  border-color: #6f42c1;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.1);
+  outline: none;
+}
+
+.filter-btn {
+  background: linear-gradient(135deg, #6f42c1, #5a2d91);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: fit-content;
+}
+
+.filter-btn:hover {
+  background: linear-gradient(135deg, #5a2d91, #4c2a85);
+  transform: translateY(-1px);
+}
+
+/* حاوية السجلات */
+.tracking-logs-container {
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.no-logs {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+/* تحسينات للسجلات */
+.change-log-entry {
+  border-right: 4px solid #6f42c1;
+  transition: all 0.3s ease;
+}
+
+.change-log-entry:hover {
+  border-right-color: #5a2d91;
+  box-shadow: 0 6px 20px rgba(111, 66, 193, 0.15);
+}
+
+.change-log-operation {
+  background: linear-gradient(135deg, #6f42c1, #5a2d91);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: inline-block;
+}
+
+/* تذييل النافذة */
+.modal-footer {
+  background: #f8f9fa;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.export-btn,
+.print-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-btn:hover,
+.print-btn:hover {
+  background: linear-gradient(135deg, #218838, #1e7e34);
+  transform: translateY(-1px);
+}
+
+.print-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.print-btn:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+/* تحسينات للهاتف */
+@media (max-width: 768px) {
+  .change-tracking-modal {
+    max-width: 95vw;
+    margin: 1rem;
+  }
+
+  .tracking-filters {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .change-log-details {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .tracking-logs-container {
+    max-height: 50vh;
+  }
+}
+
+/* ===== أنماط عرض سجل التتبع في القسم الرئيسي ===== */
+.tracking-main-view {
+    width: 100%;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 0;
+    min-height: calc(100vh - 200px);
+}
+
+.tracking-header {
+    background: linear-gradient(135deg, #6f42c1, #5a2d91);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(111, 66, 193, 0.3);
+}
+
+.tracking-title-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateX(5px);
+}
+
+.tracking-title-section h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    flex: 1;
+}
+
+.tracking-stats {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.tracking-actions {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.tracking-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refresh-btn {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #212529;
+}
+
+.refresh-btn:hover {
+    background: linear-gradient(135deg, #e0a800, #ffc107);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .tracking-main-view {
+        padding: 15px;
+        margin: 0;
+        border-radius: 0;
+        min-height: calc(100vh - 150px);
+    }
+
+    .tracking-header {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .tracking-title-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .tracking-title-section h2 {
+        font-size: 1.5rem;
+        width: 100%;
+    }
+
+    .tracking-stats {
+        align-self: flex-start;
+    }
+
+    .tracking-actions {
+        padding: 12px 15px;
+        justify-content: center;
+    }
+
+    .tracking-actions button {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+
+    .back-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* تحسينات للشاشات الكبيرة جداً */
+@media (min-width: 1200px) {
+    .tracking-main-view {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+}
+
+/* تحسينات إضافية لسجلات التتبع */
+.change-log-entry {
+    margin-bottom: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.change-log-entry:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.change-log-header {
+    background: #f8f9fa;
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.change-log-operation {
+    background: linear-gradient(135deg, #6f42c1, #5a2d91);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.change-log-timestamp {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.change-log-details {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.change-detail-item {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    border-right: 4px solid #6f42c1;
+}
+
+.change-detail-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.change-detail-value {
+    color: #212529;
+    font-size: 1rem;
+}
+
+.change-detail-old {
+    color: #dc3545;
+    text-decoration: line-through;
+    margin-left: 5px;
+}
+
+.change-detail-new {
+    color: #28a745;
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+/* رسالة عدم وجود سجلات */
+.no-logs {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+    font-size: 1.2rem;
+    background: white;
+    border-radius: 12px;
+    border: 2px dashed #dee2e6;
+}
+
+.no-logs::before {
+    content: "📋";
+    display: block;
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+/* ===== نهاية أنماط عرض سجل التتبع ===== */
+
+/* ===== أنماط نظام إدارة سجلات التتبع ===== */
+.tracking-management-modal {
+    background: #f8f9fa;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.tracking-management-modal .modal-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    padding: 25px;
+    border-radius: 15px 15px 0 0;
+    text-align: center;
+}
+
+.tracking-management-modal .modal-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.management-warning {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 15px 0 0 0;
+    font-size: 1rem;
+    font-weight: 600;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.logs-stats {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.management-filters {
+    background: white;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: end;
+}
+
+.filter-row:last-child {
+    margin-bottom: 0;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 10px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+}
+
+.filter-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-btn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.filter-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #007bff);
+    transform: translateY(-2px);
+}
+
+.clear-btn {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+}
+
+.clear-btn:hover {
+    background: linear-gradient(135deg, #5a6268, #6c757d);
+    transform: translateY(-2px);
+}
+
+.management-actions {
+    background: white;
+    padding: 20px;
+    margin: 0 20px 20px 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.selection-actions,
+.delete-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.management-actions button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.select-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.deselect-btn {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+}
+
+.select-type-btn {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+}
+
+.delete-selected-btn {
+    background: linear-gradient(135deg, #fd7e14, #e55a00);
+    color: white;
+}
+
+.delete-selected-btn:disabled {
+    background: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.delete-date-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+}
+
+.delete-type-btn {
+    background: linear-gradient(135deg, #6f42c1, #5a32a3);
+    color: white;
+}
+
+.delete-user-btn {
+    background: linear-gradient(135deg, #e83e8c, #d91a72);
+    color: white;
+}
+
+.delete-all-btn {
+    background: linear-gradient(135deg, #343a40, #23272b);
+    color: white;
+    border: 2px solid #dc3545;
+}
+
+.management-actions button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.management-logs-container {
+    background: white;
+    margin: 0 20px 20px 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.management-logs-list {
+    padding: 20px;
+}
+
+.management-log-entry {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.management-log-entry:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.log-checkbox {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 5px;
+}
+
+.log-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.log-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.log-operation {
+    background: linear-gradient(135deg, #6f42c1, #5a32a3);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.log-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: #6c757d;
+    flex-wrap: wrap;
+}
+
+.log-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.log-property,
+.log-unit,
+.log-changes {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-right: 4px solid #007bff;
+}
+
+.log-changes {
+    grid-column: 1 / -1;
+}
+
+.change-item {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 2px;
+    font-size: 0.8rem;
+}
+
+.log-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.delete-single-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.view-details-btn {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.delete-single-btn:hover,
+.view-details-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* تفاصيل السجل */
+.log-details-content {
+    padding: 20px 0;
+}
+
+.detail-section {
+    margin-bottom: 25px;
+}
+
+.detail-section h4 {
+    color: #495057;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.detail-item {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    border-right: 4px solid #007bff;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: #495057;
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.detail-item span {
+    color: #212529;
+    font-size: 1rem;
+}
+
+.changes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.change-item {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    border-right: 4px solid #28a745;
+}
+
+.change-values {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+}
+
+.old-value {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.new-value {
+    background: #d4edda;
+    color: #155724;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.arrow {
+    color: #6c757d;
+    font-weight: bold;
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .tracking-management-modal {
+        width: 95%;
+        max-width: none;
+        margin: 10px;
+        max-height: 95vh;
+    }
+
+    .filter-row {
+        grid-template-columns: 1fr;
+    }
+
+    .management-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .selection-actions,
+    .delete-actions {
+        justify-content: center;
+    }
+
+    .management-actions button {
+        flex: 1;
+        justify-content: center;
+        min-width: 120px;
+    }
+
+    .log-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .log-meta {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .log-details {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .change-values {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ===== نهاية أنماط نظام إدارة سجلات التتبع ===== */

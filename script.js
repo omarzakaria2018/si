@@ -9063,6 +9063,44 @@ function enterManagementMode() {
                         ">نقل الوحدات</span>
                     </button>
 
+                    <!-- زر إدارة سجلات التتبع (للمدير فقط) -->
+                    <button class="nav-btn admin-only-btn" onclick="showTrackingManagementModal(); hideSidebarOnMobile();" id="trackingManagementBtn"
+                            style="
+                                width: 100% !important;
+                                background: #ffffff !important;
+                                color: #2c3e50 !important;
+                                border: 3px solid #e9ecef !important;
+                                margin: 0 0 12px 0 !important;
+                                padding: 18px 25px !important;
+                                border-radius: 12px !important;
+                                min-height: 60px !important;
+                                font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                gap: 20px !important;
+                                cursor: pointer !important;
+                                transition: all 0.3s ease !important;
+                                text-align: right !important;
+                                direction: rtl !important;
+                            ">
+                        <i class="fas fa-clipboard-list" style="color: #6f42c1 !important; font-size: 1.4rem !important; width: 30px !important; text-align: center !important; font-weight: 900 !important; flex-shrink: 0 !important;"></i>
+                        <span style="
+                            color: #2c3e50 !important;
+                            font-size: 1.1rem !important;
+                            font-weight: 800 !important;
+                            flex: 1 !important;
+                            text-align: right !important;
+                            font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                            letter-spacing: 0.5px !important;
+                            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+                            line-height: 1.2 !important;
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                        ">إدارة سجلات التتبع</span>
+                    </button>
+
                     <!-- زر تصفية حسب المدينة -->
                     <button class="nav-btn filter-btn" onclick="toggleCityFilter()" id="cityFilterBtn"
                             style="
@@ -10579,6 +10617,21 @@ async function confirmDeleteProperty(propertyName) {
 
             if (result.success) {
                 console.log(`✅ تم حذف الوحدة ${unit['رقم  الوحدة ']} بنجاح`);
+
+                // إضافة سجل التتبع لحذف الوحدة
+                try {
+                    await addChangeLog(
+                        OPERATION_TYPES.DELETE_UNIT,
+                        unit,
+                        {},
+                        {
+                            reason: 'حذف وحدة من العقار',
+                            previousTenant: unit['اسم المستأجر']
+                        }
+                    );
+                } catch (trackingError) {
+                    console.error('❌ خطأ في إضافة سجل تتبع حذف الوحدة:', trackingError);
+                }
             } else {
                 console.warn(`⚠️ فشل حذف الوحدة ${unit['رقم  الوحدة ']} من قاعدة البيانات`);
 
@@ -11842,10 +11895,16 @@ async function universalAdvancedDelete(propertyData, showProgress = false) {
         // Step 1: Find the property in database
         if (progressCallback) progressCallback('البحث عن الوحدة في قاعدة البيانات...');
 
+        const unitNumber = propertyData['رقم  الوحدة '];
+        const propertyName = propertyData['اسم العقار'];
+
+        console.log('🔍 البحث عن:', { unitNumber, propertyName });
+
         const { data: foundProperties, error: searchError } = await supabaseClient
             .from('properties')
             .select('*')
-            .or(`unit_number.eq.${propertyData['رقم  الوحدة ']},property_name.eq.${propertyData['اسم العقار']}`);
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName);
 
         if (searchError) {
             console.error('❌ Search error:', searchError);
@@ -11853,8 +11912,21 @@ async function universalAdvancedDelete(propertyData, showProgress = false) {
         }
 
         if (!foundProperties || foundProperties.length === 0) {
-            console.log('ℹ️ Property not found in database');
-            return { success: false, reason: 'NOT_FOUND' };
+            console.log('ℹ️ Property not found in database - trying alternative search...');
+
+            // محاولة بحث بديلة باستخدام LIKE
+            const { data: altFoundProperties, error: altSearchError } = await supabaseClient
+                .from('properties')
+                .select('*')
+                .or(`unit_number.ilike.%${unitNumber}%,property_name.ilike.%${propertyName}%`);
+
+            if (altSearchError || !altFoundProperties || altFoundProperties.length === 0) {
+                console.log('ℹ️ Property not found in database with alternative search');
+                return { success: false, reason: 'NOT_FOUND' };
+            }
+
+            foundProperties = altFoundProperties;
+            console.log(`🔍 تم العثور على ${foundProperties.length} نتيجة بالبحث البديل`);
         }
 
         const property = foundProperties[0];
@@ -11885,19 +11957,58 @@ async function universalAdvancedDelete(propertyData, showProgress = false) {
         if (progressCallback) progressCallback('حذف المرفقات المرتبطة...');
 
         try {
-            const { data: attachments, error: attachmentError } = await supabaseClient
+            // البحث عن المرفقات بطرق متعددة
+            let attachments = [];
+
+            // البحث بـ property_id
+            const { data: attachmentsByPropertyId, error: attachmentError1 } = await supabaseClient
                 .from('attachments')
-                .select('id')
+                .select('id, storage_path')
                 .eq('property_id', property.id);
 
-            if (!attachmentError && attachments && attachments.length > 0) {
+            if (!attachmentError1 && attachmentsByPropertyId) {
+                attachments = [...attachments, ...attachmentsByPropertyId];
+            }
+
+            // البحث بـ property_key
+            const propertyKey = `${propertyName}_${unitNumber}`;
+            const { data: attachmentsByKey, error: attachmentError2 } = await supabaseClient
+                .from('attachments')
+                .select('id, storage_path')
+                .eq('property_key', propertyKey);
+
+            if (!attachmentError2 && attachmentsByKey) {
+                attachments = [...attachments, ...attachmentsByKey];
+            }
+
+            // إزالة المكررات
+            const uniqueAttachments = attachments.filter((attachment, index, self) =>
+                index === self.findIndex(a => a.id === attachment.id)
+            );
+
+            if (uniqueAttachments.length > 0) {
+                // حذف الملفات من التخزين أولاً
+                for (const attachment of uniqueAttachments) {
+                    if (attachment.storage_path) {
+                        try {
+                            await supabaseClient.storage
+                                .from('attachments')
+                                .remove([attachment.storage_path]);
+                        } catch (storageError) {
+                            console.warn('⚠️ Failed to delete file from storage:', storageError);
+                        }
+                    }
+                }
+
+                // حذف السجلات من قاعدة البيانات
+                const attachmentIds = uniqueAttachments.map(a => a.id);
                 const { error: deleteAttachmentError } = await supabaseClient
                     .from('attachments')
                     .delete()
-                    .eq('property_id', property.id);
+                    .in('id', attachmentIds);
 
                 if (!deleteAttachmentError) {
-                    if (progressCallback) progressCallback(`تم حذف ${attachments.length} مرفق`);
+                    if (progressCallback) progressCallback(`تم حذف ${uniqueAttachments.length} مرفق`);
                 } else {
                     console.warn('⚠️ Failed to delete attachments:', deleteAttachmentError);
                 }
@@ -11965,6 +12076,25 @@ async function enhancedDeleteUnit(unitData) {
             const localDeleted = originalLength - properties.length;
 
             if (localDeleted > 0) {
+                // حذف المرفقات المحلية أيضاً
+                const propertyKey = `${unitData['اسم العقار']}_${unitData['رقم  الوحدة ']}`;
+
+                // حذف مرفقات العقارات
+                const propertyAttachments = JSON.parse(localStorage.getItem('propertyAttachments') || '{}');
+                if (propertyAttachments[propertyKey]) {
+                    delete propertyAttachments[propertyKey];
+                    localStorage.setItem('propertyAttachments', JSON.stringify(propertyAttachments));
+                    console.log('✅ تم حذف مرفقات العقار المحلية');
+                }
+
+                // حذف مرفقات البطاقات
+                const cardAttachments = JSON.parse(localStorage.getItem('cardAttachments') || '{}');
+                if (cardAttachments[propertyKey]) {
+                    delete cardAttachments[propertyKey];
+                    localStorage.setItem('cardAttachments', JSON.stringify(cardAttachments));
+                    console.log('✅ تم حذف مرفقات البطاقة المحلية');
+                }
+
                 saveDataLocally();
                 renderData();
                 showToast('تم حذف الوحدة نهائياً من النظام', 'success');
@@ -14092,6 +14222,27 @@ function showCardEditModal(contractNumber, propertyName, unitNumber) {
             </div>
             <div class="edit-modal-content">
                 <form id="propertyEditForm" onsubmit="savePropertyEdit(event)">
+                    <!-- نوع العملية - حقل إجباري -->
+                    <div class="operation-type-section">
+                        <h3><i class="fas fa-cogs"></i> نوع العملية *</h3>
+                        <div class="form-group">
+                            <label for="operationType">اختر نوع العملية:</label>
+                            <select id="operationType" name="operationType" required class="operation-type-select">
+                                <option value="">-- اختر نوع العملية --</option>
+                                <option value="${OPERATION_TYPES.EDIT_DATA}">تعديل بيانات موجودة</option>
+                                <option value="${OPERATION_TYPES.NEW_CLIENT}">عميل جديد</option>
+                                <option value="${OPERATION_TYPES.RENEW_CONTRACT}">تجديد عقد</option>
+                                <option value="${OPERATION_TYPES.EMPTY_UNIT}">إفراغ وحدة</option>
+                            </select>
+                            <small class="field-note">يجب اختيار نوع العملية قبل الحفظ</small>
+                        </div>
+                    </div>
+
+                    <!-- الحقول المخفية للبيانات الأصلية -->
+                    <input type="hidden" name="originalContractNumber" value="${contractNumber || ''}">
+                    <input type="hidden" name="originalPropertyName" value="${propertyName || ''}">
+                    <input type="hidden" name="originalUnitNumber" value="${unitNumber || ''}">
+
                     <div class="edit-form-sections">
                         <div class="edit-section">
                             <h3><i class="fas fa-info-circle"></i> المعلومات الأساسية</h3>
@@ -14324,6 +14475,13 @@ async function savePropertyEdit(event) {
     const form = event.target;
     const formData = new FormData(form);
 
+    // التحقق من نوع العملية
+    const operationType = formData.get('operationType');
+    if (!operationType) {
+        alert('يرجى اختيار نوع العملية قبل الحفظ');
+        return;
+    }
+
     // الحصول على البيانات الأصلية
     const originalContractNumber = formData.get('originalContractNumber');
     const originalPropertyName = formData.get('originalPropertyName');
@@ -14346,6 +14504,9 @@ async function savePropertyEdit(event) {
         alert('لم يتم العثور على العقار المطلوب تحديثه');
         return;
     }
+
+    // حفظ البيانات الأصلية للمقارنة
+    const originalData = { ...properties[propertyIndex] };
 
     // تحديث البيانات
     const updatedProperty = { ...properties[propertyIndex] };
@@ -14440,6 +14601,11 @@ async function savePropertyEdit(event) {
     // تحديث عدد الأقساط في البيانات
     updatedProperty['عدد الاقساط'] = actualInstallmentCount;
 
+    // إضافة معلومات التحديث
+    updatedProperty['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+    updatedProperty['نوع التحديث'] = operationType || 'تحرير';
+    updatedProperty['المسؤول عن التحديث'] = getCurrentUser();
+
     console.log(`✅ تم تحديث عدد الأقساط إلى: ${actualInstallmentCount}`);
 
     // إذا تم تحديث رقم العقد، تحديث جميع الوحدات المرتبطة
@@ -14498,6 +14664,33 @@ async function savePropertyEdit(event) {
     }
 
     alert(message);
+
+    // إضافة سجل التتبع
+    try {
+        const changes = compareDataAndCreateChanges(originalData, updatedProperty);
+
+        let additionalInfo = {
+            originalData: originalData,
+            newData: updatedProperty
+        };
+
+        // معلومات إضافية حسب نوع العملية
+        if (operationType === OPERATION_TYPES.NEW_CLIENT) {
+            additionalInfo.previousTenant = originalData['اسم المستأجر'];
+            additionalInfo.newTenant = updatedProperty['اسم المستأجر'];
+        } else if (operationType === OPERATION_TYPES.EMPTY_UNIT) {
+            additionalInfo.previousTenant = originalData['اسم المستأجر'];
+            additionalInfo.reason = 'إفراغ وحدة';
+        } else if (operationType === OPERATION_TYPES.RENEW_CONTRACT) {
+            additionalInfo.previousTenant = originalData['اسم المستأجر'];
+            additionalInfo.newTenant = updatedProperty['اسم المستأجر'];
+        }
+
+        await addChangeLog(operationType, updatedProperty, changes, additionalInfo);
+        console.log('📝 تم إضافة سجل التتبع للعملية:', operationType);
+    } catch (error) {
+        console.error('❌ خطأ في إضافة سجل التتبع:', error);
+    }
 }
 
 // ==================== وظائف مساعدة إضافية ====================
@@ -17629,6 +17822,23 @@ async function transferSingleUnit(unitNumber, sourceProperty, destinationPropert
     properties.splice(unitIndex, 1);
     properties.push(unit);
 
+    // إضافة سجل التتبع لنقل الوحدة
+    try {
+        await addChangeLog(
+            OPERATION_TYPES.TRANSFER_UNIT,
+            unit,
+            {},
+            {
+                sourceProperty: sourceProperty,
+                destinationProperty: destinationProperty,
+                reason: 'نقل وحدة بين العقارات'
+            }
+        );
+        console.log('📝 تم إضافة سجل تتبع نقل الوحدة');
+    } catch (error) {
+        console.error('❌ خطأ في إضافة سجل تتبع نقل الوحدة:', error);
+    }
+
     console.log(`✅ تم نقل الوحدة ${unitNumber} بنجاح`);
     return { success: true, supabaseSuccess };
 }
@@ -17934,19 +18144,43 @@ function isDateInRange(dateString, year, month, day, week) {
     }
 }
 
-// تحليل التاريخ العربي
+// تحليل التاريخ العربي للتتبع
 function parseArabicDate(dateString) {
-    try {
-        // تحويل التاريخ العربي إلى تاريخ قابل للقراءة
-        // مثال: "٢٠٢٤/١٢/١٥" أو "2024/12/15"
-        const normalizedDate = dateString
-            .replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
-            .replace(/\//g, '-');
+    if (!dateString) return null;
 
+    try {
+        // تحويل الأرقام العربية إلى إنجليزية
+        let normalizedDate = dateString.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+
+        // معالجة التنسيقات المختلفة
+        if (normalizedDate.includes('/')) {
+            // تنسيق DD/MM/YYYY
+            const parts = normalizedDate.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]) - 1; // JavaScript months are 0-based
+                const year = parseInt(parts[2]);
+                return new Date(year, month, day);
+            }
+        } else if (normalizedDate.includes('-')) {
+            // تنسيق YYYY-MM-DD أو DD-MM-YYYY
+            const parts = normalizedDate.split('-');
+            if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                    // YYYY-MM-DD
+                    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                } else {
+                    // DD-MM-YYYY
+                    return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                }
+            }
+        }
+
+        // محاولة أخيرة
         return new Date(normalizedDate);
     } catch (error) {
-        // محاولة تحليل التاريخ كما هو
-        return new Date(dateString);
+        console.error('خطأ في تحليل التاريخ:', dateString, error);
+        return null;
     }
 }
 
@@ -17970,7 +18204,7 @@ function displayUpdatesResults(updates) {
             <div class="update-item">
                 <div class="update-header">
                     <div class="update-unit-info">
-                        الوحدة ${update.property['رقم الوحدة']} - ${update.property['اسم العقار']}
+                        الوحدة ${update.property['رقم  الوحدة '] || update.property['رقم الوحدة'] || 'غير محدد'} - ${update.property['اسم العقار']}
                     </div>
                     <div class="update-timestamp">
                         ${update.updateDate}
@@ -18008,6 +18242,1618 @@ function getUpdateTypeClass(updateType) {
         default:
             return 'edit';
     }
+}
+
+// ==================== نظام تتبع التغييرات ====================
+
+// متغيرات نظام التتبع
+let changeTrackingLogs = [];
+let isTrackingEnabled = true;
+
+// أنواع العمليات المدعومة
+const OPERATION_TYPES = {
+    EDIT_DATA: 'تعديل بيانات موجودة',
+    NEW_CLIENT: 'عميل جديد',
+    RENEW_CONTRACT: 'تجديد عقد',
+    EMPTY_UNIT: 'إفراغ وحدة',
+    MERGE_UNITS: 'دمج وحدات',
+    SPLIT_UNITS: 'فصل وحدات',
+    TRANSFER_UNIT: 'نقل وحدة',
+    DELETE_UNIT: 'حذف وحدة',
+    CREATE_PROPERTY: 'إنشاء عقار',
+    DELETE_PROPERTY: 'حذف عقار'
+};
+
+// هيكل سجل التتبع
+function createChangeLog(operationType, unitData, changes = {}, additionalInfo = {}) {
+    return {
+        id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        date: new Date().toLocaleDateString('ar-SA'),
+        time: new Date().toLocaleTimeString('ar-SA'),
+        operationType: operationType,
+        user: getCurrentUser(),
+        unitNumber: unitData['رقم  الوحدة '] || unitData['رقم الوحدة'] || 'غير محدد',
+        propertyName: unitData['اسم العقار'] || 'غير محدد',
+        city: unitData['المدينة'] || 'غير محدد',
+        contractNumber: unitData['رقم العقد'] || 'غير محدد',
+        changes: changes,
+        originalData: additionalInfo.originalData || null,
+        newData: additionalInfo.newData || null,
+        previousTenant: additionalInfo.previousTenant || null,
+        newTenant: unitData['اسم المستأجر'] || null,
+        reason: additionalInfo.reason || null,
+        notes: additionalInfo.notes || null,
+        affectedUnits: additionalInfo.affectedUnits || [],
+        sourceProperty: additionalInfo.sourceProperty || null,
+        destinationProperty: additionalInfo.destinationProperty || null
+    };
+}
+
+// حفظ سجل التتبع في Supabase
+async function saveChangeLogToSupabase(changeLog) {
+    if (!isTrackingEnabled) return false;
+
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            // محاولة إنشاء الجدول إذا لم يكن موجوداً
+            await createChangeLogsTableIfNotExists();
+
+            const { data, error } = await supabaseClient
+                .from('change_logs')
+                .insert([changeLog]);
+
+            if (error) {
+                console.warn('⚠️ لم يتم حفظ سجل التتبع في Supabase:', error.message);
+                return false;
+            }
+
+            console.log('✅ تم حفظ سجل التتبع في Supabase:', changeLog.id);
+            return true;
+        }
+    } catch (error) {
+        console.warn('⚠️ خطأ في الاتصال بـ Supabase لحفظ سجل التتبع:', error.message);
+    }
+
+    return false;
+}
+
+// إنشاء جدول التتبع إذا لم يكن موجوداً
+async function createChangeLogsTableIfNotExists() {
+    try {
+        // التحقق من وجود الجدول أولاً
+        const { data: tables, error: tablesError } = await supabaseClient
+            .from('information_schema.tables')
+            .select('table_name')
+            .eq('table_name', 'change_logs')
+            .eq('table_schema', 'public');
+
+        if (tablesError) {
+            console.log('📊 لا يمكن التحقق من وجود جدول التتبع، سيتم المتابعة بدونه');
+            return false;
+        }
+
+        if (tables && tables.length > 0) {
+            console.log('✅ جدول التتبع موجود مسبقاً');
+            return true;
+        }
+
+        console.log('📊 جدول التتبع غير موجود، سيتم الاعتماد على التخزين المحلي فقط');
+        return false;
+    } catch (error) {
+        console.log('📊 سيتم الاعتماد على التخزين المحلي للتتبع');
+        return false;
+    }
+}
+
+// تحميل سجلات التتبع من Supabase
+async function loadChangeLogsFromSupabase(limit = 100, offset = 0) {
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { data, error } = await supabaseClient
+                .from('change_logs')
+                .select('*')
+                .order('timestamp', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (error) {
+                console.log('📊 سيتم الاعتماد على سجلات التتبع المحلية');
+                return [];
+            }
+
+            console.log(`✅ تم تحميل ${data.length} سجل تتبع من Supabase`);
+            return data;
+        }
+    } catch (error) {
+        console.log('📊 سيتم الاعتماد على سجلات التتبع المحلية');
+    }
+
+    return [];
+}
+
+// إضافة سجل تتبع جديد
+async function addChangeLog(operationType, unitData, changes = {}, additionalInfo = {}) {
+    if (!isTrackingEnabled) return;
+
+    const changeLog = createChangeLog(operationType, unitData, changes, additionalInfo);
+
+    // حفظ محلياً
+    changeTrackingLogs.unshift(changeLog);
+
+    // حفظ في localStorage
+    try {
+        localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000))); // حفظ آخر 1000 سجل
+    } catch (error) {
+        console.warn('⚠️ لم يتم حفظ سجلات التتبع محلياً:', error);
+    }
+
+    // حفظ في Supabase
+    await saveChangeLogToSupabase(changeLog);
+
+    console.log('📝 تم إضافة سجل تتبع:', operationType, '- الوحدة:', changeLog.unitNumber);
+}
+
+// مقارنة البيانات وإنشاء سجل التغييرات
+function compareDataAndCreateChanges(originalData, newData) {
+    const changes = {};
+    const excludedFields = ['Column1', 'تاريخ آخر تحديث', 'نوع التحديث', 'المسؤول عن التحديث'];
+
+    Object.keys(newData).forEach(key => {
+        if (excludedFields.includes(key)) return;
+
+        const oldValue = originalData[key];
+        const newValue = newData[key];
+
+        // تحويل القيم للمقارنة
+        const oldStr = (oldValue || '').toString().trim();
+        const newStr = (newValue || '').toString().trim();
+
+        if (oldStr !== newStr) {
+            changes[key] = {
+                old: oldValue,
+                new: newValue,
+                fieldName: getFieldDisplayName(key)
+            };
+        }
+    });
+
+    return changes;
+}
+
+// الحصول على اسم الحقل للعرض
+function getFieldDisplayName(fieldKey) {
+    const fieldNames = {
+        'اسم المستأجر': 'اسم المستأجر',
+        'رقم العقد': 'رقم العقد',
+        'قيمة  الايجار ': 'قيمة الإيجار',
+        'تاريخ بداية العقد': 'تاريخ بداية العقد',
+        'تاريخ نهاية العقد': 'تاريخ نهاية العقد',
+        'عدد الاقساط': 'عدد الأقساط',
+        'نوع العقد': 'نوع العقد',
+        'المساحة': 'المساحة',
+        'رقم حساب الكهرباء': 'رقم حساب الكهرباء',
+        'الارتفاع': 'الارتفاع',
+        'موقع العقار': 'موقع العقار',
+        'رقم الصك': 'رقم الصك',
+        'السجل العيني ': 'السجل العيني',
+        'مساحةالصك': 'مساحة الصك',
+        'المالك': 'المالك'
+    };
+
+    return fieldNames[fieldKey] || fieldKey;
+}
+
+// تحميل سجلات التتبع المحلية عند بدء التطبيق
+function loadLocalChangeTrackingLogs() {
+    try {
+        const savedLogs = localStorage.getItem('changeTrackingLogs');
+        if (savedLogs) {
+            changeTrackingLogs = JSON.parse(savedLogs);
+            console.log(`📚 تم تحميل ${changeTrackingLogs.length} سجل تتبع محلي`);
+        }
+    } catch (error) {
+        console.error('❌ خطأ في تحميل سجلات التتبع المحلية:', error);
+        changeTrackingLogs = [];
+    }
+}
+
+// إضافة حقول التتبع للبيانات الموجودة
+function addTrackingFieldsToExistingData() {
+    let updatedCount = 0;
+    const currentDate = new Date().toLocaleDateString('ar-SA');
+
+    properties.forEach((property, index) => {
+        // إضافة حقول التتبع إذا لم تكن موجودة
+        if (!property['تاريخ آخر تحديث']) {
+            property['تاريخ آخر تحديث'] = currentDate;
+            property['نوع التحديث'] = 'بيانات موجودة';
+            property['المسؤول عن التحديث'] = getCurrentUser();
+            updatedCount++;
+        }
+    });
+
+    if (updatedCount > 0) {
+        console.log(`📝 تم إضافة حقول التتبع لـ ${updatedCount} وحدة`);
+
+        // إضافة تواريخ متنوعة لبعض الوحدات للاختبار
+        addVariedDatesToUnits();
+
+        saveDataLocally();
+
+        // مزامنة مع Supabase إذا متاح
+        if (typeof syncToSupabase === 'function') {
+            syncToSupabase().catch(error => {
+                console.error('⚠️ خطأ في مزامنة البيانات المحدثة:', error);
+            });
+        }
+    }
+}
+
+// إنشاء بيانات تجريبية للتتبع (للاختبار)
+function createSampleTrackingData() {
+    // مسح البيانات التجريبية القديمة
+    changeTrackingLogs = changeTrackingLogs.filter(log => !log.id.includes('sample'));
+    console.log('🗑️ تم مسح البيانات التجريبية القديمة');
+
+    console.log('📊 إنشاء بيانات تجريبية للتتبع...');
+
+    // إنشاء بيانات تجريبية متنوعة بتواريخ الشهر الحالي
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+
+    const sampleLogs = [
+        {
+            id: 'sample_1_' + Date.now(),
+            timestamp: new Date(Date.now() - 86400000).toISOString(), // أمس
+            date: `${(today.getDate() - 1).toString().padStart(2, '0')}/${currentMonth.toString().padStart(2, '0')}/${currentYear}`,
+            time: new Date(Date.now() - 86400000).toLocaleTimeString('ar-SA'),
+            operationType: OPERATION_TYPES.EDIT_DATA,
+            user: 'المدير - عمر',
+            unitNumber: '101',
+            propertyName: 'عمارة النخيل',
+            city: 'الرياض',
+            contractNumber: 'C001',
+            changes: {
+                'اسم المستأجر': {
+                    old: 'أحمد محمد',
+                    new: 'محمد أحمد',
+                    fieldName: 'اسم المستأجر'
+                },
+                'قيمة  الايجار ': {
+                    old: '2000',
+                    new: '2200',
+                    fieldName: 'قيمة الإيجار'
+                }
+            },
+            newTenant: 'محمد أحمد',
+            previousTenant: 'أحمد محمد'
+        },
+        {
+            id: 'sample_2_' + Date.now(),
+            timestamp: new Date(Date.now() - 172800000).toISOString(), // قبل يومين
+            date: `${Math.max(1, today.getDate() - 2).toString().padStart(2, '0')}/${currentMonth.toString().padStart(2, '0')}/${currentYear}`,
+            time: new Date(Date.now() - 172800000).toLocaleTimeString('ar-SA'),
+            operationType: OPERATION_TYPES.NEW_CLIENT,
+            user: 'المدير المساعد - محمد',
+            unitNumber: '205',
+            propertyName: 'برج الأمل',
+            city: 'جدة',
+            contractNumber: 'C002',
+            changes: {},
+            newTenant: 'سارة علي',
+            previousTenant: null,
+            reason: 'عميل جديد'
+        },
+        {
+            id: 'sample_3_' + Date.now(),
+            timestamp: new Date(Date.now() - 259200000).toISOString(), // قبل 3 أيام
+            date: `${Math.max(1, today.getDate() - 3).toString().padStart(2, '0')}/${currentMonth.toString().padStart(2, '0')}/${currentYear}`,
+            time: new Date(Date.now() - 259200000).toLocaleTimeString('ar-SA'),
+            operationType: OPERATION_TYPES.EMPTY_UNIT,
+            user: 'المدير - عمر',
+            unitNumber: '302',
+            propertyName: 'مجمع الورود',
+            city: 'الدمام',
+            contractNumber: 'C003',
+            changes: {},
+            previousTenant: 'خالد سعد',
+            reason: 'إفراغ وحدة'
+        },
+        {
+            id: 'sample_4_' + Date.now(),
+            timestamp: new Date(Date.now() - 345600000).toISOString(), // قبل 4 أيام
+            date: `${Math.max(1, today.getDate() - 4).toString().padStart(2, '0')}/${currentMonth.toString().padStart(2, '0')}/${currentYear}`,
+            time: new Date(Date.now() - 345600000).toLocaleTimeString('ar-SA'),
+            operationType: OPERATION_TYPES.TRANSFER_UNIT,
+            user: 'المدير المساعد - محمد',
+            unitNumber: '150',
+            propertyName: 'فيلا الياسمين',
+            city: 'الرياض',
+            contractNumber: 'C004',
+            changes: {},
+            sourceProperty: 'عمارة القمر',
+            destinationProperty: 'فيلا الياسمين',
+            reason: 'نقل وحدة بين العقارات'
+        },
+        {
+            id: 'sample_5_' + Date.now(),
+            timestamp: new Date(Date.now() - 432000000).toISOString(), // قبل 5 أيام
+            date: `${Math.max(1, today.getDate() - 5).toString().padStart(2, '0')}/${currentMonth.toString().padStart(2, '0')}/${currentYear}`,
+            time: new Date(Date.now() - 432000000).toLocaleTimeString('ar-SA'),
+            operationType: OPERATION_TYPES.RENEW_CONTRACT,
+            user: 'المدير - عمر',
+            unitNumber: '401',
+            propertyName: 'شقق الفردوس',
+            city: 'مكة المكرمة',
+            contractNumber: 'C005',
+            changes: {
+                'تاريخ نهاية العقد': {
+                    old: '31/12/2024',
+                    new: '31/12/2025',
+                    fieldName: 'تاريخ نهاية العقد'
+                },
+                'قيمة  الايجار ': {
+                    old: '1800',
+                    new: '1900',
+                    fieldName: 'قيمة الإيجار'
+                }
+            },
+            newTenant: 'فاطمة أحمد',
+            previousTenant: 'فاطمة أحمد'
+        }
+    ];
+
+    // إضافة البيانات التجريبية
+    changeTrackingLogs.unshift(...sampleLogs);
+
+    // حفظ في localStorage
+    try {
+        localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
+        console.log(`📊 تم إنشاء ${sampleLogs.length} سجل تتبع تجريبي`);
+    } catch (error) {
+        console.warn('⚠️ لم يتم حفظ البيانات التجريبية محلياً:', error);
+    }
+}
+
+// إضافة تواريخ متنوعة للوحدات للاختبار
+function addVariedDatesToUnits() {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1; // JavaScript months are 0-based
+
+    const updateTypes = ['تحرير', 'عميل جديد', 'تجديد العقد', 'إفراغ وحدة', 'نقل وحدة'];
+    const users = ['المدير - عمر', 'المدير المساعد - محمد', 'المستخدم المحدود - أحمد'];
+
+    // تحديث أول 15 وحدة بتواريخ من الشهر الحالي
+    for (let i = 0; i < Math.min(15, properties.length); i++) {
+        // إنشاء تواريخ مختلفة في الشهر الحالي
+        const day = Math.max(1, Math.min(28, i + 1)); // أيام من 1 إلى 28 لتجنب مشاكل الشهور
+        const updateDate = `${day.toString().padStart(2, '0')}/${currentMonth.toString().padStart(2, '0')}/${currentYear}`;
+
+        properties[i]['تاريخ آخر تحديث'] = updateDate;
+        properties[i]['نوع التحديث'] = updateTypes[i % updateTypes.length];
+        properties[i]['المسؤول عن التحديث'] = users[i % users.length];
+
+        console.log(`📅 تحديث الوحدة ${i + 1}: ${updateDate} - ${updateTypes[i % updateTypes.length]}`);
+    }
+
+    console.log(`📅 تم إضافة تواريخ متنوعة لـ ${Math.min(15, properties.length)} وحدة في ${currentMonth}/${currentYear}`);
+}
+
+// متغير لحفظ المحتوى السابق
+let previousMainContent = null;
+let isTrackingViewActive = false;
+
+// عرض سجلات التتبع في القسم الرئيسي
+async function showChangeTrackingModal() {
+    console.log('🔍 بدء عرض سجلات التتبع في القسم الرئيسي...');
+    console.log('📊 عدد السجلات المحلية:', changeTrackingLogs.length);
+
+    // حذف أي بيانات تجريبية موجودة
+    cleanupSampleTrackingData();
+
+    // تحميل السجلات من Supabase
+    const cloudLogs = await loadChangeLogsFromSupabase(50);
+    console.log('☁️ عدد السجلات السحابية:', cloudLogs.length);
+
+    // دمج السجلات المحلية والسحابية
+    const allLogs = [...cloudLogs, ...changeTrackingLogs];
+    console.log('📋 إجمالي السجلات قبل إزالة المكررات:', allLogs.length);
+
+    // إزالة المكررات وترتيب حسب التاريخ
+    const uniqueLogs = allLogs.filter((log, index, self) =>
+        index === self.findIndex(l => l.id === log.id)
+    ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    console.log('✅ إجمالي السجلات بعد إزالة المكررات:', uniqueLogs.length);
+
+    // حفظ المحتوى الحالي
+    const mainContent = document.getElementById('content');
+    if (!isTrackingViewActive) {
+        previousMainContent = mainContent.innerHTML;
+    }
+
+    // تعيين حالة عرض التتبع
+    isTrackingViewActive = true;
+
+    // إنشاء محتوى سجل التتبع للقسم الرئيسي
+    const trackingHtml = `
+        <div class="tracking-main-view">
+            <div class="tracking-header">
+                <div class="tracking-title-section">
+                    <button onclick="closeTrackingView()" class="back-btn">
+                        <i class="fas fa-arrow-right"></i> العودة
+                    </button>
+                    <h2><i class="fas fa-history"></i> سجل تتبع التغييرات</h2>
+                    <p class="tracking-stats">إجمالي السجلات: ${uniqueLogs.length}</p>
+                </div>
+            </div>
+
+            <div class="tracking-filters">
+                <div class="filter-group">
+                    <label>فلتر بالتاريخ:</label>
+                    <input type="date" id="trackingDateFrom" placeholder="من تاريخ">
+                    <input type="date" id="trackingDateTo" placeholder="إلى تاريخ">
+                </div>
+                <div class="filter-group">
+                    <label>نوع العملية:</label>
+                    <select id="trackingOperationType">
+                        <option value="">جميع العمليات</option>
+                        ${Object.values(OPERATION_TYPES).map(type =>
+                            `<option value="${type}">${type}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>البحث:</label>
+                    <input type="text" id="trackingSearch" placeholder="بحث في الوحدات أو العقارات...">
+                </div>
+                <button onclick="filterTrackingLogs()" class="filter-btn">
+                    <i class="fas fa-filter"></i> تطبيق الفلتر
+                </button>
+            </div>
+
+            <div class="tracking-actions">
+                <button onclick="exportTrackingLogs()" class="export-btn">
+                    <i class="fas fa-download"></i> تصدير Excel
+                </button>
+                <button onclick="printTrackingLogs()" class="print-btn">
+                    <i class="fas fa-print"></i> طباعة
+                </button>
+                <button onclick="refreshTrackingLogs()" class="refresh-btn">
+                    <i class="fas fa-sync-alt"></i> تحديث
+                </button>
+            </div>
+
+            <div class="tracking-logs-container" id="trackingLogsContainer">
+                ${renderTrackingLogs(uniqueLogs)}
+            </div>
+        </div>
+    `;
+
+    // عرض المحتوى في القسم الرئيسي
+    mainContent.innerHTML = trackingHtml;
+
+    // إخفاء الشريط الجانبي في الشاشات الصغيرة لإفساح المجال أكثر
+    if (window.innerWidth <= 768) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.style.display = 'none';
+        }
+    }
+
+    // إضافة معالج للضغط على مفتاح Escape للعودة
+    const handleEscapeKey = (event) => {
+        if (event.key === 'Escape' && isTrackingViewActive) {
+            closeTrackingView();
+        }
+    };
+
+    // إضافة معالج الأحداث
+    document.addEventListener('keydown', handleEscapeKey);
+
+    // حفظ مرجع لإزالة المعالج لاحقاً
+    window.trackingEscapeHandler = handleEscapeKey;
+
+    console.log('✅ تم عرض سجلات التتبع في القسم الرئيسي');
+}
+
+// تنظيف البيانات التجريبية
+function cleanupSampleTrackingData() {
+    console.log('🧹 تنظيف البيانات التجريبية...');
+
+    const originalLength = changeTrackingLogs.length;
+
+    // حذف السجلات التي تحتوي على 'sample' في المعرف
+    changeTrackingLogs = changeTrackingLogs.filter(log =>
+        !log.id.includes('sample') &&
+        !log.id.includes('test') &&
+        !log.unitNumber.includes('TEST') &&
+        !log.propertyName.includes('تجريبي')
+    );
+
+    const deletedCount = originalLength - changeTrackingLogs.length;
+
+    if (deletedCount > 0) {
+        // حفظ التغييرات في التخزين المحلي
+        try {
+            localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
+            console.log(`✅ تم حذف ${deletedCount} سجل تجريبي من التخزين المحلي`);
+        } catch (error) {
+            console.warn('⚠️ لم يتم حفظ التغييرات محلياً:', error);
+        }
+
+        // حذف من Supabase أيضاً
+        cleanupSampleDataFromSupabase();
+    } else {
+        console.log('ℹ️ لا توجد بيانات تجريبية للحذف');
+    }
+}
+
+// حذف البيانات التجريبية من Supabase
+async function cleanupSampleDataFromSupabase() {
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { data: sampleLogs, error: fetchError } = await supabaseClient
+                .from('change_logs')
+                .select('id')
+                .or('id.ilike.%sample%,id.ilike.%test%,unit_number.ilike.%TEST%,property_name.ilike.%تجريبي%');
+
+            if (!fetchError && sampleLogs && sampleLogs.length > 0) {
+                const { error: deleteError } = await supabaseClient
+                    .from('change_logs')
+                    .delete()
+                    .in('id', sampleLogs.map(log => log.id));
+
+                if (!deleteError) {
+                    console.log(`✅ تم حذف ${sampleLogs.length} سجل تجريبي من Supabase`);
+                } else {
+                    console.warn('⚠️ خطأ في حذف البيانات التجريبية من Supabase:', deleteError);
+                }
+            }
+        }
+    } catch (error) {
+        console.warn('⚠️ خطأ في تنظيف البيانات التجريبية من Supabase:', error);
+    }
+}
+
+// إغلاق عرض التتبع والعودة للمحتوى السابق
+function closeTrackingView() {
+    console.log('🔙 إغلاق عرض سجلات التتبع...');
+
+    const mainContent = document.getElementById('content');
+
+    if (previousMainContent) {
+        // استعادة المحتوى السابق
+        mainContent.innerHTML = previousMainContent;
+        console.log('✅ تم استعادة المحتوى السابق');
+    } else {
+        // إذا لم يكن هناك محتوى سابق، عرض البيانات الافتراضية
+        renderData();
+        console.log('✅ تم عرض البيانات الافتراضية');
+    }
+
+    // إظهار الشريط الجانبي مرة أخرى في الشاشات الصغيرة
+    if (window.innerWidth <= 768) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.style.display = '';
+        }
+    }
+
+    // إزالة معالج مفتاح Escape
+    if (window.trackingEscapeHandler) {
+        document.removeEventListener('keydown', window.trackingEscapeHandler);
+        window.trackingEscapeHandler = null;
+    }
+
+    // إعادة تعيين الحالة
+    isTrackingViewActive = false;
+    previousMainContent = null;
+
+    console.log('✅ تم إغلاق عرض التتبع بنجاح');
+}
+
+// تحديث سجلات التتبع
+async function refreshTrackingLogs() {
+    console.log('🔄 تحديث سجلات التتبع...');
+
+    if (isTrackingViewActive) {
+        // إعادة تحميل عرض التتبع
+        await showChangeTrackingModal();
+        console.log('✅ تم تحديث سجلات التتبع');
+    }
+}
+
+// ===== نظام إدارة سجلات التتبع (للمدير فقط) =====
+
+// عرض نافذة إدارة سجلات التتبع
+async function showTrackingManagementModal() {
+    console.log('🔧 عرض نافذة إدارة سجلات التتبع...');
+
+    // التحقق من الصلاحيات
+    if (!checkPermission('manageProperties')) {
+        showToast('ليس لديك صلاحية لإدارة سجلات التتبع', 'error');
+        return;
+    }
+
+    // تنظيف البيانات التجريبية أولاً
+    cleanupSampleTrackingData();
+
+    // تحميل جميع السجلات
+    const cloudLogs = await loadChangeLogsFromSupabase(1000);
+    const allLogs = [...cloudLogs, ...changeTrackingLogs];
+
+    // إزالة المكررات
+    const uniqueLogs = allLogs.filter((log, index, self) =>
+        index === self.findIndex(l => l.id === log.id)
+    ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    console.log(`📊 إجمالي السجلات للإدارة: ${uniqueLogs.length}`);
+
+    const modalHtml = `
+        <div class="modal-overlay" style="display:flex; z-index: 10000;">
+            <div class="modal-box tracking-management-modal" style="max-width: 1400px; max-height: 95vh; width: 95%;">
+                <button class="close-modal" onclick="closeModal()">×</button>
+
+                <div class="modal-header">
+                    <h2><i class="fas fa-cogs"></i> إدارة سجلات التتبع</h2>
+                    <p class="management-warning">⚠️ تحذير: هذه الصفحة للمدير فقط - يمكن حذف السجلات نهائياً</p>
+                    <div class="logs-stats">
+                        <span class="stat-item">إجمالي السجلات: <strong id="totalLogsCount">${uniqueLogs.length}</strong></span>
+                        <span class="stat-item">المحددة: <strong id="selectedLogsCount">0</strong></span>
+                    </div>
+                </div>
+
+                <div class="management-filters">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>فلتر بالتاريخ:</label>
+                            <input type="date" id="mgmtDateFrom" placeholder="من تاريخ">
+                            <input type="date" id="mgmtDateTo" placeholder="إلى تاريخ">
+                        </div>
+                        <div class="filter-group">
+                            <label>نوع العملية:</label>
+                            <select id="mgmtOperationType">
+                                <option value="">جميع العمليات</option>
+                                ${Object.values(OPERATION_TYPES).map(type =>
+                                    `<option value="${type}">${type}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>المستخدم:</label>
+                            <select id="mgmtUserFilter">
+                                <option value="">جميع المستخدمين</option>
+                                ${getUniqueUsers(uniqueLogs).map(user =>
+                                    `<option value="${user}">${user}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>البحث:</label>
+                            <input type="text" id="mgmtSearch" placeholder="بحث في الوحدات أو العقارات...">
+                        </div>
+                        <div class="filter-actions">
+                            <button onclick="applyManagementFilters()" class="filter-btn">
+                                <i class="fas fa-filter"></i> تطبيق الفلتر
+                            </button>
+                            <button onclick="clearManagementFilters()" class="clear-btn">
+                                <i class="fas fa-times"></i> مسح الفلاتر
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="management-actions">
+                    <div class="selection-actions">
+                        <button onclick="selectAllLogs()" class="select-btn">
+                            <i class="fas fa-check-square"></i> تحديد الكل
+                        </button>
+                        <button onclick="deselectAllLogs()" class="deselect-btn">
+                            <i class="fas fa-square"></i> إلغاء التحديد
+                        </button>
+                        <button onclick="selectByType()" class="select-type-btn">
+                            <i class="fas fa-filter"></i> تحديد حسب النوع
+                        </button>
+                    </div>
+
+                    <div class="delete-actions">
+                        <button onclick="deleteSelectedLogs()" class="delete-selected-btn" disabled>
+                            <i class="fas fa-trash"></i> حذف المحددة
+                        </button>
+                        <button onclick="deleteByDate()" class="delete-date-btn">
+                            <i class="fas fa-calendar-times"></i> حذف يوم كامل
+                        </button>
+                        <button onclick="deleteByType()" class="delete-type-btn">
+                            <i class="fas fa-layer-group"></i> حذف حسب النوع
+                        </button>
+                        <button onclick="deleteByUser()" class="delete-user-btn">
+                            <i class="fas fa-user-times"></i> حذف حسب المستخدم
+                        </button>
+                        <button onclick="deleteAllLogs()" class="delete-all-btn">
+                            <i class="fas fa-exclamation-triangle"></i> حذف الكل
+                        </button>
+                    </div>
+                </div>
+
+                <div class="management-logs-container" id="managementLogsContainer">
+                    ${renderManagementLogs(uniqueLogs)}
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // حفظ السجلات في متغير عام للاستخدام
+    window.currentManagementLogs = uniqueLogs;
+
+    console.log('✅ تم عرض نافذة إدارة سجلات التتبع');
+}
+
+// الحصول على قائمة المستخدمين الفريدة
+function getUniqueUsers(logs) {
+    const users = [...new Set(logs.map(log => log.user || 'غير محدد'))];
+    return users.sort();
+}
+
+// عرض السجلات في واجهة الإدارة
+function renderManagementLogs(logs) {
+    if (!logs || logs.length === 0) {
+        return `
+            <div class="no-logs">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>لا توجد سجلات للعرض</h3>
+                <p>لا توجد سجلات تتبع متاحة للإدارة</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="management-logs-list">
+            ${logs.map((log, index) => `
+                <div class="management-log-entry" data-log-id="${log.id}">
+                    <div class="log-checkbox">
+                        <input type="checkbox" id="log_${index}" class="log-selector"
+                               onchange="updateSelectedCount()" data-log-id="${log.id}">
+                        <label for="log_${index}"></label>
+                    </div>
+
+                    <div class="log-content">
+                        <div class="log-header">
+                            <div class="log-operation">
+                                <i class="fas fa-cog"></i>
+                                ${log.operationType}
+                            </div>
+                            <div class="log-meta">
+                                <span class="log-date">${log.date}</span>
+                                <span class="log-time">${log.time}</span>
+                                <span class="log-user">${log.user || 'غير محدد'}</span>
+                            </div>
+                        </div>
+
+                        <div class="log-details">
+                            <div class="log-property">
+                                <strong>العقار:</strong> ${log.propertyName}
+                            </div>
+                            <div class="log-unit">
+                                <strong>الوحدة:</strong> ${log.unitNumber}
+                            </div>
+                            ${log.changes && Object.keys(log.changes).length > 0 ? `
+                                <div class="log-changes">
+                                    <strong>التغييرات:</strong>
+                                    ${Object.entries(log.changes).map(([field, change]) =>
+                                        `<span class="change-item">${change.fieldName}: ${change.old} → ${change.new}</span>`
+                                    ).join(', ')}
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <div class="log-actions">
+                            <button onclick="deleteIndividualLog('${log.id}')" class="delete-single-btn">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                            <button onclick="viewLogDetails('${log.id}')" class="view-details-btn">
+                                <i class="fas fa-eye"></i> التفاصيل
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// تحديث عداد السجلات المحددة
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.log-selector:checked');
+    const count = checkboxes.length;
+
+    document.getElementById('selectedLogsCount').textContent = count;
+
+    // تفعيل/تعطيل زر الحذف
+    const deleteBtn = document.querySelector('.delete-selected-btn');
+    if (deleteBtn) {
+        deleteBtn.disabled = count === 0;
+    }
+}
+
+// تحديد جميع السجلات
+function selectAllLogs() {
+    const checkboxes = document.querySelectorAll('.log-selector');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateSelectedCount();
+}
+
+// إلغاء تحديد جميع السجلات
+function deselectAllLogs() {
+    const checkboxes = document.querySelectorAll('.log-selector');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateSelectedCount();
+}
+
+// تحديد السجلات حسب النوع
+function selectByType() {
+    const operationType = document.getElementById('mgmtOperationType').value;
+    if (!operationType) {
+        showToast('يرجى اختيار نوع العملية أولاً', 'warning');
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll('.log-selector');
+    checkboxes.forEach(checkbox => {
+        const logEntry = checkbox.closest('.management-log-entry');
+        const logOperation = logEntry.querySelector('.log-operation').textContent.trim();
+        checkbox.checked = logOperation === operationType;
+    });
+    updateSelectedCount();
+}
+
+// حذف سجل واحد
+async function deleteIndividualLog(logId) {
+    if (!confirm('هل أنت متأكد من حذف هذا السجل؟\nلا يمكن التراجع عن هذا الإجراء.')) {
+        return;
+    }
+
+    console.log(`🗑️ حذف السجل: ${logId}`);
+
+    try {
+        // حذف من المصفوفة المحلية
+        const localIndex = changeTrackingLogs.findIndex(log => log.id === logId);
+        if (localIndex !== -1) {
+            changeTrackingLogs.splice(localIndex, 1);
+            localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
+        }
+
+        // حذف من Supabase
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { error } = await supabaseClient
+                .from('change_logs')
+                .delete()
+                .eq('id', logId);
+
+            if (error) {
+                console.warn('⚠️ لم يتم حذف السجل من Supabase:', error);
+            }
+        }
+
+        // إزالة من الواجهة
+        const logElement = document.querySelector(`[data-log-id="${logId}"]`);
+        if (logElement) {
+            logElement.remove();
+        }
+
+        // تحديث العدادات
+        updateLogsCount();
+        updateSelectedCount();
+
+        showToast('تم حذف السجل بنجاح', 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف السجل:', error);
+        showToast('حدث خطأ أثناء حذف السجل', 'error');
+    }
+}
+
+// حذف السجلات المحددة
+async function deleteSelectedLogs() {
+    const checkboxes = document.querySelectorAll('.log-selector:checked');
+    const count = checkboxes.length;
+
+    if (count === 0) {
+        showToast('يرجى تحديد سجلات للحذف', 'warning');
+        return;
+    }
+
+    if (!confirm(`هل أنت متأكد من حذف ${count} سجل؟\nلا يمكن التراجع عن هذا الإجراء.`)) {
+        return;
+    }
+
+    console.log(`🗑️ حذف ${count} سجل محدد...`);
+
+    const logIds = Array.from(checkboxes).map(cb => cb.getAttribute('data-log-id'));
+
+    try {
+        // حذف من المصفوفة المحلية
+        logIds.forEach(logId => {
+            const index = changeTrackingLogs.findIndex(log => log.id === logId);
+            if (index !== -1) {
+                changeTrackingLogs.splice(index, 1);
+            }
+        });
+
+        localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
+
+        // حذف من Supabase
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { error } = await supabaseClient
+                .from('change_logs')
+                .delete()
+                .in('id', logIds);
+
+            if (error) {
+                console.warn('⚠️ لم يتم حذف بعض السجلات من Supabase:', error);
+            }
+        }
+
+        // إزالة من الواجهة
+        logIds.forEach(logId => {
+            const logElement = document.querySelector(`[data-log-id="${logId}"]`);
+            if (logElement) {
+                logElement.remove();
+            }
+        });
+
+        // تحديث العدادات
+        updateLogsCount();
+        updateSelectedCount();
+
+        showToast(`تم حذف ${count} سجل بنجاح`, 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف السجلات:', error);
+        showToast('حدث خطأ أثناء حذف السجلات', 'error');
+    }
+}
+
+// حذف عمليات يوم كامل
+async function deleteByDate() {
+    const date = prompt('أدخل التاريخ لحذف جميع العمليات (YYYY-MM-DD):');
+    if (!date) return;
+
+    if (!confirm(`هل أنت متأكد من حذف جميع عمليات يوم ${date}؟\nلا يمكن التراجع عن هذا الإجراء.`)) {
+        return;
+    }
+
+    console.log(`🗑️ حذف عمليات يوم ${date}...`);
+
+    try {
+        const targetDate = new Date(date).toLocaleDateString('ar-SA');
+
+        // العثور على السجلات المطابقة
+        const logsToDelete = changeTrackingLogs.filter(log => log.date === targetDate);
+        const logIds = logsToDelete.map(log => log.id);
+
+        if (logIds.length === 0) {
+            showToast('لا توجد سجلات في هذا التاريخ', 'info');
+            return;
+        }
+
+        // حذف من المصفوفة المحلية
+        changeTrackingLogs = changeTrackingLogs.filter(log => log.date !== targetDate);
+        localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
+
+        // حذف من Supabase
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { error } = await supabaseClient
+                .from('change_logs')
+                .delete()
+                .in('id', logIds);
+
+            if (error) {
+                console.warn('⚠️ لم يتم حذف بعض السجلات من Supabase:', error);
+            }
+        }
+
+        // تحديث الواجهة
+        await refreshManagementView();
+
+        showToast(`تم حذف ${logIds.length} سجل من تاريخ ${date}`, 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف عمليات اليوم:', error);
+        showToast('حدث خطأ أثناء حذف عمليات اليوم', 'error');
+    }
+}
+
+// حذف عمليات حسب النوع
+async function deleteByType() {
+    const operationType = prompt(`أدخل نوع العملية للحذف:\n${Object.values(OPERATION_TYPES).join('\n')}`);
+    if (!operationType) return;
+
+    if (!Object.values(OPERATION_TYPES).includes(operationType)) {
+        showToast('نوع العملية غير صحيح', 'error');
+        return;
+    }
+
+    if (!confirm(`هل أنت متأكد من حذف جميع عمليات "${operationType}"؟\nلا يمكن التراجع عن هذا الإجراء.`)) {
+        return;
+    }
+
+    console.log(`🗑️ حذف عمليات نوع ${operationType}...`);
+
+    try {
+        // العثور على السجلات المطابقة
+        const logsToDelete = changeTrackingLogs.filter(log => log.operationType === operationType);
+        const logIds = logsToDelete.map(log => log.id);
+
+        if (logIds.length === 0) {
+            showToast('لا توجد سجلات من هذا النوع', 'info');
+            return;
+        }
+
+        // حذف من المصفوفة المحلية
+        changeTrackingLogs = changeTrackingLogs.filter(log => log.operationType !== operationType);
+        localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
+
+        // حذف من Supabase
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { error } = await supabaseClient
+                .from('change_logs')
+                .delete()
+                .in('id', logIds);
+
+            if (error) {
+                console.warn('⚠️ لم يتم حذف بعض السجلات من Supabase:', error);
+            }
+        }
+
+        // تحديث الواجهة
+        await refreshManagementView();
+
+        showToast(`تم حذف ${logIds.length} سجل من نوع "${operationType}"`, 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف عمليات النوع:', error);
+        showToast('حدث خطأ أثناء حذف عمليات النوع', 'error');
+    }
+}
+
+// حذف عمليات حسب المستخدم
+async function deleteByUser() {
+    const user = prompt('أدخل اسم المستخدم لحذف جميع عملياته:');
+    if (!user) return;
+
+    if (!confirm(`هل أنت متأكد من حذف جميع عمليات المستخدم "${user}"؟\nلا يمكن التراجع عن هذا الإجراء.`)) {
+        return;
+    }
+
+    console.log(`🗑️ حذف عمليات المستخدم ${user}...`);
+
+    try {
+        // العثور على السجلات المطابقة
+        const logsToDelete = changeTrackingLogs.filter(log => (log.user || 'غير محدد') === user);
+        const logIds = logsToDelete.map(log => log.id);
+
+        if (logIds.length === 0) {
+            showToast('لا توجد سجلات لهذا المستخدم', 'info');
+            return;
+        }
+
+        // حذف من المصفوفة المحلية
+        changeTrackingLogs = changeTrackingLogs.filter(log => (log.user || 'غير محدد') !== user);
+        localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
+
+        // حذف من Supabase
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { error } = await supabaseClient
+                .from('change_logs')
+                .delete()
+                .in('id', logIds);
+
+            if (error) {
+                console.warn('⚠️ لم يتم حذف بعض السجلات من Supabase:', error);
+            }
+        }
+
+        // تحديث الواجهة
+        await refreshManagementView();
+
+        showToast(`تم حذف ${logIds.length} سجل للمستخدم "${user}"`, 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف عمليات المستخدم:', error);
+        showToast('حدث خطأ أثناء حذف عمليات المستخدم', 'error');
+    }
+}
+
+// حذف جميع السجلات
+async function deleteAllLogs() {
+    if (!confirm('⚠️ تحذير خطير!\n\nهل أنت متأكد من حذف جميع سجلات التتبع؟\nهذا الإجراء لا يمكن التراجع عنه نهائياً!')) {
+        return;
+    }
+
+    if (!confirm('تأكيد نهائي: سيتم حذف جميع السجلات من النظام والسحابة.\nاكتب "نعم" للمتابعة:') ||
+        prompt('اكتب "حذف الكل" للتأكيد:') !== 'حذف الكل') {
+        showToast('تم إلغاء العملية', 'info');
+        return;
+    }
+
+    console.log('🗑️ حذف جميع سجلات التتبع...');
+
+    try {
+        const totalCount = changeTrackingLogs.length;
+
+        // حذف من المصفوفة المحلية
+        changeTrackingLogs = [];
+        localStorage.removeItem('changeTrackingLogs');
+
+        // حذف من Supabase
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { error } = await supabaseClient
+                .from('change_logs')
+                .delete()
+                .neq('id', ''); // حذف جميع السجلات
+
+            if (error) {
+                console.warn('⚠️ لم يتم حذف السجلات من Supabase:', error);
+            }
+        }
+
+        // إغلاق النافذة وتحديث الواجهة
+        closeModal();
+
+        showToast(`تم حذف جميع السجلات (${totalCount} سجل) بنجاح`, 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في حذف جميع السجلات:', error);
+        showToast('حدث خطأ أثناء حذف جميع السجلات', 'error');
+    }
+}
+
+// تطبيق فلاتر الإدارة
+function applyManagementFilters() {
+    const dateFrom = document.getElementById('mgmtDateFrom').value;
+    const dateTo = document.getElementById('mgmtDateTo').value;
+    const operationType = document.getElementById('mgmtOperationType').value;
+    const userFilter = document.getElementById('mgmtUserFilter').value;
+    const searchTerm = document.getElementById('mgmtSearch').value.toLowerCase();
+
+    let filteredLogs = window.currentManagementLogs || [];
+
+    // فلترة بالتاريخ
+    if (dateFrom) {
+        const fromDate = new Date(dateFrom);
+        filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) >= fromDate);
+    }
+
+    if (dateTo) {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999); // نهاية اليوم
+        filteredLogs = filteredLogs.filter(log => new Date(log.timestamp) <= toDate);
+    }
+
+    // فلترة بنوع العملية
+    if (operationType) {
+        filteredLogs = filteredLogs.filter(log => log.operationType === operationType);
+    }
+
+    // فلترة بالمستخدم
+    if (userFilter) {
+        filteredLogs = filteredLogs.filter(log => (log.user || 'غير محدد') === userFilter);
+    }
+
+    // فلترة بالبحث
+    if (searchTerm) {
+        filteredLogs = filteredLogs.filter(log =>
+            log.propertyName.toLowerCase().includes(searchTerm) ||
+            log.unitNumber.toLowerCase().includes(searchTerm) ||
+            log.operationType.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    // تحديث العرض
+    const container = document.getElementById('managementLogsContainer');
+    if (container) {
+        container.innerHTML = renderManagementLogs(filteredLogs);
+    }
+
+    // تحديث العدادات
+    document.getElementById('totalLogsCount').textContent = filteredLogs.length;
+    updateSelectedCount();
+
+    console.log(`🔍 تم تطبيق الفلاتر: ${filteredLogs.length} سجل`);
+}
+
+// مسح فلاتر الإدارة
+function clearManagementFilters() {
+    document.getElementById('mgmtDateFrom').value = '';
+    document.getElementById('mgmtDateTo').value = '';
+    document.getElementById('mgmtOperationType').value = '';
+    document.getElementById('mgmtUserFilter').value = '';
+    document.getElementById('mgmtSearch').value = '';
+
+    // إعادة عرض جميع السجلات
+    const container = document.getElementById('managementLogsContainer');
+    if (container && window.currentManagementLogs) {
+        container.innerHTML = renderManagementLogs(window.currentManagementLogs);
+        document.getElementById('totalLogsCount').textContent = window.currentManagementLogs.length;
+    }
+
+    updateSelectedCount();
+    console.log('🧹 تم مسح جميع الفلاتر');
+}
+
+// تحديث عرض الإدارة
+async function refreshManagementView() {
+    // إعادة تحميل السجلات
+    const cloudLogs = await loadChangeLogsFromSupabase(1000);
+    const allLogs = [...cloudLogs, ...changeTrackingLogs];
+
+    const uniqueLogs = allLogs.filter((log, index, self) =>
+        index === self.findIndex(l => l.id === log.id)
+    ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    window.currentManagementLogs = uniqueLogs;
+
+    // تحديث العرض
+    const container = document.getElementById('managementLogsContainer');
+    if (container) {
+        container.innerHTML = renderManagementLogs(uniqueLogs);
+    }
+
+    updateLogsCount();
+    updateSelectedCount();
+}
+
+// تحديث عدادات السجلات
+function updateLogsCount() {
+    const totalElement = document.getElementById('totalLogsCount');
+    if (totalElement && window.currentManagementLogs) {
+        totalElement.textContent = window.currentManagementLogs.length;
+    }
+}
+
+// عرض تفاصيل السجل
+function viewLogDetails(logId) {
+    const log = window.currentManagementLogs?.find(l => l.id === logId);
+    if (!log) {
+        showToast('لم يتم العثور على السجل', 'error');
+        return;
+    }
+
+    const detailsHtml = `
+        <div class="modal-overlay" style="display:flex; z-index: 10001;">
+            <div class="modal-box" style="max-width: 800px;">
+                <button class="close-modal" onclick="closeModal()">×</button>
+
+                <div class="modal-header">
+                    <h3><i class="fas fa-info-circle"></i> تفاصيل السجل</h3>
+                </div>
+
+                <div class="log-details-content">
+                    <div class="detail-section">
+                        <h4>معلومات أساسية</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>نوع العملية:</label>
+                                <span>${log.operationType}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>التاريخ:</label>
+                                <span>${log.date}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>الوقت:</label>
+                                <span>${log.time}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>المستخدم:</label>
+                                <span>${log.user || 'غير محدد'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>العقار:</label>
+                                <span>${log.propertyName}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>الوحدة:</label>
+                                <span>${log.unitNumber}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${log.changes && Object.keys(log.changes).length > 0 ? `
+                        <div class="detail-section">
+                            <h4>التغييرات</h4>
+                            <div class="changes-list">
+                                ${Object.entries(log.changes).map(([field, change]) => `
+                                    <div class="change-item">
+                                        <strong>${change.fieldName}:</strong>
+                                        <div class="change-values">
+                                            <span class="old-value">القديم: ${change.old}</span>
+                                            <span class="arrow">→</span>
+                                            <span class="new-value">الجديد: ${change.new}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="detail-section">
+                        <h4>معلومات تقنية</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>معرف السجل:</label>
+                                <span style="font-family: monospace; font-size: 0.9em;">${log.id}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>الطابع الزمني:</label>
+                                <span style="font-family: monospace; font-size: 0.9em;">${log.timestamp}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button onclick="deleteIndividualLog('${log.id}'); closeModal();" class="delete-btn">
+                        <i class="fas fa-trash"></i> حذف هذا السجل
+                    </button>
+                    <button onclick="closeModal()" class="cancel-btn">إغلاق</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', detailsHtml);
+}
+
+// ===== نهاية نظام إدارة سجلات التتبع =====
+
+// عرض سجلات التتبع
+function renderTrackingLogs(logs) {
+    if (logs.length === 0) {
+        return '<div class="no-logs">لا توجد سجلات تتبع</div>';
+    }
+
+    return logs.map(log => `
+        <div class="change-log-entry">
+            <div class="change-log-header">
+                <div class="change-log-operation">${log.operationType}</div>
+                <div class="change-log-timestamp">
+                    ${log.date} - ${log.time}
+                    <br><small>بواسطة: ${log.user}</small>
+                </div>
+            </div>
+
+            <div class="change-log-details">
+                <div class="change-detail-item">
+                    <div class="change-detail-label">رقم الوحدة:</div>
+                    <div class="change-detail-value">${log.unitNumber}</div>
+                </div>
+                <div class="change-detail-item">
+                    <div class="change-detail-label">اسم العقار:</div>
+                    <div class="change-detail-value">${log.propertyName}</div>
+                </div>
+                <div class="change-detail-item">
+                    <div class="change-detail-label">المدينة:</div>
+                    <div class="change-detail-value">${log.city}</div>
+                </div>
+                ${log.contractNumber ? `
+                <div class="change-detail-item">
+                    <div class="change-detail-label">رقم العقد:</div>
+                    <div class="change-detail-value">${log.contractNumber}</div>
+                </div>` : ''}
+
+                ${renderChangeDetails(log)}
+
+                ${log.sourceProperty && log.destinationProperty ? `
+                <div class="change-detail-item">
+                    <div class="change-detail-label">نقل من:</div>
+                    <div class="change-detail-value">${log.sourceProperty} → ${log.destinationProperty}</div>
+                </div>` : ''}
+
+                ${log.reason ? `
+                <div class="change-detail-item">
+                    <div class="change-detail-label">السبب:</div>
+                    <div class="change-detail-value">${log.reason}</div>
+                </div>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+// عرض تفاصيل التغييرات
+function renderChangeDetails(log) {
+    if (!log.changes || Object.keys(log.changes).length === 0) {
+        return '';
+    }
+
+    return Object.entries(log.changes).map(([field, change]) => `
+        <div class="change-detail-item">
+            <div class="change-detail-label">${change.fieldName}:</div>
+            <div class="change-detail-value">
+                <span class="change-detail-old">${change.old || 'فارغ'}</span>
+                →
+                <span class="change-detail-new">${change.new || 'فارغ'}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// فلترة سجلات التتبع
+async function filterTrackingLogs() {
+    const dateFrom = document.getElementById('trackingDateFrom').value;
+    const dateTo = document.getElementById('trackingDateTo').value;
+    const operationType = document.getElementById('trackingOperationType').value;
+    const searchTerm = document.getElementById('trackingSearch').value.toLowerCase();
+
+    // تحميل جميع السجلات
+    const cloudLogs = await loadChangeLogsFromSupabase(1000);
+    const allLogs = [...cloudLogs, ...changeTrackingLogs];
+
+    // إزالة المكررات
+    const uniqueLogs = allLogs.filter((log, index, self) =>
+        index === self.findIndex(l => l.id === log.id)
+    );
+
+    // تطبيق الفلاتر
+    let filteredLogs = uniqueLogs.filter(log => {
+        // فلتر التاريخ
+        if (dateFrom && new Date(log.date.split('/').reverse().join('-')) < new Date(dateFrom)) {
+            return false;
+        }
+        if (dateTo && new Date(log.date.split('/').reverse().join('-')) > new Date(dateTo)) {
+            return false;
+        }
+
+        // فلتر نوع العملية
+        if (operationType && log.operationType !== operationType) {
+            return false;
+        }
+
+        // فلتر البحث
+        if (searchTerm &&
+            !log.unitNumber.toLowerCase().includes(searchTerm) &&
+            !log.propertyName.toLowerCase().includes(searchTerm) &&
+            !log.city.toLowerCase().includes(searchTerm) &&
+            !(log.contractNumber && log.contractNumber.toLowerCase().includes(searchTerm))) {
+            return false;
+        }
+
+        return true;
+    });
+
+    // ترتيب حسب التاريخ
+    filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // تحديث العرض
+    document.getElementById('trackingLogsContainer').innerHTML = renderTrackingLogs(filteredLogs);
+}
+
+// تصدير سجلات التتبع إلى Excel
+async function exportTrackingLogs() {
+    const cloudLogs = await loadChangeLogsFromSupabase(1000);
+    const allLogs = [...cloudLogs, ...changeTrackingLogs];
+
+    // إزالة المكررات وترتيب
+    const uniqueLogs = allLogs.filter((log, index, self) =>
+        index === self.findIndex(l => l.id === log.id)
+    ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // تحويل البيانات للتصدير
+    const exportData = uniqueLogs.map(log => ({
+        'التاريخ': log.date,
+        'الوقت': log.time,
+        'نوع العملية': log.operationType,
+        'المستخدم': log.user,
+        'رقم الوحدة': log.unitNumber,
+        'اسم العقار': log.propertyName,
+        'المدينة': log.city,
+        'رقم العقد': log.contractNumber || '',
+        'المستأجر الجديد': log.newTenant || '',
+        'المستأجر السابق': log.previousTenant || '',
+        'العقار المصدر': log.sourceProperty || '',
+        'العقار الوجهة': log.destinationProperty || '',
+        'السبب': log.reason || '',
+        'التغييرات': Object.keys(log.changes || {}).length > 0 ?
+            Object.entries(log.changes).map(([field, change]) =>
+                `${change.fieldName}: ${change.old} → ${change.new}`
+            ).join('; ') : ''
+    }));
+
+    // إنشاء ملف Excel
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'سجل التتبع');
+
+    // تحديد عرض الأعمدة
+    const colWidths = [
+        { wch: 12 }, // التاريخ
+        { wch: 10 }, // الوقت
+        { wch: 20 }, // نوع العملية
+        { wch: 15 }, // المستخدم
+        { wch: 15 }, // رقم الوحدة
+        { wch: 25 }, // اسم العقار
+        { wch: 12 }, // المدينة
+        { wch: 15 }, // رقم العقد
+        { wch: 25 }, // المستأجر الجديد
+        { wch: 25 }, // المستأجر السابق
+        { wch: 25 }, // العقار المصدر
+        { wch: 25 }, // العقار الوجهة
+        { wch: 20 }, // السبب
+        { wch: 50 }  // التغييرات
+    ];
+    ws['!cols'] = colWidths;
+
+    // تحميل الملف
+    const fileName = `سجل_التتبع_${new Date().toLocaleDateString('ar-SA').replace(/\//g, '-')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+}
+
+// طباعة سجلات التتبع
+function printTrackingLogs() {
+    const container = document.getElementById('trackingLogsContainer');
+    const printWindow = window.open('', '_blank');
+
+    printWindow.document.write(`
+        <html dir="rtl">
+        <head>
+            <title>سجل تتبع التغييرات</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                .header { text-align: center; margin-bottom: 30px; }
+                .change-log-entry {
+                    border: 1px solid #ddd;
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    page-break-inside: avoid;
+                }
+                .change-log-header {
+                    background: #f5f5f5;
+                    padding: 10px;
+                    margin: -15px -15px 15px -15px;
+                    font-weight: bold;
+                }
+                .change-log-details {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 10px;
+                }
+                .change-detail-item {
+                    background: #f9f9f9;
+                    padding: 8px;
+                    border-right: 3px solid #007bff;
+                }
+                .change-detail-label { font-weight: bold; margin-bottom: 5px; }
+                .change-detail-old { color: #dc3545; text-decoration: line-through; }
+                .change-detail-new { color: #28a745; font-weight: bold; }
+                @media print {
+                    .change-log-entry { page-break-inside: avoid; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>سجل تتبع التغييرات</h1>
+                <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}</p>
+            </div>
+            ${container.innerHTML}
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.print();
 }
 
 // ==================== نظام الصلاحيات ====================
@@ -18057,7 +19903,7 @@ const users = {
             editData: false,
             deleteData: false,
             manageProperties: false,
-            manageAttachments: false,
+            manageAttachments: true,
             exportData: false,
             importData: false,
             manageSettings: false
@@ -18232,6 +20078,12 @@ function hideLimitedUserElements() {
     managementItems.forEach(item => {
         if (item) item.style.display = 'none';
     });
+
+    // إخفاء زر إدارة سجلات التتبع
+    const trackingManagementBtn = document.getElementById('trackingManagementBtn');
+    if (trackingManagementBtn) {
+        trackingManagementBtn.style.display = 'none';
+    }
 
     // تطبيق قيود المرفقات
     applyAttachmentsRestrictions();
@@ -18665,6 +20517,15 @@ document.addEventListener('DOMContentLoaded', function() {
             addLogoutButton();
             updateMobileUserSection();
         }
+
+        // تحميل سجلات التتبع
+        loadLocalChangeTrackingLogs();
+
+        // إضافة حقول التتبع للبيانات الموجودة
+        addTrackingFieldsToExistingData();
+
+        // إنشاء بيانات تجريبية للتتبع (للاختبار)
+        createSampleTrackingData();
     }, 1000);
 });
 
@@ -18738,7 +20599,7 @@ function initializeHeaderButtons() {
 // ==================== وظيفة إفراغ الوحدة ====================
 
 // إفراغ الوحدة من جميع بيانات المستأجر
-function emptyUnit(contractNumber, propertyName, unitNumber) {
+async function emptyUnit(contractNumber, propertyName, unitNumber) {
     // رسالة تأكيد
     const confirmMessage = `هل أنت متأكد من إفراغ هذه الوحدة؟\n\nسيتم حذف جميع البيانات التالية:\n- اسم المستأجر\n- رقم العقد\n- تواريخ العقد\n- المبالغ المالية\n- جميع الأقساط\n\nسيتم الاحتفاظ بالمعلومات الأساسية للوحدة فقط.`;
 
@@ -18813,6 +20674,22 @@ function emptyUnit(contractNumber, propertyName, unitNumber) {
     fieldsToEmpty.forEach(field => {
         basicInfo[field] = null;
     });
+
+    // إضافة سجل التتبع لإفراغ الوحدة
+    try {
+        await addChangeLog(
+            OPERATION_TYPES.EMPTY_UNIT,
+            basicInfo,
+            {},
+            {
+                previousTenant: originalTenant,
+                reason: 'إفراغ وحدة من المستأجر'
+            }
+        );
+        console.log('📝 تم إضافة سجل تتبع إفراغ الوحدة');
+    } catch (error) {
+        console.error('❌ خطأ في إضافة سجل تتبع إفراغ الوحدة:', error);
+    }
 
     // تحديث العقار
     properties[propertyIndex] = basicInfo;
