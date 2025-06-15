@@ -129,6 +129,10 @@
                 <i class="fas fa-tools"></i>
                 إصلاح بيانات
               </div>
+              <div class="dropdown-item" onclick="fixStatisticsNow(); closeAllDropdowns();">
+                <i class="fas fa-calculator"></i>
+                إصلاح الإحصائيات
+              </div>
               <div class="dropdown-divider"></div>
               <div class="dropdown-item" onclick="updateSupabaseData(); closeAllDropdowns();">
                 <i class="fas fa-cloud-upload-alt"></i>
@@ -176,6 +180,13 @@
           </button>
           <button id="updateDatesBtn" class="export-btn hideable-header-btn" onclick="showDateUpdateModal()" style="background:linear-gradient(to left,#28a745,#20c997);margin-right:8px;">
             <i class="fas fa-calendar-alt"></i> تحديث التواريخ
+          </button>
+          <button id="fixStatisticsBtn" class="export-btn hideable-header-btn" onclick="fixStatisticsNow()" style="background:linear-gradient(to left,#17a2b8,#138496);margin-right:8px;">
+            <i class="fas fa-calculator"></i> إصلاح الإحصائيات
+          </button>
+
+          <button id="developerModeBtn" class="export-btn hideable-header-btn" onclick="toggleDeveloperMode()" style="background:linear-gradient(to left,#6f42c1,#5a2d91);margin-right:8px;">
+            <i class="fas fa-code"></i> <span id="developerModeText">وضع المطور</span>
           </button>
         </div>
 
@@ -295,6 +306,11 @@
         <li>
           <button id="mobile-data-import-btn" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; showDataImportModal();">
             <i class="fas fa-file-import"></i> استيراد البيانات
+          </button>
+        </li>
+        <li>
+          <button id="mobile-fix-statistics-btn" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; fixStatisticsNow();">
+            <i class="fas fa-calculator"></i> إصلاح الإحصائيات
           </button>
         </li>
       </ol>

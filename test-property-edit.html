@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تحرير العقارات</title>
+    <style>
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            background: #f8f9fa;
+            padding: 20px;
+            direction: rtl;
+            text-align: right;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .test-header h1 {
+            color: #007bff;
+            margin: 0 0 10px 0;
+        }
+        
+        .test-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-right: 4px solid #007bff;
+        }
+        
+        .test-section h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+        }
+        
+        .test-btn.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+        
+        .test-btn.warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+        }
+        
+        .test-btn.danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+        
+        .console-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        
+        .status-indicator.success {
+            background: #28a745;
+        }
+        
+        .status-indicator.error {
+            background: #dc3545;
+        }
+        
+        .status-indicator.warning {
+            background: #ffc107;
+        }
+        
+        .instructions {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            border-right: 4px solid #17a2b8;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🧪 اختبار تحرير العقارات</h1>
+            <p>أداة تشخيص واختبار وظائف تحرير العقارات في النظام</p>
+        </div>
+        
+        <div class="instructions">
+            <h4>📋 تعليمات الاختبار:</h4>
+            <ol>
+                <li>تأكد من تحميل البيانات الأساسية أولاً</li>
+                <li>قم بتشغيل التشخيص للتأكد من سلامة النظام</li>
+                <li>اختبر وظيفة التحرير المبسطة</li>
+                <li>راقب النتائج في وحدة التحكم</li>
+            </ol>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 تشخيص النظام</h3>
+            <p>فحص جميع المكونات المطلوبة لتحرير العقارات</p>
+            <button class="test-btn" onclick="runDiagnosis()">
+                <i class="fas fa-stethoscope"></i> تشغيل التشخيص
+            </button>
+            <span id="diagnosisStatus" class="status-indicator"></span>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 اختبار التحرير المبسط</h3>
+            <p>اختبار وظيفة تحرير العقارات مع حفظ مؤقت</p>
+            <button class="test-btn success" onclick="runSimpleTest()">
+                <i class="fas fa-play"></i> تشغيل الاختبار
+            </button>
+            <span id="testStatus" class="status-indicator"></span>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔄 اختبار المزامنة</h3>
+            <p>اختبار مزامنة البيانات مع Supabase</p>
+            <button class="test-btn warning" onclick="testSync()">
+                <i class="fas fa-cloud-upload-alt"></i> اختبار المزامنة
+            </button>
+            <span id="syncStatus" class="status-indicator"></span>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 عرض البيانات</h3>
+            <p>عرض معلومات النظام والبيانات المحملة</p>
+            <button class="test-btn" onclick="showSystemInfo()">
+                <i class="fas fa-info-circle"></i> معلومات النظام
+            </button>
+            <button class="test-btn" onclick="clearConsole()">
+                <i class="fas fa-trash"></i> مسح وحدة التحكم
+            </button>
+        </div>
+        
+        <div class="console-output" id="consoleOutput">
+            <div>🚀 مرحباً بك في أداة اختبار تحرير العقارات</div>
+            <div>📝 استخدم الأزرار أعلاه لتشغيل الاختبارات المختلفة</div>
+            <div>⚠️ تأكد من فتح وحدة التحكم (F12) لمراقبة التفاصيل</div>
+        </div>
+    </div>
+
+    <script>
+        // ربط وحدة التحكم بالعرض
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToConsole(message, type = 'log') {
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const div = document.createElement('div');
+            div.style.color = type === 'error' ? '#ff6b6b' : type === 'warn' ? '#feca57' : '#e2e8f0';
+            div.textContent = `[${timestamp}] ${message}`;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole(args.join(' '), 'warn');
+        };
+        
+        // وظائف الاختبار
+        function runDiagnosis() {
+            console.log('🔍 بدء تشخيص النظام...');
+            const status = document.getElementById('diagnosisStatus');
+            
+            try {
+                if (typeof window.diagnosePropertyEdit === 'function') {
+                    const result = window.diagnosePropertyEdit();
+                    status.className = 'status-indicator success';
+                    console.log('✅ تم تشغيل التشخيص بنجاح');
+                } else {
+                    throw new Error('وظيفة التشخيص غير متاحة');
+                }
+            } catch (error) {
+                status.className = 'status-indicator error';
+                console.error('❌ خطأ في التشخيص:', error.message);
+            }
+        }
+        
+        function runSimpleTest() {
+            console.log('🧪 بدء الاختبار المبسط...');
+            const status = document.getElementById('testStatus');
+            
+            try {
+                if (typeof window.simplePropertyEditTest === 'function') {
+                    const result = window.simplePropertyEditTest();
+                    status.className = result ? 'status-indicator success' : 'status-indicator warning';
+                } else {
+                    throw new Error('وظيفة الاختبار المبسط غير متاحة');
+                }
+            } catch (error) {
+                status.className = 'status-indicator error';
+                console.error('❌ خطأ في الاختبار:', error.message);
+            }
+        }
+        
+        function testSync() {
+            console.log('🔄 بدء اختبار المزامنة...');
+            const status = document.getElementById('syncStatus');
+            
+            try {
+                if (typeof window.syncToSupabase === 'function') {
+                    window.syncToSupabase(true).then(result => {
+                        status.className = result.success ? 'status-indicator success' : 'status-indicator warning';
+                        console.log(result.success ? '✅ نجحت المزامنة' : '⚠️ فشلت المزامنة');
+                    }).catch(error => {
+                        status.className = 'status-indicator error';
+                        console.error('❌ خطأ في المزامنة:', error.message);
+                    });
+                } else {
+                    throw new Error('وظيفة المزامنة غير متاحة');
+                }
+            } catch (error) {
+                status.className = 'status-indicator error';
+                console.error('❌ خطأ في اختبار المزامنة:', error.message);
+            }
+        }
+        
+        function showSystemInfo() {
+            console.log('📊 معلومات النظام:');
+            console.log('- المتصفح:', navigator.userAgent);
+            console.log('- التاريخ:', new Date().toLocaleString('ar-SA'));
+            console.log('- localStorage متاح:', typeof localStorage !== 'undefined');
+            console.log('- عدد العقارات:', typeof properties !== 'undefined' ? properties.length : 'غير محدد');
+        }
+        
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '';
+            console.log('🧹 تم مسح وحدة التحكم');
+        }
+        
+        // تحميل تلقائي عند فتح الصفحة
+        window.addEventListener('load', function() {
+            console.log('🚀 تم تحميل أداة الاختبار');
+            console.log('📝 يمكنك الآن تشغيل الاختبارات المختلفة');
+        });
+    </script>
+</body>
+</html>
