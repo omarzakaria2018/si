@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تحويل التواريخ</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code { font-family: monospace; background: #f1f1f1; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 اختبار تحويل التواريخ لـ Supabase</h1>
+        <p>هذا الاختبار يتحقق من أن التواريخ تُحول بشكل صحيح من صيغة <span class="code">dd/mm/yyyy</span> إلى <span class="code">yyyy-mm-dd</span> لـ Supabase</p>
+        
+        <button onclick="runTests()">🚀 تشغيل الاختبارات</button>
+        <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script src="data-migration.js"></script>
+    <script>
+        function runTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>📊 نتائج الاختبارات:</h2>';
+            
+            // اختبارات مختلفة للتواريخ
+            const testCases = [
+                { input: '15/11/2020', expected: '2020-11-15', description: 'تاريخ عادي بصيغة dd/mm/yyyy' },
+                { input: '01/01/2025', expected: '2025-01-01', description: 'تاريخ بداية السنة' },
+                { input: '31/12/2024', expected: '2024-12-31', description: 'تاريخ نهاية السنة' },
+                { input: '29/02/2024', expected: '2024-02-29', description: 'تاريخ سنة كبيسة' },
+                { input: '2025-01-15', expected: '2025-01-15', description: 'تاريخ بصيغة yyyy-mm-dd' },
+                { input: '15-01-2025', expected: '2025-01-15', description: 'تاريخ بصيغة dd-mm-yyyy' },
+                { input: '', expected: null, description: 'تاريخ فارغ' },
+                { input: null, expected: null, description: 'تاريخ null' },
+                { input: '32/01/2025', expected: null, description: 'تاريخ غير صالح (يوم 32)' },
+                { input: '29/02/2023', expected: null, description: 'تاريخ غير صالح (29 فبراير في سنة غير كبيسة)' }
+            ];
+            
+            let passedTests = 0;
+            let totalTests = testCases.length;
+            
+            testCases.forEach((testCase, index) => {
+                try {
+                    const result = parseDate(testCase.input);
+                    const passed = result === testCase.expected;
+                    
+                    if (passed) {
+                        passedTests++;
+                    }
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = `test-result ${passed ? 'success' : 'error'}`;
+                    resultDiv.innerHTML = `
+                        <strong>اختبار ${index + 1}:</strong> ${testCase.description}<br>
+                        <strong>المدخل:</strong> <span class="code">${testCase.input || 'null'}</span><br>
+                        <strong>المتوقع:</strong> <span class="code">${testCase.expected || 'null'}</span><br>
+                        <strong>النتيجة:</strong> <span class="code">${result || 'null'}</span><br>
+                        <strong>الحالة:</strong> ${passed ? '✅ نجح' : '❌ فشل'}
+                    `;
+                    resultsDiv.appendChild(resultDiv);
+                } catch (error) {
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'test-result error';
+                    resultDiv.innerHTML = `
+                        <strong>اختبار ${index + 1}:</strong> ${testCase.description}<br>
+                        <strong>خطأ:</strong> ${error.message}
+                    `;
+                    resultsDiv.appendChild(resultDiv);
+                }
+            });
+            
+            // ملخص النتائج
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `test-result ${passedTests === totalTests ? 'success' : 'warning'}`;
+            summaryDiv.innerHTML = `
+                <h3>📈 ملخص النتائج:</h3>
+                <strong>نجح:</strong> ${passedTests} من ${totalTests} اختبار<br>
+                <strong>معدل النجاح:</strong> ${Math.round((passedTests / totalTests) * 100)}%
+            `;
+            resultsDiv.appendChild(summaryDiv);
+            
+            // اختبار تحويل عقار كامل
+            testPropertyConversion();
+        }
+        
+        function testPropertyConversion() {
+            const resultsDiv = document.getElementById('results');
+            
+            // إنشاء عقار تجريبي
+            const testProperty = {
+                'رقم  الوحدة ': 'TEST_001',
+                'المدينة': 'الرياض',
+                'اسم العقار': 'عقار اختبار',
+                'اسم المستأجر': 'مستأجر اختبار',
+                'رقم العقد': 'CONTRACT_TEST',
+                'قيمة  الايجار ': '50000',
+                'المساحة': '150',
+                'تاريخ البداية': '15/11/2020',
+                'تاريخ النهاية': '14/11/2021',
+                'الاجمالى': '57500',
+                'تاريخ القسط الاول': '15/11/2020',
+                'مبلغ القسط الاول': 28750,
+                'تاريخ القسط الثاني': '15/05/2021',
+                'مبلغ القسط الثاني': 28750,
+                'تاريخ نهاية القسط': '15/05/2021',
+                'نوع العقد': 'ضريبي'
+            };
+            
+            try {
+                const convertedProperty = convertPropertyToSupabaseFormat(testProperty);
+                
+                const conversionDiv = document.createElement('div');
+                conversionDiv.className = 'test-result success';
+                conversionDiv.innerHTML = `
+                    <h3>🏠 اختبار تحويل عقار كامل:</h3>
+                    <strong>تاريخ البداية:</strong> ${testProperty['تاريخ البداية']} → ${convertedProperty.start_date}<br>
+                    <strong>تاريخ النهاية:</strong> ${testProperty['تاريخ النهاية']} → ${convertedProperty.end_date}<br>
+                    <strong>تاريخ القسط الأول:</strong> ${testProperty['تاريخ القسط الاول']} → ${convertedProperty.first_installment_date}<br>
+                    <strong>تاريخ القسط الثاني:</strong> ${testProperty['تاريخ القسط الثاني']} → ${convertedProperty.second_installment_date}<br>
+                    <strong>تاريخ نهاية القسط:</strong> ${testProperty['تاريخ نهاية القسط']} → ${convertedProperty.installment_end_date}<br>
+                    <strong>الحالة:</strong> ✅ تم التحويل بنجاح
+                `;
+                resultsDiv.appendChild(conversionDiv);
+                
+                // التحقق من أن جميع التواريخ بصيغة YYYY-MM-DD
+                const dateFields = [
+                    convertedProperty.start_date,
+                    convertedProperty.end_date,
+                    convertedProperty.first_installment_date,
+                    convertedProperty.second_installment_date,
+                    convertedProperty.installment_end_date
+                ];
+                
+                const allDatesValid = dateFields.every(date => 
+                    date === null || (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/))
+                );
+                
+                const validationDiv = document.createElement('div');
+                validationDiv.className = `test-result ${allDatesValid ? 'success' : 'error'}`;
+                validationDiv.innerHTML = `
+                    <strong>التحقق من صيغة التواريخ:</strong> ${allDatesValid ? '✅ جميع التواريخ بصيغة YYYY-MM-DD' : '❌ بعض التواريخ بصيغة خاطئة'}
+                `;
+                resultsDiv.appendChild(validationDiv);
+                
+            } catch (error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'test-result error';
+                errorDiv.innerHTML = `
+                    <h3>❌ خطأ في تحويل العقار:</h3>
+                    <strong>الخطأ:</strong> ${error.message}
+                `;
+                resultsDiv.appendChild(errorDiv);
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

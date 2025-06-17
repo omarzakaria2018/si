@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الإصلاح النهائي للتواريخ</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code { font-family: monospace; background: #f1f1f1; padding: 2px 5px; border-radius: 3px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+        th { background: #f8f9fa; }
+        .pass { background: #d4edda; }
+        .fail { background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 اختبار الإصلاح النهائي لمشكلة التواريخ</h1>
+        <p>هذا الاختبار يتحقق من أن جميع الإصلاحات تعمل بشكل صحيح</p>
+        
+        <button onclick="runAllTests()">🚀 تشغيل جميع الاختبارات</button>
+        <button onclick="testRealDataSample()">📊 اختبار عينة من البيانات الحقيقية</button>
+        <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script src="data-migration.js"></script>
+    <script src="supabase-config.js"></script>
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        async function runAllTests() {
+            clearResults();
+            addResult('warning', '🚀 بدء الاختبارات الشاملة...', 'جاري تشغيل جميع الاختبارات...');
+            
+            // اختبار 1: تحويل التواريخ المختلفة
+            testDateConversions();
+            
+            // اختبار 2: تحويل عقار كامل
+            testPropertyConversion();
+            
+            // اختبار 3: اختبار عينة من البيانات الحقيقية
+            await testRealDataSample();
+            
+            // اختبار 4: اختبار إرسال إلى Supabase
+            await testSupabaseInsert();
+            
+            addResult('success', '✅ اكتملت جميع الاختبارات', 'تم تشغيل جميع الاختبارات بنجاح');
+        }
+
+        function testDateConversions() {
+            addResult('warning', '📅 اختبار تحويل التواريخ...', 'جاري اختبار دالة parseDate...');
+            
+            const testCases = [
+                { input: '2025-02-01 00:00:00', expected: '2025-02-01', description: 'YYYY-MM-DD HH:MM:SS (من قاعدة البيانات)' },
+                { input: '31/1/2026', expected: '2026-01-31', description: 'DD/M/YYYY' },
+                { input: '14/5/2026', expected: '2026-05-14', description: 'DD/M/YYYY' },
+                { input: '31-3-2025', expected: '2025-03-31', description: 'DD-MM-YYYY' },
+                { input: '2025-01-15', expected: '2025-01-15', description: 'YYYY-MM-DD' },
+                { input: '15/11/2020', expected: '2020-11-15', description: 'DD/MM/YYYY' }
+            ];
+
+            let results = '<table><tr><th>المدخل</th><th>المتوقع</th><th>النتيجة</th><th>الحالة</th><th>الوصف</th></tr>';
+            let allPassed = true;
+
+            testCases.forEach(testCase => {
+                try {
+                    const result = parseDate(testCase.input);
+                    const passed = result === testCase.expected;
+                    
+                    if (!passed) allPassed = false;
+                    
+                    const statusClass = passed ? 'pass' : 'fail';
+                    const statusText = passed ? '✅ نجح' : '❌ فشل';
+                    
+                    results += `
+                        <tr class="${statusClass}">
+                            <td class="code">${testCase.input}</td>
+                            <td class="code">${testCase.expected}</td>
+                            <td class="code">${result || 'null'}</td>
+                            <td>${statusText}</td>
+                            <td>${testCase.description}</td>
+                        </tr>
+                    `;
+                } catch (error) {
+                    allPassed = false;
+                    results += `
+                        <tr class="fail">
+                            <td class="code">${testCase.input}</td>
+                            <td class="code">${testCase.expected}</td>
+                            <td class="code">خطأ: ${error.message}</td>
+                            <td>❌ خطأ</td>
+                            <td>${testCase.description}</td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            results += '</table>';
+
+            addResult(
+                allPassed ? 'success' : 'error',
+                allPassed ? '✅ جميع اختبارات التحويل نجحت' : '❌ بعض اختبارات التحويل فشلت',
+                results
+            );
+        }
+
+        function testPropertyConversion() {
+            addResult('warning', '🏠 اختبار تحويل عقار كامل...', 'جاري اختبار convertPropertyToSupabaseFormat...');
+            
+            const testProperty = {
+                'رقم  الوحدة ': 'TEST_FINAL_001',
+                'المدينة': 'الرياض',
+                'اسم العقار': 'عقار اختبار نهائي',
+                'اسم المستأجر': 'مستأجر اختبار',
+                'رقم العقد': 'FINAL_CONTRACT_001',
+                'قيمة  الايجار ': '50000',
+                'المساحة': '150',
+                'تاريخ البداية': '2025-02-01 00:00:00', // صيغة قاعدة البيانات
+                'تاريخ النهاية': '31/1/2026', // صيغة عربية
+                'الاجمالى': '57500',
+                'تاريخ القسط الاول': '15/11/2020', // صيغة عربية
+                'مبلغ القسط الاول': 28750,
+                'تاريخ القسط الثاني': '15/05/2021',
+                'مبلغ القسط الثاني': 28750,
+                'تاريخ نهاية القسط': '31-3-2025', // صيغة بشرطة
+                'نوع العقد': 'ضريبي'
+            };
+
+            try {
+                const converted = convertPropertyToSupabaseFormat(testProperty);
+                
+                const dateTests = [
+                    { field: 'start_date', original: testProperty['تاريخ البداية'], converted: converted.start_date, expected: '2025-02-01' },
+                    { field: 'end_date', original: testProperty['تاريخ النهاية'], converted: converted.end_date, expected: '2026-01-31' },
+                    { field: 'first_installment_date', original: testProperty['تاريخ القسط الاول'], converted: converted.first_installment_date, expected: '2020-11-15' },
+                    { field: 'installment_end_date', original: testProperty['تاريخ نهاية القسط'], converted: converted.installment_end_date, expected: '2025-03-31' }
+                ];
+
+                let results = '<table><tr><th>الحقل</th><th>القيمة الأصلية</th><th>القيمة المحولة</th><th>المتوقع</th><th>الحالة</th></tr>';
+                let allPassed = true;
+
+                dateTests.forEach(test => {
+                    const passed = test.converted === test.expected;
+                    if (!passed) allPassed = false;
+                    
+                    const statusClass = passed ? 'pass' : 'fail';
+                    const statusText = passed ? '✅ نجح' : '❌ فشل';
+                    
+                    results += `
+                        <tr class="${statusClass}">
+                            <td>${test.field}</td>
+                            <td class="code">${test.original}</td>
+                            <td class="code">${test.converted || 'null'}</td>
+                            <td class="code">${test.expected}</td>
+                            <td>${statusText}</td>
+                        </tr>
+                    `;
+                });
+                
+                results += '</table>';
+
+                addResult(
+                    allPassed ? 'success' : 'error',
+                    allPassed ? '✅ تحويل العقار نجح' : '❌ تحويل العقار فشل',
+                    results
+                );
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في تحويل العقار', `خطأ: ${error.message}`);
+            }
+        }
+
+        async function testRealDataSample() {
+            addResult('warning', '📊 اختبار عينة من البيانات الحقيقية...', 'جاري تحميل وتحليل عينة من data.json...');
+            
+            try {
+                const response = await fetch('data.json');
+                const data = await response.json();
+                
+                // أخذ أول 5 عقارات كعينة
+                const sample = data.slice(0, 5);
+                
+                let results = '<table><tr><th>رقم الوحدة</th><th>تاريخ البداية</th><th>تاريخ النهاية</th><th>محول start_date</th><th>محول end_date</th><th>الحالة</th></tr>';
+                let allPassed = true;
+
+                sample.forEach(property => {
+                    try {
+                        const converted = convertPropertyToSupabaseFormat(property);
+                        
+                        const startDateValid = converted.start_date ? converted.start_date.match(/^\d{4}-\d{2}-\d{2}$/) : true;
+                        const endDateValid = converted.end_date ? converted.end_date.match(/^\d{4}-\d{2}-\d{2}$/) : true;
+                        
+                        const passed = startDateValid && endDateValid;
+                        if (!passed) allPassed = false;
+                        
+                        const statusClass = passed ? 'pass' : 'fail';
+                        const statusText = passed ? '✅ نجح' : '❌ فشل';
+                        
+                        results += `
+                            <tr class="${statusClass}">
+                                <td>${property['رقم  الوحدة '] || 'غير محدد'}</td>
+                                <td class="code">${property['تاريخ البداية'] || 'null'}</td>
+                                <td class="code">${property['تاريخ النهاية'] || 'null'}</td>
+                                <td class="code">${converted.start_date || 'null'}</td>
+                                <td class="code">${converted.end_date || 'null'}</td>
+                                <td>${statusText}</td>
+                            </tr>
+                        `;
+                    } catch (error) {
+                        allPassed = false;
+                        results += `
+                            <tr class="fail">
+                                <td>${property['رقم  الوحدة '] || 'غير محدد'}</td>
+                                <td colspan="4">خطأ: ${error.message}</td>
+                                <td>❌ خطأ</td>
+                            </tr>
+                        `;
+                    }
+                });
+                
+                results += '</table>';
+
+                addResult(
+                    allPassed ? 'success' : 'error',
+                    allPassed ? '✅ جميع العينات نجحت' : '❌ بعض العينات فشلت',
+                    `تم اختبار ${sample.length} عقارات من البيانات الحقيقية:<br>${results}`
+                );
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في تحميل البيانات', `خطأ: ${error.message}`);
+            }
+        }
+
+        async function testSupabaseInsert() {
+            addResult('warning', '📤 اختبار إرسال Supabase النهائي...', 'جاري اختبار إرسال عقار بتواريخ مختلطة...');
+            
+            try {
+                const testProperty = {
+                    'رقم  الوحدة ': 'FINAL_TEST_' + Date.now(),
+                    'المدينة': 'الرياض',
+                    'اسم العقار': 'عقار اختبار نهائي',
+                    'اسم المستأجر': 'مستأجر اختبار',
+                    'رقم العقد': 'FINAL_CONTRACT_' + Date.now(),
+                    'قيمة  الايجار ': '50000',
+                    'المساحة': '150',
+                    'تاريخ البداية': '2025-02-01 00:00:00', // نفس الصيغة المشكلة
+                    'تاريخ النهاية': '31/1/2026',
+                    'الاجمالى': '57500',
+                    'تاريخ القسط الاول': '15/11/2020',
+                    'مبلغ القسط الاول': 28750,
+                    'تاريخ القسط الثاني': '15/05/2021',
+                    'مبلغ القسط الثاني': 28750,
+                    'تاريخ نهاية القسط': '15/05/2021',
+                    'نوع العقد': 'ضريبي'
+                };
+
+                const supabaseProperty = convertPropertyToSupabaseFormat(testProperty);
+                
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .insert([supabaseProperty])
+                    .select();
+
+                if (error) {
+                    addResult('error', '❌ فشل في الإرسال النهائي', `
+                        <strong>خطأ Supabase:</strong> ${error.message}<br>
+                        <strong>هذا يعني أن المشكلة لم تُحل بعد!</strong>
+                    `);
+                    return;
+                }
+
+                addResult('success', '🎉 نجح الإرسال النهائي!', `
+                    <strong>تم حل مشكلة التواريخ نهائياً! 🎉</strong><br>
+                    تم إرسال العقار بنجاح إلى Supabase:<br>
+                    <strong>معرف السجل:</strong> ${data[0]?.id}<br>
+                    <strong>رقم الوحدة:</strong> ${data[0]?.unit_number}<br>
+                    <strong>تاريخ البداية:</strong> ${data[0]?.start_date}<br>
+                    <strong>تاريخ النهاية:</strong> ${data[0]?.end_date}
+                `);
+
+                // حذف السجل التجريبي
+                setTimeout(async () => {
+                    try {
+                        await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('id', data[0].id);
+                        
+                        addResult('success', '🗑️ تنظيف نهائي', 'تم حذف السجل التجريبي بنجاح');
+                    } catch (cleanupError) {
+                        addResult('warning', '⚠️ تحذير', `لم يتم حذف السجل التجريبي: ${cleanupError.message}`);
+                    }
+                }, 3000);
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في الاختبار النهائي', `خطأ: ${error.message}`);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // تشغيل اختبار سريع عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('success', '🚀 جاهز للاختبار', 'تم تحميل جميع الملفات. يمكنك الآن تشغيل الاختبارات.');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

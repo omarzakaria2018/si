@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تحديث التواريخ</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code { font-family: monospace; background: #f1f1f1; padding: 2px 5px; border-radius: 3px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+        th { background: #f8f9fa; }
+        .pass { background: #d4edda; }
+        .fail { background: #f8d7da; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار تحديث التواريخ من ملف JSON</h1>
+        <p>هذا الاختبار يحاكي عملية تحديث التواريخ من ملف info.json</p>
+        
+        <button onclick="testDateUpdateProcess()">🚀 اختبار عملية التحديث</button>
+        <button onclick="testFormatDateForSystem()">📅 اختبار تنسيق التواريخ</button>
+        <button onclick="testSupabaseUpdate()">☁️ اختبار تحديث Supabase</button>
+        <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script src="data-migration.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="date-updater.js"></script>
+    <script src="script.js"></script>
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        async function testDateUpdateProcess() {
+            addResult('warning', '🚀 بدء اختبار عملية التحديث...', 'جاري تحميل البيانات واختبار التحديث...');
+            
+            try {
+                // تحميل البيانات الأصلية
+                const dataResponse = await fetch('data.json');
+                const originalData = await dataResponse.json();
+                
+                // تحميل بيانات التحديث
+                const infoResponse = await fetch('info.json');
+                const updateData = await infoResponse.json();
+                
+                addResult('success', '✅ تم تحميل البيانات', `
+                    <strong>البيانات الأصلية:</strong> ${originalData.length} عقار<br>
+                    <strong>بيانات التحديث:</strong> ${updateData.length} عقار
+                `);
+                
+                // محاكاة البيانات المحلية
+                window.properties = originalData;
+                
+                // اختبار عينة من التحديثات
+                const sampleUpdates = updateData.slice(0, 5);
+                let results = '<table><tr><th>رقم الوحدة</th><th>تاريخ البداية الجديد</th><th>تاريخ النهاية الجديد</th><th>الحالة</th><th>التفاصيل</th></tr>';
+                
+                for (const update of sampleUpdates) {
+                    const unitNumber = update['رقم  الوحدة '];
+                    const property = properties.find(p => p['رقم  الوحدة '] === unitNumber);
+                    
+                    let status = 'fail';
+                    let details = '';
+                    
+                    if (property) {
+                        status = 'pass';
+                        details = `تم العثور على العقار`;
+                        
+                        // اختبار تنسيق التواريخ
+                        const startDate = update['تاريخ البداية'];
+                        const endDate = update['تاريخ النهاية'];
+                        
+                        if (startDate) {
+                            const formatted = formatDateForSystem(startDate);
+                            details += `<br>تاريخ البداية: ${startDate} → ${formatted}`;
+                        }
+                        
+                        if (endDate) {
+                            const formatted = formatDateForSystem(endDate);
+                            details += `<br>تاريخ النهاية: ${endDate} → ${formatted}`;
+                        }
+                    } else {
+                        details = 'العقار غير موجود';
+                    }
+                    
+                    results += `
+                        <tr class="${status}">
+                            <td>${unitNumber}</td>
+                            <td class="code">${update['تاريخ البداية'] || 'null'}</td>
+                            <td class="code">${update['تاريخ النهاية'] || 'null'}</td>
+                            <td>${status === 'pass' ? '✅ نجح' : '❌ فشل'}</td>
+                            <td>${details}</td>
+                        </tr>
+                    `;
+                }
+                
+                results += '</table>';
+                
+                addResult('success', '📊 نتائج اختبار العينة', results);
+                
+            } catch (error) {
+                addResult('error', '❌ خطأ في الاختبار', `خطأ: ${error.message}`);
+            }
+        }
+
+        function testFormatDateForSystem() {
+            addResult('warning', '📅 اختبار تنسيق التواريخ...', 'جاري اختبار دالة formatDateForSystem...');
+            
+            const testCases = [
+                { input: '2025-02-01 00:00:00', expected: '01/02/2025', description: 'YYYY-MM-DD HH:MM:SS' },
+                { input: '31/1/2026', expected: '31/01/2026', description: 'DD/M/YYYY' },
+                { input: '28-2-2026', expected: '28/02/2026', description: 'DD-MM-YYYY' },
+                { input: '2026-02-09 00:00:00', expected: '09/02/2026', description: 'YYYY-MM-DD HH:MM:SS' },
+                { input: '14/10/2025', expected: '14/10/2025', description: 'DD/MM/YYYY' },
+                { input: null, expected: null, description: 'null value' }
+            ];
+
+            let results = '<table><tr><th>المدخل</th><th>المتوقع</th><th>النتيجة</th><th>الحالة</th><th>الوصف</th></tr>';
+            let allPassed = true;
+
+            testCases.forEach(testCase => {
+                try {
+                    const result = formatDateForSystem(testCase.input);
+                    const passed = result === testCase.expected;
+                    
+                    if (!passed) allPassed = false;
+                    
+                    const statusClass = passed ? 'pass' : 'fail';
+                    const statusText = passed ? '✅ نجح' : '❌ فشل';
+                    
+                    results += `
+                        <tr class="${statusClass}">
+                            <td class="code">${testCase.input || 'null'}</td>
+                            <td class="code">${testCase.expected || 'null'}</td>
+                            <td class="code">${result || 'null'}</td>
+                            <td>${statusText}</td>
+                            <td>${testCase.description}</td>
+                        </tr>
+                    `;
+                } catch (error) {
+                    allPassed = false;
+                    results += `
+                        <tr class="fail">
+                            <td class="code">${testCase.input || 'null'}</td>
+                            <td class="code">${testCase.expected || 'null'}</td>
+                            <td class="code">خطأ: ${error.message}</td>
+                            <td>❌ خطأ</td>
+                            <td>${testCase.description}</td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            results += '</table>';
+
+            addResult(
+                allPassed ? 'success' : 'error',
+                allPassed ? '✅ جميع اختبارات التنسيق نجحت' : '❌ بعض اختبارات التنسيق فشلت',
+                results
+            );
+        }
+
+        async function testSupabaseUpdate() {
+            addResult('warning', '☁️ اختبار تحديث Supabase...', 'جاري اختبار تحديث عقار في Supabase...');
+            
+            try {
+                // إنشاء عقار تجريبي
+                const testProperty = {
+                    'رقم  الوحدة ': 'DATE_UPDATE_TEST_' + Date.now(),
+                    'المدينة': 'الرياض',
+                    'اسم العقار': 'عقار اختبار تحديث التواريخ',
+                    'اسم المستأجر': 'مستأجر اختبار',
+                    'رقم العقد': 'UPDATE_CONTRACT_' + Date.now(),
+                    'قيمة  الايجار ': '50000',
+                    'المساحة': '150',
+                    'تاريخ البداية': '01/01/2025',
+                    'تاريخ النهاية': '31/12/2025',
+                    'الاجمالى': '57500',
+                    'نوع العقد': 'ضريبي'
+                };
+
+                // إضافة إلى البيانات المحلية
+                if (!window.properties) window.properties = [];
+                window.properties.push(testProperty);
+
+                // حفظ في Supabase
+                if (typeof savePropertyToSupabase === 'function') {
+                    const saveResult = await savePropertyToSupabase(testProperty);
+                    
+                    if (saveResult) {
+                        addResult('success', '✅ تم إنشاء العقار التجريبي', `
+                            تم إنشاء العقار بنجاح في Supabase<br>
+                            <strong>رقم الوحدة:</strong> ${testProperty['رقم  الوحدة ']}<br>
+                            <strong>تاريخ البداية:</strong> ${testProperty['تاريخ البداية']}<br>
+                            <strong>تاريخ النهاية:</strong> ${testProperty['تاريخ النهاية']}
+                        `);
+                        
+                        // الآن اختبار التحديث
+                        const updateData = [{
+                            'رقم  الوحدة ': testProperty['رقم  الوحدة '],
+                            'تاريخ البداية': '2025-02-01 00:00:00',
+                            'تاريخ النهاية': '31/1/2026'
+                        }];
+                        
+                        // تنفيذ التحديث
+                        const updateResults = await performDateUpdates(updateData);
+                        
+                        addResult('success', '📊 نتائج التحديث', `
+                            <strong>إجمالي:</strong> ${updateResults.total}<br>
+                            <strong>نجح:</strong> ${updateResults.success}<br>
+                            <strong>فشل:</strong> ${updateResults.failed}<br>
+                            <strong>الأخطاء:</strong> ${updateResults.errors.length > 0 ? updateResults.errors.join('<br>') : 'لا توجد أخطاء'}
+                        `);
+                        
+                        // حذف العقار التجريبي
+                        setTimeout(async () => {
+                            try {
+                                // حذف من البيانات المحلية
+                                const index = window.properties.findIndex(p => p['رقم  الوحدة '] === testProperty['رقم  الوحدة ']);
+                                if (index !== -1) {
+                                    window.properties.splice(index, 1);
+                                }
+                                
+                                // حذف من Supabase
+                                const { error } = await supabaseClient
+                                    .from('properties')
+                                    .delete()
+                                    .eq('unit_number', testProperty['رقم  الوحدة ']);
+                                
+                                if (!error) {
+                                    addResult('success', '🗑️ تنظيف', 'تم حذف العقار التجريبي بنجاح');
+                                }
+                            } catch (cleanupError) {
+                                addResult('warning', '⚠️ تحذير', `لم يتم حذف العقار التجريبي: ${cleanupError.message}`);
+                            }
+                        }, 5000);
+                        
+                    } else {
+                        addResult('error', '❌ فشل في إنشاء العقار التجريبي', 'لم يتم حفظ العقار في Supabase');
+                    }
+                } else {
+                    addResult('error', '❌ دالة savePropertyToSupabase غير متوفرة', 'تأكد من تحميل ملف supabase-config.js');
+                }
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في اختبار Supabase', `خطأ: ${error.message}`);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // تشغيل اختبار أولي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('success', '🚀 جاهز للاختبار', 'تم تحميل جميع الملفات. يمكنك الآن تشغيل الاختبارات.');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

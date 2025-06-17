@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار شريط التقدم للحفظ</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .test-btn { background: #28a745; }
+        .test-btn:hover { background: #1e7e34; }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .steps {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .step-number {
+            background: #007bff;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #856404;
+        }
+        .flow-box {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .flow-box h4 {
+            margin: 0 0 15px 0;
+            color: #1976d2;
+        }
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .flow-step {
+            text-align: center;
+            flex: 1;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 0 5px;
+            border: 2px solid #dee2e6;
+        }
+        .flow-step.active {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .flow-arrow {
+            font-size: 20px;
+            color: #6c757d;
+        }
+        .modal-preview {
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .modal-preview i {
+            font-size: 3rem;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        .modal-preview h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        .progress-bar-demo {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 20px 0 10px 0;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: progressAnimation 3s ease-in-out infinite;
+        }
+        @keyframes progressAnimation {
+            0% { width: 0%; }
+            25% { width: 30%; }
+            50% { width: 60%; }
+            75% { width: 85%; }
+            100% { width: 100%; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📊 اختبار شريط التقدم للحفظ</h1>
+        <p>تجربة محسنة للحفظ مع شريط تقدم ونافذة تأكيد</p>
+        
+        <div class="flow-box">
+            <h4>🎯 التجربة الجديدة المطلوبة:</h4>
+            <ol>
+                <li>✅ اضغط "حفظ التغييرات"</li>
+                <li>✅ يظهر **شريط التقدم** مع حالة الحفظ</li>
+                <li>✅ بعد انتهاء الحفظ، تظهر **نافذة تأكيد**</li>
+                <li>✅ اضغط **"موافق"** في النافذة</li>
+                <li>✅ **عندها فقط** تتحدث البطاقة والواجهة</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>🔄 مخطط التدفق الجديد</h3>
+            <div class="flow-diagram">
+                <div class="flow-step active">
+                    <i class="fas fa-save"></i>
+                    <div><strong>1. بدء الحفظ</strong></div>
+                    <div>إغلاق نافذة التحرير</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step active">
+                    <i class="fas fa-chart-line"></i>
+                    <div><strong>2. شريط التقدم</strong></div>
+                    <div>عرض حالة الحفظ</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step active">
+                    <i class="fas fa-check-circle"></i>
+                    <div><strong>3. نافذة التأكيد</strong></div>
+                    <div>رسالة نجاح مفصلة</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step active">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <div><strong>4. ضغط "موافق"</strong></div>
+                    <div>تأكيد من المستخدم</div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step active">
+                    <i class="fas fa-sync-alt"></i>
+                    <div><strong>5. تحديث البطاقة</strong></div>
+                    <div>عرض التغييرات</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 مثال على شريط التقدم</h3>
+            <div class="modal-preview">
+                <i class="fas fa-save"></i>
+                <h3>جاري حفظ التغييرات...</h3>
+                <div class="progress-bar-demo">
+                    <div class="progress-fill"></div>
+                </div>
+                <div style="color: #6c757d; font-size: 14px; margin-bottom: 5px;">حفظ في قاعدة البيانات السحابية...</div>
+                <div style="color: #007bff; font-weight: bold;">75%</div>
+            </div>
+            <p style="text-align: center; color: #6c757d; font-style: italic;">
+                شريط التقدم يُظهر حالة الحفظ بالتفصيل
+            </p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبار تفاعلي</h3>
+            <button class="test-btn" onclick="testProgressBar()">
+                <i class="fas fa-play"></i> اختبار شريط التقدم
+            </button>
+            
+            <button onclick="testFullSaveFlow()">
+                <i class="fas fa-cogs"></i> اختبار التدفق الكامل
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 خطوات الاختبار الفعلي</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>اذهب إلى <span class="highlight">"عرض البيانات"</span> في التطبيق الرئيسي</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>اختر أي عقار واضغط زر <span class="highlight">"تحرير"</span> (الأصفر)</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>غيّر أي معلومة واضغط <span class="highlight">"حفظ التغييرات"</span></div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>راقب ظهور <span class="highlight">شريط التقدم</span> مع تفاصيل الحفظ</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div>بعد انتهاء الشريط، ستظهر <span class="highlight">نافذة تأكيد</span></div>
+                </div>
+                <div class="step">
+                    <div class="step-number">6</div>
+                    <div>اضغط <span class="highlight">"موافق"</span> لرؤية التحديث في البطاقة</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 النتائج المتوقعة</h3>
+            
+            <h4>✅ مراحل شريط التقدم:</h4>
+            <ul>
+                <li><strong>20%:</strong> حفظ البيانات محلياً...</li>
+                <li><strong>40%:</strong> حفظ في قاعدة البيانات السحابية...</li>
+                <li><strong>70%:</strong> مزامنة X وحدة... (إذا كانت هناك مزامنة)</li>
+                <li><strong>100%:</strong> تم الحفظ بنجاح!</li>
+            </ul>
+
+            <h4>🎊 رسالة النجاح النهائية:</h4>
+            <div class="result success">
+                <strong>✅ تم حفظ التغييرات بنجاح!</strong><br>
+                💡 تم حفظ تعديلات الوحدة فقط (لم تتغير معلومات الصك)<br>
+                ✅ تم حفظ التغييرات في قاعدة البيانات السحابية
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎉 الفوائد المحققة</h3>
+            
+            <div class="flow-box">
+                <h4>✨ تجربة مستخدم محسنة:</h4>
+                <ul>
+                    <li><strong>وضوح العملية:</strong> المستخدم يرى ما يحدث بالضبط</li>
+                    <li><strong>شعور بالتحكم:</strong> شريط التقدم يُظهر أن النظام يعمل</li>
+                    <li><strong>تأكيد واضح:</strong> نافذة تأكيد مفصلة</li>
+                    <li><strong>تحديث منطقي:</strong> البطاقة تتحدث بعد التأكيد</li>
+                    <li><strong>ثقة في النظام:</strong> المستخدم يعرف أن التغييرات حُفظت</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <!-- تحميل الملفات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function testProgressBar() {
+            addResult('info', '🧪 اختبار شريط التقدم', 'جاري اختبار دالة showProgressModal...');
+            
+            if (typeof showProgressModal === 'function') {
+                addResult('success', '✅ الدالة موجودة', 'تم العثور على دالة showProgressModal');
+                
+                showProgressModal('اختبار شريط التقدم', async function(updateProgress) {
+                    updateProgress(0, 'بدء الاختبار...');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    updateProgress(25, 'خطوة 1 من 4...');
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    updateProgress(50, 'خطوة 2 من 4...');
+                    await new Promise(resolve => setTimeout(resolve, 600));
+                    
+                    updateProgress(75, 'خطوة 3 من 4...');
+                    await new Promise(resolve => setTimeout(resolve, 700));
+                    
+                    updateProgress(100, 'اكتمل الاختبار!');
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    return true;
+                }, function(success) {
+                    if (success) {
+                        addResult('success', '🎉 نجح الاختبار!', `
+                            شريط التقدم يعمل بشكل مثالي!<br>
+                            الآن يجب أن يعمل في التطبيق الرئيسي عند الحفظ
+                        `);
+                    } else {
+                        addResult('error', '❌ فشل الاختبار', 'حدث خطأ في شريط التقدم');
+                    }
+                });
+                
+            } else {
+                addResult('error', '❌ الدالة غير موجودة', 'لم يتم العثور على دالة showProgressModal في script.js');
+            }
+        }
+
+        function testFullSaveFlow() {
+            addResult('info', '🔄 اختبار التدفق الكامل', 'جاري محاكاة عملية الحفظ الكاملة...');
+            
+            // محاكاة شريط التقدم
+            showProgressModal('جاري حفظ التغييرات...', async function(updateProgress) {
+                updateProgress(20, 'حفظ البيانات محلياً...');
+                await new Promise(resolve => setTimeout(resolve, 600));
+                
+                updateProgress(40, 'حفظ في قاعدة البيانات السحابية...');
+                await new Promise(resolve => setTimeout(resolve, 900));
+                
+                updateProgress(70, 'مزامنة 2 وحدة...');
+                await new Promise(resolve => setTimeout(resolve, 700));
+                
+                updateProgress(100, 'تم الحفظ بنجاح!');
+                await new Promise(resolve => setTimeout(resolve, 400));
+                
+                return true;
+            }, function(success) {
+                if (success) {
+                    // محاكاة نافذة التأكيد
+                    const message = `✅ تم حفظ التغييرات بنجاح!
+🔄 تم تحديث معلومات الصك في 2 وحدة
+📝 معلومات الصك المحدثة:
+• مساحة الصك: 1800
+☁️ تم حفظ 2 وحدة في السحابة
+✅ تم حفظ التغييرات في قاعدة البيانات السحابية`;
+                    
+                    if (typeof showSuccessMessageWithCallback === 'function') {
+                        showSuccessMessageWithCallback('تم حفظ التغييرات بنجاح!', message, function() {
+                            addResult('success', '🎊 اكتمل التدفق!', `
+                                تم اختبار التدفق الكامل بنجاح:<br>
+                                1. ✅ شريط التقدم<br>
+                                2. ✅ نافذة التأكيد<br>
+                                3. ✅ callback بعد الموافقة<br><br>
+                                النظام جاهز للاستخدام!
+                            `);
+                        });
+                    } else {
+                        alert(message);
+                        addResult('warning', '⚠️ نافذة التأكيد', 'شريط التقدم يعمل، لكن نافذة التأكيد تستخدم alert عادي');
+                    }
+                } else {
+                    addResult('error', '❌ فشل التدفق', 'حدث خطأ في محاكاة عملية الحفظ');
+                }
+            });
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            addResult('success', '🚀 جاهز للاختبار', `
+                تم تحميل جميع الملفات المطلوبة<br>
+                شريط التقدم والنوافذ جاهزة للاختبار<br>
+                اضغط "اختبار شريط التقدم" للبدء
+            `);
+            
+            // فحص الدوال المطلوبة
+            const functions = [
+                'showProgressModal',
+                'showSuccessMessageWithCallback',
+                'renderData',
+                'updateTotalStats'
+            ];
+            
+            functions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    addResult('success', `✅ ${funcName}`, 'الدالة موجودة ومتاحة');
+                } else {
+                    addResult('error', `❌ ${funcName}`, 'الدالة غير موجودة');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التطبيق بدون rent_amount</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+            direction: rtl;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .test-title {
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 10px;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #d5f4e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .info {
+            color: #3498db;
+            background-color: #ebf3fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .warning {
+            color: #f39c12;
+            background-color: #fef9e7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            background: white;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 اختبار التطبيق بدون عمود rent_amount</h1>
+            <p>فحص شامل للتأكد من عمل التطبيق بدون استخدام عمود rent_amount</p>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔌 اختبار الاتصال بـ Supabase</div>
+            <button class="btn" onclick="testSupabaseConnection()">اختبار الاتصال</button>
+            <div id="connectionResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🗃️ اختبار جدول Properties</div>
+            <button class="btn" onclick="testPropertiesTable()">فحص الجدول</button>
+            <div id="tableResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">💰 اختبار البيانات المالية</div>
+            <button class="btn" onclick="testFinancialData()">فحص البيانات المالية</button>
+            <div id="financialResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔧 اختبار الدوال المساعدة</div>
+            <button class="btn" onclick="testHelperFunctions()">اختبار الدوال</button>
+            <div id="functionsResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📊 اختبار الإحصائيات</div>
+            <button class="btn" onclick="testStatistics()">حساب الإحصائيات</button>
+            <div id="statisticsResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔍 فحص شامل</div>
+            <button class="btn" onclick="runAllTests()">تشغيل جميع الاختبارات</button>
+            <div id="allTestsResults" class="results"></div>
+        </div>
+    </div>
+
+    <!-- Supabase JavaScript Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Configuration -->
+    <script src="supabase-config.js"></script>
+
+    <script>
+        // دالة مساعدة لعرض النتائج
+        function showResult(containerId, type, message) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            container.appendChild(div);
+        }
+
+        // دالة مساعدة للسجل
+        function log(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // اختبار الاتصال بـ Supabase
+        async function testSupabaseConnection() {
+            const container = document.getElementById('connectionResults');
+            container.innerHTML = '';
+            
+            log('🔄 اختبار الاتصال بـ Supabase...');
+            
+            try {
+                if (typeof supabaseClient === 'undefined') {
+                    throw new Error('Supabase client غير متوفر');
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    throw error;
+                }
+
+                showResult('connectionResults', 'success', '✅ الاتصال بـ Supabase يعمل بنجاح');
+                log('✅ الاتصال بـ Supabase يعمل بنجاح', 'success');
+                
+                return true;
+            } catch (error) {
+                showResult('connectionResults', 'error', `❌ خطأ في الاتصال: ${error.message}`);
+                log(`❌ خطأ في الاتصال: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // اختبار جدول Properties
+        async function testPropertiesTable() {
+            const container = document.getElementById('tableResults');
+            container.innerHTML = '';
+            
+            log('🔄 فحص جدول Properties...');
+            
+            try {
+                // فحص الأعمدة الموجودة
+                const { data: columns, error: columnsError } = await supabaseClient
+                    .rpc('get_table_columns', { table_name: 'properties' });
+
+                if (columnsError) {
+                    // إذا لم تكن الدالة موجودة، نستخدم طريقة أخرى
+                    log('⚠️ دالة get_table_columns غير موجودة، سنستخدم طريقة أخرى', 'warning');
+                }
+
+                // فحص البيانات
+                const { data: properties, error } = await supabaseClient
+                    .from('properties')
+                    .select('*')
+                    .limit(5);
+
+                if (error) {
+                    throw error;
+                }
+
+                // فحص وجود rent_amount في البيانات
+                const hasRentAmount = properties.length > 0 && 'rent_amount' in properties[0];
+                const hasRentValue = properties.length > 0 && 'rent_value' in properties[0];
+
+                if (hasRentAmount) {
+                    showResult('tableResults', 'warning', '⚠️ عمود rent_amount ما زال موجود في البيانات');
+                } else {
+                    showResult('tableResults', 'success', '✅ عمود rent_amount غير موجود (كما هو مطلوب)');
+                }
+
+                if (hasRentValue) {
+                    showResult('tableResults', 'success', '✅ عمود rent_value موجود ويعمل');
+                } else {
+                    showResult('tableResults', 'error', '❌ عمود rent_value غير موجود');
+                }
+
+                showResult('tableResults', 'info', `📊 تم العثور على ${properties.length} عقار في الاختبار`);
+                
+                return { hasRentAmount, hasRentValue, count: properties.length };
+            } catch (error) {
+                showResult('tableResults', 'error', `❌ خطأ في فحص الجدول: ${error.message}`);
+                log(`❌ خطأ في فحص الجدول: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        // اختبار البيانات المالية
+        async function testFinancialData() {
+            const container = document.getElementById('financialResults');
+            container.innerHTML = '';
+            
+            log('🔄 فحص البيانات المالية...');
+            
+            try {
+                const { data: properties, error } = await supabaseClient
+                    .from('properties')
+                    .select('rent_value, total_amount, paid_amount, remaining_amount')
+                    .not('rent_value', 'is', null)
+                    .gt('rent_value', 0)
+                    .limit(10);
+
+                if (error) {
+                    throw error;
+                }
+
+                if (properties.length === 0) {
+                    showResult('financialResults', 'warning', '⚠️ لا توجد عقارات بقيم إيجار');
+                    return;
+                }
+
+                let totalRent = 0;
+                let totalAmount = 0;
+                let validRecords = 0;
+
+                properties.forEach(property => {
+                    if (property.rent_value && property.rent_value > 0) {
+                        totalRent += property.rent_value;
+                        validRecords++;
+                    }
+                    if (property.total_amount && property.total_amount > 0) {
+                        totalAmount += property.total_amount;
+                    }
+                });
+
+                showResult('financialResults', 'success', `✅ تم فحص ${properties.length} عقار`);
+                showResult('financialResults', 'info', `💰 إجمالي قيم الإيجار: ${totalRent.toLocaleString()} ريال`);
+                showResult('financialResults', 'info', `💰 إجمالي المبالغ: ${totalAmount.toLocaleString()} ريال`);
+                showResult('financialResults', 'info', `📊 عدد السجلات الصحيحة: ${validRecords}`);
+                
+                return { totalRent, totalAmount, validRecords };
+            } catch (error) {
+                showResult('financialResults', 'error', `❌ خطأ في فحص البيانات المالية: ${error.message}`);
+                log(`❌ خطأ في فحص البيانات المالية: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        // اختبار الدوال المساعدة
+        function testHelperFunctions() {
+            const container = document.getElementById('functionsResults');
+            container.innerHTML = '';
+            
+            log('🔄 اختبار الدوال المساعدة...');
+            
+            try {
+                // بيانات تجريبية
+                const testProperty = {
+                    rent_value: 5000,
+                    total_amount: 60000
+                };
+
+                // اختبار getRentValue (إذا كانت موجودة)
+                if (typeof getRentValue === 'function') {
+                    const rentValue = getRentValue(testProperty);
+                    if (rentValue === 5000) {
+                        showResult('functionsResults', 'success', '✅ دالة getRentValue تعمل بشكل صحيح');
+                    } else {
+                        showResult('functionsResults', 'error', `❌ دالة getRentValue ترجع قيمة خاطئة: ${rentValue}`);
+                    }
+                } else {
+                    showResult('functionsResults', 'warning', '⚠️ دالة getRentValue غير موجودة');
+                }
+
+                // اختبار setRentValue (إذا كانت موجودة)
+                if (typeof setRentValue === 'function') {
+                    const testData = {};
+                    setRentValue(testData, 7000);
+                    if (testData.rent_value === 7000 && !testData.rent_amount) {
+                        showResult('functionsResults', 'success', '✅ دالة setRentValue تعمل بشكل صحيح (بدون rent_amount)');
+                    } else if (testData.rent_amount) {
+                        showResult('functionsResults', 'warning', '⚠️ دالة setRentValue ما زالت تستخدم rent_amount');
+                    } else {
+                        showResult('functionsResults', 'error', '❌ دالة setRentValue لا تعمل بشكل صحيح');
+                    }
+                } else {
+                    showResult('functionsResults', 'warning', '⚠️ دالة setRentValue غير موجودة');
+                }
+
+                showResult('functionsResults', 'info', '📋 تم اختبار الدوال المساعدة');
+                
+            } catch (error) {
+                showResult('functionsResults', 'error', `❌ خطأ في اختبار الدوال: ${error.message}`);
+                log(`❌ خطأ في اختبار الدوال: ${error.message}`, 'error');
+            }
+        }
+
+        // اختبار الإحصائيات
+        async function testStatistics() {
+            const container = document.getElementById('statisticsResults');
+            container.innerHTML = '';
+            
+            log('🔄 حساب الإحصائيات...');
+            
+            try {
+                const { data: allProperties, error } = await supabaseClient
+                    .from('properties')
+                    .select('rent_value, total_amount, tenant_name');
+
+                if (error) {
+                    throw error;
+                }
+
+                const stats = {
+                    total: allProperties.length,
+                    rented: allProperties.filter(p => p.tenant_name && p.tenant_name.trim() !== '').length,
+                    vacant: allProperties.filter(p => !p.tenant_name || p.tenant_name.trim() === '').length,
+                    withRentValue: allProperties.filter(p => p.rent_value && p.rent_value > 0).length,
+                    totalRentValue: allProperties.reduce((sum, p) => sum + (p.rent_value || 0), 0),
+                    totalAmount: allProperties.reduce((sum, p) => sum + (p.total_amount || 0), 0)
+                };
+
+                showResult('statisticsResults', 'success', `✅ إجمالي العقارات: ${stats.total}`);
+                showResult('statisticsResults', 'info', `🏠 العقارات المؤجرة: ${stats.rented}`);
+                showResult('statisticsResults', 'info', `🏢 العقارات الشاغرة: ${stats.vacant}`);
+                showResult('statisticsResults', 'info', `💰 عقارات بقيم إيجار: ${stats.withRentValue}`);
+                showResult('statisticsResults', 'info', `💵 إجمالي قيم الإيجار: ${stats.totalRentValue.toLocaleString()} ريال`);
+                showResult('statisticsResults', 'info', `💸 إجمالي المبالغ: ${stats.totalAmount.toLocaleString()} ريال`);
+                
+                return stats;
+            } catch (error) {
+                showResult('statisticsResults', 'error', `❌ خطأ في حساب الإحصائيات: ${error.message}`);
+                log(`❌ خطأ في حساب الإحصائيات: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        // تشغيل جميع الاختبارات
+        async function runAllTests() {
+            const container = document.getElementById('allTestsResults');
+            container.innerHTML = '';
+            
+            showResult('allTestsResults', 'info', '🚀 بدء تشغيل جميع الاختبارات...');
+            
+            const results = {};
+            
+            // اختبار الاتصال
+            results.connection = await testSupabaseConnection();
+            
+            // اختبار الجدول
+            results.table = await testPropertiesTable();
+            
+            // اختبار البيانات المالية
+            results.financial = await testFinancialData();
+            
+            // اختبار الدوال
+            testHelperFunctions();
+            
+            // اختبار الإحصائيات
+            results.statistics = await testStatistics();
+            
+            // تقرير نهائي
+            if (results.connection && results.table && results.financial && results.statistics) {
+                showResult('allTestsResults', 'success', '🎉 جميع الاختبارات نجحت! التطبيق يعمل بدون rent_amount');
+                
+                if (results.table && !results.table.hasRentAmount) {
+                    showResult('allTestsResults', 'success', '✅ تأكيد: عمود rent_amount غير موجود');
+                }
+                
+                if (results.table && results.table.hasRentValue) {
+                    showResult('allTestsResults', 'success', '✅ تأكيد: عمود rent_value يعمل بشكل طبيعي');
+                }
+            } else {
+                showResult('allTestsResults', 'warning', '⚠️ بعض الاختبارات فشلت، يرجى مراجعة النتائج أعلاه');
+            }
+        }
+
+        // تشغيل اختبار أولي عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 تم تحميل أداة اختبار rent_amount بنجاح', 'success');
+            
+            // فحص توفر Supabase
+            if (typeof supabaseClient !== 'undefined') {
+                log('✅ Supabase client متوفر', 'success');
+            } else {
+                log('❌ Supabase client غير متوفر', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

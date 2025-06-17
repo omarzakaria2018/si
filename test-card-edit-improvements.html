@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تحسينات تحرير البطاقة</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .demo-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .demo-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .feature-item h4 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .feature-item ul {
+            margin: 0;
+            padding-right: 20px;
+        }
+        .feature-item li {
+            margin: 5px 0;
+            color: #495057;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: right;
+        }
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .before { background: #fff3cd; }
+        .after { background: #d4edda; }
+        .steps {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .step-number {
+            background: #007bff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            font-weight: bold;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .test-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-card h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .test-card .card-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .test-card .card-info div {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .test-card .card-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .test-card .edit-btn {
+            background: #ffc107;
+            color: #212529;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .test-card .edit-btn:hover {
+            background: #e0a800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 اختبار تحسينات تحرير البطاقة</h1>
+        <p>هذا الاختبار يتحقق من التحسينات الجديدة المضافة لنافذة تحرير البطاقة (الزر الأصفر)</p>
+        
+        <div class="demo-section">
+            <h3>✨ التحسينات الجديدة المضافة</h3>
+            
+            <div class="features-list">
+                <div class="feature-item">
+                    <h4><i class="fas fa-building"></i> معلومات العقار والصك</h4>
+                    <ul>
+                        <li>اسم العقار (للقراءة فقط)</li>
+                        <li>المدينة (للقراءة فقط)</li>
+                        <li>رقم الوحدة (قابل للتحرير)</li>
+                        <li>رقم الصك (قابل للتحرير)</li>
+                        <li>مساحة الصك (قابل للتحرير)</li>
+                        <li>السجل العيني (قابل للتحرير)</li>
+                        <li>موقع العقار (قابل للتحرير)</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-item">
+                    <h4><i class="fas fa-home"></i> تفاصيل الوحدة المحسنة</h4>
+                    <ul>
+                        <li>مساحة الوحدة (منفصلة عن مساحة الصك)</li>
+                        <li>رقم حساب الكهرباء</li>
+                        <li>ارتفاع الوحدة</li>
+                        <li>ملاحظات الوحدة (جديد)</li>
+                        <li>توضيحات مفيدة لكل حقل</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-item">
+                    <h4><i class="fas fa-palette"></i> تحسينات التصميم</h4>
+                    <ul>
+                        <li>تصميم منظم ومقسم لأقسام</li>
+                        <li>ألوان متدرجة وجذابة</li>
+                        <li>أيقونات تفاعلية</li>
+                        <li>تأثيرات انتقالية سلسة</li>
+                        <li>تصميم متجاوب للشاشات الصغيرة</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-item">
+                    <h4><i class="fas fa-shield-alt"></i> تحسينات الأمان والوضوح</h4>
+                    <ul>
+                        <li>حقول للقراءة فقط للبيانات الحساسة</li>
+                        <li>توضيحات تحت كل حقل</li>
+                        <li>تمييز الحقول المطلوبة</li>
+                        <li>رسائل إرشادية واضحة</li>
+                        <li>تحقق من صحة البيانات</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🧪 بطاقات اختبار</h3>
+            <p>اضغط على زر "تحرير" لاختبار النافذة المحسنة:</p>
+            
+            <div class="test-card">
+                <h4>🏢 عمائر النسيم - وحدة 101</h4>
+                <div class="card-info">
+                    <div><strong>المستأجر:</strong> أحمد محمد</div>
+                    <div><strong>رقم العقد:</strong> C2024001</div>
+                    <div><strong>الإيجار:</strong> 5,000 ريال</div>
+                    <div><strong>المساحة:</strong> 120 م²</div>
+                    <div><strong>رقم الصك:</strong> 123456789</div>
+                    <div><strong>المالك:</strong> شركة السنيدي</div>
+                </div>
+                <div class="card-actions">
+                    <button class="edit-btn" onclick="testCardEdit('C2024001', 'عمائر النسيم', '101')">
+                        <i class="fas fa-edit"></i> تحرير البطاقة
+                    </button>
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h4>🏠 فيلا الورود - وحدة 201</h4>
+                <div class="card-info">
+                    <div><strong>المستأجر:</strong> سارة أحمد</div>
+                    <div><strong>رقم العقد:</strong> C2024002</div>
+                    <div><strong>الإيجار:</strong> 8,000 ريال</div>
+                    <div><strong>المساحة:</strong> 200 م²</div>
+                    <div><strong>رقم الصك:</strong> 987654321</div>
+                    <div><strong>المالك:</strong> محمد السنيدي</div>
+                </div>
+                <div class="card-actions">
+                    <button class="edit-btn" onclick="testCardEdit('C2024002', 'فيلا الورود', '201')">
+                        <i class="fas fa-edit"></i> تحرير البطاقة
+                    </button>
+                </div>
+            </div>
+            
+            <div class="test-card">
+                <h4>🏘️ مجمع الياسمين - وحدة فارغة</h4>
+                <div class="card-info">
+                    <div><strong>المستأجر:</strong> فارغة</div>
+                    <div><strong>رقم العقد:</strong> -</div>
+                    <div><strong>الإيجار:</strong> -</div>
+                    <div><strong>المساحة:</strong> 150 م²</div>
+                    <div><strong>رقم الصك:</strong> 555666777</div>
+                    <div><strong>المالك:</strong> شركة السنيدي</div>
+                </div>
+                <div class="card-actions">
+                    <button class="edit-btn" onclick="testCardEdit('', 'مجمع الياسمين', '301')">
+                        <i class="fas fa-edit"></i> تحرير البطاقة
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>📋 مقارنة قبل وبعد التحسين</h3>
+            
+            <table class="comparison-table">
+                <tr>
+                    <th>الميزة</th>
+                    <th>قبل التحسين</th>
+                    <th>بعد التحسين</th>
+                </tr>
+                <tr>
+                    <td><strong>معلومات الصك</strong></td>
+                    <td class="before">غير متوفرة في تحرير البطاقة</td>
+                    <td class="after">✅ رقم الصك، مساحة الصك، السجل العيني</td>
+                </tr>
+                <tr>
+                    <td><strong>رقم الوحدة</strong></td>
+                    <td class="before">غير قابل للتحرير</td>
+                    <td class="after">✅ قابل للتحرير مع تحقق من التفرد</td>
+                </tr>
+                <tr>
+                    <td><strong>موقع العقار</strong></td>
+                    <td class="before">في قسم منفصل</td>
+                    <td class="after">✅ في قسم معلومات العقار والصك</td>
+                </tr>
+                <tr>
+                    <td><strong>التصميم</strong></td>
+                    <td class="before">تصميم بسيط</td>
+                    <td class="after">✅ تصميم منظم مع أقسام وأيقونات</td>
+                </tr>
+                <tr>
+                    <td><strong>التوضيحات</strong></td>
+                    <td class="before">بدون توضيحات</td>
+                    <td class="after">✅ توضيحات مفيدة تحت كل حقل</td>
+                </tr>
+                <tr>
+                    <td><strong>الحماية</strong></td>
+                    <td class="before">جميع الحقول قابلة للتحرير</td>
+                    <td class="after">✅ حقول محمية للبيانات الحساسة</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="demo-section">
+            <h3>🎯 كيفية الاختبار</h3>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div>اضغط على أي زر <span class="highlight">"تحرير البطاقة"</span> أعلاه</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div>تحقق من وجود قسم <span class="highlight">"معلومات العقار والصك"</span> الجديد</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div>جرب تحرير <span class="highlight">رقم الصك</span> و <span class="highlight">مساحة الصك</span></div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div>تحقق من أن <span class="highlight">اسم العقار والمدينة</span> للقراءة فقط</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div>جرب تحرير <span class="highlight">رقم الوحدة</span> والحقول الأخرى</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">6</div>
+                    <div>احفظ التغييرات وتحقق من المزامنة</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <!-- تحميل المكتبات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function testCardEdit(contractNumber, propertyName, unitNumber) {
+            addResult('info', '🔄 اختبار تحرير البطاقة...', `
+                جاري فتح نافذة تحرير البطاقة:<br>
+                • العقار: ${propertyName}<br>
+                • الوحدة: ${unitNumber}<br>
+                • العقد: ${contractNumber || 'بدون عقد'}
+            `);
+            
+            try {
+                if (typeof showCardEditModal === 'function') {
+                    showCardEditModal(contractNumber, propertyName, unitNumber);
+                    
+                    addResult('success', '✅ تم فتح نافذة التحرير', `
+                        تحقق من النافذة المفتوحة للتأكد من وجود:<br>
+                        • قسم "معلومات العقار والصك"<br>
+                        • حقول رقم الصك ومساحة الصك<br>
+                        • حقل رقم الوحدة القابل للتحرير<br>
+                        • التصميم المحسن والأيقونات<br>
+                        • التوضيحات تحت الحقول
+                    `);
+                } else {
+                    addResult('error', '❌ دالة غير موجودة', 'تأكد من تحميل script.js');
+                }
+            } catch (error) {
+                addResult('error', '❌ خطأ في الاختبار', `خطأ: ${error.message}`);
+            }
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            addResult('success', '🚀 جاهز للاختبار', 'تم تحميل جميع الملفات المطلوبة');
+            addResult('info', '💡 تعليمات', `
+                هذا الاختبار يتحقق من التحسينات الجديدة:<br>
+                • إضافة معلومات الصك ورقم الوحدة<br>
+                • تحسين التصميم والتنظيم<br>
+                • إضافة توضيحات مفيدة<br>
+                • حماية البيانات الحساسة<br><br>
+                اضغط على أي زر "تحرير البطاقة" للبدء
+            `);
+        });
+    </script>
+</body>
+</html>

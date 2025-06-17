@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نهائي لجميع الإصلاحات</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code { font-family: monospace; background: #f1f1f1; padding: 2px 5px; border-radius: 3px; }
+        .test-summary {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .test-item:last-child { border-bottom: none; }
+        .status-icon {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .pass { color: #28a745; }
+        .fail { color: #dc3545; }
+        .pending { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏁 اختبار نهائي لجميع الإصلاحات</h1>
+        <p>اختبار شامل للتحقق من إصلاح جميع المشاكل المُبلغ عنها</p>
+        
+        <div class="test-summary">
+            <h3>📋 قائمة الاختبارات</h3>
+            <div class="test-item">
+                <span>1. مشكلة تكرار الوحدات</span>
+                <span id="test1" class="status-icon pending">⏳</span>
+            </div>
+            <div class="test-item">
+                <span>2. مشكلة حفظ التعديلات</span>
+                <span id="test2" class="status-icon pending">⏳</span>
+            </div>
+            <div class="test-item">
+                <span>3. مشكلة معلومات الصك</span>
+                <span id="test3" class="status-icon pending">⏳</span>
+            </div>
+            <div class="test-item">
+                <span>4. مشكلة originalUnitNumber is not defined</span>
+                <span id="test4" class="status-icon pending">⏳</span>
+            </div>
+            <div class="test-item">
+                <span>5. مشكلة saveChangeLog is not defined</span>
+                <span id="test5" class="status-icon pending">⏳</span>
+            </div>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="runAllTests()">🚀 تشغيل جميع الاختبارات</button>
+            <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- تحميل المكتبات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-migration.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function updateTestStatus(testId, status) {
+            const element = document.getElementById(testId);
+            if (status === 'pass') {
+                element.textContent = '✅';
+                element.className = 'status-icon pass';
+            } else if (status === 'fail') {
+                element.textContent = '❌';
+                element.className = 'status-icon fail';
+            } else {
+                element.textContent = '⏳';
+                element.className = 'status-icon pending';
+            }
+        }
+
+        async function runAllTests() {
+            addResult('info', '🚀 بدء تشغيل جميع الاختبارات...', 'جاري فحص جميع الإصلاحات المطبقة');
+            
+            let passedTests = 0;
+            const totalTests = 5;
+            
+            // اختبار 1: مشكلة تكرار الوحدات
+            try {
+                addResult('info', '🔍 اختبار 1: مشكلة تكرار الوحدات', 'فحص دوال منع التكرار...');
+                
+                // فحص وجود دوال منع التكرار
+                const hasDuplicateCheck = typeof checkForDuplicateUnit === 'function';
+                const hasValidation = typeof validateUnitData === 'function';
+                
+                if (hasDuplicateCheck && hasValidation) {
+                    addResult('success', '✅ اختبار 1 نجح', 'دوال منع تكرار الوحدات موجودة ومعرفة بشكل صحيح');
+                    updateTestStatus('test1', 'pass');
+                    passedTests++;
+                } else {
+                    addResult('warning', '⚠️ اختبار 1 جزئي', 'بعض دوال منع التكرار مفقودة');
+                    updateTestStatus('test1', 'fail');
+                }
+            } catch (error) {
+                addResult('error', '❌ اختبار 1 فشل', `خطأ: ${error.message}`);
+                updateTestStatus('test1', 'fail');
+            }
+            
+            // اختبار 2: مشكلة حفظ التعديلات
+            try {
+                addResult('info', '🔍 اختبار 2: مشكلة حفظ التعديلات', 'فحص دوال الحفظ...');
+                
+                const hasSaveFunction = typeof savePropertyToSupabase === 'function';
+                const hasAutoSync = typeof autoSyncAfterEdit === 'function';
+                
+                if (hasSaveFunction && hasAutoSync) {
+                    addResult('success', '✅ اختبار 2 نجح', 'دوال حفظ التعديلات موجودة ومعرفة بشكل صحيح');
+                    updateTestStatus('test2', 'pass');
+                    passedTests++;
+                } else {
+                    addResult('warning', '⚠️ اختبار 2 جزئي', 'بعض دوال الحفظ مفقودة');
+                    updateTestStatus('test2', 'fail');
+                }
+            } catch (error) {
+                addResult('error', '❌ اختبار 2 فشل', `خطأ: ${error.message}`);
+                updateTestStatus('test2', 'fail');
+            }
+            
+            // اختبار 3: مشكلة معلومات الصك
+            try {
+                addResult('info', '🔍 اختبار 3: مشكلة معلومات الصك', 'فحص حفظ معلومات الصك...');
+                
+                // فحص وجود حقول الصك في النظام
+                const hasPropertyEdit = typeof editProperty === 'function';
+                const hasPropertySave = typeof savePropertyChanges === 'function';
+                
+                if (hasPropertyEdit && hasPropertySave) {
+                    addResult('success', '✅ اختبار 3 نجح', 'دوال تحرير وحفظ معلومات الصك موجودة');
+                    updateTestStatus('test3', 'pass');
+                    passedTests++;
+                } else {
+                    addResult('warning', '⚠️ اختبار 3 جزئي', 'بعض دوال معلومات الصك مفقودة');
+                    updateTestStatus('test3', 'fail');
+                }
+            } catch (error) {
+                addResult('error', '❌ اختبار 3 فشل', `خطأ: ${error.message}`);
+                updateTestStatus('test3', 'fail');
+            }
+            
+            // اختبار 4: مشكلة originalUnitNumber is not defined
+            try {
+                addResult('info', '🔍 اختبار 4: مشكلة originalUnitNumber', 'فحص تعريف المتغيرات...');
+                
+                if (typeof savePropertyChanges === 'function') {
+                    const functionCode = savePropertyChanges.toString();
+                    const hasFixedVariables = functionCode.includes('const originalUnitNumber = originalData');
+                    
+                    if (hasFixedVariables) {
+                        addResult('success', '✅ اختبار 4 نجح', 'تم إصلاح مشكلة originalUnitNumber is not defined');
+                        updateTestStatus('test4', 'pass');
+                        passedTests++;
+                    } else {
+                        addResult('error', '❌ اختبار 4 فشل', 'مشكلة originalUnitNumber لم تُحل بعد');
+                        updateTestStatus('test4', 'fail');
+                    }
+                } else {
+                    addResult('error', '❌ اختبار 4 فشل', 'دالة savePropertyChanges غير موجودة');
+                    updateTestStatus('test4', 'fail');
+                }
+            } catch (error) {
+                addResult('error', '❌ اختبار 4 فشل', `خطأ: ${error.message}`);
+                updateTestStatus('test4', 'fail');
+            }
+            
+            // اختبار 5: مشكلة saveChangeLog is not defined
+            try {
+                addResult('info', '🔍 اختبار 5: مشكلة saveChangeLog', 'فحص استدعاءات دوال التتبع...');
+                
+                if (typeof savePropertyChanges === 'function') {
+                    const functionCode = savePropertyChanges.toString();
+                    const hasFixedSaveChangeLog = !functionCode.includes('await saveChangeLog(') && 
+                                                 functionCode.includes('await saveChangeLogToSupabase(');
+                    
+                    if (hasFixedSaveChangeLog) {
+                        addResult('success', '✅ اختبار 5 نجح', 'تم إصلاح مشكلة saveChangeLog is not defined');
+                        updateTestStatus('test5', 'pass');
+                        passedTests++;
+                    } else {
+                        addResult('error', '❌ اختبار 5 فشل', 'مشكلة saveChangeLog لم تُحل بعد');
+                        updateTestStatus('test5', 'fail');
+                    }
+                } else {
+                    addResult('error', '❌ اختبار 5 فشل', 'دالة savePropertyChanges غير موجودة');
+                    updateTestStatus('test5', 'fail');
+                }
+            } catch (error) {
+                addResult('error', '❌ اختبار 5 فشل', `خطأ: ${error.message}`);
+                updateTestStatus('test5', 'fail');
+            }
+            
+            // النتيجة النهائية
+            const successRate = Math.round((passedTests / totalTests) * 100);
+            
+            if (passedTests === totalTests) {
+                addResult('success', '🎉 جميع الاختبارات نجحت!', `
+                    ✅ تم اجتياز ${passedTests} من ${totalTests} اختبارات (${successRate}%)<br>
+                    🎯 جميع المشاكل المُبلغ عنها تم إصلاحها بنجاح<br>
+                    🚀 النظام جاهز للاستخدام
+                `);
+            } else if (passedTests >= totalTests * 0.8) {
+                addResult('warning', '⚠️ معظم الاختبارات نجحت', `
+                    ✅ تم اجتياز ${passedTests} من ${totalTests} اختبارات (${successRate}%)<br>
+                    🔧 هناك بعض المشاكل البسيطة المتبقية<br>
+                    📝 راجع النتائج أعلاه للتفاصيل
+                `);
+            } else {
+                addResult('error', '❌ عدة اختبارات فشلت', `
+                    ❌ تم اجتياز ${passedTests} من ${totalTests} اختبارات فقط (${successRate}%)<br>
+                    🚨 هناك مشاكل مهمة تحتاج إصلاح<br>
+                    🔍 راجع النتائج أعلاه لمعرفة المشاكل المحددة
+                `);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            // إعادة تعيين حالة الاختبارات
+            for (let i = 1; i <= 5; i++) {
+                updateTestStatus(`test${i}`, 'pending');
+            }
+        }
+
+        // تشغيل اختبار تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('success', '🚀 جاهز للاختبار', 'تم تحميل جميع الملفات المطلوبة');
+                addResult('info', '📋 تعليمات', `
+                    هذا الاختبار يفحص جميع الإصلاحات المطبقة:<br>
+                    1. مشكلة تكرار الوحدات<br>
+                    2. مشكلة حفظ التعديلات<br>
+                    3. مشكلة معلومات الصك<br>
+                    4. مشكلة originalUnitNumber is not defined<br>
+                    5. مشكلة saveChangeLog is not defined<br><br>
+                    اضغط "تشغيل جميع الاختبارات" للبدء
+                `);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

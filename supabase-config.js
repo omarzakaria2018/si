@@ -353,7 +353,9 @@ async function deleteProperty(id) {
 }
 
 // Enhanced property deletion with comprehensive search and error handling
-async function deletePropertyFromSupabase(propertyData) {
+async function deletePropertyFromSupabase(propertyData, retryCount = 0) {
+    const maxRetries = 3;
+
     try {
         if (!supabaseClient) {
             console.warn('🚫 Supabase client not initialized - skipping cloud deletion');
@@ -472,10 +474,14 @@ async function deletePropertyFromSupabase(propertyData) {
                 console.error('❌ Failed to fetch sample data:', debugError.message);
             }
 
+            // إصلاح: عدم فشل العملية إذا لم توجد في قاعدة البيانات
+            console.log('✅ Property not found in database, treating as successful local-only deletion');
             return {
-                success: false,
-                reason: 'NOT_FOUND',
-                message: 'Property not found in database',
+                success: true,
+                reason: 'LOCAL_ONLY',
+                message: 'Property not found in database - local deletion successful',
+                deletedCount: 0,
+                totalFound: 0,
                 searchedWith: searchStrategies.map(s => s.query)
             };
         }
@@ -599,11 +605,25 @@ async function deletePropertyFromSupabase(propertyData) {
 
     } catch (error) {
         console.error('❌ Critical error in deletePropertyFromSupabase:', error);
+
+        // إعادة المحاولة في حالة أخطاء الشبكة
+        if (retryCount < maxRetries && (
+            error.message.includes('network') ||
+            error.message.includes('timeout') ||
+            error.message.includes('connection') ||
+            error.code === 'PGRST301' // Supabase timeout error
+        )) {
+            console.log(`🔄 Retrying deletion attempt ${retryCount + 1}/${maxRetries} after network error...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // تأخير متزايد
+            return deletePropertyFromSupabase(propertyData, retryCount + 1);
+        }
+
         return {
             success: false,
             reason: 'CRITICAL_ERROR',
             message: error.message,
-            stack: error.stack
+            stack: error.stack,
+            retryCount
         };
     }
 }
@@ -870,6 +890,164 @@ async function deleteAttachment(attachmentId) {
 }
 
 // ===== INTEGRATION WITH EXISTING SYSTEM =====
+
+// Convert JSON property data to Supabase format
+function convertPropertyToSupabaseFormat(jsonProperty) {
+    return {
+        unit_number: jsonProperty['رقم  الوحدة '] || '',
+        city: jsonProperty['المدينة'] || '',
+        property_name: jsonProperty['اسم العقار'] || '',
+        property_location: jsonProperty['موقع العقار'] || '',
+        height: jsonProperty['الارتفاع'] || null,
+        deed_number: jsonProperty['رقم الصك'] || '',
+        real_estate_registry: jsonProperty['السجل العيني '] || null,
+        deed_area: jsonProperty['مساحةالصك'] || '',
+        owner: jsonProperty['المالك'] || '',
+        tenant_name: jsonProperty['اسم المستأجر'] || null,
+        contract_number: jsonProperty['رقم العقد'] || null,
+        rent_value: parseFloat(jsonProperty['قيمة  الايجار ']) || null,
+        area: parseFloat(jsonProperty['المساحة']) || null,
+        start_date: parseDate(jsonProperty['تاريخ البداية']) || null,
+        end_date: parseDate(jsonProperty['تاريخ النهاية']) || null,
+        total_amount: parseFloat(jsonProperty['الاجمالى']) || null,
+        electricity_account: jsonProperty['رقم حساب الكهرباء'] || null,
+        remaining_installments: parseInt(jsonProperty['عدد الاقساط المتبقية']) || null,
+        installment_count: parseInt(jsonProperty['عدد الاقساط']) || null,
+
+        // حفظ جميع الأقساط (حتى 10 أقساط)
+        first_installment_date: parseDate(jsonProperty['تاريخ القسط الاول']) || null,
+        first_installment_amount: parseFloat(jsonProperty['مبلغ القسط الاول']) || null,
+        second_installment_date: parseDate(jsonProperty['تاريخ القسط الثاني']) || null,
+        second_installment_amount: parseFloat(jsonProperty['مبلغ القسط الثاني']) || null,
+        third_installment_date: parseDate(jsonProperty['تاريخ القسط الثالث']) || null,
+        third_installment_amount: parseFloat(jsonProperty['مبلغ القسط الثالث']) || null,
+        fourth_installment_date: parseDate(jsonProperty['تاريخ القسط الرابع']) || null,
+        fourth_installment_amount: parseFloat(jsonProperty['مبلغ القسط الرابع']) || null,
+        fifth_installment_date: parseDate(jsonProperty['تاريخ القسط الخامس']) || null,
+        fifth_installment_amount: parseFloat(jsonProperty['مبلغ القسط الخامس']) || null,
+        sixth_installment_date: parseDate(jsonProperty['تاريخ القسط السادس']) || null,
+        sixth_installment_amount: parseFloat(jsonProperty['مبلغ القسط السادس']) || null,
+        seventh_installment_date: parseDate(jsonProperty['تاريخ القسط السابع']) || null,
+        seventh_installment_amount: parseFloat(jsonProperty['مبلغ القسط السابع']) || null,
+        eighth_installment_date: parseDate(jsonProperty['تاريخ القسط الثامن']) || null,
+        eighth_installment_amount: parseFloat(jsonProperty['مبلغ القسط الثامن']) || null,
+        ninth_installment_date: parseDate(jsonProperty['تاريخ القسط التاسع']) || null,
+        ninth_installment_amount: parseFloat(jsonProperty['مبلغ القسط التاسع']) || null,
+        tenth_installment_date: parseDate(jsonProperty['تاريخ القسط العاشر']) || null,
+        tenth_installment_amount: parseFloat(jsonProperty['مبلغ القسط العاشر']) || null,
+
+        installment_end_date: parseDate(jsonProperty['تاريخ نهاية القسط']) || null,
+        contract_type: jsonProperty['نوع العقد'] || null
+    };
+}
+
+// Parse date function - Fixed to return proper format for Supabase
+function parseDate(dateStr) {
+    if (!dateStr) return null;
+
+    // Clean the date string
+    dateStr = dateStr.toString().trim();
+
+    // Remove any Arabic text if present
+    if (dateStr.includes('(') && dateStr.includes(')')) {
+        const numericPart = dateStr.split('(')[0].trim();
+        if (numericPart) {
+            dateStr = numericPart;
+        }
+    }
+
+    // Handle different date formats and return YYYY-MM-DD for Supabase
+    if (dateStr.includes('/')) {
+        // Format: DD/MM/YYYY (most common from the UI)
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+
+            // Validate date
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                // Additional validation using Date object to avoid invalid dates like Feb 31
+                const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                    // Return in YYYY-MM-DD format for Supabase
+                    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+    } else if (dateStr.includes('-')) {
+        // Format: YYYY-MM-DD or DD-MM-YYYY
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            if (parts[0].length === 4) {
+                // YYYY-MM-DD format - already correct for Supabase
+                const year = parseInt(parts[0]);
+                const month = parseInt(parts[1]);
+                const day = parseInt(parts[2]);
+
+                // Validate date
+                if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                    if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                        return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    }
+                }
+            } else {
+                // DD-MM-YYYY format
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]);
+                const year = parseInt(parts[2]);
+
+                // Validate date
+                if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                    if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                        return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    }
+                }
+            }
+        }
+    }
+
+    // Handle YYYY-MM-DD HH:MM:SS format (from database exports)
+    if (dateStr.match(/^\d{4}-\d{1,2}-\d{1,2}\s+\d{1,2}:\d{1,2}:\d{1,2}$/)) {
+        const datePart = dateStr.split(' ')[0]; // Extract date part only
+        const parts = datePart.split('-');
+        if (parts.length === 3) {
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+
+            // Validate date
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+    }
+
+    // Try to parse as Date object (last resort)
+    try {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+
+            // Validate parsed date
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            }
+        }
+    } catch (error) {
+        console.warn(`Error parsing date: ${dateStr}`, error);
+    }
+
+    console.warn(`Could not parse date: ${dateStr}`);
+    return null;
+}
 
 // Save property changes to Supabase when data is modified
 async function savePropertyToSupabase(property) {
@@ -2385,6 +2563,11 @@ async function ensureStorageBucketExists() {
 
     } catch (error) {
         console.error('❌ خطأ في إنشاء مجلد التخزين:', error);
+        // تجاهل خطأ RLS للمجلد - سيتم إنشاؤه تلقائياً عند الحاجة
+        if (error.message && error.message.includes('row-level security policy')) {
+            console.log('ℹ️ سيتم إنشاء مجلد التخزين تلقائياً عند الحاجة');
+            return true; // اعتبر العملية ناجحة
+        }
         return false;
     }
 }

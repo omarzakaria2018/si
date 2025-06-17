@@ -311,9 +311,77 @@ aside.active {
   text-align: center;
 }
 
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
 .sidebar-header h3 {
   font-size: 1.5rem;
   color: var(--primary-color);
+  margin: 0;
+}
+
+.property-order-btn {
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+}
+
+.property-order-btn:hover {
+  background: linear-gradient(135deg, #5f3dc4, #9775fa);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+}
+
+.property-order-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+}
+
+/* أنماط رسائل النجاح المتحركة */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* أنماط نافذة إدارة الترتيب */
+.sortable-property-item:hover {
+  background-color: #f8f9fa !important;
+  border-color: #007bff !important;
+  transform: translateX(-2px);
+}
+
+.sortable-property-item:active {
+  background-color: #e9ecef !important;
 }
 
 #propertySearch {
@@ -17461,3 +17529,707 @@ textarea.mobile-friendly:focus {
 }
 
 /* ===== نهاية أنماط الإشعارات ===== */
+
+/* ===== تصميم نافذة تفاصيل الوحدة المحسنة ===== */
+.unit-details-modal {
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.unit-details-modal .modal-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 20px;
+    border-radius: 12px 12px 0 0;
+    margin: -20px -20px 20px -20px;
+}
+
+.unit-details-modal .modal-header h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.unit-details-modal .modal-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.details-section {
+    margin-bottom: 25px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.details-section h4 {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    margin: 0;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.details-grid {
+    padding: 20px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 200px;
+}
+
+.detail-label i {
+    color: #007bff;
+    width: 16px;
+    text-align: center;
+}
+
+.detail-value {
+    color: #212529;
+    font-weight: 500;
+    text-align: left;
+    flex: 1;
+}
+
+.detail-value .location-link {
+    color: #007bff;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.detail-value .location-link:hover {
+    text-decoration: underline;
+}
+
+.empty-unit-notice {
+    text-align: center;
+    padding: 30px 20px;
+    color: #6c757d;
+    font-style: italic;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 20px;
+}
+
+.empty-unit-notice i {
+    font-size: 1.2rem;
+    margin-left: 8px;
+    color: #007bff;
+}
+
+.unit-details-modal .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    padding: 20px 0 0 0;
+    border-top: 1px solid #e9ecef;
+    margin-top: 20px;
+}
+
+.unit-details-modal .modal-action-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.unit-details-modal .edit-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.unit-details-modal .edit-btn:hover {
+    background: linear-gradient(135deg, #218838, #1ea085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.unit-details-modal .property-btn {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #212529;
+}
+
+.unit-details-modal .property-btn:hover {
+    background: linear-gradient(135deg, #e0a800, #d39e00);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+}
+
+.unit-details-modal .close-btn {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+}
+
+.unit-details-modal .close-btn:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .unit-details-modal {
+        max-width: 95vw;
+        margin: 10px;
+    }
+
+    .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .detail-label {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .detail-value {
+        width: 100%;
+        text-align: right;
+        padding-right: 24px;
+    }
+
+    .unit-details-modal .modal-actions {
+        flex-direction: column;
+    }
+
+    .unit-details-modal .modal-action-btn {
+        width: 100%;
+    }
+}
+
+/* ===== نهاية تصميم نافذة تفاصيل الوحدة المحسنة ===== */
+
+/* ===== تحسينات نافذة تحرير البطاقة ===== */
+.property-edit-modal {
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.edit-modal-header {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 20px;
+    border-radius: 12px 12px 0 0;
+    margin: -20px -20px 20px -20px;
+}
+
+.edit-modal-header h2 {
+    margin: 0 0 5px 0;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.edit-modal-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.edit-form-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.edit-section {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.edit-section h3 {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    margin: 0;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.edit-section .form-row {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.edit-section .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.edit-section .form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.edit-section .form-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.edit-section .form-group input,
+.edit-section .form-group select {
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.edit-section .form-group input:focus,
+.edit-section .form-group select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.edit-section .form-group input[readonly] {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.field-note {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.operation-type-section {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.operation-type-section h3 {
+    margin: 0 0 15px 0;
+    color: #856404;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.operation-type-select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ffc107;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    background: white;
+}
+
+.operation-type-select:focus {
+    outline: none;
+    border-color: #e0a800;
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+}
+
+/* ===== نهاية تحسينات نافذة تحرير البطاقة - الجزء الأول ===== */
+
+.edit-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px 0 0 0;
+    border-top: 1px solid #e9ecef;
+    margin-top: 20px;
+}
+
+.action-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.edit-modal-actions button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838, #1ea085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #138496, #117a8b);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .property-edit-modal {
+        max-width: 95vw;
+        margin: 10px;
+    }
+
+    .edit-section .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .action-group {
+        flex-direction: column;
+    }
+
+    .edit-modal-actions button {
+        width: 100%;
+    }
+}
+
+/* ===== نهاية تحسينات نافذة تحرير البطاقة ===== */
+
+/* ===== تحسينات نافذة تحرير البطاقة ===== */
+.property-edit-modal {
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.edit-modal-header {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 20px;
+    border-radius: 12px 12px 0 0;
+    margin: -20px -20px 20px -20px;
+}
+
+.edit-modal-header h2 {
+    margin: 0 0 5px 0;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.edit-modal-header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1rem;
+}
+
+.edit-form-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.edit-section {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.edit-section h3 {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    margin: 0;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.edit-section .form-row {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.edit-section .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.edit-section .form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.edit-section .form-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.edit-section .form-group input,
+.edit-section .form-group select {
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.edit-section .form-group input:focus,
+.edit-section .form-group select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.edit-section .form-group input[readonly] {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.field-note {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.operation-type-section {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.operation-type-section h3 {
+    margin: 0 0 15px 0;
+    color: #856404;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.operation-type-select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ffc107;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    background: white;
+}
+
+.operation-type-select:focus {
+    outline: none;
+    border-color: #e0a800;
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+}
+
+.edit-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px 0 0 0;
+    border-top: 1px solid #e9ecef;
+    margin-top: 20px;
+}
+
+.action-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.edit-modal-actions button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838, #1ea085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+}
+
+.btn-info:hover {
+    background: linear-gradient(135deg, #138496, #117a8b);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .property-edit-modal {
+        max-width: 95vw;
+        margin: 10px;
+    }
+
+    .edit-section .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .action-group {
+        flex-direction: column;
+    }
+
+    .edit-modal-actions button {
+        width: 100%;
+    }
+}
+
+/* ===== نهاية تحسينات نافذة تحرير البطاقة ===== */

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار سريع للإصلاح</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code { font-family: monospace; background: #f1f1f1; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ اختبار سريع للإصلاح المحدث</h1>
+        <p>اختبار سريع للتحقق من إصلاح مشكلة <code>saveChangeLog is not defined</code></p>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="quickTest()">🚀 اختبار سريع</button>
+            <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- تحميل المكتبات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-migration.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function quickTest() {
+            addResult('info', '🚀 بدء الاختبار السريع...', 'جاري فحص إصلاح المشكلة');
+            
+            try {
+                // فحص وجود الدالة
+                if (typeof savePropertyChanges !== 'function') {
+                    addResult('error', '❌ دالة savePropertyChanges غير موجودة', 'تأكد من تحميل script.js');
+                    return;
+                }
+                
+                addResult('success', '✅ دالة savePropertyChanges موجودة', 'الدالة محملة بشكل صحيح');
+                
+                // فحص الكود المصدري
+                const functionCode = savePropertyChanges.toString();
+                
+                // فحص وجود الإصلاح الأول (المتغيرات)
+                const hasFixedVariables = functionCode.includes('const originalUnitNumber = originalData');
+
+                // فحص وجود الإصلاح الثاني (saveChangeLog)
+                const hasFixedSaveChangeLog = !functionCode.includes('await saveChangeLog(') && functionCode.includes('await saveChangeLogToSupabase(');
+
+                if (hasFixedVariables && hasFixedSaveChangeLog) {
+                    addResult('success', '🎉 تم إصلاح جميع المشاكل!', `
+                        ✅ تم إضافة تعريف المتغيرات المطلوبة<br>
+                        ✅ <code>originalUnitNumber</code> معرف بشكل صحيح<br>
+                        ✅ <code>originalTenantName</code> معرف بشكل صحيح<br>
+                        ✅ <code>originalContractNumber</code> معرف بشكل صحيح<br>
+                        ✅ تم إصلاح استدعاءات <code>saveChangeLog</code> إلى <code>saveChangeLogToSupabase</code>
+                    `);
+                } else if (hasFixedVariables) {
+                    addResult('warning', '⚠️ إصلاح جزئي', `
+                        ✅ تم إصلاح مشكلة المتغيرات<br>
+                        ${hasFixedSaveChangeLog ? '✅' : '❌'} إصلاح مشكلة saveChangeLog
+                    `);
+                } else {
+                    addResult('error', '❌ المشاكل لم تُحل بعد', `
+                        ${hasFixedVariables ? '✅' : '❌'} إصلاح مشكلة المتغيرات<br>
+                        ${hasFixedSaveChangeLog ? '✅' : '❌'} إصلاح مشكلة saveChangeLog
+                    `);
+                    
+                    // اختبار إضافي: محاولة تشغيل الدالة
+                    addResult('info', '🔄 اختبار تشغيل الدالة...', 'جاري محاولة تشغيل الدالة مع بيانات تجريبية');
+                    
+                    // إنشاء بيانات تجريبية
+                    if (!window.properties) window.properties = [];
+                    
+                    const testProperty = {
+                        'رقم  الوحدة ': 'QUICK_TEST_' + Date.now(),
+                        'اسم العقار': 'عقار اختبار سريع',
+                        'المدينة': 'الرياض',
+                        'اسم المستأجر': 'مستأجر تجريبي',
+                        'رقم العقد': 'CONTRACT_QUICK_' + Date.now()
+                    };
+                    
+                    window.properties.push(testProperty);
+                    
+                    // إنشاء عناصر DOM مؤقتة
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = `
+                        <input type="text" id="editPropertyName" value="${testProperty['اسم العقار']}">
+                        <select id="editPropertyCity"><option value="الرياض" selected>الرياض</option></select>
+                        <input type="text" id="editPropertyDeed" value="">
+                        <input type="text" id="editPropertyArea" value="">
+                        <input type="text" id="editPropertyRegistry" value="">
+                        <input type="text" id="editPropertyOwner" value="">
+                        <input type="text" id="editPropertyLocation" value="">
+                    `;
+                    tempDiv.style.display = 'none';
+                    document.body.appendChild(tempDiv);
+                    
+                    // تشغيل الدالة
+                    savePropertyChanges(testProperty['اسم العقار'])
+                        .then(() => {
+                            addResult('success', '✅ الدالة تعمل بدون أخطاء!', 'لم تحدث أي مشاكل في تعريف المتغيرات أو الدوال');
+
+                            // تنظيف
+                            document.body.removeChild(tempDiv);
+                            const index = window.properties.findIndex(p => p['رقم  الوحدة '] === testProperty['رقم  الوحدة ']);
+                            if (index !== -1) {
+                                window.properties.splice(index, 1);
+                            }
+                        })
+                        .catch(error => {
+                            if (error.message.includes('originalUnitNumber is not defined')) {
+                                addResult('error', '❌ مشكلة originalUnitNumber لم تُحل!', 'ما زال هناك خطأ originalUnitNumber is not defined');
+                            } else if (error.message.includes('saveChangeLog is not defined')) {
+                                addResult('error', '❌ مشكلة saveChangeLog لم تُحل!', 'ما زال هناك خطأ saveChangeLog is not defined');
+                            } else {
+                                addResult('warning', '⚠️ خطأ آخر', `خطأ مختلف: ${error.message}`);
+                            }
+
+                            // تنظيف
+                            document.body.removeChild(tempDiv);
+                            const index = window.properties.findIndex(p => p['رقم  الوحدة '] === testProperty['رقم  الوحدة ']);
+                            if (index !== -1) {
+                                window.properties.splice(index, 1);
+                            }
+                        });
+                    
+                }
+
+                if (!hasFixedVariables || !hasFixedSaveChangeLog) {
+                    addResult('error', '❌ بعض المشاكل لم تُحل بعد', `
+                        ${!hasFixedVariables ? 'يجب إضافة تعريف المتغيرات في بداية دالة savePropertyChanges<br>' : ''}
+                        ${!hasFixedSaveChangeLog ? 'يجب تغيير استدعاءات saveChangeLog إلى saveChangeLogToSupabase' : ''}
+                    `);
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ خطأ في الاختبار', `خطأ: ${error.message}`);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // تشغيل اختبار تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('success', '🚀 جاهز للاختبار', 'تم تحميل جميع الملفات المطلوبة');
+                addResult('info', '📋 تعليمات', 'اضغط "اختبار سريع" للتحقق من إصلاح مشكلة saveChangeLog is not defined');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

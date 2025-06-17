@@ -273,13 +273,25 @@ async function performDateUpdates(updateData) {
 
             // البحث عن العقار - دعم المفاتيح المختلفة
             const unitNumber = item.unit_number || item['رقم  الوحدة '] || item['رقم الوحدة'];
+
+            console.log(`🔍 البحث عن الوحدة: ${unitNumber}`);
+            console.log(`📋 البيانات الواردة:`, item);
+
             const property = properties.find(p => p['رقم  الوحدة '] === unitNumber);
 
             if (!property) {
+                console.warn(`❌ الوحدة ${unitNumber} غير موجودة في البيانات المحلية`);
                 results.failed++;
-                results.errors.push(`الوحدة ${unitNumber}: غير موجودة`);
+                results.errors.push(`الوحدة ${unitNumber}: غير موجودة في البيانات المحلية`);
                 continue;
             }
+
+            console.log(`✅ تم العثور على الوحدة: ${unitNumber}`);
+            console.log(`📊 البيانات الحالية:`, {
+                'رقم  الوحدة ': property['رقم  الوحدة '],
+                'تاريخ البداية': property['تاريخ البداية'],
+                'تاريخ النهاية': property['تاريخ النهاية']
+            });
             
             // تحديث التواريخ
             let updated = false;
@@ -287,11 +299,17 @@ async function performDateUpdates(updateData) {
             // معالجة تاريخ البداية
             const startDate = item.start_date || item['تاريخ البداية'];
             if (startDate && startDate !== null) {
+                console.log(`📅 معالجة تاريخ البداية: ${startDate}`);
                 const formattedStartDate = formatDateForSystem(startDate);
+                console.log(`🔄 تاريخ البداية المنسق: ${formattedStartDate}`);
+
                 if (formattedStartDate) {
+                    const oldStartDate = property['تاريخ البداية'];
                     property['تاريخ البداية'] = formattedStartDate;
                     updated = true;
+                    console.log(`✅ تم تحديث تاريخ البداية من ${oldStartDate} إلى ${formattedStartDate}`);
                 } else {
+                    console.error(`❌ تاريخ البداية غير صالح: ${startDate}`);
                     results.errors.push(`الوحدة ${unitNumber}: تاريخ البداية غير صالح (${startDate})`);
                 }
             }
@@ -299,11 +317,17 @@ async function performDateUpdates(updateData) {
             // معالجة تاريخ النهاية
             const endDate = item.end_date || item['تاريخ النهاية'];
             if (endDate && endDate !== null) {
+                console.log(`📅 معالجة تاريخ النهاية: ${endDate}`);
                 const formattedEndDate = formatDateForSystem(endDate);
+                console.log(`🔄 تاريخ النهاية المنسق: ${formattedEndDate}`);
+
                 if (formattedEndDate) {
+                    const oldEndDate = property['تاريخ النهاية'];
                     property['تاريخ النهاية'] = formattedEndDate;
                     updated = true;
+                    console.log(`✅ تم تحديث تاريخ النهاية من ${oldEndDate} إلى ${formattedEndDate}`);
                 } else {
+                    console.error(`❌ تاريخ النهاية غير صالح: ${endDate}`);
                     results.errors.push(`الوحدة ${unitNumber}: تاريخ النهاية غير صالح (${endDate})`);
                 }
             }
@@ -311,7 +335,15 @@ async function performDateUpdates(updateData) {
             if (updated) {
                 // حفظ في Supabase إذا كان متوفراً
                 if (typeof savePropertyToSupabase === 'function') {
-                    await savePropertyToSupabase(property);
+                    try {
+                        const saveResult = await savePropertyToSupabase(property);
+                        if (!saveResult) {
+                            results.errors.push(`الوحدة ${unitNumber}: فشل في حفظ البيانات في Supabase`);
+                        }
+                    } catch (supabaseError) {
+                        console.error(`خطأ في حفظ الوحدة ${unitNumber} في Supabase:`, supabaseError);
+                        results.errors.push(`الوحدة ${unitNumber}: خطأ في Supabase - ${supabaseError.message}`);
+                    }
                 }
 
                 results.success++;

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التحديث الفعلي</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code { font-family: monospace; background: #f1f1f1; padding: 2px 5px; border-radius: 3px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+        th { background: #f8f9fa; }
+        .pass { background: #d4edda; }
+        .fail { background: #f8d7da; }
+        .file-input { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 اختبار التحديث الفعلي للتواريخ</h1>
+        <p>هذا الاختبار يستخدم البيانات الفعلية من الملفات</p>
+        
+        <div class="file-input">
+            <label for="infoFile">اختر ملف info.json:</label>
+            <input type="file" id="infoFile" accept=".json">
+        </div>
+        
+        <button onclick="testRealUpdate()">🚀 اختبار التحديث الفعلي</button>
+        <button onclick="compareDataStructures()">📊 مقارنة هياكل البيانات</button>
+        <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script src="data-migration.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="date-updater.js"></script>
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        async function testRealUpdate() {
+            clearResults();
+            addResult('warning', '🚀 بدء الاختبار الفعلي...', 'جاري تحميل البيانات الفعلية...');
+            
+            try {
+                // تحميل البيانات الأصلية
+                const dataResponse = await fetch('data.json');
+                const originalData = await dataResponse.json();
+                
+                // تحميل بيانات التحديث
+                let updateData;
+                const fileInput = document.getElementById('infoFile');
+                
+                if (fileInput.files.length > 0) {
+                    // استخدام الملف المرفوع
+                    const file = fileInput.files[0];
+                    const text = await file.text();
+                    updateData = JSON.parse(text);
+                    addResult('success', '✅ تم تحميل ملف info.json المرفوع', `عدد السجلات: ${updateData.length}`);
+                } else {
+                    // استخدام الملف الافتراضي
+                    const infoResponse = await fetch('info.json');
+                    updateData = await infoResponse.json();
+                    addResult('success', '✅ تم تحميل ملف info.json الافتراضي', `عدد السجلات: ${updateData.length}`);
+                }
+                
+                addResult('success', '✅ تم تحميل البيانات', `
+                    <strong>البيانات الأصلية:</strong> ${originalData.length} عقار<br>
+                    <strong>بيانات التحديث:</strong> ${updateData.length} عقار
+                `);
+                
+                // محاكاة البيانات المحلية
+                window.properties = originalData;
+                
+                // تحليل أول 5 سجلات من بيانات التحديث
+                const sampleUpdates = updateData.slice(0, 5);
+                let analysisResults = '<table><tr><th>رقم الوحدة</th><th>موجود في البيانات</th><th>تاريخ البداية</th><th>تاريخ النهاية</th><th>حالة التحديث</th></tr>';
+                
+                let successCount = 0;
+                let failCount = 0;
+                
+                for (const update of sampleUpdates) {
+                    const unitNumber = update['رقم  الوحدة '] || update.unit_number;
+                    const property = properties.find(p => p['رقم  الوحدة '] === unitNumber);
+                    
+                    let status = 'fail';
+                    let statusText = '❌ فشل';
+                    let updateStatus = 'لم يتم العثور على العقار';
+                    
+                    if (property) {
+                        status = 'pass';
+                        statusText = '✅ موجود';
+                        
+                        // محاولة التحديث
+                        let updated = false;
+                        const startDate = update['تاريخ البداية'] || update.start_date;
+                        const endDate = update['تاريخ النهاية'] || update.end_date;
+                        
+                        if (startDate) {
+                            const formatted = formatDateForSystem(startDate);
+                            if (formatted) {
+                                property['تاريخ البداية'] = formatted;
+                                updated = true;
+                            }
+                        }
+                        
+                        if (endDate) {
+                            const formatted = formatDateForSystem(endDate);
+                            if (formatted) {
+                                property['تاريخ النهاية'] = formatted;
+                                updated = true;
+                            }
+                        }
+                        
+                        if (updated) {
+                            updateStatus = '✅ تم التحديث';
+                            successCount++;
+                        } else {
+                            updateStatus = '⚠️ لا توجد تواريخ للتحديث';
+                        }
+                    } else {
+                        failCount++;
+                    }
+                    
+                    analysisResults += `
+                        <tr class="${status}">
+                            <td class="code">${unitNumber}</td>
+                            <td>${statusText}</td>
+                            <td class="code">${update['تاريخ البداية'] || update.start_date || 'null'}</td>
+                            <td class="code">${update['تاريخ النهاية'] || update.end_date || 'null'}</td>
+                            <td>${updateStatus}</td>
+                        </tr>
+                    `;
+                }
+                
+                analysisResults += '</table>';
+                
+                addResult('success', '📊 نتائج تحليل العينة', `
+                    ${analysisResults}
+                    <p><strong>الملخص:</strong> نجح ${successCount}، فشل ${failCount}</p>
+                `);
+                
+                // اختبار التحديث الكامل
+                if (successCount > 0) {
+                    addResult('warning', '🔄 تنفيذ التحديث الكامل...', 'جاري تطبيق التحديثات على جميع السجلات...');
+                    
+                    const results = await performDateUpdates(updateData);
+                    
+                    addResult(
+                        results.success > 0 ? 'success' : 'error',
+                        '📈 نتائج التحديث الكامل',
+                        `
+                            <strong>إجمالي السجلات:</strong> ${results.total}<br>
+                            <strong>نجح:</strong> ${results.success}<br>
+                            <strong>فشل:</strong> ${results.failed}<br>
+                            <strong>الأخطاء:</strong><br>
+                            ${results.errors.length > 0 ? results.errors.slice(0, 10).map(error => `• ${error}`).join('<br>') : 'لا توجد أخطاء'}
+                        `
+                    );
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ خطأ في الاختبار', `خطأ: ${error.message}`);
+            }
+        }
+
+        async function compareDataStructures() {
+            addResult('warning', '📊 مقارنة هياكل البيانات...', 'جاري تحليل هياكل البيانات...');
+            
+            try {
+                // تحميل البيانات
+                const dataResponse = await fetch('data.json');
+                const originalData = await dataResponse.json();
+                
+                let updateData;
+                const fileInput = document.getElementById('infoFile');
+                
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const text = await file.text();
+                    updateData = JSON.parse(text);
+                } else {
+                    const infoResponse = await fetch('info.json');
+                    updateData = await infoResponse.json();
+                }
+                
+                // تحليل الحقول
+                const originalFields = Object.keys(originalData[0] || {});
+                const updateFields = Object.keys(updateData[0] || {});
+                
+                let comparison = '<h4>مقارنة الحقول:</h4>';
+                comparison += '<table><tr><th>الحقل</th><th>في data.json</th><th>في info.json</th><th>الحالة</th></tr>';
+                
+                const allFields = [...new Set([...originalFields, ...updateFields])];
+                
+                allFields.forEach(field => {
+                    const inOriginal = originalFields.includes(field);
+                    const inUpdate = updateFields.includes(field);
+                    
+                    let status = 'warning';
+                    let statusText = '⚠️ جزئي';
+                    
+                    if (inOriginal && inUpdate) {
+                        status = 'pass';
+                        statusText = '✅ موجود';
+                    } else if (!inOriginal && !inUpdate) {
+                        status = 'fail';
+                        statusText = '❌ غير موجود';
+                    }
+                    
+                    comparison += `
+                        <tr class="${status}">
+                            <td class="code">${field}</td>
+                            <td>${inOriginal ? '✅' : '❌'}</td>
+                            <td>${inUpdate ? '✅' : '❌'}</td>
+                            <td>${statusText}</td>
+                        </tr>
+                    `;
+                });
+                
+                comparison += '</table>';
+                
+                // تحليل أرقام الوحدات
+                const originalUnits = originalData.map(p => p['رقم  الوحدة ']).filter(Boolean);
+                const updateUnits = updateData.map(p => p['رقم  الوحدة '] || p.unit_number).filter(Boolean);
+                
+                const matchingUnits = updateUnits.filter(unit => originalUnits.includes(unit));
+                const missingUnits = updateUnits.filter(unit => !originalUnits.includes(unit));
+                
+                comparison += `
+                    <h4>تحليل أرقام الوحدات:</h4>
+                    <p><strong>وحدات في data.json:</strong> ${originalUnits.length}</p>
+                    <p><strong>وحدات في info.json:</strong> ${updateUnits.length}</p>
+                    <p><strong>وحدات متطابقة:</strong> ${matchingUnits.length}</p>
+                    <p><strong>وحدات مفقودة:</strong> ${missingUnits.length}</p>
+                `;
+                
+                if (missingUnits.length > 0 && missingUnits.length <= 10) {
+                    comparison += `<p><strong>الوحدات المفقودة:</strong> ${missingUnits.join(', ')}</p>`;
+                }
+                
+                addResult('success', '📊 مقارنة هياكل البيانات', comparison);
+                
+            } catch (error) {
+                addResult('error', '❌ خطأ في المقارنة', `خطأ: ${error.message}`);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // تشغيل تحليل أولي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('success', '🚀 جاهز للاختبار', 'يمكنك الآن رفع ملف info.json أو استخدام الملف الافتراضي لاختبار التحديث');
+                compareDataStructures();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

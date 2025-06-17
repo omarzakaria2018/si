@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إصلاح خطأ UUID</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+            direction: rtl;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            color: #e74c3c;
+            margin-bottom: 30px;
+        }
+        .fix-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .fix-title {
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 10px;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #d5f4e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .info {
+            color: #3498db;
+            background-color: #ebf3fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .warning {
+            color: #f39c12;
+            background-color: #fef9e7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: linear-gradient(45deg, #c0392b, #e74c3c);
+        }
+        .btn.success {
+            background: linear-gradient(45deg, #27ae60, #229954);
+        }
+        .btn.success:hover {
+            background: linear-gradient(45deg, #229954, #27ae60);
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            background: white;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 إصلاح خطأ UUID</h1>
+            <p>حل مشكلة: invalid input syntax for type uuid</p>
+        </div>
+
+        <div class="fix-section">
+            <div class="fix-title">📋 شرح المشكلة</div>
+            <div class="info">
+                <strong>المشكلة:</strong> التطبيق يحاول إدراج معرفات بتنسيق خاطئ مثل "prop_1750142497034_0" في عمود UUID
+            </div>
+            <div class="warning">
+                <strong>السبب:</strong> استخدام دوال تولد معرفات نصية بدلاً من UUID صحيح
+            </div>
+            <div class="success">
+                <strong>الحل:</strong> تحويل جميع المعرفات إلى تنسيق UUID صحيح
+            </div>
+        </div>
+
+        <div class="fix-section">
+            <div class="fix-title">🔍 فحص المشكلة</div>
+            <button class="btn" onclick="checkUUIDIssues()">فحص مشاكل UUID</button>
+            <div id="checkResults" class="results"></div>
+        </div>
+
+        <div class="fix-section">
+            <div class="fix-title">🛠️ إصلاح تلقائي</div>
+            <button class="btn success" onclick="autoFixUUIDs()">إصلاح تلقائي شامل</button>
+            <div class="progress">
+                <div class="progress-bar" id="fixProgress"></div>
+            </div>
+            <div id="autoFixResults" class="results"></div>
+        </div>
+
+        <div class="fix-section">
+            <div class="fix-title">💾 حفظ البيانات بتنسيق صحيح</div>
+            <button class="btn" onclick="saveWithCorrectUUIDs()">حفظ بـ UUID صحيح</button>
+            <div id="saveResults" class="results"></div>
+        </div>
+
+        <div class="fix-section">
+            <div class="fix-title">🧪 اختبار الحل</div>
+            <button class="btn" onclick="testUUIDFix()">اختبار الإصلاح</button>
+            <div id="testResults" class="results"></div>
+        </div>
+
+        <div class="fix-section">
+            <div class="fix-title">📄 كود SQL للإصلاح اليدوي</div>
+            <div class="code-block" id="sqlCode">
+-- تشغيل هذا الكود في Supabase SQL Editor لإصلاح المشكلة يدوياً
+-- حذف السجلات بمعرفات خاطئة
+DELETE FROM properties 
+WHERE id::text LIKE 'prop_%' 
+   OR id::text LIKE 'simple_%' 
+   OR id::text LIKE 'updated_%' 
+   OR id::text LIKE 'fallback_%'
+   OR id::text LIKE 'test_%';
+
+-- فحص النتيجة
+SELECT COUNT(*) as remaining_records FROM properties;
+            </div>
+            <button class="btn" onclick="copySQL()">نسخ الكود</button>
+        </div>
+    </div>
+
+    <!-- Supabase JavaScript Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Configuration -->
+    <script src="supabase-config.js"></script>
+
+    <script>
+        // دالة مساعدة لعرض النتائج
+        function showResult(containerId, type, message) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            container.appendChild(div);
+        }
+
+        // دالة مساعدة للسجل
+        function log(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // تحديث شريط التقدم
+        function updateProgress(percentage) {
+            const progressBar = document.getElementById('fixProgress');
+            progressBar.style.width = percentage + '%';
+        }
+
+        // توليد UUID صحيح
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // فحص مشاكل UUID
+        async function checkUUIDIssues() {
+            const container = document.getElementById('checkResults');
+            container.innerHTML = '';
+            
+            log('🔍 فحص مشاكل UUID...');
+            
+            try {
+                if (typeof supabaseClient === 'undefined') {
+                    showResult('checkResults', 'error', '❌ Supabase client غير متوفر');
+                    return;
+                }
+
+                // فحص السجلات بمعرفات خاطئة
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('id, property_name, city, created_at')
+                    .or('id.like.prop_%,id.like.simple_%,id.like.updated_%,id.like.fallback_%,id.like.test_%');
+
+                if (error) {
+                    showResult('checkResults', 'error', `❌ خطأ في الفحص: ${error.message}`);
+                    return;
+                }
+
+                if (data && data.length > 0) {
+                    showResult('checkResults', 'warning', `⚠️ تم العثور على ${data.length} سجل بمعرفات خاطئة`);
+                    
+                    // عرض عينة من المعرفات الخاطئة
+                    const sampleIds = data.slice(0, 5).map(item => item.id).join(', ');
+                    showResult('checkResults', 'info', `📋 عينة من المعرفات الخاطئة: ${sampleIds}`);
+                    
+                    return data;
+                } else {
+                    showResult('checkResults', 'success', '✅ لا توجد مشاكل في UUID - جميع المعرفات صحيحة');
+                    return [];
+                }
+            } catch (error) {
+                showResult('checkResults', 'error', `❌ خطأ في الفحص: ${error.message}`);
+                return null;
+            }
+        }
+
+        // إصلاح تلقائي شامل
+        async function autoFixUUIDs() {
+            const container = document.getElementById('autoFixResults');
+            container.innerHTML = '';
+            
+            showResult('autoFixResults', 'info', '🚀 بدء الإصلاح التلقائي...');
+            updateProgress(10);
+
+            try {
+                // الخطوة 1: فحص المشكلة
+                const issues = await checkUUIDIssues();
+                updateProgress(30);
+
+                if (!issues || issues.length === 0) {
+                    showResult('autoFixResults', 'success', '✅ لا توجد مشاكل للإصلاح');
+                    updateProgress(100);
+                    return;
+                }
+
+                // الخطوة 2: حذف السجلات بمعرفات خاطئة
+                showResult('autoFixResults', 'info', '🗑️ حذف السجلات بمعرفات خاطئة...');
+                
+                const { error: deleteError } = await supabaseClient
+                    .from('properties')
+                    .delete()
+                    .or('id.like.prop_%,id.like.simple_%,id.like.updated_%,id.like.fallback_%,id.like.test_%');
+
+                if (deleteError) {
+                    throw deleteError;
+                }
+
+                updateProgress(70);
+                showResult('autoFixResults', 'success', `✅ تم حذف ${issues.length} سجل بمعرفات خاطئة`);
+
+                // الخطوة 3: التحقق من النتيجة
+                updateProgress(90);
+                const finalCheck = await checkUUIDIssues();
+                
+                if (!finalCheck || finalCheck.length === 0) {
+                    showResult('autoFixResults', 'success', '🎉 تم الإصلاح بنجاح! جميع المعرفات أصبحت صحيحة');
+                    updateProgress(100);
+                } else {
+                    showResult('autoFixResults', 'warning', '⚠️ قد تحتاج لإعادة تشغيل الإصلاح');
+                    updateProgress(100);
+                }
+
+            } catch (error) {
+                showResult('autoFixResults', 'error', `❌ خطأ في الإصلاح: ${error.message}`);
+                updateProgress(100);
+            }
+        }
+
+        // حفظ البيانات بتنسيق UUID صحيح
+        async function saveWithCorrectUUIDs() {
+            const container = document.getElementById('saveResults');
+            container.innerHTML = '';
+            
+            log('💾 حفظ البيانات بـ UUID صحيح...');
+            
+            try {
+                // التحقق من وجود بيانات محلية
+                if (typeof properties === 'undefined' || !properties || properties.length === 0) {
+                    showResult('saveResults', 'warning', '⚠️ لا توجد بيانات محلية للحفظ');
+                    return;
+                }
+
+                // تحضير البيانات بـ UUID صحيح
+                const dataWithCorrectUUIDs = properties.map(property => ({
+                    id: generateUUID(),
+                    property_name: String(property['اسم العقار'] || ''),
+                    city: String(property['المدينة'] || ''),
+                    unit_number: String(property['رقم  الوحدة '] || ''),
+                    tenant_name: String(property['اسم المستأجر'] || ''),
+                    contract_number: String(property['رقم العقد'] || ''),
+                    rent_value: Number(property['قيمة  الايجار '] || 0),
+                    total_amount: Number(property['الاجمالى'] || 0),
+                    raw_data: property,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }));
+
+                // حفظ في Supabase
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .insert(dataWithCorrectUUIDs);
+
+                if (error) {
+                    throw error;
+                }
+
+                showResult('saveResults', 'success', `✅ تم حفظ ${dataWithCorrectUUIDs.length} عقار بـ UUID صحيح`);
+                
+            } catch (error) {
+                showResult('saveResults', 'error', `❌ خطأ في الحفظ: ${error.message}`);
+            }
+        }
+
+        // اختبار الإصلاح
+        async function testUUIDFix() {
+            const container = document.getElementById('testResults');
+            container.innerHTML = '';
+            
+            log('🧪 اختبار الإصلاح...');
+            
+            try {
+                // اختبار إنشاء سجل جديد بـ UUID صحيح
+                const testData = {
+                    id: generateUUID(),
+                    property_name: 'اختبار UUID',
+                    city: 'اختبار',
+                    unit_number: 'TEST_UUID_001',
+                    tenant_name: 'مستأجر اختبار',
+                    rent_value: 1000,
+                    total_amount: 1150,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .insert([testData]);
+
+                if (error) {
+                    throw error;
+                }
+
+                showResult('testResults', 'success', '✅ اختبار الإدراج نجح - UUID يعمل بشكل صحيح');
+
+                // حذف السجل التجريبي
+                await supabaseClient
+                    .from('properties')
+                    .delete()
+                    .eq('unit_number', 'TEST_UUID_001');
+
+                showResult('testResults', 'info', '🧹 تم حذف البيانات التجريبية');
+
+            } catch (error) {
+                showResult('testResults', 'error', `❌ فشل الاختبار: ${error.message}`);
+            }
+        }
+
+        // نسخ كود SQL
+        function copySQL() {
+            const sqlCode = document.getElementById('sqlCode').textContent;
+            navigator.clipboard.writeText(sqlCode).then(() => {
+                alert('تم نسخ الكود إلى الحافظة');
+            }).catch(() => {
+                alert('فشل في نسخ الكود');
+            });
+        }
+
+        // تشغيل فحص أولي عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 تم تحميل أداة إصلاح UUID', 'success');
+            
+            // فحص توفر Supabase
+            if (typeof supabaseClient !== 'undefined') {
+                log('✅ Supabase client متوفر', 'success');
+                // تشغيل فحص تلقائي
+                setTimeout(checkUUIDIssues, 1000);
+            } else {
+                log('❌ Supabase client غير متوفر', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

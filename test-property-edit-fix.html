@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح تحرير العقار</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code { font-family: monospace; background: #f1f1f1; padding: 2px 5px; border-radius: 3px; }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 اختبار إصلاح تحرير العقار</h1>
+        <p>هذا الاختبار يتحقق من إصلاح مشكلة <code>originalUnitNumber is not defined</code></p>
+        
+        <div class="test-section">
+            <h3>🧪 اختبارات التحقق من الإصلاح</h3>
+            <button onclick="testVariableDefinition()">🔍 اختبار تعريف المتغيرات</button>
+            <button onclick="testPropertyEditFunction()">⚙️ اختبار دالة تحرير العقار</button>
+            <button onclick="testUnitEditFunction()">🏠 اختبار دالة تحرير الوحدة</button>
+            <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 مراقبة Console</h3>
+            <p>افتح Developer Console (F12) لمراقبة الرسائل التفصيلية</p>
+            <div id="consoleOutput" class="console-output">
+                جاري انتظار تشغيل الاختبارات...
+            </div>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- تحميل المكتبات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-migration.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        let consoleMessages = [];
+        
+        // اعتراض رسائل console
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            addConsoleMessage('LOG', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            addConsoleMessage('ERROR', args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            addConsoleMessage('WARN', args.join(' '));
+        };
+        
+        function addConsoleMessage(type, message) {
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const colorClass = type === 'ERROR' ? '#ff6b6b' : type === 'WARN' ? '#ffa500' : '#00ff00';
+            consoleMessages.push(`<span style="color: ${colorClass}">[${timestamp}] ${type}: ${message}</span>`);
+            
+            // الاحتفاظ بآخر 50 رسالة فقط
+            if (consoleMessages.length > 50) {
+                consoleMessages.shift();
+            }
+            
+            updateConsoleOutput();
+        }
+        
+        function updateConsoleOutput() {
+            const consoleDiv = document.getElementById('consoleOutput');
+            consoleDiv.innerHTML = consoleMessages.join('<br>');
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function testVariableDefinition() {
+            addResult('info', '🔍 اختبار تعريف المتغيرات...', 'جاري فحص تعريف المتغيرات في دالة savePropertyChanges');
+            
+            try {
+                // فحص وجود الدالة
+                if (typeof savePropertyChanges !== 'function') {
+                    addResult('error', '❌ دالة savePropertyChanges غير موجودة', 'تأكد من تحميل script.js بشكل صحيح');
+                    return;
+                }
+                
+                addResult('success', '✅ دالة savePropertyChanges موجودة', 'الدالة محملة بشكل صحيح');
+                
+                // فحص الكود المصدري للدالة
+                const functionCode = savePropertyChanges.toString();
+                
+                // فحص وجود تعريف المتغيرات المطلوبة
+                const hasOriginalUnitNumber = functionCode.includes('originalUnitNumber');
+                const hasOriginalTenantName = functionCode.includes('originalTenantName');
+                const hasOriginalContractNumber = functionCode.includes('originalContractNumber');
+                
+                if (hasOriginalUnitNumber && hasOriginalTenantName && hasOriginalContractNumber) {
+                    addResult('success', '✅ جميع المتغيرات المطلوبة موجودة', `
+                        ✅ originalUnitNumber: موجود<br>
+                        ✅ originalTenantName: موجود<br>
+                        ✅ originalContractNumber: موجود
+                    `);
+                } else {
+                    addResult('warning', '⚠️ بعض المتغيرات مفقودة', `
+                        ${hasOriginalUnitNumber ? '✅' : '❌'} originalUnitNumber<br>
+                        ${hasOriginalTenantName ? '✅' : '❌'} originalTenantName<br>
+                        ${hasOriginalContractNumber ? '✅' : '❌'} originalContractNumber
+                    `);
+                }
+                
+                // فحص وجود تعريف المتغيرات في بداية الدالة
+                const hasVariableDefinition = functionCode.includes('const originalUnitNumber = originalData');
+                
+                if (hasVariableDefinition) {
+                    addResult('success', '✅ تم إصلاح تعريف المتغيرات', 'المتغيرات معرفة بشكل صحيح في بداية الدالة');
+                } else {
+                    addResult('error', '❌ المتغيرات غير معرفة بشكل صحيح', 'يجب تعريف المتغيرات في بداية الدالة');
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ خطأ في اختبار تعريف المتغيرات', `خطأ: ${error.message}`);
+            }
+        }
+
+        function testPropertyEditFunction() {
+            addResult('info', '⚙️ اختبار دالة تحرير العقار...', 'جاري محاكاة تحرير عقار');
+            
+            try {
+                // إنشاء عقار تجريبي
+                if (!window.properties) window.properties = [];
+                
+                const testProperty = {
+                    'رقم  الوحدة ': 'TEST_UNIT_' + Date.now(),
+                    'اسم العقار': 'عقار اختبار الإصلاح',
+                    'المدينة': 'الرياض',
+                    'اسم المستأجر': 'مستأجر اختبار',
+                    'رقم العقد': 'CONTRACT_TEST_' + Date.now(),
+                    'رقم الصك': 'DEED_TEST_' + Date.now(),
+                    'مساحةالصك': '500',
+                    'السجل العيني ': 'REG_TEST_' + Date.now(),
+                    'المالك': 'مالك اختبار'
+                };
+                
+                // إضافة العقار للبيانات المحلية
+                window.properties.push(testProperty);
+                
+                addResult('success', '✅ تم إنشاء عقار تجريبي', `
+                    <strong>اسم العقار:</strong> ${testProperty['اسم العقار']}<br>
+                    <strong>رقم الوحدة:</strong> ${testProperty['رقم  الوحدة ']}<br>
+                    <strong>رقم الصك:</strong> ${testProperty['رقم الصك']}
+                `);
+                
+                // إنشاء عناصر DOM مؤقتة للاختبار
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = `
+                    <input type="text" id="editPropertyName" value="${testProperty['اسم العقار']} - محدث">
+                    <select id="editPropertyCity">
+                        <option value="الرياض" selected>الرياض</option>
+                    </select>
+                    <input type="text" id="editPropertyDeed" value="${testProperty['رقم الصك']}_UPDATED">
+                    <input type="text" id="editPropertyArea" value="600">
+                    <input type="text" id="editPropertyRegistry" value="${testProperty['السجل العيني ']}_UPDATED">
+                    <input type="text" id="editPropertyOwner" value="${testProperty['المالك']} - محدث">
+                    <input type="text" id="editPropertyLocation" value="موقع محدث">
+                `;
+                document.body.appendChild(tempDiv);
+                
+                // محاولة تشغيل دالة savePropertyChanges
+                addResult('info', '🔄 تشغيل دالة savePropertyChanges...', 'جاري اختبار الدالة مع البيانات التجريبية');
+                
+                // تشغيل الدالة مع معالجة الأخطاء
+                savePropertyChanges(testProperty['اسم العقار'])
+                    .then(() => {
+                        addResult('success', '✅ تم تشغيل الدالة بنجاح', 'لم تحدث أخطاء في تعريف المتغيرات');
+                        
+                        // تنظيف العناصر المؤقتة
+                        document.body.removeChild(tempDiv);
+                        
+                        // إزالة العقار التجريبي
+                        const index = window.properties.findIndex(p => p['رقم  الوحدة '] === testProperty['رقم  الوحدة ']);
+                        if (index !== -1) {
+                            window.properties.splice(index, 1);
+                        }
+                    })
+                    .catch(error => {
+                        if (error.message.includes('originalUnitNumber is not defined')) {
+                            addResult('error', '❌ المشكلة لم تُحل بعد', 'ما زال هناك خطأ في تعريف originalUnitNumber');
+                        } else {
+                            addResult('warning', '⚠️ خطأ آخر في الدالة', `خطأ: ${error.message}`);
+                        }
+                        
+                        // تنظيف العناصر المؤقتة
+                        document.body.removeChild(tempDiv);
+                        
+                        // إزالة العقار التجريبي
+                        const index = window.properties.findIndex(p => p['رقم  الوحدة '] === testProperty['رقم  الوحدة ']);
+                        if (index !== -1) {
+                            window.properties.splice(index, 1);
+                        }
+                    });
+                
+            } catch (error) {
+                addResult('error', '❌ خطأ في اختبار دالة تحرير العقار', `خطأ: ${error.message}`);
+            }
+        }
+
+        function testUnitEditFunction() {
+            addResult('info', '🏠 اختبار دالة تحرير الوحدة...', 'جاري فحص دالة saveUnitEdit');
+            
+            try {
+                // فحص وجود الدالة
+                if (typeof saveUnitEdit !== 'function') {
+                    addResult('error', '❌ دالة saveUnitEdit غير موجودة', 'تأكد من تحميل script.js بشكل صحيح');
+                    return;
+                }
+                
+                addResult('success', '✅ دالة saveUnitEdit موجودة', 'الدالة محملة بشكل صحيح');
+                
+                // فحص الكود المصدري للدالة
+                const functionCode = saveUnitEdit.toString();
+                
+                // فحص وجود استخدام originalUnitNumber
+                const usesOriginalUnitNumber = functionCode.includes('originalUnitNumber');
+                
+                if (usesOriginalUnitNumber) {
+                    addResult('success', '✅ دالة saveUnitEdit تستخدم originalUnitNumber', 'الدالة تحصل على originalUnitNumber من DOM');
+                } else {
+                    addResult('warning', '⚠️ دالة saveUnitEdit لا تستخدم originalUnitNumber', 'قد لا تحتاج هذه الدالة للمتغير');
+                }
+                
+                // فحص طريقة الحصول على originalUnitNumber
+                const getsFromDOM = functionCode.includes("document.getElementById('originalUnitNumber')");
+                
+                if (getsFromDOM) {
+                    addResult('success', '✅ الدالة تحصل على originalUnitNumber من DOM', 'الطريقة صحيحة للحصول على القيمة');
+                } else if (usesOriginalUnitNumber) {
+                    addResult('warning', '⚠️ طريقة غير واضحة للحصول على originalUnitNumber', 'تحقق من طريقة الحصول على القيمة');
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ خطأ في اختبار دالة تحرير الوحدة', `خطأ: ${error.message}`);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            consoleMessages = [];
+            updateConsoleOutput();
+        }
+
+        // تشغيل اختبار أولي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('success', '🚀 جاهز للاختبار', 'تم تحميل جميع المكتبات والملفات المطلوبة');
+                addResult('info', '📋 تعليمات الاختبار', `
+                    1. اضغط "اختبار تعريف المتغيرات" للتحقق من الإصلاح<br>
+                    2. اضغط "اختبار دالة تحرير العقار" لمحاكاة التحرير<br>
+                    3. راقب رسائل Console للحصول على تفاصيل أكثر<br>
+                    4. إذا ظهرت رسالة "originalUnitNumber is not defined" فالمشكلة لم تُحل بعد
+                `);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

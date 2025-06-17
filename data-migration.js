@@ -18,7 +18,7 @@ function convertPropertyToSupabaseFormat(jsonProperty) {
         rent_value: parseFloat(jsonProperty['قيمة  الايجار ']) || null,
         area: parseFloat(jsonProperty['المساحة']) || null,
         start_date: parseDate(jsonProperty['تاريخ البداية']) || null,
-        end_date: jsonProperty['تاريخ النهاية'] || null,
+        end_date: parseDate(jsonProperty['تاريخ النهاية']) || null,
         total_amount: parseFloat(jsonProperty['الاجمالى']) || null,
         electricity_account: jsonProperty['رقم حساب الكهرباء'] || null,
         remaining_installments: parseInt(jsonProperty['عدد الاقساط المتبقية']) || null,
@@ -51,30 +51,111 @@ function convertPropertyToSupabaseFormat(jsonProperty) {
     };
 }
 
-// Parse date function (reuse from existing code)
+// Parse date function - Fixed to return proper format for Supabase
 function parseDate(dateStr) {
     if (!dateStr) return null;
-    
-    // Handle different date formats
-    if (dateStr.includes('-')) {
+
+    // Clean the date string
+    dateStr = dateStr.toString().trim();
+
+    // Remove any Arabic text if present
+    if (dateStr.includes('(') && dateStr.includes(')')) {
+        const numericPart = dateStr.split('(')[0].trim();
+        if (numericPart) {
+            dateStr = numericPart;
+        }
+    }
+
+    // Handle different date formats and return YYYY-MM-DD for Supabase
+    if (dateStr.includes('/')) {
+        // Format: DD/MM/YYYY (most common from the UI)
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+
+            // Validate date
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                // Additional validation using Date object to avoid invalid dates like Feb 31
+                const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                    // Return in YYYY-MM-DD format for Supabase
+                    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+    } else if (dateStr.includes('-')) {
         // Format: YYYY-MM-DD or DD-MM-YYYY
         const parts = dateStr.split('-');
-        if (parts[0].length === 4) {
-            // YYYY-MM-DD format
-            return new Date(dateStr);
-        } else {
-            // DD-MM-YYYY format
-            return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        if (parts.length === 3) {
+            if (parts[0].length === 4) {
+                // YYYY-MM-DD format - already correct for Supabase
+                const year = parseInt(parts[0]);
+                const month = parseInt(parts[1]);
+                const day = parseInt(parts[2]);
+
+                // Validate date
+                if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                    if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                        return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    }
+                }
+            } else {
+                // DD-MM-YYYY format
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]);
+                const year = parseInt(parts[2]);
+
+                // Validate date
+                if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                    if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                        return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    }
+                }
+            }
         }
-    } else if (dateStr.includes('/')) {
-        // Format: DD/MM/YYYY
-        const parts = dateStr.split('/');
-        return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-    } else if (dateStr.includes(' ')) {
-        // Format with time
-        return new Date(dateStr);
     }
-    
+
+    // Handle YYYY-MM-DD HH:MM:SS format (from database exports)
+    if (dateStr.match(/^\d{4}-\d{1,2}-\d{1,2}\s+\d{1,2}:\d{1,2}:\d{1,2}$/)) {
+        const datePart = dateStr.split(' ')[0]; // Extract date part only
+        const parts = datePart.split('-');
+        if (parts.length === 3) {
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+
+            // Validate date
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                const testDate = new Date(year, month - 1, day, 12, 0, 0);
+                if (testDate.getFullYear() === year && testDate.getMonth() === (month - 1) && testDate.getDate() === day) {
+                    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                }
+            }
+        }
+    }
+
+    // Try to parse as Date object (last resort)
+    try {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+
+            // Validate parsed date
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            }
+        }
+    } catch (error) {
+        console.warn(`Error parsing date: ${dateStr}`, error);
+    }
+
+    console.warn(`Could not parse date: ${dateStr}`);
     return null;
 }
 

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 اختبار الحذف المحسن للوحدات</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 10px;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .result.success { border-left-color: #28a745; background: #d4edda; }
+        .result.error { border-left-color: #dc3545; background: #f8d7da; }
+        .result.warning { border-left-color: #ffc107; background: #fff3cd; }
+        .result.info { border-left-color: #17a2b8; background: #d1ecf1; }
+        
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); }
+        .btn-success { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        
+        .test-scenario {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .fix-applied {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-vial"></i> اختبار الحذف المحسن للوحدات</h1>
+            <p>اختبار شامل للإصلاحات المطبقة على نظام حذف الوحدات</p>
+        </div>
+
+        <div class="fix-applied">
+            <h3><i class="fas fa-tools"></i> الإصلاحات المطبقة:</h3>
+            <ul>
+                <li>✅ <strong>إصلاح معالجة "NOT_FOUND":</strong> عدم فشل العملية إذا لم توجد الوحدة في قاعدة البيانات</li>
+                <li>✅ <strong>إضافة آلية إعادة المحاولة:</strong> إعادة المحاولة 3 مرات في حالة أخطاء الشبكة</li>
+                <li>✅ <strong>تحسين رسائل المستخدم:</strong> رسائل أوضح وأكثر تفصيلاً</li>
+                <li>✅ <strong>معالجة LOCAL_ONLY:</strong> التعامل مع الحذف المحلي فقط بشكل صحيح</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-play"></i> اختبار 1: الحذف العادي</h2>
+            <p>اختبار حذف وحدة موجودة محلياً وسحابياً</p>
+            <button onclick="testNormalDeletion()" class="btn-success">
+                <i class="fas fa-play"></i> تشغيل الاختبار
+            </button>
+            <div id="normalDeletionResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-wifi-slash"></i> اختبار 2: فشل الشبكة</h2>
+            <p>اختبار سلوك النظام عند انقطاع الاتصال</p>
+            <button onclick="testNetworkFailure()" class="btn-warning">
+                <i class="fas fa-play"></i> محاكاة انقطاع الشبكة
+            </button>
+            <div id="networkFailureResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-search-minus"></i> اختبار 3: وحدة غير موجودة في قاعدة البيانات</h2>
+            <p>اختبار حذف وحدة موجودة محلياً فقط</p>
+            <button onclick="testNotFoundInDatabase()" class="btn-warning">
+                <i class="fas fa-play"></i> اختبار NOT_FOUND
+            </button>
+            <div id="notFoundResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-redo"></i> اختبار 4: إعادة المحاولة</h2>
+            <p>اختبار آلية إعادة المحاولة عند أخطاء الشبكة</p>
+            <button onclick="testRetryMechanism()" class="btn-warning">
+                <i class="fas fa-play"></i> اختبار إعادة المحاولة
+            </button>
+            <div id="retryResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-chart-line"></i> اختبار 5: الأداء والاستقرار</h2>
+            <p>اختبار حذف متعدد وقياس الأداء</p>
+            <button onclick="testPerformance()" class="btn-success">
+                <i class="fas fa-play"></i> اختبار الأداء
+            </button>
+            <div id="performanceResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-file-alt"></i> تقرير الاختبار النهائي</h2>
+            <button onclick="generateTestReport()" class="btn-success">
+                <i class="fas fa-file-alt"></i> إنشاء تقرير شامل
+            </button>
+            <div id="finalTestReport"></div>
+        </div>
+    </div>
+
+    <!-- تحميل الملفات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        // متغيرات الاختبار
+        let testResults = {
+            normalDeletion: null,
+            networkFailure: null,
+            notFound: null,
+            retry: null,
+            performance: null
+        };
+
+        function addResult(containerId, type, title, content) {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong><i class="fas fa-${getIcon(type)}"></i> ${title}</strong><br>
+                ${content}
+            `;
+            container.appendChild(resultDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function getIcon(type) {
+            switch(type) {
+                case 'success': return 'check-circle';
+                case 'error': return 'times-circle';
+                case 'warning': return 'exclamation-triangle';
+                case 'info': return 'info-circle';
+                default: return 'circle';
+            }
+        }
+
+        // اختبار 1: الحذف العادي
+        async function testNormalDeletion() {
+            addResult('normalDeletionResults', 'info', 'بدء اختبار الحذف العادي', 'جاري إنشاء وحدة تجريبية...');
+            
+            try {
+                // إنشاء وحدة تجريبية
+                const testUnit = {
+                    'رقم  الوحدة ': 'TEST_NORMAL_001',
+                    'اسم العقار': 'عقار اختبار الحذف العادي',
+                    'المدينة': 'الرياض',
+                    'اسم المستأجر': 'مستأجر تجريبي',
+                    'رقم العقد': 'CONTRACT_NORMAL_001'
+                };
+                
+                // إضافة للمصفوفة المحلية
+                if (!Array.isArray(window.properties)) {
+                    window.properties = [];
+                }
+                window.properties.push(testUnit);
+                
+                addResult('normalDeletionResults', 'success', 'تم إنشاء الوحدة التجريبية', 
+                    `الوحدة: ${testUnit['رقم  الوحدة ']} في العقار: ${testUnit['اسم العقار']}`);
+                
+                // اختبار الحذف
+                if (typeof deletePropertyFromSupabase === 'function') {
+                    const deleteResult = await deletePropertyFromSupabase(testUnit);
+                    
+                    if (deleteResult.success) {
+                        addResult('normalDeletionResults', 'success', 'نجح الحذف من قاعدة البيانات', 
+                            `السبب: ${deleteResult.reason || 'DELETED'}, عدد السجلات المحذوفة: ${deleteResult.deletedCount || 0}`);
+                        testResults.normalDeletion = true;
+                    } else {
+                        addResult('normalDeletionResults', 'warning', 'فشل الحذف من قاعدة البيانات', 
+                            `السبب: ${deleteResult.reason}, الرسالة: ${deleteResult.message}`);
+                        testResults.normalDeletion = false;
+                    }
+                } else {
+                    addResult('normalDeletionResults', 'error', 'دالة الحذف غير متوفرة', 
+                        'deletePropertyFromSupabase غير موجودة');
+                    testResults.normalDeletion = false;
+                }
+                
+                // حذف محلي
+                const unitIndex = window.properties.findIndex(p => 
+                    p['رقم  الوحدة '] === testUnit['رقم  الوحدة ']
+                );
+                if (unitIndex !== -1) {
+                    window.properties.splice(unitIndex, 1);
+                    addResult('normalDeletionResults', 'success', 'نجح الحذف المحلي', 
+                        'تم حذف الوحدة من المصفوفة المحلية');
+                }
+                
+            } catch (error) {
+                addResult('normalDeletionResults', 'error', 'خطأ في اختبار الحذف العادي', 
+                    `خطأ: ${error.message}`);
+                testResults.normalDeletion = false;
+            }
+        }
+
+        // اختبار 2: فشل الشبكة
+        async function testNetworkFailure() {
+            addResult('networkFailureResults', 'info', 'بدء اختبار فشل الشبكة', 'محاكاة انقطاع الاتصال...');
+            
+            try {
+                // محاكاة وحدة للحذف
+                const testUnit = {
+                    'رقم  الوحدة ': 'TEST_NETWORK_001',
+                    'اسم العقار': 'عقار اختبار الشبكة',
+                    'المدينة': 'جدة'
+                };
+                
+                // محاكاة فشل الشبكة بتعطيل supabaseClient مؤقتاً
+                const originalClient = window.supabaseClient;
+                window.supabaseClient = null;
+                
+                if (typeof deletePropertyFromSupabase === 'function') {
+                    const deleteResult = await deletePropertyFromSupabase(testUnit);
+                    
+                    if (deleteResult.reason === 'NO_CLIENT') {
+                        addResult('networkFailureResults', 'success', 'تم التعامل مع فشل الشبكة بشكل صحيح', 
+                            'النظام تعامل مع عدم وجود اتصال بشكل مناسب');
+                        testResults.networkFailure = true;
+                    } else {
+                        addResult('networkFailureResults', 'warning', 'سلوك غير متوقع', 
+                            `النتيجة: ${deleteResult.reason}`);
+                        testResults.networkFailure = false;
+                    }
+                } else {
+                    addResult('networkFailureResults', 'error', 'دالة الحذف غير متوفرة', 
+                        'لا يمكن اختبار فشل الشبكة');
+                    testResults.networkFailure = false;
+                }
+                
+                // استعادة الاتصال
+                window.supabaseClient = originalClient;
+                addResult('networkFailureResults', 'info', 'تم استعادة الاتصال', 
+                    'تم إعادة تفعيل supabaseClient');
+                
+            } catch (error) {
+                addResult('networkFailureResults', 'error', 'خطأ في اختبار فشل الشبكة',
+                    `خطأ: ${error.message}`);
+                testResults.networkFailure = false;
+            }
+        }
+
+        // اختبار 3: وحدة غير موجودة في قاعدة البيانات
+        async function testNotFoundInDatabase() {
+            addResult('notFoundResults', 'info', 'بدء اختبار NOT_FOUND', 'اختبار وحدة غير موجودة في قاعدة البيانات...');
+
+            try {
+                // وحدة وهمية غير موجودة في قاعدة البيانات
+                const testUnit = {
+                    'رقم  الوحدة ': 'FAKE_UNIT_999',
+                    'اسم العقار': 'عقار وهمي غير موجود',
+                    'المدينة': 'مدينة وهمية'
+                };
+
+                if (typeof deletePropertyFromSupabase === 'function') {
+                    const deleteResult = await deletePropertyFromSupabase(testUnit);
+
+                    if (deleteResult.success && deleteResult.reason === 'LOCAL_ONLY') {
+                        addResult('notFoundResults', 'success', 'تم التعامل مع NOT_FOUND بشكل صحيح',
+                            'النظام اعتبر العملية ناجحة رغم عدم وجود الوحدة في قاعدة البيانات');
+                        testResults.notFound = true;
+                    } else if (!deleteResult.success && deleteResult.reason === 'NOT_FOUND') {
+                        addResult('notFoundResults', 'warning', 'سلوك قديم - يحتاج تحديث',
+                            'النظام ما زال يعتبر NOT_FOUND كفشل');
+                        testResults.notFound = false;
+                    } else {
+                        addResult('notFoundResults', 'info', 'نتيجة غير متوقعة',
+                            `السبب: ${deleteResult.reason}, النجاح: ${deleteResult.success}`);
+                        testResults.notFound = null;
+                    }
+                } else {
+                    addResult('notFoundResults', 'error', 'دالة الحذف غير متوفرة',
+                        'لا يمكن اختبار NOT_FOUND');
+                    testResults.notFound = false;
+                }
+
+            } catch (error) {
+                addResult('notFoundResults', 'error', 'خطأ في اختبار NOT_FOUND',
+                    `خطأ: ${error.message}`);
+                testResults.notFound = false;
+            }
+        }
+
+        // اختبار 4: آلية إعادة المحاولة
+        async function testRetryMechanism() {
+            addResult('retryResults', 'info', 'بدء اختبار إعادة المحاولة', 'محاكاة خطأ شبكة مؤقت...');
+
+            try {
+                // محاكاة وحدة للحذف
+                const testUnit = {
+                    'رقم  الوحدة ': 'TEST_RETRY_001',
+                    'اسم العقار': 'عقار اختبار إعادة المحاولة',
+                    'المدينة': 'الدمام'
+                };
+
+                // محاكاة خطأ شبكة
+                const originalClient = window.supabaseClient;
+                let attemptCount = 0;
+
+                // إنشاء عميل وهمي يفشل في المحاولات الأولى
+                window.supabaseClient = {
+                    from: () => ({
+                        select: () => {
+                            attemptCount++;
+                            if (attemptCount <= 2) {
+                                throw new Error('network timeout - simulated');
+                            }
+                            return Promise.resolve({ data: [], error: null });
+                        }
+                    })
+                };
+
+                if (typeof deletePropertyFromSupabase === 'function') {
+                    const startTime = Date.now();
+                    const deleteResult = await deletePropertyFromSupabase(testUnit);
+                    const endTime = Date.now();
+
+                    addResult('retryResults', 'info', 'نتيجة اختبار إعادة المحاولة',
+                        `المحاولات: ${attemptCount}, الوقت: ${endTime - startTime}ms, النتيجة: ${deleteResult.success}`);
+
+                    if (attemptCount > 1) {
+                        addResult('retryResults', 'success', 'آلية إعادة المحاولة تعمل',
+                            `تم إعادة المحاولة ${attemptCount} مرة قبل النجاح`);
+                        testResults.retry = true;
+                    } else {
+                        addResult('retryResults', 'warning', 'لم يتم اختبار إعادة المحاولة',
+                            'نجحت المحاولة الأولى');
+                        testResults.retry = null;
+                    }
+                } else {
+                    addResult('retryResults', 'error', 'دالة الحذف غير متوفرة',
+                        'لا يمكن اختبار إعادة المحاولة');
+                    testResults.retry = false;
+                }
+
+                // استعادة العميل الأصلي
+                window.supabaseClient = originalClient;
+
+            } catch (error) {
+                addResult('retryResults', 'error', 'خطأ في اختبار إعادة المحاولة',
+                    `خطأ: ${error.message}`);
+                testResults.retry = false;
+            }
+        }
+
+        // اختبار 5: الأداء
+        async function testPerformance() {
+            addResult('performanceResults', 'info', 'بدء اختبار الأداء', 'اختبار حذف متعدد...');
+
+            try {
+                const testUnits = [];
+                const testCount = 5;
+
+                // إنشاء وحدات تجريبية متعددة
+                for (let i = 1; i <= testCount; i++) {
+                    testUnits.push({
+                        'رقم  الوحدة ': `PERF_TEST_${i.toString().padStart(3, '0')}`,
+                        'اسم العقار': `عقار اختبار الأداء ${i}`,
+                        'المدينة': 'الرياض'
+                    });
+                }
+
+                addResult('performanceResults', 'info', 'تم إنشاء الوحدات التجريبية',
+                    `تم إنشاء ${testCount} وحدة للاختبار`);
+
+                // اختبار الحذف المتتالي
+                const startTime = Date.now();
+                let successCount = 0;
+                let failCount = 0;
+
+                for (const unit of testUnits) {
+                    try {
+                        if (typeof deletePropertyFromSupabase === 'function') {
+                            const result = await deletePropertyFromSupabase(unit);
+                            if (result.success) {
+                                successCount++;
+                            } else {
+                                failCount++;
+                            }
+                        }
+                    } catch (error) {
+                        failCount++;
+                    }
+                }
+
+                const endTime = Date.now();
+                const totalTime = endTime - startTime;
+                const avgTime = totalTime / testCount;
+
+                addResult('performanceResults', 'success', 'اكتمل اختبار الأداء',
+                    `الوقت الإجمالي: ${totalTime}ms, متوسط الوقت: ${avgTime.toFixed(2)}ms, نجح: ${successCount}, فشل: ${failCount}`);
+
+                testResults.performance = {
+                    totalTime,
+                    avgTime,
+                    successCount,
+                    failCount,
+                    successRate: (successCount / testCount) * 100
+                };
+
+            } catch (error) {
+                addResult('performanceResults', 'error', 'خطأ في اختبار الأداء',
+                    `خطأ: ${error.message}`);
+                testResults.performance = false;
+            }
+        }
+
+        // إنشاء تقرير نهائي
+        function generateTestReport() {
+            addResult('finalTestReport', 'info', 'إنشاء التقرير النهائي', 'جاري تجميع نتائج جميع الاختبارات...');
+
+            let reportHtml = '<div class="test-scenario">';
+            reportHtml += '<h4><i class="fas fa-chart-bar"></i> تقرير الاختبار الشامل</h4>';
+
+            // ملخص النتائج
+            const tests = [
+                { name: 'الحذف العادي', result: testResults.normalDeletion },
+                { name: 'فشل الشبكة', result: testResults.networkFailure },
+                { name: 'NOT_FOUND', result: testResults.notFound },
+                { name: 'إعادة المحاولة', result: testResults.retry },
+                { name: 'الأداء', result: testResults.performance }
+            ];
+
+            let passedTests = 0;
+            let totalTests = 0;
+
+            reportHtml += '<h5>نتائج الاختبارات:</h5><ul>';
+            tests.forEach(test => {
+                if (test.result !== null) {
+                    totalTests++;
+                    if (test.result === true || (typeof test.result === 'object' && test.result.successRate > 80)) {
+                        passedTests++;
+                        reportHtml += `<li style="color: #28a745;">✅ ${test.name}: نجح</li>`;
+                    } else if (test.result === false) {
+                        reportHtml += `<li style="color: #dc3545;">❌ ${test.name}: فشل</li>`;
+                    } else {
+                        reportHtml += `<li style="color: #ffc107;">⚠️ ${test.name}: جزئي</li>`;
+                    }
+                } else {
+                    reportHtml += `<li style="color: #6c757d;">➖ ${test.name}: لم يتم تشغيله</li>`;
+                }
+            });
+            reportHtml += '</ul>';
+
+            // إحصائيات الأداء
+            if (testResults.performance && typeof testResults.performance === 'object') {
+                reportHtml += '<h5>إحصائيات الأداء:</h5>';
+                reportHtml += `<p>متوسط وقت الحذف: ${testResults.performance.avgTime.toFixed(2)}ms</p>`;
+                reportHtml += `<p>معدل النجاح: ${testResults.performance.successRate.toFixed(1)}%</p>`;
+            }
+
+            // التوصيات
+            reportHtml += '<h5>التوصيات:</h5>';
+            if (passedTests === totalTests) {
+                reportHtml += '<p style="color: #28a745;">🎉 جميع الاختبارات نجحت! النظام يعمل بشكل ممتاز.</p>';
+            } else {
+                reportHtml += '<p style="color: #ffc107;">⚠️ بعض الاختبارات تحتاج تحسين:</p>';
+                reportHtml += '<ul>';
+                if (testResults.notFound === false) {
+                    reportHtml += '<li>تحديث معالجة NOT_FOUND في الكود</li>';
+                }
+                if (testResults.retry === false) {
+                    reportHtml += '<li>تفعيل آلية إعادة المحاولة</li>';
+                }
+                if (testResults.performance && testResults.performance.successRate < 80) {
+                    reportHtml += '<li>تحسين استقرار النظام</li>';
+                }
+                reportHtml += '</ul>';
+            }
+
+            reportHtml += '</div>';
+
+            const reportType = passedTests === totalTests ? 'success' : 'warning';
+            addResult('finalTestReport', reportType, `اكتمل التقرير (${passedTests}/${totalTests})`, reportHtml);
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            addResult('normalDeletionResults', 'info', '🚀 مرحباً بك في اختبار الحذف المحسن',
+                'اضغط على الأزرار أعلاه لتشغيل الاختبارات المختلفة');
+        });
+    </script>
+</body>
+</html>

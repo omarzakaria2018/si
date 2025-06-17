@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح شريط التقدم</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .test-btn { background: #28a745; }
+        .test-btn:hover { background: #1e7e34; }
+        .fix-box {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .fix-box h4 {
+            margin: 0 0 15px 0;
+            color: #2e7d32;
+        }
+        .issue-box {
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            border: 1px solid #f44336;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .issue-box h4 {
+            margin: 0 0 15px 0;
+            color: #c62828;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #856404;
+        }
+        .steps {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .step-number {
+            background: #28a745;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 اختبار إصلاح شريط التقدم</h1>
+        <p>تم إصلاح المشاكل التي منعت ظهور شريط التقدم</p>
+        
+        <div class="issue-box">
+            <h4>🚨 المشاكل التي تم إصلاحها:</h4>
+            <ol>
+                <li><strong>خطأ JavaScript:</strong> <code>originalProperty is not defined</code> في السطر 15480</li>
+                <li><strong>ترتيب العمليات:</strong> شريط التقدم كان يظهر بعد انتهاء الحفظ بدلاً من أثنائه</li>
+                <li><strong>عدم تنفيذ الكود:</strong> الخطأ كان يوقف تنفيذ باقي الكود</li>
+            </ol>
+        </div>
+
+        <div class="fix-box">
+            <h4>✅ الإصلاحات المطبقة:</h4>
+            <ol>
+                <li><strong>إصلاح المتغير:</strong> تغيير <code>originalProperty</code> إلى <code>originalData</code></li>
+                <li><strong>إعادة ترتيب الكود:</strong> نقل شريط التقدم ليكون قبل عمليات الحفظ</li>
+                <li><strong>دمج العمليات:</strong> وضع عمليات الحفظ الفعلية داخل شريط التقدم</li>
+                <li><strong>تحسين الرسائل:</strong> بناء رسالة النجاح داخل شريط التقدم</li>
+            </ol>
+        </div>
+
+        <div class="result info">
+            <strong>📋 الكود المصحح:</strong>
+            <div class="code-block">
+// قبل الإصلاح (خطأ)
+const deedChanges = checkDeedFieldChanges(originalProperty, updatedProperty, deedFields);
+                                          ^^^^^^^^^^^^^^^^
+                                          غير معرف!
+
+// بعد الإصلاح (صحيح)
+const deedChanges = checkDeedFieldChanges(originalData, updatedProperty, deedFields);
+                                          ^^^^^^^^^^^^
+                                          معرف بشكل صحيح!
+            </div>
+        </div>
+
+        <div class="result success">
+            <strong>🎯 التدفق الجديد المصحح:</strong><br>
+            1. ✅ إغلاق نافذة التحرير<br>
+            2. ✅ عرض شريط التقدم<br>
+            3. ✅ تنفيذ عمليات الحفظ داخل الشريط<br>
+            4. ✅ عرض نافذة التأكيد<br>
+            5. ✅ تحديث البطاقة بعد الموافقة
+        </div>
+
+        <div class="steps">
+            <h3>🧪 خطوات الاختبار</h3>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>اذهب إلى <span class="highlight">"عرض البيانات"</span> في التطبيق الرئيسي</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div>اختر أي عقار واضغط زر <span class="highlight">"تحرير"</span> (الأصفر)</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div>غيّر أي معلومة واضغط <span class="highlight">"حفظ التغييرات"</span></div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div>يجب أن ترى <span class="highlight">شريط التقدم</span> فوراً مع مراحل الحفظ</div>
+            </div>
+            <div class="step">
+                <div class="step-number">5</div>
+                <div>بعد انتهاء الشريط، ستظهر <span class="highlight">نافذة تأكيد</span></div>
+            </div>
+            <div class="step">
+                <div class="step-number">6</div>
+                <div>اضغط <span class="highlight">"موافق"</span> لرؤية التحديث في البطاقة</div>
+            </div>
+        </div>
+
+        <div class="result warning">
+            <strong>⚠️ إذا لم يعمل الإصلاح:</strong><br>
+            1. تأكد من تحديث الصفحة (Ctrl+F5)<br>
+            2. افتح وحدة التحكم (F12) وتحقق من عدم وجود أخطاء<br>
+            3. تأكد من أن ملف script.js محدث<br>
+            4. جرب مسح الكاش وإعادة التحميل
+        </div>
+
+        <button class="test-btn" onclick="testProgressFunction()">
+            <i class="fas fa-play"></i> اختبار دالة شريط التقدم
+        </button>
+        
+        <button onclick="checkFunctions()">
+            <i class="fas fa-search"></i> فحص الدوال المطلوبة
+        </button>
+
+        <div id="results"></div>
+    </div>
+
+    <!-- تحميل الملفات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function testProgressFunction() {
+            addResult('info', '🧪 اختبار دالة شريط التقدم', 'جاري اختبار showProgressModal...');
+            
+            if (typeof showProgressModal === 'function') {
+                addResult('success', '✅ الدالة موجودة', 'تم العثور على دالة showProgressModal');
+                
+                showProgressModal('اختبار الإصلاح', async function(updateProgress) {
+                    updateProgress(10, 'بدء الاختبار...');
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                    
+                    updateProgress(30, 'اختبار المرحلة الأولى...');
+                    await new Promise(resolve => setTimeout(resolve, 600));
+                    
+                    updateProgress(60, 'اختبار المرحلة الثانية...');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    updateProgress(90, 'اختبار المرحلة الأخيرة...');
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                    
+                    updateProgress(100, 'اكتمل الاختبار!');
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    return { success: true, message: 'تم اختبار شريط التقدم بنجاح!' };
+                }, function(result) {
+                    if (result && result.success) {
+                        addResult('success', '🎉 نجح الاختبار!', `
+                            شريط التقدم يعمل بشكل مثالي!<br>
+                            الآن يجب أن يعمل في التطبيق الرئيسي عند تحرير البطاقات<br>
+                            الرسالة: ${result.message}
+                        `);
+                    } else {
+                        addResult('error', '❌ فشل الاختبار', 'حدث خطأ في شريط التقدم');
+                    }
+                });
+                
+            } else {
+                addResult('error', '❌ الدالة غير موجودة', 'لم يتم العثور على دالة showProgressModal');
+            }
+        }
+
+        function checkFunctions() {
+            addResult('info', '🔍 فحص الدوال المطلوبة', 'جاري فحص جميع الدوال...');
+            
+            const functions = [
+                'showProgressModal',
+                'showSuccessMessageWithCallback', 
+                'savePropertyEdit',
+                'renderData',
+                'updateTotalStats',
+                'checkDeedFieldChanges'
+            ];
+            
+            let allGood = true;
+            functions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    addResult('success', `✅ ${funcName}`, 'الدالة موجودة ومتاحة');
+                } else {
+                    addResult('error', `❌ ${funcName}`, 'الدالة غير موجودة');
+                    allGood = false;
+                }
+            });
+            
+            if (allGood) {
+                addResult('success', '🎊 جميع الدوال موجودة', `
+                    جميع الدوال المطلوبة متوفرة!<br>
+                    النظام جاهز للعمل بشكل صحيح<br>
+                    يمكنك الآن اختبار تحرير البطاقات
+                `);
+            } else {
+                addResult('warning', '⚠️ بعض الدوال مفقودة', 'تحقق من تحميل ملف script.js بشكل صحيح');
+            }
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            addResult('success', '🚀 تم تحميل الاختبار', `
+                تم تحميل صفحة اختبار الإصلاح بنجاح<br>
+                تم إصلاح المشاكل التي منعت ظهور شريط التقدم<br>
+                اضغط "اختبار دالة شريط التقدم" للتحقق من العمل
+            `);
+            
+            // فحص سريع للدالة الأساسية
+            if (typeof showProgressModal === 'function') {
+                addResult('success', '✅ الفحص الأولي', 'دالة شريط التقدم متوفرة');
+            } else {
+                addResult('error', '❌ مشكلة في التحميل', 'دالة شريط التقدم غير متوفرة');
+            }
+        });
+    </script>
+</body>
+</html>

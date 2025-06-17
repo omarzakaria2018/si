@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار رسالة النجاح</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .test-btn { background: #28a745; }
+        .test-btn:hover { background: #1e7e34; }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار رسالة النجاح</h1>
+        <p>هذا الاختبار يتحقق من أن دالة showSuccessMessageWithCallback تعمل بشكل صحيح</p>
+        
+        <button class="test-btn" onclick="testSuccessMessage()">
+            <i class="fas fa-play"></i> اختبار رسالة النجاح
+        </button>
+        
+        <button onclick="testSimpleAlert()">
+            <i class="fas fa-exclamation"></i> اختبار Alert عادي
+        </button>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- تحميل الملفات المطلوبة -->
+    <script src="script.js"></script>
+    
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function testSuccessMessage() {
+            addResult('info', '🧪 بدء اختبار رسالة النجاح', 'جاري اختبار دالة showSuccessMessageWithCallback...');
+            
+            // التحقق من وجود الدالة
+            if (typeof showSuccessMessageWithCallback === 'function') {
+                addResult('success', '✅ الدالة موجودة', 'تم العثور على دالة showSuccessMessageWithCallback');
+                
+                // اختبار الدالة
+                const testMessage = `✅ تم حفظ التغييرات بنجاح!
+💡 تم حفظ تعديلات الوحدة فقط (لم تتغير معلومات الصك)
+✅ تم حفظ التغييرات في قاعدة البيانات السحابية`;
+                
+                showSuccessMessageWithCallback('تم حفظ التغييرات بنجاح!', testMessage, function() {
+                    addResult('success', '🎉 نجح الاختبار!', `
+                        تم تنفيذ callback بنجاح!<br>
+                        هذا يعني أن الدالة تعمل بشكل صحيح<br>
+                        الآن يجب أن تعمل في التطبيق الرئيسي
+                    `);
+                });
+                
+                addResult('warning', '⏳ انتظار التفاعل', 'اضغط "موافق" في النافذة التي ظهرت لإكمال الاختبار');
+                
+            } else {
+                addResult('error', '❌ الدالة غير موجودة', 'لم يتم العثور على دالة showSuccessMessageWithCallback');
+            }
+        }
+
+        function testSimpleAlert() {
+            addResult('info', '📢 اختبار Alert عادي', 'جاري عرض alert عادي للمقارنة...');
+            
+            alert('هذا alert عادي للمقارنة\nيجب أن تكون رسالة النجاح أجمل من هذا!');
+            
+            addResult('info', '✅ تم عرض Alert عادي', 'لاحظ الفرق بين Alert العادي ورسالة النجاح الجميلة');
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            addResult('success', '🚀 جاهز للاختبار', `
+                تم تحميل صفحة الاختبار بنجاح<br>
+                تم تحميل ملف script.js<br>
+                اضغط "اختبار رسالة النجاح" للبدء
+            `);
+            
+            // التحقق من وجود الدوال المطلوبة
+            const functions = [
+                'showSuccessMessageWithCallback',
+                'showSuccessMessage',
+                'renderData',
+                'updateTotalStats'
+            ];
+            
+            functions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    addResult('success', `✅ ${funcName}`, 'الدالة موجودة ومتاحة');
+                } else {
+                    addResult('error', `❌ ${funcName}`, 'الدالة غير موجودة');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

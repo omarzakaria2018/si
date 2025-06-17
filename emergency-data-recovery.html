@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استعادة البيانات الطارئة</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+            direction: rtl;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            color: #e74c3c;
+            margin-bottom: 30px;
+        }
+        .recovery-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .recovery-title {
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 10px;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #d5f4e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .info {
+            color: #3498db;
+            background-color: #ebf3fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .warning {
+            color: #f39c12;
+            background-color: #fef9e7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: linear-gradient(45deg, #c0392b, #e74c3c);
+        }
+        .btn.success {
+            background: linear-gradient(45deg, #27ae60, #229954);
+        }
+        .btn.success:hover {
+            background: linear-gradient(45deg, #229954, #27ae60);
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            background: white;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 استعادة البيانات الطارئة</h1>
+            <p>أداة إصلاح سريع لاستعادة البيانات المفقودة</p>
+        </div>
+
+        <div class="recovery-section">
+            <div class="recovery-title">🔍 فحص حالة البيانات</div>
+            <button class="btn" onclick="checkDataStatus()">فحص البيانات</button>
+            <div id="dataStatusResults" class="results"></div>
+        </div>
+
+        <div class="recovery-section">
+            <div class="recovery-title">💾 استعادة من localStorage</div>
+            <button class="btn" onclick="recoverFromLocalStorage()">استعادة من التخزين المحلي</button>
+            <div id="localStorageResults" class="results"></div>
+        </div>
+
+        <div class="recovery-section">
+            <div class="recovery-title">☁️ استعادة من Supabase</div>
+            <button class="btn" onclick="recoverFromSupabase()">استعادة من Supabase</button>
+            <div id="supabaseResults" class="results"></div>
+        </div>
+
+        <div class="recovery-section">
+            <div class="recovery-title">📄 استعادة من JSON</div>
+            <button class="btn" onclick="recoverFromJSON()">استعادة من ملف JSON</button>
+            <div id="jsonResults" class="results"></div>
+        </div>
+
+        <div class="recovery-section">
+            <div class="recovery-title">🔧 إنشاء بيانات تجريبية</div>
+            <button class="btn" onclick="createSampleData()">إنشاء بيانات تجريبية</button>
+            <div id="sampleDataResults" class="results"></div>
+        </div>
+
+        <div class="recovery-section">
+            <div class="recovery-title">🚀 استعادة شاملة</div>
+            <button class="btn success" onclick="fullRecovery()">استعادة شاملة تلقائية</button>
+            <div class="progress">
+                <div class="progress-bar" id="recoveryProgress"></div>
+            </div>
+            <div id="fullRecoveryResults" class="results"></div>
+        </div>
+    </div>
+
+    <!-- Supabase JavaScript Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase Configuration -->
+    <script src="supabase-config.js"></script>
+
+    <script>
+        // متغيرات عامة
+        let recoveredProperties = [];
+
+        // دالة مساعدة لعرض النتائج
+        function showResult(containerId, type, message) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            container.appendChild(div);
+        }
+
+        // دالة مساعدة للسجل
+        function log(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // تحديث شريط التقدم
+        function updateProgress(percentage) {
+            const progressBar = document.getElementById('recoveryProgress');
+            progressBar.style.width = percentage + '%';
+        }
+
+        // فحص حالة البيانات
+        function checkDataStatus() {
+            const container = document.getElementById('dataStatusResults');
+            container.innerHTML = '';
+            
+            log('🔍 فحص حالة البيانات...');
+            
+            // فحص المتغيرات العامة
+            const hasGlobalProperties = typeof properties !== 'undefined' && properties && properties.length > 0;
+            const hasLocalStorage = localStorage.getItem('properties') !== null;
+            const hasSupabaseClient = typeof supabaseClient !== 'undefined';
+            
+            showResult('dataStatusResults', hasGlobalProperties ? 'success' : 'error', 
+                `📊 البيانات العامة: ${hasGlobalProperties ? `✅ ${properties.length} عقار` : '❌ غير موجودة'}`);
+            
+            showResult('dataStatusResults', hasLocalStorage ? 'success' : 'warning', 
+                `💾 التخزين المحلي: ${hasLocalStorage ? '✅ موجود' : '⚠️ غير موجود'}`);
+            
+            showResult('dataStatusResults', hasSupabaseClient ? 'success' : 'error', 
+                `☁️ Supabase: ${hasSupabaseClient ? '✅ متصل' : '❌ غير متصل'}`);
+
+            // فحص النسخ الاحتياطية
+            const backupKeys = Object.keys(localStorage).filter(key => key.startsWith('properties_backup_'));
+            if (backupKeys.length > 0) {
+                showResult('dataStatusResults', 'info', `🗂️ تم العثور على ${backupKeys.length} نسخة احتياطية`);
+            }
+
+            return { hasGlobalProperties, hasLocalStorage, hasSupabaseClient, backupKeys };
+        }
+
+        // استعادة من localStorage
+        function recoverFromLocalStorage() {
+            const container = document.getElementById('localStorageResults');
+            container.innerHTML = '';
+            
+            log('💾 محاولة الاستعادة من localStorage...');
+            
+            try {
+                // محاولة استعادة البيانات الأساسية
+                const localData = localStorage.getItem('properties');
+                if (localData) {
+                    const parsedData = JSON.parse(localData);
+                    if (Array.isArray(parsedData) && parsedData.length > 0) {
+                        recoveredProperties = parsedData;
+                        window.properties = parsedData;
+                        showResult('localStorageResults', 'success', `✅ تم استعادة ${parsedData.length} عقار من localStorage`);
+                        return true;
+                    }
+                }
+
+                // محاولة استعادة من النسخ الاحتياطية
+                const backupKeys = Object.keys(localStorage).filter(key => key.startsWith('properties_backup_'));
+                if (backupKeys.length > 0) {
+                    // ترتيب النسخ الاحتياطية حسب التاريخ (الأحدث أولاً)
+                    backupKeys.sort((a, b) => {
+                        const timeA = parseInt(a.split('_').pop());
+                        const timeB = parseInt(b.split('_').pop());
+                        return timeB - timeA;
+                    });
+
+                    for (const backupKey of backupKeys) {
+                        try {
+                            const backupData = JSON.parse(localStorage.getItem(backupKey));
+                            if (Array.isArray(backupData) && backupData.length > 0) {
+                                recoveredProperties = backupData;
+                                window.properties = backupData;
+                                showResult('localStorageResults', 'success', 
+                                    `✅ تم استعادة ${backupData.length} عقار من النسخة الاحتياطية: ${backupKey}`);
+                                return true;
+                            }
+                        } catch (e) {
+                            showResult('localStorageResults', 'warning', `⚠️ فشل في قراءة النسخة الاحتياطية: ${backupKey}`);
+                        }
+                    }
+                }
+
+                showResult('localStorageResults', 'error', '❌ لم يتم العثور على بيانات صالحة في localStorage');
+                return false;
+            } catch (error) {
+                showResult('localStorageResults', 'error', `❌ خطأ في الاستعادة: ${error.message}`);
+                return false;
+            }
+        }
+
+        // استعادة من Supabase
+        async function recoverFromSupabase() {
+            const container = document.getElementById('supabaseResults');
+            container.innerHTML = '';
+            
+            log('☁️ محاولة الاستعادة من Supabase...');
+            
+            try {
+                if (typeof supabaseClient === 'undefined') {
+                    showResult('supabaseResults', 'error', '❌ Supabase client غير متوفر');
+                    return false;
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    throw error;
+                }
+
+                if (data && data.length > 0) {
+                    // تحويل البيانات إلى التنسيق المطلوب
+                    const convertedData = data.map(item => {
+                        if (item.raw_data) {
+                            return item.raw_data;
+                        } else {
+                            return {
+                                'رقم  الوحدة ': item.unit_number || '',
+                                'المدينة': item.city || '',
+                                'اسم العقار': item.property_name || '',
+                                'اسم المستأجر': item.tenant_name || '',
+                                'رقم العقد': item.contract_number || '',
+                                'قيمة  الايجار ': item.rent_value || 0,
+                                'الاجمالى': item.total_amount || 0
+                            };
+                        }
+                    });
+
+                    recoveredProperties = convertedData;
+                    window.properties = convertedData;
+                    
+                    // حفظ في localStorage
+                    localStorage.setItem('properties', JSON.stringify(convertedData));
+                    
+                    showResult('supabaseResults', 'success', `✅ تم استعادة ${convertedData.length} عقار من Supabase`);
+                    return true;
+                } else {
+                    showResult('supabaseResults', 'warning', '⚠️ لا توجد بيانات في Supabase');
+                    return false;
+                }
+            } catch (error) {
+                showResult('supabaseResults', 'error', `❌ خطأ في الاستعادة من Supabase: ${error.message}`);
+                return false;
+            }
+        }
+
+        // استعادة من JSON
+        async function recoverFromJSON() {
+            const container = document.getElementById('jsonResults');
+            container.innerHTML = '';
+            
+            log('📄 محاولة الاستعادة من ملف JSON...');
+            
+            try {
+                const response = await fetch('data.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    recoveredProperties = data;
+                    window.properties = data;
+                    
+                    // حفظ في localStorage
+                    localStorage.setItem('properties', JSON.stringify(data));
+                    
+                    showResult('jsonResults', 'success', `✅ تم استعادة ${data.length} عقار من ملف JSON`);
+                    return true;
+                } else {
+                    showResult('jsonResults', 'warning', '⚠️ ملف JSON فارغ أو غير صالح');
+                    return false;
+                }
+            } catch (error) {
+                showResult('jsonResults', 'error', `❌ خطأ في قراءة ملف JSON: ${error.message}`);
+                return false;
+            }
+        }
+
+        // إنشاء بيانات تجريبية
+        function createSampleData() {
+            const container = document.getElementById('sampleDataResults');
+            container.innerHTML = '';
+            
+            log('🔧 إنشاء بيانات تجريبية...');
+            
+            const sampleData = [
+                {
+                    'رقم  الوحدة ': 'SAMPLE_001',
+                    'المدينة': 'الرياض',
+                    'اسم العقار': 'عقار تجريبي 1',
+                    'اسم المستأجر': 'مستأجر تجريبي 1',
+                    'رقم العقد': 'CONTRACT_001',
+                    'قيمة  الايجار ': 50000,
+                    'المساحة': 150,
+                    'تاريخ البداية': '01/01/2024',
+                    'تاريخ النهاية': '31/12/2024',
+                    'الاجمالى': 57500,
+                    'نوع العقد': 'ضريبي'
+                },
+                {
+                    'رقم  الوحدة ': 'SAMPLE_002',
+                    'المدينة': 'جدة',
+                    'اسم العقار': 'عقار تجريبي 2',
+                    'اسم المستأجر': 'مستأجر تجريبي 2',
+                    'رقم العقد': 'CONTRACT_002',
+                    'قيمة  الايجار ': 40000,
+                    'المساحة': 120,
+                    'تاريخ البداية': '01/02/2024',
+                    'تاريخ النهاية': '31/01/2025',
+                    'الاجمالى': 46000,
+                    'نوع العقد': 'ضريبي'
+                },
+                {
+                    'رقم  الوحدة ': 'SAMPLE_003',
+                    'المدينة': 'الدمام',
+                    'اسم العقار': 'عقار تجريبي 3',
+                    'اسم المستأجر': '',
+                    'رقم العقد': '',
+                    'قيمة  الايجار ': 0,
+                    'المساحة': 200,
+                    'تاريخ البداية': '',
+                    'تاريخ النهاية': '',
+                    'الاجمالى': 0,
+                    'نوع العقد': 'شاغر'
+                }
+            ];
+
+            recoveredProperties = sampleData;
+            window.properties = sampleData;
+            
+            // حفظ في localStorage
+            localStorage.setItem('properties', JSON.stringify(sampleData));
+            
+            showResult('sampleDataResults', 'success', `✅ تم إنشاء ${sampleData.length} عقار تجريبي`);
+            showResult('sampleDataResults', 'info', '💡 يمكنك الآن العودة للتطبيق الأساسي');
+            
+            return true;
+        }
+
+        // استعادة شاملة
+        async function fullRecovery() {
+            const container = document.getElementById('fullRecoveryResults');
+            container.innerHTML = '';
+            
+            showResult('fullRecoveryResults', 'info', '🚀 بدء عملية الاستعادة الشاملة...');
+            updateProgress(10);
+
+            // الخطوة 1: فحص البيانات
+            const status = checkDataStatus();
+            updateProgress(20);
+
+            if (status.hasGlobalProperties) {
+                showResult('fullRecoveryResults', 'success', '✅ البيانات موجودة بالفعل - لا حاجة للاستعادة');
+                updateProgress(100);
+                return;
+            }
+
+            // الخطوة 2: محاولة الاستعادة من localStorage
+            updateProgress(30);
+            if (await recoverFromLocalStorage()) {
+                showResult('fullRecoveryResults', 'success', '✅ تم الاستعادة من localStorage');
+                updateProgress(100);
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                return;
+            }
+
+            // الخطوة 3: محاولة الاستعادة من Supabase
+            updateProgress(50);
+            if (await recoverFromSupabase()) {
+                showResult('fullRecoveryResults', 'success', '✅ تم الاستعادة من Supabase');
+                updateProgress(100);
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                return;
+            }
+
+            // الخطوة 4: محاولة الاستعادة من JSON
+            updateProgress(70);
+            if (await recoverFromJSON()) {
+                showResult('fullRecoveryResults', 'success', '✅ تم الاستعادة من ملف JSON');
+                updateProgress(100);
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                return;
+            }
+
+            // الخطوة 5: إنشاء بيانات تجريبية كحل أخير
+            updateProgress(90);
+            if (createSampleData()) {
+                showResult('fullRecoveryResults', 'warning', '⚠️ تم إنشاء بيانات تجريبية كحل أخير');
+                showResult('fullRecoveryResults', 'info', '💡 سيتم توجيهك للتطبيق الأساسي خلال 3 ثوان...');
+                updateProgress(100);
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 3000);
+                return;
+            }
+
+            // فشل في جميع المحاولات
+            showResult('fullRecoveryResults', 'error', '❌ فشل في جميع محاولات الاستعادة');
+            updateProgress(100);
+        }
+
+        // تشغيل فحص أولي عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 تم تحميل أداة الاستعادة الطارئة', 'success');
+            checkDataStatus();
+        });
+    </script>
+</body>
+</html>

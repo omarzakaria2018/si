@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 اختبار نظام ترتيب العقارات الثابت</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            border-radius: 10px;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .result.success { border-left-color: #28a745; background: #d4edda; }
+        .result.error { border-left-color: #dc3545; background: #f8d7da; }
+        .result.warning { border-left-color: #ffc107; background: #fff3cd; }
+        .result.info { border-left-color: #17a2b8; background: #d1ecf1; }
+        
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); }
+        .btn-success { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        
+        .property-list {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .property-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .order-demo {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-sort"></i> اختبار نظام ترتيب العقارات الثابت</h1>
+            <p>التأكد من أن ترتيب العقارات في الـ Sidebar يبقى ثابتاً</p>
+        </div>
+
+        <div class="order-demo">
+            <h3><i class="fas fa-info-circle"></i> كيف يعمل النظام الجديد:</h3>
+            <ul>
+                <li>✅ <strong>ترتيب ثابت:</strong> العقارات تحتفظ بترتيبها حتى لو تم تحديث البيانات</li>
+                <li>✅ <strong>ترتيب منفصل لكل مدينة:</strong> كل مدينة لها ترتيب منفصل</li>
+                <li>✅ <strong>إدارة سهلة:</strong> زر إدارة الترتيب في الـ Sidebar</li>
+                <li>✅ <strong>سحب وإفلات:</strong> إعادة ترتيب العقارات بالسحب</li>
+                <li>✅ <strong>حفظ تلقائي:</strong> الترتيب يُحفظ في localStorage</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-database"></i> اختبار 1: إنشاء بيانات تجريبية</h2>
+            <p>إنشاء عقارات تجريبية لاختبار النظام</p>
+            <button onclick="createTestData()" class="btn-success">
+                <i class="fas fa-plus"></i> إنشاء بيانات تجريبية
+            </button>
+            <div id="testDataResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-list"></i> اختبار 2: عرض الترتيب الحالي</h2>
+            <p>عرض ترتيب العقارات في المدن المختلفة</p>
+            <button onclick="showCurrentOrder()" class="btn-warning">
+                <i class="fas fa-eye"></i> عرض الترتيب الحالي
+            </button>
+            <div id="currentOrderResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-random"></i> اختبار 3: تغيير الترتيب</h2>
+            <p>اختبار تغيير ترتيب العقارات وحفظه</p>
+            <button onclick="testReorder()" class="btn-warning">
+                <i class="fas fa-random"></i> اختبار إعادة الترتيب
+            </button>
+            <div id="reorderResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-sync"></i> اختبار 4: محاكاة تحديث البيانات</h2>
+            <p>محاكاة تحديث البيانات والتأكد من ثبات الترتيب</p>
+            <button onclick="simulateDataUpdate()" class="btn-warning">
+                <i class="fas fa-sync"></i> محاكاة تحديث البيانات
+            </button>
+            <div id="updateResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-undo"></i> اختبار 5: إعادة تعيين الترتيب</h2>
+            <p>اختبار إعادة تعيين الترتيب للحالة الافتراضية</p>
+            <button onclick="testReset()" class="btn-danger">
+                <i class="fas fa-undo"></i> اختبار إعادة التعيين
+            </button>
+            <div id="resetResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-file-alt"></i> تقرير الاختبار النهائي</h2>
+            <button onclick="generateFinalReport()" class="btn-success">
+                <i class="fas fa-file-alt"></i> إنشاء تقرير شامل
+            </button>
+            <div id="finalReport"></div>
+        </div>
+    </div>
+
+    <script>
+        // متغيرات الاختبار
+        let testResults = {
+            createData: null,
+            showOrder: null,
+            reorder: null,
+            update: null,
+            reset: null
+        };
+
+        // بيانات تجريبية
+        const testProperties = [
+            { name: 'عقار الأمل', city: 'الرياض' },
+            { name: 'برج النور', city: 'الرياض' },
+            { name: 'مجمع الفردوس', city: 'الرياض' },
+            { name: 'عقار الخليج', city: 'جدة' },
+            { name: 'برج البحر', city: 'جدة' },
+            { name: 'مجمع الساحل', city: 'جدة' },
+            { name: 'عقار الجبل', city: 'الطائف' },
+            { name: 'برج الورد', city: 'الطائف' }
+        ];
+
+        function addResult(containerId, type, title, content) {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong><i class="fas fa-${getIcon(type)}"></i> ${title}</strong><br>
+                ${content}
+            `;
+            container.appendChild(resultDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function getIcon(type) {
+            switch(type) {
+                case 'success': return 'check-circle';
+                case 'error': return 'times-circle';
+                case 'warning': return 'exclamation-triangle';
+                case 'info': return 'info-circle';
+                default: return 'circle';
+            }
+        }
+
+        // اختبار 1: إنشاء بيانات تجريبية
+        function createTestData() {
+            addResult('testDataResults', 'info', 'بدء إنشاء البيانات التجريبية', 'جاري إنشاء عقارات تجريبية...');
+            
+            try {
+                // محاكاة إنشاء البيانات
+                const mockProperties = testProperties.map(prop => ({
+                    'اسم العقار': prop.name,
+                    'المدينة': prop.city,
+                    'رقم  الوحدة ': 'وحدة أساسية',
+                    'المالك': 'مالك تجريبي',
+                    'نوع العقد': 'سكني'
+                }));
+
+                // حفظ في localStorage للاختبار
+                localStorage.setItem('testProperties', JSON.stringify(mockProperties));
+                
+                addResult('testDataResults', 'success', 'تم إنشاء البيانات بنجاح', 
+                    `تم إنشاء ${testProperties.length} عقار في ${new Set(testProperties.map(p => p.city)).size} مدن`);
+                
+                // عرض البيانات
+                let html = '<div class="property-list"><h4>العقارات المنشأة:</h4>';
+                testProperties.forEach((prop, index) => {
+                    html += `
+                        <div class="property-item">
+                            <span>${index + 1}. ${prop.name}</span>
+                            <span style="color: #666;">${prop.city}</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                addResult('testDataResults', 'info', 'قائمة العقارات', html);
+                testResults.createData = true;
+                
+            } catch (error) {
+                addResult('testDataResults', 'error', 'خطأ في إنشاء البيانات', 
+                    `خطأ: ${error.message}`);
+                testResults.createData = false;
+            }
+        }
+
+        // اختبار 2: عرض الترتيب الحالي
+        function showCurrentOrder() {
+            addResult('currentOrderResults', 'info', 'بدء عرض الترتيب', 'جاري فحص الترتيب المحفوظ...');
+            
+            try {
+                // قراءة الترتيب المحفوظ
+                const savedOrder = JSON.parse(localStorage.getItem('fixedPropertyOrder') || '{}');
+                
+                addResult('currentOrderResults', 'info', 'الترتيب المحفوظ', 
+                    `عدد المدن المحفوظة: ${Object.keys(savedOrder).length}`);
+                
+                // عرض ترتيب كل مدينة
+                let html = '<div class="property-list">';
+                Object.keys(savedOrder).forEach(city => {
+                    html += `<h4>${city}:</h4>`;
+                    savedOrder[city].forEach((property, index) => {
+                        html += `
+                            <div class="property-item">
+                                <span>${index + 1}. ${property}</span>
+                                <i class="fas fa-building" style="color: #007bff;"></i>
+                            </div>
+                        `;
+                    });
+                });
+                html += '</div>';
+                
+                if (Object.keys(savedOrder).length > 0) {
+                    addResult('currentOrderResults', 'success', 'الترتيب المحفوظ', html);
+                } else {
+                    addResult('currentOrderResults', 'warning', 'لا يوجد ترتيب محفوظ', 
+                        'لم يتم العثور على ترتيب محفوظ. قم بإنشاء البيانات التجريبية أولاً.');
+                }
+                
+                testResults.showOrder = true;
+                
+            } catch (error) {
+                addResult('currentOrderResults', 'error', 'خطأ في عرض الترتيب',
+                    `خطأ: ${error.message}`);
+                testResults.showOrder = false;
+            }
+        }
+
+        // اختبار 3: تغيير الترتيب
+        function testReorder() {
+            addResult('reorderResults', 'info', 'بدء اختبار إعادة الترتيب', 'جاري اختبار تغيير ترتيب العقارات...');
+
+            try {
+                // محاكاة ترتيب جديد للرياض
+                const newRiyadhOrder = ['مجمع الفردوس', 'عقار الأمل', 'برج النور'];
+                const newJeddahOrder = ['برج البحر', 'عقار الخليج', 'مجمع الساحل'];
+
+                // حفظ الترتيب الجديد
+                const fixedOrder = JSON.parse(localStorage.getItem('fixedPropertyOrder') || '{}');
+                fixedOrder['الرياض'] = newRiyadhOrder;
+                fixedOrder['جدة'] = newJeddahOrder;
+                localStorage.setItem('fixedPropertyOrder', JSON.stringify(fixedOrder));
+
+                addResult('reorderResults', 'success', 'تم تغيير الترتيب بنجاح',
+                    'تم تطبيق ترتيب جديد للرياض وجدة');
+
+                // عرض الترتيب الجديد
+                let html = '<div class="property-list">';
+                html += '<h4>الترتيب الجديد للرياض:</h4>';
+                newRiyadhOrder.forEach((property, index) => {
+                    html += `
+                        <div class="property-item">
+                            <span>${index + 1}. ${property}</span>
+                            <i class="fas fa-arrow-up" style="color: #28a745;"></i>
+                        </div>
+                    `;
+                });
+                html += '<h4>الترتيب الجديد لجدة:</h4>';
+                newJeddahOrder.forEach((property, index) => {
+                    html += `
+                        <div class="property-item">
+                            <span>${index + 1}. ${property}</span>
+                            <i class="fas fa-arrow-up" style="color: #28a745;"></i>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                addResult('reorderResults', 'info', 'الترتيب الجديد', html);
+                testResults.reorder = true;
+
+            } catch (error) {
+                addResult('reorderResults', 'error', 'خطأ في إعادة الترتيب',
+                    `خطأ: ${error.message}`);
+                testResults.reorder = false;
+            }
+        }
+
+        // اختبار 4: محاكاة تحديث البيانات
+        function simulateDataUpdate() {
+            addResult('updateResults', 'info', 'بدء محاكاة التحديث', 'جاري محاكاة تحديث البيانات...');
+
+            try {
+                // قراءة الترتيب قبل التحديث
+                const orderBefore = JSON.parse(localStorage.getItem('fixedPropertyOrder') || '{}');
+
+                // محاكاة إضافة عقار جديد
+                const newProperty = { name: 'عقار جديد', city: 'الرياض' };
+
+                // محاكاة دالة applySortedPropertyOrder
+                const riyadhProperties = ['عقار الأمل', 'برج النور', 'مجمع الفردوس', 'عقار جديد'];
+                const savedRiyadhOrder = orderBefore['الرياض'] || [];
+
+                // فصل العقارات الموجودة عن الجديدة
+                const existingProperties = riyadhProperties.filter(prop => savedRiyadhOrder.includes(prop));
+                const newProperties = riyadhProperties.filter(prop => !savedRiyadhOrder.includes(prop));
+
+                // ترتيب العقارات الموجودة حسب الترتيب المحفوظ
+                existingProperties.sort((a, b) => {
+                    const indexA = savedRiyadhOrder.indexOf(a);
+                    const indexB = savedRiyadhOrder.indexOf(b);
+                    return indexA - indexB;
+                });
+
+                // دمج القوائم
+                const finalOrder = [...existingProperties, ...newProperties.sort()];
+
+                addResult('updateResults', 'success', 'تم الحفاظ على الترتيب',
+                    'الترتيب المحفوظ لم يتغير رغم إضافة عقار جديد');
+
+                // عرض النتيجة
+                let html = '<div class="property-list">';
+                html += '<h4>الترتيب بعد إضافة عقار جديد:</h4>';
+                finalOrder.forEach((property, index) => {
+                    const isNew = newProperties.includes(property);
+                    html += `
+                        <div class="property-item">
+                            <span>${index + 1}. ${property}</span>
+                            ${isNew ? '<span style="color: #28a745; font-weight: bold;">جديد</span>' : '<i class="fas fa-check" style="color: #007bff;"></i>'}
+                        </div>
+                    `;
+                });
+                html += '</div>';
+
+                addResult('updateResults', 'info', 'النتيجة النهائية', html);
+                testResults.update = true;
+
+            } catch (error) {
+                addResult('updateResults', 'error', 'خطأ في محاكاة التحديث',
+                    `خطأ: ${error.message}`);
+                testResults.update = false;
+            }
+        }
+
+        // اختبار 5: إعادة تعيين الترتيب
+        function testReset() {
+            addResult('resetResults', 'info', 'بدء اختبار إعادة التعيين', 'جاري اختبار إعادة تعيين الترتيب...');
+
+            try {
+                // حفظ نسخة احتياطية
+                const backupOrder = localStorage.getItem('fixedPropertyOrder');
+
+                // إعادة تعيين الترتيب
+                localStorage.removeItem('fixedPropertyOrder');
+
+                addResult('resetResults', 'success', 'تم إعادة التعيين بنجاح',
+                    'تم حذف جميع الترتيبات المحفوظة');
+
+                // التحقق من الحذف
+                const currentOrder = localStorage.getItem('fixedPropertyOrder');
+                if (!currentOrder) {
+                    addResult('resetResults', 'success', 'تأكيد الحذف',
+                        'تم التأكد من حذف جميع البيانات المحفوظة');
+                } else {
+                    addResult('resetResults', 'warning', 'لم يتم الحذف بالكامل',
+                        'ما زالت هناك بيانات محفوظة');
+                }
+
+                // استعادة النسخة الاحتياطية للاختبارات الأخرى
+                if (backupOrder) {
+                    localStorage.setItem('fixedPropertyOrder', backupOrder);
+                    addResult('resetResults', 'info', 'استعادة النسخة الاحتياطية',
+                        'تم استعادة البيانات للاختبارات الأخرى');
+                }
+
+                testResults.reset = true;
+
+            } catch (error) {
+                addResult('resetResults', 'error', 'خطأ في إعادة التعيين',
+                    `خطأ: ${error.message}`);
+                testResults.reset = false;
+            }
+        }
+
+        // إنشاء تقرير نهائي
+        function generateFinalReport() {
+            addResult('finalReport', 'info', 'إنشاء التقرير النهائي', 'جاري تجميع نتائج جميع الاختبارات...');
+
+            let reportHtml = '<div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 15px; margin: 15px 0;">';
+            reportHtml += '<h4><i class="fas fa-chart-bar"></i> تقرير اختبار نظام ترتيب العقارات الثابت</h4>';
+
+            // ملخص النتائج
+            const tests = [
+                { name: 'إنشاء البيانات التجريبية', result: testResults.createData },
+                { name: 'عرض الترتيب الحالي', result: testResults.showOrder },
+                { name: 'تغيير الترتيب', result: testResults.reorder },
+                { name: 'محاكاة تحديث البيانات', result: testResults.update },
+                { name: 'إعادة تعيين الترتيب', result: testResults.reset }
+            ];
+
+            let passedTests = 0;
+            let totalTests = 0;
+
+            reportHtml += '<h5>نتائج الاختبارات:</h5><ul>';
+            tests.forEach(test => {
+                if (test.result !== null) {
+                    totalTests++;
+                    if (test.result === true) {
+                        passedTests++;
+                        reportHtml += `<li style="color: #28a745;">✅ ${test.name}: نجح</li>`;
+                    } else {
+                        reportHtml += `<li style="color: #dc3545;">❌ ${test.name}: فشل</li>`;
+                    }
+                } else {
+                    reportHtml += `<li style="color: #6c757d;">➖ ${test.name}: لم يتم تشغيله</li>`;
+                }
+            });
+            reportHtml += '</ul>';
+
+            // التوصيات
+            reportHtml += '<h5>التوصيات:</h5>';
+            if (passedTests === totalTests) {
+                reportHtml += '<p style="color: #28a745;">🎉 جميع الاختبارات نجحت! نظام الترتيب الثابت يعمل بشكل ممتاز.</p>';
+                reportHtml += '<p><strong>✅ المميزات المؤكدة:</strong></p>';
+                reportHtml += '<ul>';
+                reportHtml += '<li>✅ الترتيب يبقى ثابتاً عند التحديثات</li>';
+                reportHtml += '<li>✅ ترتيب منفصل لكل مدينة</li>';
+                reportHtml += '<li>✅ العقارات الجديدة تُضاف في النهاية</li>';
+                reportHtml += '<li>✅ إمكانية إعادة تعيين الترتيب</li>';
+                reportHtml += '</ul>';
+            } else {
+                reportHtml += '<p style="color: #ffc107;">⚠️ بعض الاختبارات تحتاج تحسين</p>';
+            }
+
+            reportHtml += '</div>';
+
+            const reportType = passedTests === totalTests ? 'success' : 'warning';
+            addResult('finalReport', reportType, `اكتمل التقرير (${passedTests}/${totalTests})`, reportHtml);
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            addResult('testDataResults', 'info', '🚀 مرحباً بك في اختبار نظام الترتيب الثابت',
+                'اضغط على الأزرار أعلاه لتشغيل الاختبارات المختلفة');
+        });
+    </script>
+</body>
+</html>

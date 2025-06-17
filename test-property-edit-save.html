@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار حفظ تحرير العقارات في Supabase</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code { font-family: monospace; background: #f1f1f1; padding: 2px 5px; border-radius: 3px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+        th { background: #f8f9fa; }
+        .pass { background: #d4edda; }
+        .fail { background: #f8d7da; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار حفظ تحرير العقارات في Supabase</h1>
+        <p>هذا الاختبار يتحقق من أن تحرير العقارات يحفظ التغييرات في Supabase بشكل صحيح</p>
+        
+        <button onclick="testPropertyEditSave()">🚀 اختبار حفظ التحرير</button>
+        <button onclick="testSupabaseConnection()">☁️ اختبار اتصال Supabase</button>
+        <button onclick="testSavePropertyToSupabase()">💾 اختبار دالة الحفظ</button>
+        <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script src="data-migration.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        async function testSupabaseConnection() {
+            addResult('warning', '☁️ اختبار اتصال Supabase...', 'جاري فحص الاتصال...');
+            
+            try {
+                if (typeof supabaseClient === 'undefined' || !supabaseClient) {
+                    addResult('error', '❌ Supabase غير متصل', 'عميل Supabase غير متاح');
+                    return false;
+                }
+
+                // اختبار الاتصال بجدول properties
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('id')
+                    .limit(1);
+
+                if (error) {
+                    addResult('error', '❌ خطأ في الاتصال', `خطأ: ${error.message}`);
+                    return false;
+                }
+
+                addResult('success', '✅ Supabase متصل', `تم الاتصال بنجاح. عدد السجلات: ${data.length}`);
+                return true;
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في الاتصال', `خطأ: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testSavePropertyToSupabase() {
+            addResult('warning', '💾 اختبار دالة savePropertyToSupabase...', 'جاري اختبار دالة الحفظ...');
+            
+            try {
+                if (typeof savePropertyToSupabase !== 'function') {
+                    addResult('error', '❌ دالة الحفظ غير متوفرة', 'دالة savePropertyToSupabase غير موجودة');
+                    return false;
+                }
+
+                // إنشاء عقار تجريبي
+                const testProperty = {
+                    'رقم  الوحدة ': 'TEST_EDIT_' + Date.now(),
+                    'المدينة': 'الرياض',
+                    'اسم العقار': 'عقار اختبار تحرير',
+                    'اسم المستأجر': 'مستأجر اختبار',
+                    'رقم العقد': 'EDIT_TEST_' + Date.now(),
+                    'قيمة  الايجار ': '30000',
+                    'المساحة': '120',
+                    'تاريخ البداية': '01/01/2025',
+                    'تاريخ النهاية': '31/12/2025',
+                    'الاجمالى': '34500',
+                    'نوع العقد': 'ضريبي',
+                    'المالك': 'مالك اختبار'
+                };
+
+                addResult('warning', '📝 إنشاء عقار تجريبي...', `
+                    <strong>رقم الوحدة:</strong> ${testProperty['رقم  الوحدة ']}<br>
+                    <strong>اسم العقار:</strong> ${testProperty['اسم العقار']}<br>
+                    <strong>المالك:</strong> ${testProperty['المالك']}
+                `);
+
+                // حفظ العقار التجريبي
+                const saveResult = await savePropertyToSupabase(testProperty);
+                
+                if (saveResult) {
+                    addResult('success', '✅ تم حفظ العقار التجريبي', 'تم إنشاء العقار في Supabase بنجاح');
+                    
+                    // اختبار التحديث
+                    testProperty['المالك'] = 'مالك محدث - ' + Date.now();
+                    testProperty['قيمة  الايجار '] = '35000';
+                    
+                    addResult('warning', '🔄 اختبار تحديث العقار...', `
+                        <strong>المالك الجديد:</strong> ${testProperty['المالك']}<br>
+                        <strong>الإيجار الجديد:</strong> ${testProperty['قيمة  الايجار ']}
+                    `);
+                    
+                    const updateResult = await savePropertyToSupabase(testProperty);
+                    
+                    if (updateResult) {
+                        addResult('success', '✅ تم تحديث العقار', 'تم تحديث العقار في Supabase بنجاح');
+                        
+                        // التحقق من التحديث
+                        const { data: verifyData } = await supabaseClient
+                            .from('properties')
+                            .select('*')
+                            .eq('unit_number', testProperty['رقم  الوحدة '])
+                            .single();
+                        
+                        if (verifyData && verifyData.owner === testProperty['المالك']) {
+                            addResult('success', '✅ تم التحقق من التحديث', `
+                                <strong>المالك في قاعدة البيانات:</strong> ${verifyData.owner}<br>
+                                <strong>الإيجار في قاعدة البيانات:</strong> ${verifyData.rent_value}
+                            `);
+                        } else {
+                            addResult('warning', '⚠️ مشكلة في التحديث', 'البيانات لم تُحدث بشكل صحيح');
+                        }
+                        
+                        // حذف العقار التجريبي
+                        setTimeout(async () => {
+                            try {
+                                const { error } = await supabaseClient
+                                    .from('properties')
+                                    .delete()
+                                    .eq('unit_number', testProperty['رقم  الوحدة ']);
+                                
+                                if (!error) {
+                                    addResult('success', '🗑️ تنظيف', 'تم حذف العقار التجريبي بنجاح');
+                                }
+                            } catch (cleanupError) {
+                                addResult('warning', '⚠️ تحذير', `لم يتم حذف العقار التجريبي: ${cleanupError.message}`);
+                            }
+                        }, 3000);
+                        
+                        return true;
+                    } else {
+                        addResult('error', '❌ فشل في التحديث', 'لم يتم تحديث العقار في Supabase');
+                        return false;
+                    }
+                } else {
+                    addResult('error', '❌ فشل في الحفظ', 'لم يتم حفظ العقار في Supabase');
+                    return false;
+                }
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في اختبار الحفظ', `خطأ: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testPropertyEditSave() {
+            addResult('warning', '🚀 بدء اختبار حفظ تحرير العقارات...', 'جاري تنفيذ الاختبار الشامل...');
+            
+            try {
+                // 1. اختبار اتصال Supabase
+                const connectionTest = await testSupabaseConnection();
+                if (!connectionTest) {
+                    addResult('error', '❌ فشل الاختبار', 'لا يمكن المتابعة بدون اتصال Supabase');
+                    return;
+                }
+
+                // 2. اختبار دالة الحفظ
+                const saveTest = await testSavePropertyToSupabase();
+                if (!saveTest) {
+                    addResult('error', '❌ فشل اختبار الحفظ', 'دالة الحفظ لا تعمل بشكل صحيح');
+                    return;
+                }
+
+                // 3. اختبار دالة savePropertyEdit
+                addResult('warning', '🔧 اختبار دالة savePropertyEdit...', 'جاري فحص وجود الدالة...');
+                
+                if (typeof savePropertyEdit !== 'function') {
+                    addResult('error', '❌ دالة savePropertyEdit غير موجودة', 'الدالة غير متوفرة في النظام');
+                    return;
+                }
+
+                addResult('success', '✅ دالة savePropertyEdit موجودة', 'الدالة متوفرة ويمكن استدعاؤها');
+
+                // 4. فحص البيانات المحلية
+                if (!window.properties || !Array.isArray(window.properties) || window.properties.length === 0) {
+                    addResult('warning', '⚠️ لا توجد بيانات محلية', 'سيتم تحميل البيانات من Supabase...');
+                    
+                    // محاولة تحميل البيانات
+                    if (typeof loadAndDisplayProperties === 'function') {
+                        await loadAndDisplayProperties();
+                    }
+                }
+
+                if (window.properties && window.properties.length > 0) {
+                    addResult('success', '✅ البيانات المحلية متوفرة', `عدد العقارات: ${window.properties.length}`);
+                } else {
+                    addResult('warning', '⚠️ لا توجد بيانات للاختبار', 'سيتم إنشاء عقار تجريبي');
+                }
+
+                // 5. اختبار محاكاة تحرير عقار
+                addResult('warning', '🎭 محاكاة تحرير عقار...', 'جاري إنشاء محاكاة لعملية التحرير...');
+                
+                // إنشاء عقار تجريبي للتحرير
+                const testProperty = {
+                    'رقم  الوحدة ': 'EDIT_SIMULATION_' + Date.now(),
+                    'المدينة': 'الرياض',
+                    'اسم العقار': 'عقار محاكاة التحرير',
+                    'اسم المستأجر': 'مستأجر أصلي',
+                    'رقم العقد': 'SIM_CONTRACT_' + Date.now(),
+                    'قيمة  الايجار ': '25000',
+                    'المساحة': '100',
+                    'تاريخ البداية': '01/01/2025',
+                    'تاريخ النهاية': '31/12/2025',
+                    'الاجمالى': '28750',
+                    'نوع العقد': 'ضريبي',
+                    'المالك': 'مالك أصلي'
+                };
+
+                // إضافة إلى البيانات المحلية
+                if (!window.properties) window.properties = [];
+                window.properties.push(testProperty);
+
+                // حفظ في Supabase
+                const initialSave = await savePropertyToSupabase(testProperty);
+                if (!initialSave) {
+                    addResult('error', '❌ فشل في إنشاء العقار التجريبي', 'لا يمكن المتابعة');
+                    return;
+                }
+
+                addResult('success', '✅ تم إنشاء العقار التجريبي', 'العقار جاهز للتحرير');
+
+                // محاكاة التحرير
+                const originalOwner = testProperty['المالك'];
+                const newOwner = 'مالك محدث - ' + Date.now();
+                const newRent = '30000';
+
+                testProperty['المالك'] = newOwner;
+                testProperty['قيمة  الايجار '] = newRent;
+                testProperty['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+                testProperty['نوع التحديث'] = 'تحرير';
+
+                addResult('warning', '✏️ تطبيق التحديثات...', `
+                    <strong>المالك:</strong> ${originalOwner} → ${newOwner}<br>
+                    <strong>الإيجار:</strong> 25000 → ${newRent}
+                `);
+
+                // حفظ التحديثات
+                const updateSave = await savePropertyToSupabase(testProperty);
+                
+                if (updateSave) {
+                    addResult('success', '✅ تم حفظ التحديثات في Supabase', 'التحديثات حُفظت بنجاح');
+                    
+                    // التحقق من الحفظ
+                    const { data: verifyData } = await supabaseClient
+                        .from('properties')
+                        .select('*')
+                        .eq('unit_number', testProperty['رقم  الوحدة '])
+                        .single();
+                    
+                    if (verifyData && verifyData.owner === newOwner) {
+                        addResult('success', '🎉 نجح الاختبار الشامل!', `
+                            <strong>✅ جميع الاختبارات نجحت:</strong><br>
+                            • اتصال Supabase: يعمل<br>
+                            • دالة الحفظ: تعمل<br>
+                            • تحرير العقارات: يعمل<br>
+                            • حفظ التحديثات: يعمل<br><br>
+                            <strong>🔍 التحقق من البيانات:</strong><br>
+                            • المالك في قاعدة البيانات: ${verifyData.owner}<br>
+                            • الإيجار في قاعدة البيانات: ${verifyData.rent_value}
+                        `);
+                    } else {
+                        addResult('warning', '⚠️ مشكلة في التحقق', 'البيانات قد لا تكون محدثة بشكل صحيح');
+                    }
+                } else {
+                    addResult('error', '❌ فشل في حفظ التحديثات', 'التحديثات لم تُحفظ في Supabase');
+                }
+
+                // تنظيف العقار التجريبي
+                setTimeout(async () => {
+                    try {
+                        // حذف من البيانات المحلية
+                        const index = window.properties.findIndex(p => p['رقم  الوحدة '] === testProperty['رقم  الوحدة ']);
+                        if (index !== -1) {
+                            window.properties.splice(index, 1);
+                        }
+                        
+                        // حذف من Supabase
+                        const { error } = await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('unit_number', testProperty['رقم  الوحدة ']);
+                        
+                        if (!error) {
+                            addResult('success', '🗑️ تنظيف', 'تم حذف العقار التجريبي بنجاح');
+                        }
+                    } catch (cleanupError) {
+                        addResult('warning', '⚠️ تحذير', `لم يتم حذف العقار التجريبي: ${cleanupError.message}`);
+                    }
+                }, 5000);
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في الاختبار', `خطأ: ${error.message}`);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // تشغيل اختبار أولي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('success', '🚀 جاهز للاختبار', 'تم تحميل جميع الملفات. يمكنك الآن تشغيل الاختبارات.');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

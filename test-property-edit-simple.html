@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تحرير العقار المبسط</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .code { font-family: monospace; background: #f1f1f1; padding: 2px 5px; border-radius: 3px; }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار تحرير العقار المبسط</h1>
+        <p>هذا الاختبار يحاكي عملية تحرير عقار ويتحقق من حفظ التعديلات في Supabase</p>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="testSimplePropertyEdit()">🚀 اختبار تحرير عقار</button>
+            <button onclick="testDeedInfoSave()">📋 اختبار حفظ معلومات الصك</button>
+            <button onclick="testReloadPersistence()">🔄 اختبار الثبات بعد إعادة التحميل</button>
+            <button onclick="clearResults()">🗑️ مسح النتائج</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- تحميل المكتبات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-migration.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        function addResult(type, title, content) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${title}</strong><br>
+                ${content}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        async function testSimplePropertyEdit() {
+            addResult('info', '🚀 بدء اختبار تحرير العقار...', 'جاري إنشاء عقار تجريبي وتحريره');
+            
+            try {
+                // التحقق من الاتصال
+                if (!supabaseClient) {
+                    addResult('error', '❌ Supabase غير متصل', 'تأكد من تحميل إعدادات Supabase');
+                    return;
+                }
+
+                // إنشاء عقار تجريبي
+                const testProperty = {
+                    'رقم  الوحدة ': 'EDIT_SIMPLE_' + Date.now(),
+                    'اسم العقار': 'عقار اختبار التحرير المبسط',
+                    'المدينة': 'الرياض',
+                    'اسم المستأجر': 'مستأجر اختبار',
+                    'رقم العقد': 'CONTRACT_' + Date.now(),
+                    'قيمة  الايجار ': '25000',
+                    'المساحة': '120',
+                    'الاجمالى': '30000',
+                    'نوع العقد': 'سكني',
+                    'رقم الصك': 'ORIGINAL_DEED_' + Date.now(),
+                    'مساحةالصك': '400',
+                    'السجل العيني ': 'ORIGINAL_REG_' + Date.now(),
+                    'المالك': 'مالك أصلي'
+                };
+
+                addResult('success', '✅ تم إنشاء العقار التجريبي', `
+                    <strong>رقم الوحدة:</strong> ${testProperty['رقم  الوحدة ']}<br>
+                    <strong>اسم العقار:</strong> ${testProperty['اسم العقار']}<br>
+                    <strong>رقم الصك الأصلي:</strong> ${testProperty['رقم الصك']}
+                `);
+
+                // إضافة إلى البيانات المحلية
+                if (!window.properties) window.properties = [];
+                window.properties.push(testProperty);
+
+                // حفظ العقار الأصلي في Supabase
+                addResult('info', '💾 حفظ العقار الأصلي...', 'جاري حفظ العقار في Supabase');
+                
+                const initialSave = await savePropertyToSupabase(testProperty);
+                if (!initialSave) {
+                    addResult('error', '❌ فشل في حفظ العقار الأصلي', 'لا يمكن المتابعة');
+                    return;
+                }
+
+                addResult('success', '✅ تم حفظ العقار الأصلي', 'العقار محفوظ في Supabase');
+
+                // محاكاة التحرير
+                addResult('info', '✏️ محاكاة تحرير العقار...', 'جاري تطبيق تعديلات على العقار');
+                
+                const newDeed = 'UPDATED_DEED_' + Date.now();
+                const newArea = '600';
+                const newRegistry = 'UPDATED_REG_' + Date.now();
+                const newOwner = 'مالك محدث - ' + new Date().toLocaleString('ar-SA');
+
+                // تحديث البيانات المحلية
+                testProperty['رقم الصك'] = newDeed;
+                testProperty['مساحةالصك'] = newArea;
+                testProperty['السجل العيني '] = newRegistry;
+                testProperty['المالك'] = newOwner;
+                testProperty['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+
+                addResult('success', '✅ تم تطبيق التعديلات محلياً', `
+                    <strong>رقم الصك الجديد:</strong> ${newDeed}<br>
+                    <strong>مساحة الصك الجديدة:</strong> ${newArea} م²<br>
+                    <strong>السجل العيني الجديد:</strong> ${newRegistry}<br>
+                    <strong>المالك الجديد:</strong> ${newOwner}
+                `);
+
+                // حفظ التعديلات في Supabase
+                addResult('info', '💾 حفظ التعديلات في Supabase...', 'جاري حفظ التعديلات');
+                
+                const updateSave = await savePropertyToSupabase(testProperty);
+                
+                if (updateSave) {
+                    addResult('success', '✅ تم حفظ التعديلات', 'التعديلات محفوظة في Supabase');
+                    
+                    // التحقق من الحفظ
+                    addResult('info', '🔍 التحقق من حفظ التعديلات...', 'جاري فحص البيانات في Supabase');
+                    
+                    const { data: verifyData, error: verifyError } = await supabaseClient
+                        .from('properties')
+                        .select('deed_number, deed_area, real_estate_registry, owner')
+                        .eq('unit_number', testProperty['رقم  الوحدة '])
+                        .single();
+
+                    if (verifyError) {
+                        addResult('error', '❌ خطأ في التحقق', verifyError.message);
+                    } else {
+                        const deedSaved = verifyData.deed_number === newDeed;
+                        const areaSaved = verifyData.deed_area === newArea;
+                        const registrySaved = verifyData.real_estate_registry === newRegistry;
+                        const ownerSaved = verifyData.owner === newOwner;
+                        
+                        const allSaved = deedSaved && areaSaved && registrySaved && ownerSaved;
+                        
+                        if (allSaved) {
+                            addResult('success', '🎉 جميع التعديلات محفوظة بنجاح!', `
+                                ✅ رقم الصك: ${verifyData.deed_number}<br>
+                                ✅ مساحة الصك: ${verifyData.deed_area} م²<br>
+                                ✅ السجل العيني: ${verifyData.real_estate_registry}<br>
+                                ✅ المالك: ${verifyData.owner}
+                            `);
+                        } else {
+                            addResult('warning', '⚠️ بعض التعديلات لم تُحفظ', `
+                                ${deedSaved ? '✅' : '❌'} رقم الصك<br>
+                                ${areaSaved ? '✅' : '❌'} مساحة الصك<br>
+                                ${registrySaved ? '✅' : '❌'} السجل العيني<br>
+                                ${ownerSaved ? '✅' : '❌'} المالك
+                            `);
+                        }
+                    }
+                } else {
+                    addResult('error', '❌ فشل في حفظ التعديلات', 'التعديلات لم تُحفظ في Supabase');
+                }
+
+                // تنظيف العقار التجريبي
+                setTimeout(async () => {
+                    try {
+                        // حذف من البيانات المحلية
+                        const index = window.properties.findIndex(p => p['رقم  الوحدة '] === testProperty['رقم  الوحدة ']);
+                        if (index !== -1) {
+                            window.properties.splice(index, 1);
+                        }
+                        
+                        // حذف من Supabase
+                        const { error } = await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('unit_number', testProperty['رقم  الوحدة ']);
+                        
+                        if (!error) {
+                            addResult('success', '🗑️ تنظيف', 'تم حذف العقار التجريبي بنجاح');
+                        }
+                    } catch (cleanupError) {
+                        addResult('warning', '⚠️ تحذير', `لم يتم حذف العقار التجريبي: ${cleanupError.message}`);
+                    }
+                }, 5000);
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في اختبار التحرير', `خطأ: ${error.message}`);
+            }
+        }
+
+        async function testDeedInfoSave() {
+            addResult('info', '📋 اختبار حفظ معلومات الصك...', 'جاري اختبار حفظ معلومات الصك بشكل منفصل');
+            
+            try {
+                if (!supabaseClient) {
+                    addResult('error', '❌ Supabase غير متصل', 'تأكد من تحميل إعدادات Supabase');
+                    return;
+                }
+
+                // إنشاء عقار بمعلومات صك محددة
+                const deedTestProperty = {
+                    'رقم  الوحدة ': 'DEED_TEST_' + Date.now(),
+                    'اسم العقار': 'عقار اختبار معلومات الصك',
+                    'المدينة': 'جدة',
+                    'رقم الصك': 'DEED_SPECIFIC_' + Date.now(),
+                    'مساحةالصك': '750',
+                    'السجل العيني ': 'REG_SPECIFIC_' + Date.now(),
+                    'المالك': 'مالك اختبار الصك'
+                };
+
+                addResult('success', '✅ تم إنشاء عقار اختبار الصك', `
+                    <strong>رقم الصك:</strong> ${deedTestProperty['رقم الصك']}<br>
+                    <strong>مساحة الصك:</strong> ${deedTestProperty['مساحةالصك']} م²<br>
+                    <strong>السجل العيني:</strong> ${deedTestProperty['السجل العيني ']}
+                `);
+
+                // حفظ في Supabase
+                const saveResult = await savePropertyToSupabase(deedTestProperty);
+                
+                if (saveResult) {
+                    addResult('success', '✅ تم حفظ العقار', 'العقار محفوظ في Supabase');
+                    
+                    // التحقق من حفظ معلومات الصك
+                    const { data: checkData, error: checkError } = await supabaseClient
+                        .from('properties')
+                        .select('deed_number, deed_area, real_estate_registry')
+                        .eq('unit_number', deedTestProperty['رقم  الوحدة '])
+                        .single();
+
+                    if (checkError) {
+                        addResult('error', '❌ خطأ في التحقق من معلومات الصك', checkError.message);
+                    } else {
+                        const deedMatch = checkData.deed_number === deedTestProperty['رقم الصك'];
+                        const areaMatch = checkData.deed_area === deedTestProperty['مساحةالصك'];
+                        const registryMatch = checkData.real_estate_registry === deedTestProperty['السجل العيني '];
+                        
+                        if (deedMatch && areaMatch && registryMatch) {
+                            addResult('success', '🎉 جميع معلومات الصك محفوظة!', `
+                                ✅ رقم الصك: ${checkData.deed_number}<br>
+                                ✅ مساحة الصك: ${checkData.deed_area} م²<br>
+                                ✅ السجل العيني: ${checkData.real_estate_registry}
+                            `);
+                        } else {
+                            addResult('warning', '⚠️ بعض معلومات الصك لم تُحفظ', `
+                                ${deedMatch ? '✅' : '❌'} رقم الصك<br>
+                                ${areaMatch ? '✅' : '❌'} مساحة الصك<br>
+                                ${registryMatch ? '✅' : '❌'} السجل العيني
+                            `);
+                        }
+                    }
+                    
+                    // حذف العقار التجريبي
+                    setTimeout(async () => {
+                        try {
+                            const { error } = await supabaseClient
+                                .from('properties')
+                                .delete()
+                                .eq('unit_number', deedTestProperty['رقم  الوحدة ']);
+                            
+                            if (!error) {
+                                addResult('success', '🗑️ تنظيف', 'تم حذف عقار اختبار الصك');
+                            }
+                        } catch (cleanupError) {
+                            addResult('warning', '⚠️ تحذير', `لم يتم حذف عقار اختبار الصك: ${cleanupError.message}`);
+                        }
+                    }, 3000);
+                    
+                } else {
+                    addResult('error', '❌ فشل في حفظ عقار اختبار الصك', 'لم يتم حفظ العقار في Supabase');
+                }
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في اختبار معلومات الصك', `خطأ: ${error.message}`);
+            }
+        }
+
+        async function testReloadPersistence() {
+            addResult('info', '🔄 اختبار الثبات بعد إعادة التحميل...', 'جاري اختبار ما إذا كانت التعديلات تبقى بعد إعادة تحميل الصفحة');
+            
+            try {
+                if (!supabaseClient) {
+                    addResult('error', '❌ Supabase غير متصل', 'تأكد من تحميل إعدادات Supabase');
+                    return;
+                }
+
+                // إنشاء عقار للاختبار
+                const persistenceTestProperty = {
+                    'رقم  الوحدة ': 'PERSIST_TEST_' + Date.now(),
+                    'اسم العقار': 'عقار اختبار الثبات',
+                    'المدينة': 'الدمام',
+                    'رقم الصك': 'PERSIST_DEED_' + Date.now(),
+                    'مساحةالصك': '500',
+                    'السجل العيني ': 'PERSIST_REG_' + Date.now(),
+                    'المالك': 'مالك اختبار الثبات'
+                };
+
+                // حفظ العقار
+                const saveResult = await savePropertyToSupabase(persistenceTestProperty);
+                
+                if (saveResult) {
+                    addResult('success', '✅ تم حفظ عقار اختبار الثبات', `رقم الوحدة: ${persistenceTestProperty['رقم  الوحدة ']}`);
+                    
+                    // إنشاء رابط لاختبار إعادة التحميل
+                    const testUrl = `${window.location.origin}${window.location.pathname}?test_unit=${persistenceTestProperty['رقم  الوحدة ']}&test_deed=${persistenceTestProperty['رقم الصك']}`;
+                    
+                    addResult('info', '🔗 رابط اختبار إعادة التحميل', `
+                        <p>لاختبار الثبات، افتح الرابط التالي في نافذة جديدة:</p>
+                        <p><a href="${testUrl}" target="_blank" style="color: #007bff; text-decoration: underline;">${testUrl}</a></p>
+                        <p>ثم تحقق من وجود العقار ومعلومات الصك.</p>
+                    `);
+                    
+                    // فحص تلقائي للعقار
+                    setTimeout(async () => {
+                        try {
+                            const { data: checkData, error: checkError } = await supabaseClient
+                                .from('properties')
+                                .select('*')
+                                .eq('unit_number', persistenceTestProperty['رقم  الوحدة '])
+                                .single();
+
+                            if (checkError) {
+                                addResult('error', '❌ العقار غير موجود بعد الحفظ', checkError.message);
+                            } else {
+                                addResult('success', '✅ العقار موجود ومحفوظ', `
+                                    العقار محفوظ بنجاح في Supabase ويمكن الوصول إليه بعد إعادة التحميل
+                                `);
+                            }
+                        } catch (checkError) {
+                            addResult('error', '❌ خطأ في فحص العقار', checkError.message);
+                        }
+                    }, 2000);
+                    
+                } else {
+                    addResult('error', '❌ فشل في حفظ عقار اختبار الثبات', 'لا يمكن اختبار الثبات');
+                }
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في اختبار الثبات', `خطأ: ${error.message}`);
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // فحص إذا كان هناك اختبار ثبات في URL
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const testUnit = urlParams.get('test_unit');
+            const testDeed = urlParams.get('test_deed');
+            
+            if (testUnit && testDeed) {
+                setTimeout(async () => {
+                    addResult('info', '🔍 فحص اختبار الثبات...', `جاري البحث عن العقار: ${testUnit}`);
+                    
+                    try {
+                        const { data: foundData, error: findError } = await supabaseClient
+                            .from('properties')
+                            .select('*')
+                            .eq('unit_number', testUnit)
+                            .single();
+
+                        if (findError) {
+                            addResult('error', '❌ فشل اختبار الثبات', `العقار غير موجود: ${findError.message}`);
+                        } else {
+                            const deedMatch = foundData.deed_number === testDeed;
+                            
+                            if (deedMatch) {
+                                addResult('success', '🎉 نجح اختبار الثبات!', `
+                                    العقار موجود ومعلومات الصك محفوظة بشكل صحيح:<br>
+                                    ✅ رقم الوحدة: ${foundData.unit_number}<br>
+                                    ✅ رقم الصك: ${foundData.deed_number}<br>
+                                    ✅ مساحة الصك: ${foundData.deed_area} م²<br>
+                                    ✅ السجل العيني: ${foundData.real_estate_registry}
+                                `);
+                            } else {
+                                addResult('warning', '⚠️ اختبار الثبات جزئي', `
+                                    العقار موجود لكن معلومات الصك لا تطابق المتوقع
+                                `);
+                            }
+                        }
+                    } catch (error) {
+                        addResult('error', '❌ خطأ في فحص اختبار الثبات', error.message);
+                    }
+                }, 2000);
+            } else {
+                setTimeout(() => {
+                    addResult('success', '🚀 جاهز للاختبار', 'يمكنك الآن تشغيل اختبارات تحرير العقارات');
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
