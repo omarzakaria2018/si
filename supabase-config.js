@@ -904,6 +904,7 @@ function convertPropertyToSupabaseFormat(jsonProperty) {
         deed_area: jsonProperty['مساحةالصك'] || '',
         owner: jsonProperty['المالك'] || '',
         tenant_name: jsonProperty['اسم المستأجر'] || null,
+        tenant_phone: jsonProperty['رقم جوال المستأجر'] || null,
         contract_number: jsonProperty['رقم العقد'] || null,
         rent_value: parseFloat(jsonProperty['قيمة  الايجار ']) || null,
         area: parseFloat(jsonProperty['المساحة']) || null,
@@ -1060,11 +1061,12 @@ async function savePropertyToSupabase(property) {
         // Convert original format to Supabase format
         const supabaseProperty = convertPropertyToSupabaseFormat(property);
 
-        // Check if property exists (by unit_number)
+        // Check if property exists (by unit_number AND property_name for uniqueness)
         const { data: existingProperty } = await supabaseClient
             .from('properties')
             .select('id')
             .eq('unit_number', supabaseProperty.unit_number)
+            .eq('property_name', supabaseProperty.property_name)
             .single();
 
         if (existingProperty) {

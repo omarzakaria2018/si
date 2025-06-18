@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 اختبار مشكلة تكرار التعديل</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            border-radius: 10px;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .result.success { border-left-color: #28a745; background: #d4edda; }
+        .result.error { border-left-color: #dc3545; background: #f8d7da; }
+        .result.warning { border-left-color: #ffc107; background: #fff3cd; }
+        .result.info { border-left-color: #17a2b8; background: #d1ecf1; }
+        
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); }
+        .btn-success { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        
+        .data-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .step {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .unit-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-bug"></i> اختبار مشكلة تكرار التعديل</h1>
+            <p>فحص سبب إنشاء وحدات جديدة عند التعديل بدلاً من تعديل الموجودة</p>
+        </div>
+
+        <div class="step">
+            <h3><i class="fas fa-info-circle"></i> المشكلة المبلغ عنها:</h3>
+            <ul>
+                <li>❌ عند تعديل وحدة من البطاقة → ينشئ وحدة جديدة</li>
+                <li>❌ عند تعديل وحدة من إدارة العقارات → ينشئ وحدة جديدة</li>
+                <li>❌ الوحدة الأصلية لا تُحذف أو تُحدث</li>
+                <li>❌ النتيجة: وحدات مكررة</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3><i class="fas fa-search"></i> التشخيص المحتمل:</h3>
+            <ul>
+                <li>🔍 مشكلة في البحث عن الوحدة في showCardEditModal</li>
+                <li>🔍 مشكلة في معرفات الوحدة (رقم العقد، رقم الوحدة)</li>
+                <li>🔍 مشكلة في دالة savePropertyEdit</li>
+                <li>🔍 مشكلة في فهرس الوحدة في المصفوفة</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-play"></i> اختبار شامل للمشكلة</h2>
+            <p>تشغيل جميع خطوات الاختبار لتحديد السبب</p>
+            <button onclick="runFullDiagnostic()" class="btn-success">
+                <i class="fas fa-play"></i> تشغيل التشخيص الشامل
+            </button>
+            <div id="fullDiagnosticResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-step-forward"></i> اختبارات فردية</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <button onclick="step1_CreateUnit()" class="btn-warning">
+                    <i class="fas fa-plus"></i> 1. إنشاء وحدة
+                </button>
+                <button onclick="step2_FindUnit()" class="btn-warning">
+                    <i class="fas fa-search"></i> 2. البحث عن الوحدة
+                </button>
+                <button onclick="step3_SimulateEdit()" class="btn-warning">
+                    <i class="fas fa-edit"></i> 3. محاكاة التعديل
+                </button>
+                <button onclick="step4_CheckDuplication()" class="btn-warning">
+                    <i class="fas fa-copy"></i> 4. فحص التكرار
+                </button>
+                <button onclick="step5_Cleanup()" class="btn-danger">
+                    <i class="fas fa-trash"></i> 5. تنظيف
+                </button>
+            </div>
+            <div id="stepResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-list"></i> عرض الوحدات الحالية</h2>
+            <button onclick="showCurrentUnits()" class="btn-warning">
+                <i class="fas fa-list"></i> عرض جميع الوحدات
+            </button>
+            <div id="currentUnitsResults"></div>
+        </div>
+    </div>
+
+    <!-- تحميل الملفات المطلوبة -->
+    <script src="script.js"></script>
+    
+    <script>
+        let testPropertyName = 'عقار اختبار التعديل ' + Date.now();
+        let testUnitNumber = 'EDIT_TEST_001';
+        let testResults = {
+            createUnit: null,
+            findUnit: null,
+            simulateEdit: null,
+            checkDuplication: null,
+            cleanup: null
+        };
+
+        function addResult(containerId, type, title, content) {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong><i class="fas fa-${getIcon(type)}"></i> ${title}</strong><br>
+                ${content}
+            `;
+            container.appendChild(resultDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function getIcon(type) {
+            switch(type) {
+                case 'success': return 'check-circle';
+                case 'error': return 'times-circle';
+                case 'warning': return 'exclamation-triangle';
+                case 'info': return 'info-circle';
+                default: return 'circle';
+            }
+        }
+
+        // تشغيل التشخيص الشامل
+        async function runFullDiagnostic() {
+            addResult('fullDiagnosticResults', 'info', 'بدء التشخيص الشامل', 'تشغيل جميع خطوات التشخيص...');
+            
+            try {
+                await step1_CreateUnit();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await step2_FindUnit();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await step3_SimulateEdit();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await step4_CheckDuplication();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await step5_Cleanup();
+                
+                // تقرير نهائي
+                const passedSteps = Object.values(testResults).filter(r => r === true).length;
+                const totalSteps = Object.keys(testResults).length;
+                
+                if (passedSteps === totalSteps) {
+                    addResult('fullDiagnosticResults', 'success', 'التشخيص مكتمل! 🎉', 
+                        `جميع الخطوات نجحت (${passedSteps}/${totalSteps}). تم تحديد المشكلة!`);
+                } else {
+                    addResult('fullDiagnosticResults', 'warning', 'تشخيص جزئي', 
+                        `نجح ${passedSteps} من ${totalSteps} خطوات. تحتاج مراجعة.`);
+                }
+                
+            } catch (error) {
+                addResult('fullDiagnosticResults', 'error', 'خطأ في التشخيص', 
+                    `خطأ: ${error.message}`);
+            }
+        }
+
+        // الخطوة 1: إنشاء وحدة للاختبار
+        async function step1_CreateUnit() {
+            addResult('stepResults', 'info', 'الخطوة 1: إنشاء وحدة', 'إنشاء وحدة جديدة للاختبار...');
+            
+            try {
+                // التأكد من وجود المصفوفات
+                if (typeof window.properties === 'undefined') window.properties = [];
+                if (typeof window.propertyDefinitions === 'undefined') window.propertyDefinitions = [];
+                
+                // إنشاء وحدة جديدة
+                const newUnit = {
+                    'رقم  الوحدة ': testUnitNumber,
+                    'اسم العقار': testPropertyName,
+                    'المدينة': 'الرياض',
+                    'اسم المستأجر': 'مستأجر اختبار',
+                    'رقم العقد': 'CONTRACT_TEST_001',
+                    'قيمة  الايجار ': 5000,
+                    'تاريخ البداية': '01/01/2024',
+                    'تاريخ النهاية': '31/12/2024',
+                    'الاجمالى': 60000,
+                    'المساحة': 120,
+                    'رقم حساب الكهرباء': 'ELE_TEST_001',
+                    'رقم الصك': 'DEED_TEST_001',
+                    'مساحةالصك': '150',
+                    'السجل العيني ': 'REG_TEST_001',
+                    'موقع العقار': 'https://maps.google.com',
+                    'المالك': 'مالك اختبار',
+                    'الارتفاع': null,
+                    'عدد الاقساط المتبقية': null,
+                    'تاريخ القسط الاول': null,
+                    'مبلغ القسط الاول': null,
+                    'تاريخ القسط الثاني': null,
+                    'مبلغ القسط الثاني': null,
+                    'تاريخ نهاية القسط': null,
+                    'نوع العقد': 'سكني'
+                };
+                
+                window.properties.push(newUnit);
+                localStorage.setItem('properties', JSON.stringify(window.properties));
+                
+                addResult('stepResults', 'success', 'نجحت الخطوة 1! ✅', 
+                    `تم إنشاء الوحدة "${testUnitNumber}" في العقار "${testPropertyName}"`);
+                testResults.createUnit = true;
+                
+            } catch (error) {
+                addResult('stepResults', 'error', 'فشلت الخطوة 1! ❌', 
+                    `خطأ: ${error.message}`);
+                testResults.createUnit = false;
+            }
+        }
+
+        // الخطوة 2: البحث عن الوحدة
+        async function step2_FindUnit() {
+            addResult('stepResults', 'info', 'الخطوة 2: البحث عن الوحدة', 'محاكاة البحث في showCardEditModal...');
+            
+            try {
+                const contractNumber = 'CONTRACT_TEST_001';
+                const propertyName = testPropertyName;
+                const unitNumber = testUnitNumber;
+                
+                // محاكاة البحث في showCardEditModal
+                let property;
+                
+                // البحث بناءً على رقم العقد واسم العقار
+                if (contractNumber && propertyName) {
+                    property = window.properties.find(p =>
+                        p['رقم العقد'] === contractNumber && p['اسم العقار'] === propertyName
+                    );
+                    addResult('stepResults', 'info', 'البحث بالعقد والعقار', 
+                        `النتيجة: ${property ? 'موجود' : 'غير موجود'}`);
+                }
+                
+                // البحث بناءً على رقم الوحدة واسم العقار
+                if (!property && unitNumber && propertyName) {
+                    property = window.properties.find(p =>
+                        p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName
+                    );
+                    addResult('stepResults', 'info', 'البحث بالوحدة والعقار', 
+                        `النتيجة: ${property ? 'موجود' : 'غير موجود'}`);
+                }
+                
+                if (property) {
+                    addResult('stepResults', 'success', 'نجحت الخطوة 2! ✅', 
+                        `تم العثور على الوحدة بنجاح`);
+                    testResults.findUnit = true;
+                    
+                    // عرض تفاصيل الوحدة
+                    let html = '<div class="data-display"><h4>تفاصيل الوحدة الموجودة:</h4>';
+                    html += `<p><strong>رقم الوحدة:</strong> ${property['رقم  الوحدة ']}</p>`;
+                    html += `<p><strong>اسم العقار:</strong> ${property['اسم العقار']}</p>`;
+                    html += `<p><strong>رقم العقد:</strong> ${property['رقم العقد']}</p>`;
+                    html += `<p><strong>المستأجر:</strong> ${property['اسم المستأجر']}</p>`;
+                    html += '</div>';
+                    
+                    addResult('stepResults', 'info', 'تفاصيل الوحدة', html);
+                } else {
+                    addResult('stepResults', 'error', 'فشلت الخطوة 2! ❌', 
+                        'لم يتم العثور على الوحدة - هذا سبب المشكلة!');
+                    testResults.findUnit = false;
+                }
+                
+            } catch (error) {
+                addResult('stepResults', 'error', 'خطأ في الخطوة 2', 
+                    `خطأ: ${error.message}`);
+                testResults.findUnit = false;
+            }
+        }
+
+        // الخطوة 3: محاكاة التعديل
+        async function step3_SimulateEdit() {
+            addResult('stepResults', 'info', 'الخطوة 3: محاكاة التعديل', 'محاكاة دالة savePropertyEdit...');
+            
+            try {
+                const originalContractNumber = 'CONTRACT_TEST_001';
+                const originalPropertyName = testPropertyName;
+                const originalUnitNumber = testUnitNumber;
+                
+                // البحث عن العقار المطلوب تحديثه (محاكاة savePropertyEdit)
+                let propertyIndex = -1;
+                
+                if (originalContractNumber && originalPropertyName) {
+                    propertyIndex = window.properties.findIndex(p =>
+                        p['رقم العقد'] === originalContractNumber && p['اسم العقار'] === originalPropertyName
+                    );
+                    addResult('stepResults', 'info', 'البحث للتحديث بالعقد', 
+                        `فهرس الوحدة: ${propertyIndex}`);
+                }
+                
+                if (propertyIndex === -1 && originalUnitNumber && originalPropertyName) {
+                    propertyIndex = window.properties.findIndex(p =>
+                        p['رقم  الوحدة '] === originalUnitNumber && p['اسم العقار'] === originalPropertyName
+                    );
+                    addResult('stepResults', 'info', 'البحث للتحديث بالوحدة', 
+                        `فهرس الوحدة: ${propertyIndex}`);
+                }
+                
+                if (propertyIndex !== -1) {
+                    // محاكاة التحديث
+                    const originalData = { ...window.properties[propertyIndex] };
+                    const updatedProperty = { 
+                        ...window.properties[propertyIndex],
+                        'اسم المستأجر': 'مستأجر محدث',
+                        'قيمة  الايجار ': 6000,
+                        'تاريخ آخر تحديث': new Date().toLocaleDateString('ar-SA')
+                    };
+                    
+                    // تحديث الوحدة
+                    window.properties[propertyIndex] = updatedProperty;
+                    localStorage.setItem('properties', JSON.stringify(window.properties));
+                    
+                    addResult('stepResults', 'success', 'نجحت الخطوة 3! ✅', 
+                        `تم تحديث الوحدة بنجاح في الفهرس ${propertyIndex}`);
+                    testResults.simulateEdit = true;
+                } else {
+                    addResult('stepResults', 'error', 'فشلت الخطوة 3! ❌', 
+                        'لم يتم العثور على الوحدة للتحديث - هذا سبب إنشاء وحدة جديدة!');
+                    testResults.simulateEdit = false;
+                }
+                
+            } catch (error) {
+                addResult('stepResults', 'error', 'خطأ في الخطوة 3', 
+                    `خطأ: ${error.message}`);
+                testResults.simulateEdit = false;
+            }
+        }
+
+        // الخطوة 4: فحص التكرار
+        async function step4_CheckDuplication() {
+            addResult('stepResults', 'info', 'الخطوة 4: فحص التكرار', 'فحص وجود وحدات مكررة...');
+            
+            try {
+                const propertyName = testPropertyName;
+                const unitNumber = testUnitNumber;
+                
+                // البحث عن جميع الوحدات بنفس الرقم والعقار
+                const duplicateUnits = window.properties.filter(p => 
+                    p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName
+                );
+                
+                if (duplicateUnits.length === 1) {
+                    addResult('stepResults', 'success', 'نجحت الخطوة 4! ✅', 
+                        `لا يوجد تكرار: وحدة واحدة فقط`);
+                    testResults.checkDuplication = true;
+                } else if (duplicateUnits.length > 1) {
+                    addResult('stepResults', 'error', 'فشلت الخطوة 4! ❌', 
+                        `تكرار مكتشف: ${duplicateUnits.length} وحدة بنفس الرقم`);
+                    testResults.checkDuplication = false;
+                    
+                    // عرض الوحدات المكررة
+                    let html = '<div class="data-display"><h4>الوحدات المكررة:</h4>';
+                    duplicateUnits.forEach((unit, index) => {
+                        html += `<div class="unit-item">`;
+                        html += `<span>${index + 1}. ${unit['رقم  الوحدة ']} - ${unit['اسم المستأجر']}</span>`;
+                        html += `<span>إيجار: ${unit['قيمة  الايجار ']}</span>`;
+                        html += `</div>`;
+                    });
+                    html += '</div>';
+                    
+                    addResult('stepResults', 'info', 'تفاصيل التكرار', html);
+                } else {
+                    addResult('stepResults', 'warning', 'الوحدة غير موجودة', 
+                        'لم يتم العثور على أي وحدة');
+                    testResults.checkDuplication = false;
+                }
+                
+            } catch (error) {
+                addResult('stepResults', 'error', 'خطأ في الخطوة 4', 
+                    `خطأ: ${error.message}`);
+                testResults.checkDuplication = false;
+            }
+        }
+
+        // الخطوة 5: تنظيف البيانات
+        async function step5_Cleanup() {
+            addResult('stepResults', 'info', 'الخطوة 5: تنظيف', 'حذف البيانات التجريبية...');
+            
+            try {
+                let deletedCount = 0;
+                
+                // حذف جميع الوحدات التجريبية
+                if (window.properties) {
+                    for (let i = window.properties.length - 1; i >= 0; i--) {
+                        if (window.properties[i]['اسم العقار'] === testPropertyName) {
+                            window.properties.splice(i, 1);
+                            deletedCount++;
+                        }
+                    }
+                    localStorage.setItem('properties', JSON.stringify(window.properties));
+                }
+                
+                addResult('stepResults', 'success', 'نجحت الخطوة 5! ✅', 
+                    `تم حذف ${deletedCount} وحدة تجريبية`);
+                testResults.cleanup = true;
+                
+            } catch (error) {
+                addResult('stepResults', 'error', 'فشلت الخطوة 5! ❌', 
+                    `خطأ: ${error.message}`);
+                testResults.cleanup = false;
+            }
+        }
+
+        // عرض الوحدات الحالية
+        function showCurrentUnits() {
+            addResult('currentUnitsResults', 'info', 'عرض الوحدات الحالية', 'جاري عرض جميع الوحدات...');
+            
+            try {
+                if (!window.properties || window.properties.length === 0) {
+                    addResult('currentUnitsResults', 'warning', 'لا توجد وحدات', 'لا توجد وحدات في النظام');
+                    return;
+                }
+                
+                let html = '<div class="data-display"><h4>جميع الوحدات في النظام:</h4>';
+                window.properties.forEach((unit, index) => {
+                    html += `<div class="unit-item">`;
+                    html += `<span>${index + 1}. ${unit['رقم  الوحدة '] || 'غير محدد'} - ${unit['اسم العقار'] || 'غير محدد'}</span>`;
+                    html += `<span>${unit['اسم المستأجر'] || 'فارغ'}</span>`;
+                    html += `</div>`;
+                });
+                html += '</div>';
+                
+                addResult('currentUnitsResults', 'info', `إجمالي الوحدات: ${window.properties.length}`, html);
+                
+            } catch (error) {
+                addResult('currentUnitsResults', 'error', 'خطأ في عرض الوحدات', 
+                    `خطأ: ${error.message}`);
+            }
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            addResult('stepResults', 'info', '🚀 مرحباً بك في اختبار مشكلة التكرار', 
+                'اضغط على "تشغيل التشخيص الشامل" لتحديد سبب المشكلة');
+        });
+    </script>
+</body>
+</html>

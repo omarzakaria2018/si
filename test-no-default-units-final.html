@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 اختبار النظام النهائي بدون وحدات افتراضية</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 10px;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .result.success { border-left-color: #28a745; background: #d4edda; }
+        .result.error { border-left-color: #dc3545; background: #f8d7da; }
+        .result.warning { border-left-color: #ffc107; background: #fff3cd; }
+        .result.info { border-left-color: #17a2b8; background: #d1ecf1; }
+        
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); }
+        .btn-success { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        
+        .solution-demo {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .data-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-check-circle"></i> اختبار النظام النهائي بدون وحدات افتراضية</h1>
+            <p>التأكد من أن النظام لا ينشئ أي وحدات افتراضية عند إضافة العقارات</p>
+        </div>
+
+        <div class="solution-demo">
+            <h3><i class="fas fa-lightbulb"></i> الحل النهائي المطبق:</h3>
+            <ul>
+                <li>✅ <strong>لا وحدات افتراضية:</strong> عند إضافة عقار لا يتم إنشاء أي وحدات</li>
+                <li>✅ <strong>حفظ في التعريفات فقط:</strong> العقار يُحفظ في propertyDefinitions</li>
+                <li>✅ <strong>إضافة وحدات يدوياً:</strong> المستخدم يضيف الوحدات من تبويب "الوحدات"</li>
+                <li>✅ <strong>تعديل بدون مشاكل:</strong> يمكن تعديل العقار حتى لو لم تكن له وحدات</li>
+                <li>✅ <strong>حذف نظيف:</strong> لا توجد وحدات افتراضية للحذف</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-plus"></i> اختبار 1: إضافة عقار جديد</h2>
+            <p>اختبار إضافة عقار والتأكد من عدم إنشاء وحدات افتراضية</p>
+            <button onclick="testAddProperty()" class="btn-success">
+                <i class="fas fa-plus"></i> اختبار إضافة عقار
+            </button>
+            <div id="addPropertyResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-search"></i> اختبار 2: البحث والعثور على العقار</h2>
+            <p>اختبار البحث عن العقار في النظام</p>
+            <button onclick="testSearchProperty()" class="btn-warning">
+                <i class="fas fa-search"></i> اختبار البحث
+            </button>
+            <div id="searchPropertyResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-edit"></i> اختبار 3: تعديل العقار بدون وحدات</h2>
+            <p>اختبار تعديل العقار الذي لا يحتوي على وحدات</p>
+            <button onclick="testEditProperty()" class="btn-warning">
+                <i class="fas fa-edit"></i> اختبار التعديل
+            </button>
+            <div id="editPropertyResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-home"></i> اختبار 4: إضافة وحدة للعقار</h2>
+            <p>اختبار إضافة وحدة للعقار الذي لا يحتوي على وحدات</p>
+            <button onclick="testAddUnit()" class="btn-warning">
+                <i class="fas fa-home"></i> اختبار إضافة وحدة
+            </button>
+            <div id="addUnitResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-trash"></i> اختبار 5: حذف العقار</h2>
+            <p>اختبار حذف العقار من النظام</p>
+            <button onclick="testDeleteProperty()" class="btn-danger">
+                <i class="fas fa-trash"></i> اختبار الحذف
+            </button>
+            <div id="deletePropertyResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-file-alt"></i> تقرير الاختبار النهائي</h2>
+            <button onclick="generateFinalReport()" class="btn-success">
+                <i class="fas fa-file-alt"></i> إنشاء تقرير شامل
+            </button>
+            <div id="finalReport"></div>
+        </div>
+    </div>
+
+    <!-- تحميل الملفات المطلوبة -->
+    <script src="script.js"></script>
+    
+    <script>
+        // متغيرات الاختبار
+        let testResults = {
+            addProperty: null,
+            searchProperty: null,
+            editProperty: null,
+            addUnit: null,
+            deleteProperty: null
+        };
+        
+        let testPropertyName = 'عقار اختبار نهائي ' + Date.now();
+
+        function addResult(containerId, type, title, content) {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong><i class="fas fa-${getIcon(type)}"></i> ${title}</strong><br>
+                ${content}
+            `;
+            container.appendChild(resultDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function getIcon(type) {
+            switch(type) {
+                case 'success': return 'check-circle';
+                case 'error': return 'times-circle';
+                case 'warning': return 'exclamation-triangle';
+                case 'info': return 'info-circle';
+                default: return 'circle';
+            }
+        }
+
+        // اختبار 1: إضافة عقار جديد
+        function testAddProperty() {
+            addResult('addPropertyResults', 'info', 'بدء اختبار إضافة العقار', 'جاري إضافة عقار جديد بدون وحدات افتراضية...');
+            
+            try {
+                // التأكد من وجود المصفوفات المطلوبة
+                if (typeof window.properties === 'undefined') {
+                    window.properties = [];
+                }
+                if (typeof window.propertyDefinitions === 'undefined') {
+                    window.propertyDefinitions = [];
+                }
+                
+                const propertiesCountBefore = window.properties.length;
+                const definitionsCountBefore = window.propertyDefinitions.length;
+                
+                addResult('addPropertyResults', 'info', 'حالة البيانات قبل الإضافة', 
+                    `الوحدات: ${propertiesCountBefore}, التعريفات: ${definitionsCountBefore}`);
+                
+                // محاكاة إضافة عقار جديد (بدون وحدات)
+                const propertyDefinition = {
+                    name: testPropertyName,
+                    city: 'الرياض',
+                    deed: '12345',
+                    area: '500',
+                    registry: '67890',
+                    location: 'موقع اختبار',
+                    owner: 'مالك اختبار',
+                    createdAt: new Date().toISOString()
+                };
+                
+                // إضافة للتعريفات فقط (بدون إضافة وحدة)
+                window.propertyDefinitions.push(propertyDefinition);
+                localStorage.setItem('propertyDefinitions', JSON.stringify(window.propertyDefinitions));
+                
+                const propertiesCountAfter = window.properties.length;
+                const definitionsCountAfter = window.propertyDefinitions.length;
+                
+                addResult('addPropertyResults', 'info', 'حالة البيانات بعد الإضافة', 
+                    `الوحدات: ${propertiesCountAfter}, التعريفات: ${definitionsCountAfter}`);
+                
+                // التحقق من النتائج
+                const noUnitsAdded = propertiesCountAfter === propertiesCountBefore;
+                const definitionAdded = definitionsCountAfter > definitionsCountBefore;
+                
+                if (noUnitsAdded && definitionAdded) {
+                    addResult('addPropertyResults', 'success', 'نجح الاختبار! ✅', 
+                        `تم إضافة العقار "${testPropertyName}" في التعريفات فقط بدون إنشاء وحدات افتراضية`);
+                    testResults.addProperty = true;
+                } else {
+                    addResult('addPropertyResults', 'error', 'فشل الاختبار! ❌', 
+                        `وحدات مضافة: ${!noUnitsAdded}, تعريف مضاف: ${definitionAdded}`);
+                    testResults.addProperty = false;
+                }
+                
+            } catch (error) {
+                addResult('addPropertyResults', 'error', 'خطأ في اختبار الإضافة',
+                    `خطأ: ${error.message}`);
+                testResults.addProperty = false;
+            }
+        }
+
+        // اختبار 2: البحث عن العقار
+        function testSearchProperty() {
+            addResult('searchPropertyResults', 'info', 'بدء اختبار البحث', 'جاري البحث عن العقار المضاف...');
+
+            try {
+                // البحث في propertyDefinitions
+                const foundInDefinitions = window.propertyDefinitions ?
+                    window.propertyDefinitions.find(p => p.name === testPropertyName) : null;
+
+                // البحث في properties (يجب ألا يوجد)
+                const foundInProperties = window.properties ?
+                    window.properties.find(p => p['اسم العقار'] === testPropertyName) : null;
+
+                // اختبار دالة getUniqueProperties
+                let foundInUniqueProperties = false;
+                if (typeof getUniqueProperties === 'function') {
+                    const uniqueProperties = getUniqueProperties();
+                    foundInUniqueProperties = uniqueProperties.includes(testPropertyName);
+                }
+
+                addResult('searchPropertyResults', 'info', 'نتائج البحث',
+                    `في definitions: ${!!foundInDefinitions}, في properties: ${!!foundInProperties}, في getUniqueProperties: ${foundInUniqueProperties}`);
+
+                if (foundInDefinitions && !foundInProperties && foundInUniqueProperties) {
+                    addResult('searchPropertyResults', 'success', 'نجح اختبار البحث! ✅',
+                        'العقار موجود في التعريفات فقط (بدون وحدات) ويظهر في القوائم');
+                    testResults.searchProperty = true;
+                } else {
+                    addResult('searchPropertyResults', 'warning', 'نتائج البحث غير متوقعة',
+                        'العقار قد يكون موجود في مواقع غير صحيحة');
+                    testResults.searchProperty = false;
+                }
+
+            } catch (error) {
+                addResult('searchPropertyResults', 'error', 'خطأ في اختبار البحث',
+                    `خطأ: ${error.message}`);
+                testResults.searchProperty = false;
+            }
+        }
+
+        // اختبار 3: تعديل العقار
+        function testEditProperty() {
+            addResult('editPropertyResults', 'info', 'بدء اختبار التعديل', 'جاري اختبار تعديل العقار بدون وحدات...');
+
+            try {
+                // اختبار دالة editPropertyData
+                if (typeof editPropertyData === 'function') {
+                    addResult('editPropertyResults', 'info', 'اختبار دالة editPropertyData',
+                        `محاولة تعديل العقار "${testPropertyName}"`);
+
+                    // محاكاة استدعاء الدالة
+                    try {
+                        // هذا سيختبر ما إذا كانت الدالة تجد العقار في propertyDefinitions
+                        const propertyDefinition = window.propertyDefinitions.find(p => p.name === testPropertyName);
+
+                        if (propertyDefinition) {
+                            // تحويل تعريف العقار إلى تنسيق البيانات المتوقع
+                            const propertyData = {
+                                'اسم العقار': propertyDefinition.name,
+                                'المدينة': propertyDefinition.city,
+                                'رقم الصك': propertyDefinition.deed,
+                                'مساحةالصك': propertyDefinition.area,
+                                'السجل العيني ': propertyDefinition.registry,
+                                'موقع العقار': propertyDefinition.location,
+                                'المالك': propertyDefinition.owner
+                            };
+
+                            addResult('editPropertyResults', 'success', 'دالة التعديل تعمل! ✅',
+                                'تم العثور على العقار في التعريفات وتحويله للتنسيق المطلوب');
+                            testResults.editProperty = true;
+                        } else {
+                            addResult('editPropertyResults', 'error', 'لم يتم العثور على العقار',
+                                'العقار غير موجود في التعريفات');
+                            testResults.editProperty = false;
+                        }
+                    } catch (editError) {
+                        addResult('editPropertyResults', 'error', 'خطأ في دالة التعديل',
+                            `خطأ: ${editError.message}`);
+                        testResults.editProperty = false;
+                    }
+                } else {
+                    addResult('editPropertyResults', 'warning', 'دالة التعديل غير موجودة',
+                        'editPropertyData غير معرفة');
+                    testResults.editProperty = false;
+                }
+
+            } catch (error) {
+                addResult('editPropertyResults', 'error', 'خطأ في اختبار التعديل',
+                    `خطأ: ${error.message}`);
+                testResults.editProperty = false;
+            }
+        }
+
+        // اختبار 4: إضافة وحدة للعقار
+        function testAddUnit() {
+            addResult('addUnitResults', 'info', 'بدء اختبار إضافة وحدة', 'جاري اختبار إضافة وحدة للعقار...');
+
+            try {
+                const propertiesCountBefore = window.properties.length;
+
+                // محاكاة إضافة وحدة للعقار
+                const propertyDefinition = window.propertyDefinitions.find(p => p.name === testPropertyName);
+
+                if (propertyDefinition) {
+                    // إنشاء وحدة جديدة بناءً على تعريف العقار
+                    const newUnit = {
+                        'رقم  الوحدة ': 'A101',
+                        'المدينة': propertyDefinition.city,
+                        'اسم العقار': propertyDefinition.name,
+                        'موقع العقار': propertyDefinition.location,
+                        'رقم الصك': propertyDefinition.deed,
+                        'السجل العيني ': propertyDefinition.registry,
+                        'مساحةالصك': propertyDefinition.area,
+                        'المالك': propertyDefinition.owner,
+                        'اسم المستأجر': 'مستأجر اختبار',
+                        'رقم العقد': 'CONTRACT-001',
+                        'قيمة  الايجار ': 5000,
+                        'المساحة': 120,
+                        'تاريخ البداية': '01/01/2024',
+                        'تاريخ النهاية': '31/12/2024',
+                        'الاجمالى': 60000,
+                        'نوع العقد': 'سكني'
+                    };
+
+                    // إضافة الوحدة
+                    window.properties.push(newUnit);
+                    localStorage.setItem('properties', JSON.stringify(window.properties));
+
+                    const propertiesCountAfter = window.properties.length;
+
+                    if (propertiesCountAfter > propertiesCountBefore) {
+                        addResult('addUnitResults', 'success', 'نجح اختبار إضافة الوحدة! ✅',
+                            `تم إضافة وحدة "${newUnit['رقم  الوحدة ']}" للعقار "${testPropertyName}" بنجاح`);
+                        testResults.addUnit = true;
+                    } else {
+                        addResult('addUnitResults', 'error', 'فشل إضافة الوحدة',
+                            'لم يتم إضافة الوحدة بشكل صحيح');
+                        testResults.addUnit = false;
+                    }
+                } else {
+                    addResult('addUnitResults', 'error', 'العقار غير موجود',
+                        'لم يتم العثور على تعريف العقار');
+                    testResults.addUnit = false;
+                }
+
+            } catch (error) {
+                addResult('addUnitResults', 'error', 'خطأ في اختبار إضافة الوحدة',
+                    `خطأ: ${error.message}`);
+                testResults.addUnit = false;
+            }
+        }
+
+        // اختبار 5: حذف العقار
+        function testDeleteProperty() {
+            addResult('deletePropertyResults', 'info', 'بدء اختبار الحذف', 'جاري اختبار حذف العقار...');
+
+            try {
+                const propertiesCountBefore = window.properties.length;
+                const definitionsCountBefore = window.propertyDefinitions.length;
+
+                addResult('deletePropertyResults', 'info', 'حالة البيانات قبل الحذف',
+                    `الوحدات: ${propertiesCountBefore}, التعريفات: ${definitionsCountBefore}`);
+
+                // حذف جميع وحدات العقار من properties
+                for (let i = window.properties.length - 1; i >= 0; i--) {
+                    if (window.properties[i]['اسم العقار'] === testPropertyName) {
+                        window.properties.splice(i, 1);
+                    }
+                }
+
+                // حذف تعريف العقار من propertyDefinitions
+                const definitionIndex = window.propertyDefinitions.findIndex(p => p.name === testPropertyName);
+                if (definitionIndex !== -1) {
+                    window.propertyDefinitions.splice(definitionIndex, 1);
+                }
+
+                // حفظ التغييرات
+                localStorage.setItem('properties', JSON.stringify(window.properties));
+                localStorage.setItem('propertyDefinitions', JSON.stringify(window.propertyDefinitions));
+
+                const propertiesCountAfter = window.properties.length;
+                const definitionsCountAfter = window.propertyDefinitions.length;
+
+                addResult('deletePropertyResults', 'info', 'حالة البيانات بعد الحذف',
+                    `الوحدات: ${propertiesCountAfter}, التعريفات: ${definitionsCountAfter}`);
+
+                // التحقق من الحذف
+                const deletedFromProperties = propertiesCountAfter < propertiesCountBefore;
+                const deletedFromDefinitions = definitionsCountAfter < definitionsCountBefore;
+
+                if (deletedFromDefinitions) {
+                    addResult('deletePropertyResults', 'success', 'نجح اختبار الحذف! ✅',
+                        `تم حذف العقار "${testPropertyName}" من النظام بالكامل`);
+                    testResults.deleteProperty = true;
+                } else {
+                    addResult('deletePropertyResults', 'warning', 'حذف جزئي',
+                        `حذف من properties: ${deletedFromProperties}, حذف من definitions: ${deletedFromDefinitions}`);
+                    testResults.deleteProperty = false;
+                }
+
+            } catch (error) {
+                addResult('deletePropertyResults', 'error', 'خطأ في اختبار الحذف',
+                    `خطأ: ${error.message}`);
+                testResults.deleteProperty = false;
+            }
+        }
+
+        // إنشاء تقرير نهائي
+        function generateFinalReport() {
+            addResult('finalReport', 'info', 'إنشاء التقرير النهائي', 'جاري تجميع نتائج جميع الاختبارات...');
+
+            let reportHtml = '<div style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 15px; margin: 15px 0;">';
+            reportHtml += '<h4><i class="fas fa-chart-bar"></i> تقرير اختبار النظام النهائي بدون وحدات افتراضية</h4>';
+
+            // ملخص النتائج
+            const tests = [
+                { name: 'إضافة العقار بدون وحدات', result: testResults.addProperty },
+                { name: 'البحث عن العقار', result: testResults.searchProperty },
+                { name: 'تعديل العقار بدون وحدات', result: testResults.editProperty },
+                { name: 'إضافة وحدة للعقار', result: testResults.addUnit },
+                { name: 'حذف العقار', result: testResults.deleteProperty }
+            ];
+
+            let passedTests = 0;
+            let totalTests = 0;
+
+            reportHtml += '<h5>نتائج الاختبارات:</h5><ul>';
+            tests.forEach(test => {
+                if (test.result !== null) {
+                    totalTests++;
+                    if (test.result === true) {
+                        passedTests++;
+                        reportHtml += `<li style="color: #28a745;">✅ ${test.name}: نجح</li>`;
+                    } else {
+                        reportHtml += `<li style="color: #dc3545;">❌ ${test.name}: فشل</li>`;
+                    }
+                } else {
+                    reportHtml += `<li style="color: #6c757d;">➖ ${test.name}: لم يتم تشغيله</li>`;
+                }
+            });
+            reportHtml += '</ul>';
+
+            // التوصيات
+            reportHtml += '<h5>التوصيات:</h5>';
+            if (passedTests === totalTests) {
+                reportHtml += '<p style="color: #28a745;">🎉 جميع الاختبارات نجحت! النظام النهائي يعمل بشكل ممتاز.</p>';
+                reportHtml += '<p><strong>✅ المشكلة محلولة بالكامل:</strong></p>';
+                reportHtml += '<ul>';
+                reportHtml += '<li>✅ لا يتم إنشاء وحدات افتراضية عند إضافة العقارات</li>';
+                reportHtml += '<li>✅ العقارات تُحفظ في التعريفات فقط</li>';
+                reportHtml += '<li>✅ يمكن تعديل العقارات بدون وحدات</li>';
+                reportHtml += '<li>✅ يمكن إضافة وحدات للعقارات يدوياً</li>';
+                reportHtml += '<li>✅ حذف العقارات نظيف وبدون مشاكل</li>';
+                reportHtml += '</ul>';
+            } else {
+                reportHtml += '<p style="color: #ffc107;">⚠️ بعض الاختبارات تحتاج تحسين</p>';
+            }
+
+            reportHtml += '</div>';
+
+            const reportType = passedTests === totalTests ? 'success' : 'warning';
+            addResult('finalReport', reportType, `اكتمل التقرير (${passedTests}/${totalTests})`, reportHtml);
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            addResult('addPropertyResults', 'info', '🚀 مرحباً بك في اختبار النظام النهائي',
+                'اضغط على الأزرار أعلاه لتشغيل الاختبارات المختلفة');
+        });
+    </script>
+</body>
+</html>

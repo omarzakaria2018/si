@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠 اختبار تحرير الوحدات المتعددة</title>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 10px;
+            color: white;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .result.success { border-left-color: #28a745; background: #d4edda; }
+        .result.error { border-left-color: #dc3545; background: #f8d7da; }
+        .result.warning { border-left-color: #ffc107; background: #fff3cd; }
+        .result.info { border-left-color: #17a2b8; background: #d1ecf1; }
+        
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); }
+        .btn-success { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        
+        .data-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .step {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .unit-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .demo-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .demo-card h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        .demo-card .card-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .demo-card .card-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .demo-card .card-actions button {
+            padding: 8px 16px;
+            font-size: 14px;
+            margin: 0;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-home"></i> اختبار تحرير الوحدات المتعددة</h1>
+            <p>اختبار الميزة الجديدة لتحرير عدة وحدات في نافذة واحدة</p>
+        </div>
+
+        <div class="step">
+            <h3><i class="fas fa-lightbulb"></i> الميزة الجديدة:</h3>
+            <ul>
+                <li>✅ عندما تحتوي البطاقة على عدة وحدات (نفس العقد أو المستأجر)</li>
+                <li>✅ عند الضغط على زر التحرير → تظهر نافذة بتبويبات لكل وحدة</li>
+                <li>✅ يمكن تحرير كل وحدة منفصلة أو تطبيق عمليات مشتركة</li>
+                <li>✅ حفظ فردي أو جماعي للوحدات</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-play"></i> إعداد بيانات الاختبار</h2>
+            <p>إنشاء عدة وحدات مرتبطة لاختبار الميزة</p>
+            <button onclick="setupTestData()" class="btn-success">
+                <i class="fas fa-database"></i> إنشاء بيانات الاختبار
+            </button>
+            <div id="setupResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-cards-blank"></i> محاكاة البطاقات</h2>
+            <p>عرض البطاقات التجريبية مع أزرار التحرير</p>
+            <div id="demoCards"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-list"></i> عرض الوحدات الحالية</h2>
+            <button onclick="showCurrentUnits()" class="btn-warning">
+                <i class="fas fa-list"></i> عرض جميع الوحدات
+            </button>
+            <div id="currentUnitsResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h2><i class="fas fa-trash"></i> تنظيف البيانات</h2>
+            <button onclick="cleanupTestData()" class="btn-danger">
+                <i class="fas fa-trash"></i> حذف بيانات الاختبار
+            </button>
+            <div id="cleanupResults"></div>
+        </div>
+    </div>
+
+    <!-- تحميل الملفات المطلوبة -->
+    <script src="script.js"></script>
+    
+    <script>
+        let testPropertyName = 'عقار اختبار متعدد ' + Date.now();
+        let testContractNumber = 'CONTRACT_MULTI_' + Date.now();
+        let testTenantName = 'مستأجر متعدد ' + Date.now();
+
+        function addResult(containerId, type, title, content) {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                <strong><i class="fas fa-${getIcon(type)}"></i> ${title}</strong><br>
+                ${content}
+            `;
+            container.appendChild(resultDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function getIcon(type) {
+            switch(type) {
+                case 'success': return 'check-circle';
+                case 'error': return 'times-circle';
+                case 'warning': return 'exclamation-triangle';
+                case 'info': return 'info-circle';
+                default: return 'circle';
+            }
+        }
+
+        // إعداد بيانات الاختبار
+        function setupTestData() {
+            addResult('setupResults', 'info', 'بدء إعداد البيانات', 'إنشاء عدة وحدات مرتبطة...');
+            
+            try {
+                // التأكد من وجود المصفوفات
+                if (typeof window.properties === 'undefined') window.properties = [];
+                
+                // إنشاء 3 وحدات مرتبطة بنفس العقد
+                const baseUnit = {
+                    'اسم العقار': testPropertyName,
+                    'المدينة': 'الرياض',
+                    'اسم المستأجر': testTenantName,
+                    'رقم العقد': testContractNumber,
+                    'تاريخ البداية': '01/01/2024',
+                    'تاريخ النهاية': '31/12/2024',
+                    'رقم الصك': 'DEED_MULTI_001',
+                    'مساحةالصك': '500',
+                    'السجل العيني ': 'REG_MULTI_001',
+                    'موقع العقار': 'https://maps.google.com',
+                    'المالك': 'مالك متعدد',
+                    'نوع العقد': 'سكني',
+                    'تاريخ آخر تحديث': new Date().toLocaleDateString('ar-SA')
+                };
+
+                const units = [
+                    {
+                        ...baseUnit,
+                        'رقم  الوحدة ': 'A001',
+                        'المساحة': 120,
+                        'قيمة  الايجار ': 5000,
+                        'الاجمالى': 60000,
+                        'رقم حساب الكهرباء': 'ELE_A001'
+                    },
+                    {
+                        ...baseUnit,
+                        'رقم  الوحدة ': 'A002',
+                        'المساحة': 100,
+                        'قيمة  الايجار ': 4500,
+                        'الاجمالى': 54000,
+                        'رقم حساب الكهرباء': 'ELE_A002'
+                    },
+                    {
+                        ...baseUnit,
+                        'رقم  الوحدة ': 'A003',
+                        'المساحة': 150,
+                        'قيمة  الايجار ': 6000,
+                        'الاجمالى': 72000,
+                        'رقم حساب الكهرباء': 'ELE_A003'
+                    }
+                ];
+
+                // إضافة الوحدات
+                units.forEach(unit => {
+                    window.properties.push(unit);
+                });
+
+                localStorage.setItem('properties', JSON.stringify(window.properties));
+                
+                addResult('setupResults', 'success', 'تم إنشاء البيانات! ✅', 
+                    `تم إنشاء ${units.length} وحدة مرتبطة:<br>` +
+                    `- العقار: ${testPropertyName}<br>` +
+                    `- العقد: ${testContractNumber}<br>` +
+                    `- المستأجر: ${testTenantName}<br>` +
+                    `- الوحدات: ${units.map(u => u['رقم  الوحدة ']).join(', ')}`);
+                
+                // عرض البطاقات التجريبية
+                showDemoCards();
+                
+            } catch (error) {
+                addResult('setupResults', 'error', 'فشل في إنشاء البيانات! ❌', 
+                    `خطأ: ${error.message}`);
+            }
+        }
+
+        // عرض البطاقات التجريبية
+        function showDemoCards() {
+            const container = document.getElementById('demoCards');
+            
+            const html = `
+                <div class="demo-card">
+                    <h4><i class="fas fa-home"></i> بطاقة العقار المتعدد</h4>
+                    <div class="card-info">
+                        <div><strong>العقار:</strong> ${testPropertyName}</div>
+                        <div><strong>المستأجر:</strong> ${testTenantName}</div>
+                        <div><strong>العقد:</strong> ${testContractNumber}</div>
+                        <div><strong>الوحدات:</strong> A001, A002, A003</div>
+                    </div>
+                    <div class="card-actions">
+                        <button onclick="testSingleUnitEdit()" class="btn-warning">
+                            <i class="fas fa-edit"></i> تحرير وحدة واحدة (A001)
+                        </button>
+                        <button onclick="testMultiUnitEdit()" class="btn-success">
+                            <i class="fas fa-edit"></i> تحرير متعدد (العقد)
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // اختبار تحرير وحدة واحدة
+        function testSingleUnitEdit() {
+            addResult('setupResults', 'info', 'اختبار تحرير وحدة واحدة', 'فتح نافذة تحرير لوحدة A001 فقط...');
+            
+            try {
+                // محاكاة الضغط على زر التحرير لوحدة واحدة (بدون عقد)
+                if (typeof showCardEditModal === 'function') {
+                    showCardEditModal('', testPropertyName, 'A001');
+                    addResult('setupResults', 'success', 'تم فتح نافذة التحرير الفردية! ✅', 
+                        'يجب أن تظهر نافذة تحرير عادية لوحدة A001 فقط');
+                } else {
+                    addResult('setupResults', 'error', 'دالة التحرير غير موجودة! ❌', 
+                        'تأكد من تحميل script.js');
+                }
+            } catch (error) {
+                addResult('setupResults', 'error', 'خطأ في التحرير الفردي! ❌', 
+                    `خطأ: ${error.message}`);
+            }
+        }
+
+        // اختبار تحرير متعدد
+        function testMultiUnitEdit() {
+            addResult('setupResults', 'info', 'اختبار تحرير متعدد', 'فتح نافذة تحرير لجميع وحدات العقد...');
+            
+            try {
+                // محاكاة الضغط على زر التحرير مع العقد (سيجد عدة وحدات)
+                if (typeof showCardEditModal === 'function') {
+                    showCardEditModal(testContractNumber, testPropertyName, 'A001');
+                    addResult('setupResults', 'success', 'تم فتح نافذة التحرير المتعددة! ✅', 
+                        'يجب أن تظهر نافذة بتبويبات للوحدات A001, A002, A003');
+                } else {
+                    addResult('setupResults', 'error', 'دالة التحرير غير موجودة! ❌', 
+                        'تأكد من تحميل script.js');
+                }
+            } catch (error) {
+                addResult('setupResults', 'error', 'خطأ في التحرير المتعدد! ❌', 
+                    `خطأ: ${error.message}`);
+            }
+        }
+
+        // عرض الوحدات الحالية
+        function showCurrentUnits() {
+            addResult('currentUnitsResults', 'info', 'عرض الوحدات الحالية', 'جاري عرض جميع الوحدات...');
+            
+            try {
+                if (!window.properties || window.properties.length === 0) {
+                    addResult('currentUnitsResults', 'warning', 'لا توجد وحدات', 'لا توجد وحدات في النظام');
+                    return;
+                }
+                
+                // تصفية الوحدات التجريبية
+                const testUnits = window.properties.filter(p => 
+                    p['اسم العقار'] === testPropertyName
+                );
+                
+                let html = '<div class="data-display"><h4>الوحدات التجريبية:</h4>';
+                if (testUnits.length > 0) {
+                    testUnits.forEach((unit, index) => {
+                        html += `<div class="unit-item">`;
+                        html += `<span>${index + 1}. ${unit['رقم  الوحدة '] || 'غير محدد'} - ${unit['اسم المستأجر'] || 'فارغ'}</span>`;
+                        html += `<span>عقد: ${unit['رقم العقد'] || 'غير محدد'}</span>`;
+                        html += `</div>`;
+                    });
+                } else {
+                    html += '<p>لا توجد وحدات تجريبية. اضغط "إنشاء بيانات الاختبار" أولاً.</p>';
+                }
+                html += '</div>';
+                
+                addResult('currentUnitsResults', 'info', `إجمالي الوحدات التجريبية: ${testUnits.length}`, html);
+                
+            } catch (error) {
+                addResult('currentUnitsResults', 'error', 'خطأ في عرض الوحدات', 
+                    `خطأ: ${error.message}`);
+            }
+        }
+
+        // تنظيف بيانات الاختبار
+        function cleanupTestData() {
+            addResult('cleanupResults', 'info', 'بدء التنظيف', 'حذف جميع البيانات التجريبية...');
+            
+            try {
+                let deletedCount = 0;
+                
+                if (window.properties) {
+                    for (let i = window.properties.length - 1; i >= 0; i--) {
+                        if (window.properties[i]['اسم العقار'] === testPropertyName) {
+                            window.properties.splice(i, 1);
+                            deletedCount++;
+                        }
+                    }
+                    localStorage.setItem('properties', JSON.stringify(window.properties));
+                }
+                
+                // مسح البطاقات التجريبية
+                document.getElementById('demoCards').innerHTML = '';
+                
+                addResult('cleanupResults', 'success', 'تم التنظيف! ✅', 
+                    `تم حذف ${deletedCount} وحدة تجريبية`);
+                
+            } catch (error) {
+                addResult('cleanupResults', 'error', 'فشل في التنظيف! ❌', 
+                    `خطأ: ${error.message}`);
+            }
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            addResult('setupResults', 'info', '🚀 مرحباً بك في اختبار التحرير المتعدد', 
+                'اضغط على "إنشاء بيانات الاختبار" لبدء الاختبار');
+        });
+    </script>
+</body>
+</html>
