@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تحميل البيانات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+        
+        .data-table th,
+        .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .phone-number {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-database"></i> اختبار تحميل البيانات</h1>
+            <p>اختبار تحميل رقم الجوال الإضافي من Supabase</p>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-download"></i> اختبار تحميل البيانات من Supabase</h3>
+            <p>جلب البيانات مباشرة من قاعدة البيانات والتحقق من وجود رقم الجوال الإضافي</p>
+            <button class="test-button" onclick="testDataLoading()">
+                <i class="fas fa-sync-alt"></i> تحميل البيانات من Supabase
+            </button>
+            <div id="loadingTestResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-exchange-alt"></i> اختبار دالة التحويل</h3>
+            <p>اختبار دالة تحويل البيانات من صيغة Supabase إلى الصيغة المحلية</p>
+            <button class="test-button" onclick="testConversionFunction()">
+                <i class="fas fa-code"></i> اختبار دالة التحويل
+            </button>
+            <div id="conversionTestResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-search"></i> البحث عن الوحدات مع رقم جوال إضافي</h3>
+            <p>البحث عن الوحدات التي تحتوي على رقم جوال إضافي في قاعدة البيانات</p>
+            <button class="test-button" onclick="searchUnitsWithSecondPhone()">
+                <i class="fas fa-mobile-alt"></i> البحث عن الوحدات
+            </button>
+            <div id="searchTestResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-check-double"></i> اختبار شامل</h3>
+            <p>تشغيل جميع الاختبارات معاً</p>
+            <button class="test-button" onclick="runAllTests()">
+                <i class="fas fa-play"></i> تشغيل جميع الاختبارات
+            </button>
+            <div id="allTestsResult"></div>
+        </div>
+    </div>
+
+    <!-- تحميل ملفات النظام -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-migration.js"></script>
+    <script>
+        // دالة لإظهار النتائج
+        function showResult(containerId, type, message) {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `result ${type}`;
+            result.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            container.appendChild(result);
+        }
+
+        // اختبار تحميل البيانات
+        async function testDataLoading() {
+            const container = document.getElementById('loadingTestResult');
+            container.innerHTML = '';
+            
+            showResult('loadingTestResult', 'info', 'بدء اختبار تحميل البيانات...');
+            
+            try {
+                // تهيئة Supabase
+                if (!supabaseClient) {
+                    await initSupabase();
+                }
+
+                if (!supabaseClient) {
+                    showResult('loadingTestResult', 'error', 'فشل في الاتصال بـ Supabase');
+                    return;
+                }
+
+                // جلب البيانات مباشرة من Supabase
+                const { data: rawData, error } = await supabaseClient
+                    .from('properties')
+                    .select('unit_number, tenant_name, tenant_phone, tenant_phone_2')
+                    .not('tenant_phone_2', 'is', null)
+                    .limit(5);
+
+                if (error) {
+                    showResult('loadingTestResult', 'error', `خطأ في جلب البيانات: ${error.message}`);
+                    return;
+                }
+
+                showResult('loadingTestResult', 'success', `تم جلب ${rawData.length} وحدة تحتوي على رقم جوال إضافي`);
+
+                if (rawData.length > 0) {
+                    let tableHtml = `
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>رقم الوحدة</th>
+                                    <th>اسم المستأجر</th>
+                                    <th>الجوال الأساسي</th>
+                                    <th>الجوال الإضافي</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    rawData.forEach(unit => {
+                        tableHtml += `
+                            <tr>
+                                <td>${unit.unit_number}</td>
+                                <td>${unit.tenant_name || 'غير محدد'}</td>
+                                <td class="phone-number">${unit.tenant_phone || 'غير محدد'}</td>
+                                <td class="phone-number">${unit.tenant_phone_2 || 'غير محدد'}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tableHtml += '</tbody></table>';
+                    container.innerHTML += tableHtml;
+                } else {
+                    showResult('loadingTestResult', 'info', 'لا توجد وحدات تحتوي على رقم جوال إضافي');
+                }
+
+            } catch (error) {
+                showResult('loadingTestResult', 'error', `خطأ: ${error.message}`);
+            }
+        }
+
+        // اختبار دالة التحويل
+        function testConversionFunction() {
+            const container = document.getElementById('conversionTestResult');
+            container.innerHTML = '';
+            
+            showResult('conversionTestResult', 'info', 'اختبار دالة التحويل...');
+            
+            try {
+                // بيانات تجريبية من Supabase
+                const supabaseData = {
+                    unit_number: 'TEST_001',
+                    tenant_name: 'مستأجر تجريبي',
+                    tenant_phone: '0501234567',
+                    tenant_phone_2: '0509876543',
+                    contract_number: 'CONTRACT_001'
+                };
+
+                // اختبار دالة التحويل
+                if (typeof convertSupabaseToOriginalFormat === 'function') {
+                    const convertedData = convertSupabaseToOriginalFormat(supabaseData);
+                    
+                    showResult('conversionTestResult', 'success', 'دالة التحويل موجودة وتعمل');
+                    
+                    // التحقق من وجود الحقول
+                    const hasMainPhone = convertedData['رقم جوال المستأجر'] === '0501234567';
+                    const hasSecondPhone = convertedData['رقم جوال إضافي'] === '0509876543';
+                    
+                    if (hasMainPhone) {
+                        showResult('conversionTestResult', 'success', '✅ رقم الجوال الأساسي محول بشكل صحيح');
+                    } else {
+                        showResult('conversionTestResult', 'error', '❌ رقم الجوال الأساسي لم يُحول');
+                    }
+                    
+                    if (hasSecondPhone) {
+                        showResult('conversionTestResult', 'success', '✅ رقم الجوال الإضافي محول بشكل صحيح');
+                    } else {
+                        showResult('conversionTestResult', 'error', '❌ رقم الجوال الإضافي لم يُحول');
+                    }
+
+                    // عرض البيانات المحولة
+                    const resultHtml = `
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <h4>البيانات المحولة:</h4>
+                            <p><strong>رقم الوحدة:</strong> ${convertedData['رقم  الوحدة ']}</p>
+                            <p><strong>اسم المستأجر:</strong> ${convertedData['اسم المستأجر']}</p>
+                            <p><strong>رقم الجوال الأساسي:</strong> <span class="phone-number">${convertedData['رقم جوال المستأجر']}</span></p>
+                            <p><strong>رقم الجوال الإضافي:</strong> <span class="phone-number">${convertedData['رقم جوال إضافي']}</span></p>
+                        </div>
+                    `;
+                    container.innerHTML += resultHtml;
+                    
+                } else {
+                    showResult('conversionTestResult', 'error', 'دالة التحويل غير موجودة');
+                }
+
+            } catch (error) {
+                showResult('conversionTestResult', 'error', `خطأ في اختبار التحويل: ${error.message}`);
+            }
+        }
+
+        // البحث عن الوحدات مع رقم جوال إضافي
+        async function searchUnitsWithSecondPhone() {
+            const container = document.getElementById('searchTestResult');
+            container.innerHTML = '';
+            
+            showResult('searchTestResult', 'info', 'البحث عن الوحدات...');
+            
+            try {
+                if (!supabaseClient) {
+                    await initSupabase();
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('unit_number, property_name, tenant_name, tenant_phone_2')
+                    .not('tenant_phone_2', 'is', null)
+                    .order('unit_number');
+
+                if (error) {
+                    showResult('searchTestResult', 'error', `خطأ في البحث: ${error.message}`);
+                    return;
+                }
+
+                showResult('searchTestResult', 'success', `تم العثور على ${data.length} وحدة تحتوي على رقم جوال إضافي`);
+
+                if (data.length > 0) {
+                    let tableHtml = `
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>رقم الوحدة</th>
+                                    <th>اسم العقار</th>
+                                    <th>اسم المستأجر</th>
+                                    <th>رقم الجوال الإضافي</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    data.forEach(unit => {
+                        tableHtml += `
+                            <tr>
+                                <td>${unit.unit_number}</td>
+                                <td>${unit.property_name}</td>
+                                <td>${unit.tenant_name || 'غير محدد'}</td>
+                                <td class="phone-number">${unit.tenant_phone_2}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tableHtml += '</tbody></table>';
+                    container.innerHTML += tableHtml;
+                }
+
+            } catch (error) {
+                showResult('searchTestResult', 'error', `خطأ: ${error.message}`);
+            }
+        }
+
+        // تشغيل جميع الاختبارات
+        async function runAllTests() {
+            const container = document.getElementById('allTestsResult');
+            container.innerHTML = '';
+            
+            showResult('allTestsResult', 'info', '🚀 بدء تشغيل جميع الاختبارات...');
+            
+            await testDataLoading();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testConversionFunction();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await searchUnitsWithSecondPhone();
+            
+            showResult('allTestsResult', 'success', '🎉 تم الانتهاء من جميع الاختبارات!');
+        }
+
+        // تهيئة تلقائية عند تحميل الصفحة
+        window.addEventListener('load', async () => {
+            console.log('🔄 تهيئة اختبار تحميل البيانات...');
+            
+            // انتظار قليل لضمان تحميل جميع الملفات
+            setTimeout(async () => {
+                if (typeof initSupabase === 'function') {
+                    await initSupabase();
+                    console.log('✅ تم تهيئة Supabase');
+                } else {
+                    console.error('❌ دالة initSupabase غير موجودة');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

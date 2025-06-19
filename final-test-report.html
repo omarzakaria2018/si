@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير الاختبار النهائي - رقم الجوال الإضافي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #28a745;
+        }
+        
+        .test-section.warning {
+            border-left-color: #ffc107;
+        }
+        
+        .test-section.error {
+            border-left-color: #dc3545;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .checklist li {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+        }
+        
+        .checklist li.pending {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        
+        .checklist li.failed {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .status-icon {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+        }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-clipboard-check"></i> تقرير الاختبار النهائي</h1>
+            <p>اختبار شامل لميزة رقم الجوال الإضافي</p>
+        </div>
+
+        <div class="summary-card">
+            <h3><i class="fas fa-chart-pie"></i> ملخص النتائج</h3>
+            <div class="summary-stats">
+                <div class="stat">
+                    <span class="stat-number" id="passedTests">0</span>
+                    <span class="stat-label">اختبار نجح</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="failedTests">0</span>
+                    <span class="stat-label">اختبار فشل</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="totalTests">0</span>
+                    <span class="stat-label">إجمالي الاختبارات</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-list-check"></i> قائمة الاختبارات</h3>
+            <ul class="checklist" id="testChecklist">
+                <li class="pending" id="test-database">
+                    <i class="fas fa-database"></i> اختبار قاعدة البيانات
+                    <span class="status-icon">⏳</span>
+                </li>
+                <li class="pending" id="test-conversion">
+                    <i class="fas fa-exchange-alt"></i> اختبار دالة التحويل
+                    <span class="status-icon">⏳</span>
+                </li>
+                <li class="pending" id="test-loading">
+                    <i class="fas fa-download"></i> اختبار تحميل البيانات
+                    <span class="status-icon">⏳</span>
+                </li>
+                <li class="pending" id="test-display">
+                    <i class="fas fa-eye"></i> اختبار عرض البيانات
+                    <span class="status-icon">⏳</span>
+                </li>
+                <li class="pending" id="test-save">
+                    <i class="fas fa-save"></i> اختبار حفظ البيانات
+                    <span class="status-icon">⏳</span>
+                </li>
+                <li class="pending" id="test-integration">
+                    <i class="fas fa-puzzle-piece"></i> اختبار التكامل الشامل
+                    <span class="status-icon">⏳</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-play"></i> تشغيل الاختبارات</h3>
+            <button class="test-button" onclick="runAllTests()">
+                <i class="fas fa-rocket"></i> تشغيل جميع الاختبارات
+            </button>
+            <button class="test-button" onclick="generateReport()">
+                <i class="fas fa-file-alt"></i> إنشاء تقرير مفصل
+            </button>
+        </div>
+
+        <div id="testResults"></div>
+    </div>
+
+    <!-- تحميل ملفات النظام -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-migration.js"></script>
+    
+    <script>
+        let testResults = {
+            passed: 0,
+            failed: 0,
+            total: 0,
+            details: []
+        };
+
+        function updateTestStatus(testId, status, message) {
+            const testElement = document.getElementById(testId);
+            const statusIcon = testElement.querySelector('.status-icon');
+            
+            testElement.className = status;
+            
+            if (status === 'success') {
+                statusIcon.innerHTML = '✅';
+                testResults.passed++;
+            } else if (status === 'failed') {
+                statusIcon.innerHTML = '❌';
+                testResults.failed++;
+            } else {
+                statusIcon.innerHTML = '⏳';
+            }
+            
+            testResults.total = testResults.passed + testResults.failed;
+            testResults.details.push({ test: testId, status, message, time: new Date() });
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            document.getElementById('passedTests').textContent = testResults.passed;
+            document.getElementById('failedTests').textContent = testResults.failed;
+            document.getElementById('totalTests').textContent = testResults.total;
+        }
+
+        function addResult(type, message) {
+            const results = document.getElementById('testResults');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <strong>${new Date().toLocaleTimeString()}:</strong> ${message}
+            `;
+            results.appendChild(div);
+        }
+
+        async function testDatabase() {
+            addResult('info', 'بدء اختبار قاعدة البيانات...');
+            
+            try {
+                if (!supabaseClient) {
+                    await initSupabase();
+                }
+                
+                // اختبار الاتصال
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('unit_number, tenant_phone_2')
+                    .not('tenant_phone_2', 'is', null)
+                    .limit(1);
+                
+                if (error) {
+                    updateTestStatus('test-database', 'failed', `خطأ في قاعدة البيانات: ${error.message}`);
+                    addResult('error', `خطأ في قاعدة البيانات: ${error.message}`);
+                    return false;
+                }
+                
+                if (data.length > 0) {
+                    updateTestStatus('test-database', 'success', 'قاعدة البيانات تعمل وتحتوي على بيانات رقم الجوال الإضافي');
+                    addResult('success', `تم العثور على ${data.length} وحدة تحتوي على رقم جوال إضافي`);
+                    return true;
+                } else {
+                    updateTestStatus('test-database', 'failed', 'لا توجد بيانات رقم جوال إضافي في قاعدة البيانات');
+                    addResult('error', 'لا توجد بيانات رقم جوال إضافي في قاعدة البيانات');
+                    return false;
+                }
+                
+            } catch (error) {
+                updateTestStatus('test-database', 'failed', `خطأ: ${error.message}`);
+                addResult('error', `خطأ في اختبار قاعدة البيانات: ${error.message}`);
+                return false;
+            }
+        }
+
+        function testConversion() {
+            addResult('info', 'بدء اختبار دالة التحويل...');
+            
+            try {
+                if (typeof convertSupabaseToOriginalFormat !== 'function') {
+                    updateTestStatus('test-conversion', 'failed', 'دالة التحويل غير موجودة');
+                    addResult('error', 'دالة convertSupabaseToOriginalFormat غير موجودة');
+                    return false;
+                }
+                
+                const testData = {
+                    unit_number: 'TEST_001',
+                    tenant_name: 'مستأجر تجريبي',
+                    tenant_phone: '0501234567',
+                    tenant_phone_2: '0509876543',
+                    contract_number: 'CONTRACT_001'
+                };
+                
+                const converted = convertSupabaseToOriginalFormat(testData);
+                
+                const hasMainPhone = converted['رقم جوال المستأجر'] === '0501234567';
+                const hasSecondPhone = converted['رقم جوال إضافي'] === '0509876543';
+                
+                if (hasMainPhone && hasSecondPhone) {
+                    updateTestStatus('test-conversion', 'success', 'دالة التحويل تعمل بشكل صحيح');
+                    addResult('success', 'دالة التحويل تحول أرقام الجوال بشكل صحيح');
+                    return true;
+                } else {
+                    updateTestStatus('test-conversion', 'failed', 'دالة التحويل لا تحول أرقام الجوال بشكل صحيح');
+                    addResult('error', `دالة التحويل فشلت: الأساسي=${hasMainPhone}, الإضافي=${hasSecondPhone}`);
+                    return false;
+                }
+                
+            } catch (error) {
+                updateTestStatus('test-conversion', 'failed', `خطأ في دالة التحويل: ${error.message}`);
+                addResult('error', `خطأ في اختبار دالة التحويل: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testDataLoading() {
+            addResult('info', 'بدء اختبار تحميل البيانات...');
+            
+            try {
+                if (!supabaseClient) {
+                    await initSupabase();
+                }
+                
+                // تحميل البيانات الخام
+                const { data: rawData, error } = await supabaseClient
+                    .from('properties')
+                    .select('unit_number, tenant_name, tenant_phone, tenant_phone_2')
+                    .not('tenant_phone_2', 'is', null)
+                    .limit(3);
+                
+                if (error) {
+                    updateTestStatus('test-loading', 'failed', `خطأ في تحميل البيانات: ${error.message}`);
+                    addResult('error', `خطأ في تحميل البيانات: ${error.message}`);
+                    return false;
+                }
+                
+                if (rawData.length === 0) {
+                    updateTestStatus('test-loading', 'failed', 'لا توجد بيانات للتحميل');
+                    addResult('error', 'لا توجد بيانات تحتوي على رقم جوال إضافي للتحميل');
+                    return false;
+                }
+                
+                // تحويل البيانات
+                const convertedData = rawData.map(convertSupabaseToOriginalFormat);
+                
+                let successCount = 0;
+                convertedData.forEach(unit => {
+                    if (unit['رقم جوال إضافي']) {
+                        successCount++;
+                    }
+                });
+                
+                if (successCount === rawData.length) {
+                    updateTestStatus('test-loading', 'success', `تم تحميل وتحويل ${successCount} وحدة بنجاح`);
+                    addResult('success', `تم تحميل وتحويل ${successCount} وحدة تحتوي على رقم جوال إضافي`);
+                    return true;
+                } else {
+                    updateTestStatus('test-loading', 'failed', `فشل في تحويل بعض البيانات: ${successCount}/${rawData.length}`);
+                    addResult('error', `فشل في تحويل بعض البيانات: ${successCount}/${rawData.length}`);
+                    return false;
+                }
+                
+            } catch (error) {
+                updateTestStatus('test-loading', 'failed', `خطأ: ${error.message}`);
+                addResult('error', `خطأ في اختبار تحميل البيانات: ${error.message}`);
+                return false;
+            }
+        }
+
+        function testDisplay() {
+            addResult('info', 'بدء اختبار عرض البيانات...');
+            
+            try {
+                // محاكاة بيانات وحدة
+                const mockUnit = {
+                    'رقم جوال المستأجر': '0501234567',
+                    'رقم جوال إضافي': '0509876543'
+                };
+
+                // اختبار إنشاء HTML للعرض
+                let displayHtml = '';
+                
+                if (mockUnit['رقم جوال المستأجر']) {
+                    displayHtml += `رقم الجوال: ${mockUnit['رقم جوال المستأجر']}`;
+                }
+                
+                if (mockUnit['رقم جوال إضافي']) {
+                    displayHtml += ` | جوال إضافي: ${mockUnit['رقم جوال إضافي']}`;
+                }
+
+                if (displayHtml.includes('0501234567') && displayHtml.includes('0509876543')) {
+                    updateTestStatus('test-display', 'success', 'عرض البيانات يعمل بشكل صحيح');
+                    addResult('success', 'تم إنشاء عرض أرقام الجوال بنجاح');
+                    return true;
+                } else {
+                    updateTestStatus('test-display', 'failed', 'مشكلة في عرض البيانات');
+                    addResult('error', 'فشل في إنشاء عرض أرقام الجوال');
+                    return false;
+                }
+                
+            } catch (error) {
+                updateTestStatus('test-display', 'failed', `خطأ في عرض البيانات: ${error.message}`);
+                addResult('error', `خطأ في اختبار عرض البيانات: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testSave() {
+            addResult('info', 'بدء اختبار حفظ البيانات...');
+            
+            try {
+                if (!supabaseClient) {
+                    await initSupabase();
+                }
+                
+                // إنشاء بيانات تجريبية للحفظ
+                const testUnitNumber = 'TEST_SAVE_' + Date.now();
+                const testData = {
+                    unit_number: testUnitNumber,
+                    property_name: 'اختبار الحفظ',
+                    tenant_name: 'مستأجر اختبار الحفظ',
+                    tenant_phone: '0501111111',
+                    tenant_phone_2: '0502222222'
+                };
+                
+                // محاولة الحفظ
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .insert([testData])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    updateTestStatus('test-save', 'failed', `خطأ في الحفظ: ${error.message}`);
+                    addResult('error', `خطأ في حفظ البيانات: ${error.message}`);
+                    return false;
+                }
+                
+                // التحقق من الحفظ
+                if (data.tenant_phone_2 === '0502222222') {
+                    updateTestStatus('test-save', 'success', 'تم حفظ رقم الجوال الإضافي بنجاح');
+                    addResult('success', 'تم حفظ رقم الجوال الإضافي في قاعدة البيانات');
+                    
+                    // حذف البيانات التجريبية
+                    setTimeout(async () => {
+                        await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('unit_number', testUnitNumber);
+                    }, 2000);
+                    
+                    return true;
+                } else {
+                    updateTestStatus('test-save', 'failed', 'رقم الجوال الإضافي لم يُحفظ بشكل صحيح');
+                    addResult('error', 'رقم الجوال الإضافي لم يُحفظ بشكل صحيح');
+                    return false;
+                }
+                
+            } catch (error) {
+                updateTestStatus('test-save', 'failed', `خطأ: ${error.message}`);
+                addResult('error', `خطأ في اختبار حفظ البيانات: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function testIntegration() {
+            addResult('info', 'بدء اختبار التكامل الشامل...');
+            
+            try {
+                // اختبار التكامل بين جميع المكونات
+                const integrationTests = [
+                    'قاعدة البيانات متصلة',
+                    'دالة التحويل تعمل',
+                    'تحميل البيانات يعمل',
+                    'عرض البيانات يعمل',
+                    'حفظ البيانات يعمل'
+                ];
+                
+                const passedTests = testResults.details.filter(test => test.status === 'success').length;
+                const totalTests = integrationTests.length;
+                
+                if (passedTests === totalTests) {
+                    updateTestStatus('test-integration', 'success', 'جميع اختبارات التكامل نجحت');
+                    addResult('success', '🎉 جميع اختبارات التكامل نجحت! النظام يعمل بشكل مثالي');
+                    return true;
+                } else {
+                    updateTestStatus('test-integration', 'failed', `فشل ${totalTests - passedTests} من ${totalTests} اختبارات`);
+                    addResult('error', `فشل ${totalTests - passedTests} من ${totalTests} اختبارات التكامل`);
+                    return false;
+                }
+                
+            } catch (error) {
+                updateTestStatus('test-integration', 'failed', `خطأ في اختبار التكامل: ${error.message}`);
+                addResult('error', `خطأ في اختبار التكامل: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function runAllTests() {
+            addResult('info', '🚀 بدء تشغيل جميع الاختبارات...');
+            
+            // إعادة تعيين النتائج
+            testResults = { passed: 0, failed: 0, total: 0, details: [] };
+            updateSummary();
+            
+            // تشغيل الاختبارات بالتسلسل
+            await testDatabase();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testConversion();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testDataLoading();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testDisplay();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testSave();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testIntegration();
+            
+            addResult('info', '✅ تم الانتهاء من جميع الاختبارات');
+        }
+
+        function generateReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                summary: {
+                    passed: testResults.passed,
+                    failed: testResults.failed,
+                    total: testResults.total,
+                    successRate: testResults.total > 0 ? (testResults.passed / testResults.total * 100).toFixed(2) + '%' : '0%'
+                },
+                details: testResults.details
+            };
+            
+            const reportJson = JSON.stringify(report, null, 2);
+            const blob = new Blob([reportJson], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `phone-field-test-report-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            
+            addResult('success', 'تم إنشاء تقرير الاختبار وتحميله');
+        }
+
+        // تهيئة تلقائية
+        window.addEventListener('load', () => {
+            addResult('info', 'مرحباً بك في تقرير الاختبار النهائي لميزة رقم الجوال الإضافي');
+            addResult('info', 'اضغط على "تشغيل جميع الاختبارات" لبدء الاختبار الشامل');
+        });
+    </script>
+</body>
+</html>

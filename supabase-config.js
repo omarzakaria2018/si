@@ -271,23 +271,31 @@ async function getAllProperties() {
 // Add new property to Supabase
 async function addProperty(propertyData) {
     try {
+        console.log('➕ إضافة عقار جديد إلى قاعدة البيانات...');
+
         const { data, error } = await supabaseClient
             .from('properties')
             .insert([propertyData])
             .select();
 
         if (error) {
-            console.error('Error adding property:', error);
-            return null;
+            console.error('❌ خطأ في إضافة العقار:', error);
+            throw new Error(`فشل في إضافة العقار: ${error.message}`);
         }
 
-        // Log activity
-        await logActivity(data[0].id, 'CREATE', 'تم إضافة عقار جديد', null, propertyData);
+        console.log('✅ تم إضافة العقار بنجاح إلى قاعدة البيانات');
+
+        // Log activity (لا تفشل العملية إذا فشل تسجيل النشاط)
+        try {
+            await logActivity(data[0].id, 'CREATE', 'تم إضافة عقار جديد', null, propertyData);
+        } catch (logError) {
+            console.warn('⚠️ تحذير: فشل في تسجيل النشاط (لكن الإضافة نجحت):', logError.message);
+        }
 
         return data[0];
     } catch (error) {
-        console.error('Error in addProperty:', error);
-        return null;
+        console.error('❌ خطأ في addProperty:', error);
+        throw error; // إعادة رمي الخطأ ليتم التعامل معه في المستوى الأعلى
     }
 }
 
@@ -308,17 +316,23 @@ async function updateProperty(id, updates) {
             .select();
 
         if (error) {
-            console.error('Error updating property:', error);
-            return null;
+            console.error('❌ خطأ في تحديث العقار:', error);
+            throw new Error(`فشل في تحديث العقار: ${error.message}`);
         }
 
-        // Log activity
-        await logActivity(id, 'UPDATE', 'تم تحديث بيانات العقار', currentData, updates);
+        console.log('✅ تم تحديث العقار بنجاح في قاعدة البيانات');
+
+        // Log activity (لا تفشل العملية إذا فشل تسجيل النشاط)
+        try {
+            await logActivity(id, 'UPDATE', 'تم تحديث بيانات العقار', currentData, updates);
+        } catch (logError) {
+            console.warn('⚠️ تحذير: فشل في تسجيل النشاط (لكن التحديث نجح):', logError.message);
+        }
 
         return data[0];
     } catch (error) {
-        console.error('Error in updateProperty:', error);
-        return null;
+        console.error('❌ خطأ في updateProperty:', error);
+        throw error; // إعادة رمي الخطأ ليتم التعامل معه في المستوى الأعلى
     }
 }
 
@@ -704,6 +718,16 @@ async function deleteUnitAttachmentsFromSupabase(unitNumber, propertyName) {
 // ===== ACTIVITY LOGGING =====
 async function logActivity(propertyId, actionType, description, oldValues, newValues) {
     try {
+        // التحقق من وجود جدول activity_log أولاً
+        const { data: tableCheck, error: tableError } = await supabaseClient
+            .from('activity_log')
+            .select('count', { count: 'exact', head: true });
+
+        if (tableError && tableError.message.includes('relation "public.activity_log" does not exist')) {
+            console.warn('⚠️ جدول activity_log غير موجود، تخطي تسجيل النشاط');
+            return; // تخطي تسجيل النشاط إذا لم يكن الجدول موجوداً
+        }
+
         const { error } = await supabaseClient
             .from('activity_log')
             .insert([{
@@ -716,10 +740,12 @@ async function logActivity(propertyId, actionType, description, oldValues, newVa
             }]);
 
         if (error) {
-            console.error('Error logging activity:', error);
+            console.warn('⚠️ تحذير في تسجيل النشاط (لن يؤثر على الحفظ):', error.message);
+        } else {
+            console.log('📝 تم تسجيل النشاط بنجاح');
         }
     } catch (error) {
-        console.error('Error in logActivity:', error);
+        console.warn('⚠️ تحذير في logActivity (لن يؤثر على الحفظ):', error.message);
     }
 }
 
@@ -905,6 +931,7 @@ function convertPropertyToSupabaseFormat(jsonProperty) {
         owner: jsonProperty['المالك'] || '',
         tenant_name: jsonProperty['اسم المستأجر'] || null,
         tenant_phone: jsonProperty['رقم جوال المستأجر'] || null,
+        tenant_phone_2: jsonProperty['رقم جوال إضافي'] || null,
         contract_number: jsonProperty['رقم العقد'] || null,
         rent_value: parseFloat(jsonProperty['قيمة  الايجار ']) || null,
         area: parseFloat(jsonProperty['المساحة']) || null,
@@ -1054,34 +1081,57 @@ function parseDate(dateStr) {
 async function savePropertyToSupabase(property) {
     try {
         if (!supabaseClient) {
-            console.warn('Supabase not initialized, skipping save');
+            console.warn('⚠️ Supabase غير متصل، تخطي الحفظ السحابي');
             return false;
         }
+
+        console.log('🔄 بدء حفظ العقار في Supabase...');
+        console.log('📋 بيانات العقار:', {
+            unitNumber: property['رقم  الوحدة '],
+            propertyName: property['اسم العقار'],
+            tenant: property['اسم المستأجر']
+        });
 
         // Convert original format to Supabase format
         const supabaseProperty = convertPropertyToSupabaseFormat(property);
 
         // Check if property exists (by unit_number AND property_name for uniqueness)
-        const { data: existingProperty } = await supabaseClient
+        console.log('🔍 البحث عن العقار في قاعدة البيانات...');
+        const { data: existingProperty, error: searchError } = await supabaseClient
             .from('properties')
             .select('id')
             .eq('unit_number', supabaseProperty.unit_number)
             .eq('property_name', supabaseProperty.property_name)
             .single();
 
+        if (searchError && searchError.code !== 'PGRST116') {
+            console.error('❌ خطأ في البحث عن العقار:', searchError);
+            throw new Error(`فشل في البحث عن العقار: ${searchError.message}`);
+        }
+
         if (existingProperty) {
             // Update existing property
+            console.log('🔄 تحديث عقار موجود، ID:', existingProperty.id);
             const result = await updateProperty(existingProperty.id, supabaseProperty);
-            console.log('✅ Property updated in Supabase:', supabaseProperty.unit_number);
+            console.log('✅ تم تحديث العقار في Supabase:', supabaseProperty.unit_number);
             return result;
         } else {
             // Add new property
+            console.log('➕ إضافة عقار جديد...');
             const result = await addProperty(supabaseProperty);
-            console.log('✅ Property added to Supabase:', supabaseProperty.unit_number);
+            console.log('✅ تم إضافة العقار إلى Supabase:', supabaseProperty.unit_number);
             return result;
         }
     } catch (error) {
-        console.error('❌ Error saving property to Supabase:', error);
+        console.error('❌ خطأ في حفظ العقار في Supabase:', error);
+        console.error('📊 تفاصيل الخطأ:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
+
+        // إرجاع false بدلاً من رمي الخطأ لمنع فشل العملية بالكامل
         return false;
     }
 }

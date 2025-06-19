@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح شاشة التحميل</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .result.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .loading-test-area {
+            text-align: center;
+            padding: 40px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .timer {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .status-indicator.loading {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+
+        .status-indicator.success {
+            background: #28a745;
+        }
+
+        .status-indicator.error {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-spinner"></i> اختبار إصلاح شاشة التحميل</h1>
+        
+        <div class="test-section">
+            <h3><i class="fas fa-info-circle"></i> معلومات الاختبار</h3>
+            <p>هذا الاختبار يفحص آلية شاشة التحميل البلورية المحدثة:</p>
+            <ul>
+                <li>عرض الشاشة لمدة 5 ثوانٍ كحد أدنى</li>
+                <li>إخفاء الشاشة بعد اختفاء جميع الإشعارات العلوية</li>
+                <li>منع تكرار عرض الشاشة</li>
+                <li>مراقبة حالة الإشعارات والرسائل</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-play"></i> اختبارات شاشة التحميل</h3>
+            
+            <button class="test-button" onclick="testShowLoading()">
+                <i class="fas fa-eye"></i> اختبار إظهار شاشة التحميل
+            </button>
+            
+            <button class="test-button" onclick="testHideLoading()">
+                <i class="fas fa-eye-slash"></i> اختبار إخفاء شاشة التحميل
+            </button>
+            
+            <button class="test-button" onclick="testLoadingDuration()">
+                <i class="fas fa-clock"></i> اختبار مدة العرض
+            </button>
+            
+            <button class="test-button" onclick="testNotificationCheck()">
+                <i class="fas fa-bell"></i> اختبار فحص الإشعارات
+            </button>
+
+            <button class="test-button" onclick="simulateNotifications()">
+                <i class="fas fa-plus"></i> محاكاة إشعارات
+            </button>
+            
+            <button class="test-button" onclick="clearResults()">
+                <i class="fas fa-trash"></i> مسح النتائج
+            </button>
+        </div>
+
+        <div class="loading-test-area">
+            <div class="timer" id="loadingTimer">00:00</div>
+            <div>
+                <span class="status-indicator" id="loadingStatus"></span>
+                <span id="loadingStatusText">جاهز للاختبار</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-list"></i> نتائج الاختبار</h3>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <!-- تحميل ملفات النظام -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="data-migration.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        let timerInterval;
+        let startTime;
+
+        function addResult(type, message) {
+            const resultsDiv = document.getElementById('results');
+            const result = document.createElement('div');
+            result.className = `result ${type}`;
+            result.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+                <small style="margin-right: auto; opacity: 0.7;">${new Date().toLocaleTimeString('ar-SA')}</small>
+            `;
+            resultsDiv.appendChild(result);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function updateStatus(status, text) {
+            const indicator = document.getElementById('loadingStatus');
+            const statusText = document.getElementById('loadingStatusText');
+            
+            indicator.className = `status-indicator ${status}`;
+            statusText.textContent = text;
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const seconds = Math.floor(elapsed / 1000);
+                const milliseconds = Math.floor((elapsed % 1000) / 10);
+                document.getElementById('loadingTimer').textContent = 
+                    `${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
+            }, 10);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function testShowLoading() {
+            addResult('info', 'بدء اختبار إظهار شاشة التحميل...');
+            updateStatus('loading', 'جاري إظهار شاشة التحميل...');
+            startTimer();
+
+            if (typeof showCrystalLoading === 'function') {
+                showCrystalLoading();
+                addResult('success', 'تم استدعاء دالة إظهار شاشة التحميل بنجاح');
+                
+                // التحقق من وجود العنصر
+                setTimeout(() => {
+                    const overlay = document.getElementById('crystalLoadingOverlay');
+                    if (overlay) {
+                        addResult('success', 'تم إنشاء عنصر شاشة التحميل في DOM');
+                        updateStatus('success', 'شاشة التحميل معروضة');
+                    } else {
+                        addResult('error', 'لم يتم العثور على عنصر شاشة التحميل في DOM');
+                        updateStatus('error', 'فشل في إظهار شاشة التحميل');
+                        stopTimer();
+                    }
+                }, 100);
+            } else {
+                addResult('error', 'دالة showCrystalLoading غير متوفرة');
+                updateStatus('error', 'دالة الإظهار غير متوفرة');
+                stopTimer();
+            }
+        }
+
+        function testHideLoading() {
+            addResult('info', 'بدء اختبار إخفاء شاشة التحميل...');
+            
+            if (typeof hideCrystalLoading === 'function') {
+                hideCrystalLoading();
+                addResult('success', 'تم استدعاء دالة إخفاء شاشة التحميل');
+                
+                // التحقق من إخفاء العنصر
+                setTimeout(() => {
+                    const overlay = document.getElementById('crystalLoadingOverlay');
+                    if (!overlay || overlay.classList.contains('fade-out')) {
+                        addResult('success', 'تم إخفاء شاشة التحميل بنجاح');
+                        updateStatus('success', 'تم إخفاء شاشة التحميل');
+                        stopTimer();
+                    } else {
+                        addResult('warning', 'شاشة التحميل لا تزال مرئية');
+                        updateStatus('warning', 'الشاشة لا تزال مرئية');
+                    }
+                }, 100);
+            } else {
+                addResult('error', 'دالة hideCrystalLoading غير متوفرة');
+                updateStatus('error', 'دالة الإخفاء غير متوفرة');
+            }
+        }
+
+        function testLoadingDuration() {
+            addResult('info', 'بدء اختبار مدة عرض شاشة التحميل...');
+            updateStatus('loading', 'قياس مدة العرض...');
+            startTimer();
+
+            if (typeof showCrystalLoading === 'function') {
+                const startTime = Date.now();
+                showCrystalLoading();
+
+                // مراقبة إخفاء الشاشة
+                const checkInterval = setInterval(() => {
+                    const overlay = document.getElementById('crystalLoadingOverlay');
+                    if (!overlay || overlay.classList.contains('fade-out')) {
+                        const duration = Date.now() - startTime;
+                        clearInterval(checkInterval);
+                        stopTimer();
+
+                        addResult('success', `تم إخفاء شاشة التحميل بعد ${(duration/1000).toFixed(1)} ثانية`);
+
+                        if (duration >= 5000 && duration <= 7000) {
+                            addResult('success', 'مدة العرض مثالية (5-7 ثوانٍ)');
+                            updateStatus('success', 'التوقيت مثالي');
+                        } else if (duration < 5000) {
+                            addResult('warning', 'مدة العرض أقل من المتوقع (أقل من 5 ثوانٍ)');
+                            updateStatus('warning', 'التوقيت قصير');
+                        } else {
+                            addResult('info', 'مدة العرض طويلة (انتظار اختفاء الإشعارات)');
+                            updateStatus('info', 'انتظار الإشعارات');
+                        }
+                    }
+                }, 100);
+
+                // إيقاف المراقبة بعد 20 ثانية
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    stopTimer();
+                    addResult('warning', 'انتهت مهلة مراقبة إخفاء الشاشة (20 ثانية)');
+                    updateStatus('warning', 'انتهت المهلة');
+                }, 20000);
+            } else {
+                addResult('error', 'دالة showCrystalLoading غير متوفرة');
+                updateStatus('error', 'الدالة غير متوفرة');
+                stopTimer();
+            }
+        }
+
+        function testNotificationCheck() {
+            addResult('info', 'بدء اختبار فحص الإشعارات...');
+
+            if (typeof checkNotificationsAndHideLoading === 'function') {
+                addResult('success', 'دالة checkNotificationsAndHideLoading متوفرة');
+
+                updateStatus('loading', 'فحص الإشعارات الحالية...');
+
+                // تشغيل فحص الإشعارات
+                checkNotificationsAndHideLoading();
+                addResult('info', 'تم تشغيل فحص الإشعارات');
+
+                // مراقبة النتيجة
+                setTimeout(() => {
+                    const overlay = document.getElementById('crystalLoadingOverlay');
+                    if (!overlay) {
+                        addResult('success', 'آلية فحص الإشعارات تعمل بشكل صحيح');
+                        updateStatus('success', 'الفحص يعمل');
+                    } else {
+                        addResult('info', 'فحص الإشعارات قيد التشغيل...');
+                        updateStatus('loading', 'الفحص قيد التشغيل');
+                    }
+                }, 2000);
+            } else {
+                addResult('error', 'دالة checkNotificationsAndHideLoading غير متوفرة');
+                updateStatus('error', 'دالة الفحص غير متوفرة');
+            }
+        }
+
+        function simulateNotifications() {
+            addResult('info', 'محاكاة إشعارات لاختبار الآلية...');
+
+            // إنشاء إشعار تجريبي
+            const notification = document.createElement('div');
+            notification.className = 'notification test-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 9999;
+                font-weight: 500;
+            `;
+            notification.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                إشعار تجريبي - سيختفي بعد 3 ثوانٍ
+            `;
+
+            document.body.appendChild(notification);
+            addResult('success', 'تم إنشاء إشعار تجريبي');
+
+            // إظهار شاشة التحميل
+            if (typeof showCrystalLoading === 'function') {
+                showCrystalLoading();
+                addResult('info', 'تم إظهار شاشة التحميل مع الإشعار');
+            }
+
+            // إزالة الإشعار بعد 3 ثوانٍ
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                    addResult('info', 'تم إزالة الإشعار التجريبي');
+                }
+            }, 3000);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            updateStatus('', 'جاهز للاختبار');
+            stopTimer();
+            document.getElementById('loadingTimer').textContent = '00:00';
+            addResult('info', 'تم مسح النتائج');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            addResult('info', 'تم تحميل صفحة اختبار شاشة التحميل');
+            
+            // فحص توفر الدوال المطلوبة
+            const functions = [
+                'showCrystalLoading',
+                'hideCrystalLoading',
+                'checkNotificationsAndHideLoading'
+            ];
+            
+            functions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    addResult('success', `✅ دالة ${funcName} متوفرة`);
+                } else {
+                    addResult('error', `❌ دالة ${funcName} غير متوفرة`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

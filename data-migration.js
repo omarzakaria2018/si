@@ -15,6 +15,7 @@ function convertPropertyToSupabaseFormat(jsonProperty) {
         owner: jsonProperty['المالك'] || '',
         tenant_name: jsonProperty['اسم المستأجر'] || null,
         tenant_phone: jsonProperty['رقم جوال المستأجر'] || null,
+        tenant_phone_2: jsonProperty['رقم جوال إضافي'] || null,
         contract_number: jsonProperty['رقم العقد'] || null,
         rent_value: parseFloat(jsonProperty['قيمة  الايجار ']) || null,
         area: parseFloat(jsonProperty['المساحة']) || null,
@@ -221,24 +222,24 @@ async function migrateDataToSupabase() {
 async function loadAndDisplayProperties() {
     try {
         console.log('Loading properties from Supabase...');
-        
+
         const supabaseProperties = await getAllProperties();
-        
+
         // Convert Supabase format back to original format for compatibility
         const convertedProperties = supabaseProperties.map(convertSupabaseToOriginalFormat);
-        
+
         // Update global properties variable
         properties = convertedProperties;
-        
+
         // Recalculate totals and render data
         recalculateAllTotals();
         renderData();
-        
+
         console.log(`Loaded ${properties.length} properties from Supabase`);
-        
+
     } catch (error) {
         console.error('Error loading properties from Supabase:', error);
-        
+
         // Fallback to JSON if Supabase fails
         console.log('Falling back to JSON data...');
         await loadOriginalJsonData();
@@ -259,6 +260,7 @@ function convertSupabaseToOriginalFormat(supabaseProperty) {
         'المالك': supabaseProperty.owner,
         'اسم المستأجر': supabaseProperty.tenant_name,
         'رقم جوال المستأجر': supabaseProperty.tenant_phone,
+        'رقم جوال إضافي': supabaseProperty.tenant_phone_2,
         'رقم العقد': supabaseProperty.contract_number,
         'قيمة  الايجار ': supabaseProperty.rent_value,
         'المساحة': supabaseProperty.area,
@@ -410,6 +412,7 @@ async function loadOriginalJsonData() {
         recalculateAllTotals();
         renderData();
         console.log('Loaded original JSON data as fallback');
+
     } catch (error) {
         console.error('Error loading original JSON data:', error);
     }

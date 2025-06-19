@@ -24,6 +24,13 @@ function shouldHideField(fieldName) {
 function showCrystalLoading() {
     console.log('🔮 إظهار شاشة التحميل البلورية');
 
+    // التحقق من وجود شاشة تحميل مسبقاً
+    const existingOverlay = document.getElementById('crystalLoadingOverlay');
+    if (existingOverlay) {
+        console.log('⚠️ شاشة التحميل موجودة بالفعل');
+        return;
+    }
+
     // إنشاء عنصر شاشة التحميل
     const loadingOverlay = document.createElement('div');
     loadingOverlay.id = 'crystalLoadingOverlay';
@@ -57,10 +64,64 @@ function showCrystalLoading() {
     // إضافة الشاشة إلى الصفحة
     document.body.appendChild(loadingOverlay);
 
-    // إخفاء الشاشة بعد 5 ثوانٍ
+    // إخفاء الشاشة بعد 5 ثوانٍ أو بعد اختفاء الإشعارات العلوية
     setTimeout(() => {
-        hideCrystalLoading();
+        checkNotificationsAndHideLoading();
     }, 5000);
+}
+
+// التحقق من اختفاء الإشعارات العلوية وإخفاء شاشة التحميل
+function checkNotificationsAndHideLoading() {
+    console.log('🔍 فحص حالة الإشعارات العلوية...');
+
+    // البحث عن جميع أنواع الإشعارات والرسائل العلوية
+    const notifications = document.querySelectorAll(`
+        .notification,
+        .no-permission-message,
+        .success-message,
+        .error-message,
+        .welcome-message,
+        .toast,
+        .alert,
+        [style*="position: fixed"][style*="top:"],
+        [style*="position:fixed"][style*="top:"]
+    `);
+
+    // فلترة الإشعارات المرئية فقط (استثناء شاشة التحميل)
+    const visibleNotifications = Array.from(notifications).filter(notification => {
+        // تجاهل شاشة التحميل نفسها
+        if (notification.id === 'crystalLoadingOverlay' ||
+            notification.classList.contains('crystal-loading-overlay')) {
+            return false;
+        }
+
+        // فحص إذا كان العنصر مرئي
+        const style = window.getComputedStyle(notification);
+        const isVisible = style.display !== 'none' &&
+                         style.visibility !== 'hidden' &&
+                         style.opacity !== '0' &&
+                         notification.offsetParent !== null;
+
+        return isVisible;
+    });
+
+    console.log('📊 حالة الإشعارات:', {
+        totalNotifications: notifications.length,
+        visibleNotifications: visibleNotifications.length,
+        notificationTypes: visibleNotifications.map(n => n.className || n.tagName)
+    });
+
+    if (visibleNotifications.length === 0) {
+        // لا توجد إشعارات مرئية، يمكن إخفاء شاشة التحميل
+        console.log('✅ لا توجد إشعارات مرئية - إخفاء شاشة التحميل');
+        hideCrystalLoading();
+    } else {
+        // هناك إشعارات مرئية، انتظار قليل ثم فحص مرة أخرى
+        console.log('⏳ يوجد إشعارات مرئية - انتظار اختفائها...');
+        setTimeout(() => {
+            checkNotificationsAndHideLoading();
+        }, 1000); // فحص كل ثانية
+    }
 }
 
 // إخفاء شاشة التحميل البلورية
@@ -69,6 +130,12 @@ function hideCrystalLoading() {
 
     const loadingOverlay = document.getElementById('crystalLoadingOverlay');
     if (loadingOverlay) {
+        // إلغاء المؤقت إذا كان موجوداً
+        const timeoutId = loadingOverlay.dataset.timeoutId;
+        if (timeoutId) {
+            clearTimeout(parseInt(timeoutId));
+        }
+
         loadingOverlay.classList.add('fade-out');
 
         // إزالة العنصر بعد انتهاء الانتقال
@@ -81,6 +148,680 @@ function hideCrystalLoading() {
 }
 
 // ==================== نهاية شاشة التحميل البلورية ====================
+
+// ==================== تحديث عمائر النسيم من ملف JSON ====================
+
+// دالة لتحديث عمائر النسيم من ملف JSON
+async function updateNaseemBuildingsFromJSON() {
+    try {
+        console.log('🏢 بدء تحديث عمائر النسيم من ملف JSON...');
+
+        // قراءة ملف JSON
+        const response = await fetch('./info2.json');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const jsonData = await response.json();
+        console.log(`📄 تم تحميل ${jsonData.length} سجل من ملف JSON`);
+
+        // فلترة بيانات عمائر النسيم
+        const naseemUnits = jsonData.filter(unit =>
+            unit['اسم العقار'] && unit['اسم العقار'].includes('عمائر النسيم')
+        );
+
+        console.log(`🏗️ تم العثور على ${naseemUnits.length} وحدة في عمائر النسيم`);
+
+        if (naseemUnits.length === 0) {
+            console.warn('⚠️ لم يتم العثور على وحدات عمائر النسيم في الملف');
+            return false;
+        }
+
+        // تجميع الوحدات حسب العقار (المبنى)
+        const buildingGroups = {};
+        naseemUnits.forEach(unit => {
+            const buildingKey = `${unit['اسم العقار']}_${unit['رقم الصك'] || 'unknown'}`;
+            if (!buildingGroups[buildingKey]) {
+                buildingGroups[buildingKey] = [];
+            }
+            buildingGroups[buildingKey].push(unit);
+        });
+
+        console.log(`🏢 تم تجميع الوحدات في ${Object.keys(buildingGroups).length} مبنى`);
+
+        // تحديث أو إضافة المباني
+        let updatedCount = 0;
+        let addedCount = 0;
+
+        for (const [buildingKey, units] of Object.entries(buildingGroups)) {
+            const firstUnit = units[0];
+            const propertyName = firstUnit['اسم العقار'];
+
+            // البحث عن العقار الموجود
+            let existingProperty = properties.find(p =>
+                p.name === propertyName &&
+                p.deedNumber === firstUnit['رقم الصك']
+            );
+
+            if (existingProperty) {
+                // تحديث العقار الموجود
+                console.log(`🔄 تحديث العقار الموجود: ${propertyName}`);
+                updateExistingProperty(existingProperty, units);
+                updatedCount++;
+            } else {
+                // إضافة عقار جديد
+                console.log(`➕ إضافة عقار جديد: ${propertyName}`);
+                const newProperty = createNewPropertyFromJSON(units);
+                properties.push(newProperty);
+                addedCount++;
+            }
+        }
+
+        // حفظ البيانات
+        await saveDataToLocalStorage();
+        await saveAllPropertiesToSupabase();
+
+        // تحديث الواجهة
+        displayProperties();
+        updateSidebar();
+
+        console.log(`✅ تم تحديث عمائر النسيم بنجاح:`);
+        console.log(`   - تم تحديث ${updatedCount} عقار موجود`);
+        console.log(`   - تم إضافة ${addedCount} عقار جديد`);
+        console.log(`   - إجمالي الوحدات المعالجة: ${naseemUnits.length}`);
+
+        // إظهار رسالة نجاح
+        showNotification(
+            `تم تحديث عمائر النسيم بنجاح!\n` +
+            `تم تحديث ${updatedCount} عقار وإضافة ${addedCount} عقار جديد\n` +
+            `إجمالي ${naseemUnits.length} وحدة`,
+            'success'
+        );
+
+        return true;
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث عمائر النسيم:', error);
+        showNotification(`خطأ في تحديث عمائر النسيم: ${error.message}`, 'error');
+        return false;
+    }
+}
+
+// دالة لتحديث عقار موجود
+function updateExistingProperty(property, units) {
+    // تحديث معلومات العقار الأساسية من أول وحدة
+    const firstUnit = units[0];
+
+    property.city = firstUnit['المدينة'] || property.city;
+    property.location = firstUnit['موقع العقار'] || property.location;
+    property.deedNumber = firstUnit['رقم الصك'] || property.deedNumber;
+    property.realEstateRegistry = firstUnit['السجل العيني '] || property.realEstateRegistry;
+    property.deedArea = firstUnit['مساحةالصك'] || property.deedArea;
+    property.owner = firstUnit['المالك'] || property.owner;
+
+    // تحديث الوحدات
+    units.forEach(jsonUnit => {
+        const unitNumber = jsonUnit['رقم  الوحدة '];
+        if (!unitNumber) return;
+
+        // البحث عن الوحدة الموجودة
+        let existingUnit = property.units.find(u => u.unitNumber === unitNumber);
+
+        if (existingUnit) {
+            // تحديث الوحدة الموجودة
+            updateUnitFromJSON(existingUnit, jsonUnit);
+        } else {
+            // إضافة وحدة جديدة
+            const newUnit = createUnitFromJSON(jsonUnit);
+            property.units.push(newUnit);
+        }
+    });
+
+    // تحديث تاريخ التعديل
+    property.lastModified = new Date().toISOString();
+}
+
+// دالة لإنشاء عقار جديد من JSON
+function createNewPropertyFromJSON(units) {
+    const firstUnit = units[0];
+    const propertyId = generateUUID();
+
+    const newProperty = {
+        id: propertyId,
+        name: firstUnit['اسم العقار'],
+        city: firstUnit['المدينة'] || 'الرياض',
+        location: firstUnit['موقع العقار'] || '',
+        deedNumber: firstUnit['رقم الصك'] || '',
+        realEstateRegistry: firstUnit['السجل العيني '] || '',
+        deedArea: firstUnit['مساحةالصك'] || '',
+        owner: firstUnit['المالك'] || '',
+        units: [],
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+    };
+
+    // إضافة الوحدات
+    units.forEach(jsonUnit => {
+        if (jsonUnit['رقم  الوحدة ']) {
+            const unit = createUnitFromJSON(jsonUnit);
+            newProperty.units.push(unit);
+        }
+    });
+
+    return newProperty;
+}
+
+// دالة لإنشاء وحدة من JSON
+function createUnitFromJSON(jsonUnit) {
+    const unitId = generateUUID();
+
+    return {
+        id: unitId,
+        unitNumber: jsonUnit['رقم  الوحدة '],
+        tenantName: jsonUnit['اسم المستأجر'] || '',
+        tenantPhone: '', // سيتم إضافته لاحقاً إذا كان متوفراً
+        contractNumber: jsonUnit['رقم العقد'] || '',
+        rentAmount: parseFloat(jsonUnit['قيمة  الايجار ']) || 0,
+        area: parseFloat(jsonUnit['المساحة']) || 0,
+        startDate: jsonUnit['تاريخ البداية'] ? formatDateFromJSON(jsonUnit['تاريخ البداية']) : '',
+        endDate: jsonUnit['تاريخ النهاية'] ? formatDateFromJSON(jsonUnit['تاريخ النهاية']) : '',
+        totalAmount: parseFloat(jsonUnit['الاجمالى']) || 0,
+        electricityAccount: jsonUnit['رقم حساب الكهرباء'] ? String(jsonUnit['رقم حساب الكهرباء']).replace('.0', '') : '',
+        remainingInstallments: jsonUnit['عدد الاقساط المتبقية'] || 0,
+        firstInstallmentDate: jsonUnit['تاريخ القسط الاول'] ? formatDateFromJSON(jsonUnit['تاريخ القسط الاول']) : '',
+        firstInstallmentAmount: parseFloat(jsonUnit['مبلغ القسط الاول']) || 0,
+        secondInstallmentDate: jsonUnit['تاريخ القسط الثاني'] ? formatDateFromJSON(jsonUnit['تاريخ القسط الثاني']) : '',
+        secondInstallmentAmount: parseFloat(jsonUnit['مبلغ القسط الثاني']) || 0,
+        installmentEndDate: jsonUnit['تاريخ نهاية القسط'] ? formatDateFromJSON(jsonUnit['تاريخ نهاية القسط']) : '',
+        contractType: jsonUnit['نوع العقد'] || 'سكني',
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+    };
+}
+
+// دالة لتحديث وحدة موجودة من JSON
+function updateUnitFromJSON(unit, jsonUnit) {
+    unit.tenantName = jsonUnit['اسم المستأجر'] || unit.tenantName;
+    unit.contractNumber = jsonUnit['رقم العقد'] || unit.contractNumber;
+    unit.rentAmount = parseFloat(jsonUnit['قيمة  الايجار ']) || unit.rentAmount;
+    unit.area = parseFloat(jsonUnit['المساحة']) || unit.area;
+    unit.startDate = jsonUnit['تاريخ البداية'] ? formatDateFromJSON(jsonUnit['تاريخ البداية']) : unit.startDate;
+    unit.endDate = jsonUnit['تاريخ النهاية'] ? formatDateFromJSON(jsonUnit['تاريخ النهاية']) : unit.endDate;
+    unit.totalAmount = parseFloat(jsonUnit['الاجمالى']) || unit.totalAmount;
+    unit.electricityAccount = jsonUnit['رقم حساب الكهرباء'] ? String(jsonUnit['رقم حساب الكهرباء']).replace('.0', '') : unit.electricityAccount;
+    unit.remainingInstallments = jsonUnit['عدد الاقساط المتبقية'] || unit.remainingInstallments;
+    unit.firstInstallmentDate = jsonUnit['تاريخ القسط الاول'] ? formatDateFromJSON(jsonUnit['تاريخ القسط الاول']) : unit.firstInstallmentDate;
+    unit.firstInstallmentAmount = parseFloat(jsonUnit['مبلغ القسط الاول']) || unit.firstInstallmentAmount;
+    unit.secondInstallmentDate = jsonUnit['تاريخ القسط الثاني'] ? formatDateFromJSON(jsonUnit['تاريخ القسط الثاني']) : unit.secondInstallmentDate;
+    unit.secondInstallmentAmount = parseFloat(jsonUnit['مبلغ القسط الثاني']) || unit.secondInstallmentAmount;
+    unit.installmentEndDate = jsonUnit['تاريخ نهاية القسط'] ? formatDateFromJSON(jsonUnit['تاريخ نهاية القسط']) : unit.installmentEndDate;
+    unit.contractType = jsonUnit['نوع العقد'] || unit.contractType;
+    unit.lastModified = new Date().toISOString();
+}
+
+// دالة لتنسيق التاريخ من JSON
+function formatDateFromJSON(dateString) {
+    if (!dateString) return '';
+
+    try {
+        // إذا كان التاريخ يحتوي على وقت
+        if (dateString.includes(' ')) {
+            const date = new Date(dateString);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString().split('T')[0];
+            }
+        }
+
+        // إذا كان التاريخ بصيغة DD/MM/YYYY أو DD-MM-YYYY
+        if (dateString.includes('/') || dateString.includes('-')) {
+            const separator = dateString.includes('/') ? '/' : '-';
+            const parts = dateString.split(separator);
+
+            if (parts.length === 3) {
+                // تحويل من DD/MM/YYYY إلى YYYY-MM-DD
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2];
+
+                return `${year}-${month}-${day}`;
+            }
+        }
+
+        return dateString;
+    } catch (error) {
+        console.warn('تحذير: لا يمكن تنسيق التاريخ:', dateString);
+        return dateString;
+    }
+}
+
+// ==================== نهاية تحديث عمائر النسيم من ملف JSON ====================
+
+// ==================== اختبار حفظ رقم الجوال الإضافي ====================
+
+// دالة لاختبار حفظ رقم الجوال الإضافي
+async function testPhoneFieldSave() {
+    console.log('🧪 بدء اختبار حفظ رقم الجوال الإضافي...');
+
+    try {
+        // إنشاء عقار تجريبي
+        const testProperty = {
+            'رقم  الوحدة ': 'TEST_PHONE_001',
+            'اسم العقار': 'اختبار رقم الجوال',
+            'المدينة': 'الرياض',
+            'اسم المستأجر': 'مستأجر تجريبي',
+            'رقم جوال المستأجر': '0501234567',
+            'رقم جوال إضافي': '0509876543',
+            'رقم العقد': 'CONTRACT_TEST_001',
+            'قيمة  الايجار ': 5000,
+            'المساحة': 100,
+            'رقم الصك': 'DEED_TEST_001',
+            'المالك': 'مالك تجريبي',
+            'تاريخ آخر تحديث': new Date().toLocaleDateString('ar-SA'),
+            'نوع التحديث': 'اختبار',
+            'المسؤول عن التحديث': getCurrentUser()
+        };
+
+        console.log('📝 العقار التجريبي:', testProperty);
+
+        // إضافة العقار إلى المصفوفة المحلية
+        properties.push(testProperty);
+
+        // حفظ محلياً
+        saveDataLocally();
+        console.log('✅ تم حفظ العقار محلياً');
+
+        // حفظ في Supabase
+        if (typeof savePropertyToSupabase === 'function') {
+            console.log('☁️ حفظ العقار في Supabase...');
+            const result = await savePropertyToSupabase(testProperty);
+
+            if (result) {
+                console.log('✅ تم حفظ العقار في Supabase بنجاح');
+
+                // التحقق من الحفظ
+                setTimeout(async () => {
+                    try {
+                        const { data: verifyData, error } = await supabaseClient
+                            .from('properties')
+                            .select('unit_number, tenant_name, tenant_phone, tenant_phone_2')
+                            .eq('unit_number', 'TEST_PHONE_001')
+                            .single();
+
+                        if (error) {
+                            console.error('❌ خطأ في التحقق:', error);
+                        } else {
+                            console.log('🔍 البيانات المحفوظة في Supabase:', verifyData);
+
+                            if (verifyData.tenant_phone_2 === '0509876543') {
+                                console.log('🎉 نجح اختبار حفظ رقم الجوال الإضافي!');
+                                showNotification('نجح الاختبار! رقم الجوال الإضافي يُحفظ بشكل صحيح في Supabase', 'success');
+                            } else {
+                                console.error('❌ فشل اختبار حفظ رقم الجوال الإضافي');
+                                showNotification('فشل الاختبار! رقم الجوال الإضافي لم يُحفظ في Supabase', 'error');
+                            }
+                        }
+
+                        // حذف العقار التجريبي
+                        setTimeout(async () => {
+                            try {
+                                await supabaseClient
+                                    .from('properties')
+                                    .delete()
+                                    .eq('unit_number', 'TEST_PHONE_001');
+
+                                // حذف من المصفوفة المحلية
+                                const testIndex = properties.findIndex(p => p['رقم  الوحدة '] === 'TEST_PHONE_001');
+                                if (testIndex !== -1) {
+                                    properties.splice(testIndex, 1);
+                                    saveDataLocally();
+                                }
+
+                                console.log('🗑️ تم حذف العقار التجريبي');
+                            } catch (cleanupError) {
+                                console.warn('⚠️ فشل في حذف العقار التجريبي:', cleanupError);
+                            }
+                        }, 3000);
+
+                    } catch (verifyError) {
+                        console.error('❌ خطأ في التحقق من البيانات:', verifyError);
+                    }
+                }, 2000);
+
+            } else {
+                console.error('❌ فشل حفظ العقار في Supabase');
+                showNotification('فشل في حفظ العقار التجريبي في Supabase', 'error');
+            }
+        } else {
+            console.error('❌ دالة savePropertyToSupabase غير متوفرة');
+            showNotification('دالة الحفظ غير متوفرة', 'error');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في اختبار حفظ رقم الجوال الإضافي:', error);
+        showNotification(`خطأ في الاختبار: ${error.message}`, 'error');
+    }
+}
+
+// دالة لإظهار الإشعارات
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        font-size: 1rem;
+        font-weight: 500;
+        max-width: 400px;
+        word-wrap: break-word;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// ==================== نهاية اختبار حفظ رقم الجوال الإضافي ====================
+
+// ==================== تحديث بيانات info2.json ====================
+
+// دالة لتحديث بيانات info2.json إلى Supabase
+async function updateInfo2DataToSupabase() {
+    console.log('🚀 بدء تحديث بيانات info2.json إلى Supabase...');
+
+    try {
+        // إظهار مؤشر التحميل
+        const loadingModal = document.createElement('div');
+        loadingModal.className = 'modal-overlay';
+        loadingModal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        `;
+
+        loadingModal.innerHTML = `
+            <div style="
+                background: white;
+                padding: 40px;
+                border-radius: 15px;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                max-width: 500px;
+                width: 90%;
+            ">
+                <div style="
+                    width: 60px;
+                    height: 60px;
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #007bff;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 20px;
+                "></div>
+                <h3 style="color: #333; margin: 0 0 10px 0;">جاري تحديث البيانات</h3>
+                <p style="color: #666; margin: 0;" id="updateProgress">تحميل ملف info2.json...</p>
+            </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+
+        document.body.appendChild(loadingModal);
+
+        const updateProgress = (message) => {
+            const progressElement = document.getElementById('updateProgress');
+            if (progressElement) {
+                progressElement.textContent = message;
+            }
+            console.log('📊 ' + message);
+        };
+
+        // تحميل ملف info2.json
+        updateProgress('تحميل ملف info2.json...');
+        const response = await fetch('info2.json');
+        if (!response.ok) {
+            throw new Error(`فشل في تحميل ملف info2.json: ${response.status}`);
+        }
+
+        const info2Data = await response.json();
+        console.log(`📁 تم تحميل ${info2Data.length} عقار من info2.json`);
+
+        // التحقق من الاتصال بـ Supabase
+        updateProgress('التحقق من الاتصال بـ Supabase...');
+        if (!supabaseClient) {
+            await initSupabase();
+        }
+
+        if (!supabaseClient) {
+            throw new Error('فشل في الاتصال بـ Supabase');
+        }
+
+        // معالجة البيانات وتحديثها
+        updateProgress('معالجة البيانات...');
+        let successCount = 0;
+        let errorCount = 0;
+        let updateCount = 0;
+        let insertCount = 0;
+
+        for (let i = 0; i < info2Data.length; i++) {
+            const property = info2Data[i];
+            const unitNumber = property['رقم  الوحدة '];
+
+            updateProgress(`معالجة الوحدة ${i + 1}/${info2Data.length}: ${unitNumber}`);
+
+            try {
+                // تحويل البيانات إلى صيغة Supabase
+                const supabaseData = convertPropertyToSupabaseFormat(property);
+
+                // التحقق من وجود الوحدة
+                const { data: existingUnit, error: checkError } = await supabaseClient
+                    .from('properties')
+                    .select('id')
+                    .eq('unit_number', unitNumber)
+                    .single();
+
+                if (checkError && checkError.code !== 'PGRST116') {
+                    console.error(`خطأ في التحقق من الوحدة ${unitNumber}:`, checkError);
+                    errorCount++;
+                    continue;
+                }
+
+                if (existingUnit) {
+                    // تحديث الوحدة الموجودة
+                    const { error: updateError } = await supabaseClient
+                        .from('properties')
+                        .update(supabaseData)
+                        .eq('unit_number', unitNumber);
+
+                    if (updateError) {
+                        console.error(`خطأ في تحديث الوحدة ${unitNumber}:`, updateError);
+                        errorCount++;
+                    } else {
+                        console.log(`✅ تم تحديث الوحدة ${unitNumber}`);
+                        updateCount++;
+                        successCount++;
+                    }
+                } else {
+                    // إدراج وحدة جديدة
+                    const { error: insertError } = await supabaseClient
+                        .from('properties')
+                        .insert([supabaseData]);
+
+                    if (insertError) {
+                        console.error(`خطأ في إدراج الوحدة ${unitNumber}:`, insertError);
+                        errorCount++;
+                    } else {
+                        console.log(`✅ تم إدراج الوحدة ${unitNumber}`);
+                        insertCount++;
+                        successCount++;
+                    }
+                }
+
+                // تأخير قصير لتجنب إرهاق الخادم
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+            } catch (error) {
+                console.error(`خطأ في معالجة الوحدة ${unitNumber}:`, error);
+                errorCount++;
+            }
+        }
+
+        // تحديث البيانات المحلية
+        updateProgress('تحديث البيانات المحلية...');
+
+        // دمج البيانات الجديدة مع البيانات الموجودة
+        info2Data.forEach(newProperty => {
+            const existingIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === newProperty['رقم  الوحدة ']
+            );
+
+            if (existingIndex !== -1) {
+                // تحديث العقار الموجود
+                properties[existingIndex] = { ...properties[existingIndex], ...newProperty };
+            } else {
+                // إضافة عقار جديد
+                properties.push(newProperty);
+            }
+        });
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
+
+        // إعادة تحميل التطبيق
+        updateProgress('إعادة تحميل التطبيق...');
+        initializeApp();
+
+        // إزالة مؤشر التحميل
+        loadingModal.remove();
+
+        // إظهار تقرير النتائج
+        const reportMessage = `
+🎉 تم تحديث بيانات info2.json بنجاح!
+
+📊 تقرير التحديث:
+• إجمالي الوحدات: ${info2Data.length}
+• تم التحديث بنجاح: ${successCount}
+• تم التحديث: ${updateCount}
+• تم الإدراج: ${insertCount}
+• فشل: ${errorCount}
+
+✅ تم تحديث البيانات المحلية والسحابية
+        `;
+
+        alert(reportMessage);
+        console.log('🎉 تم الانتهاء من تحديث بيانات info2.json');
+
+        return {
+            total: info2Data.length,
+            success: successCount,
+            updated: updateCount,
+            inserted: insertCount,
+            errors: errorCount
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث بيانات info2.json:', error);
+
+        // إزالة مؤشر التحميل
+        const loadingModal = document.querySelector('.modal-overlay');
+        if (loadingModal) {
+            loadingModal.remove();
+        }
+
+        alert(`❌ خطأ في تحديث البيانات: ${error.message}`);
+        throw error;
+    }
+}
+
+// دالة مساعدة لتحويل البيانات إلى صيغة Supabase
+function convertPropertyToSupabaseFormat(jsonProperty) {
+    // تحويل التواريخ من صيغة ISO إلى صيغة dd/mm/yyyy
+    const convertDate = (dateStr) => {
+        if (!dateStr) return null;
+
+        // إذا كان التاريخ بصيغة ISO (yyyy-mm-dd hh:mm:ss)
+        if (dateStr.includes('-') && dateStr.length > 10) {
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+        }
+
+        // إذا كان التاريخ بصيغة dd/mm/yyyy أو dd-mm-yyyy
+        if (typeof dateStr === 'string') {
+            return dateStr.replace(/-/g, '/');
+        }
+
+        return dateStr;
+    };
+
+    return {
+        unit_number: jsonProperty['رقم  الوحدة '],
+        city: jsonProperty['المدينة'],
+        property_name: jsonProperty['اسم العقار'],
+        property_location: jsonProperty['موقع العقار'],
+        height: jsonProperty['الارتفاع'],
+        deed_number: jsonProperty['رقم الصك'],
+        real_estate_registry: jsonProperty['السجل العيني '],
+        deed_area: jsonProperty['مساحةالصك'],
+        owner: jsonProperty['المالك'],
+        tenant_name: jsonProperty['اسم المستأجر'],
+        tenant_phone: jsonProperty['رقم جوال المستأجر'],
+        tenant_phone_2: jsonProperty['رقم جوال إضافي'],
+        contract_number: jsonProperty['رقم العقد'],
+        rent_value: parseFloat(jsonProperty['قيمة  الايجار ']) || null,
+        area: parseFloat(jsonProperty['المساحة']) || null,
+        start_date: convertDate(jsonProperty['تاريخ البداية']),
+        end_date: convertDate(jsonProperty['تاريخ النهاية']),
+        total_amount: parseFloat(jsonProperty['الاجمالى']) || null,
+        electricity_account: jsonProperty['رقم حساب الكهرباء'],
+        remaining_installments: parseFloat(jsonProperty['عدد الاقساط المتبقية']) || null,
+        first_installment_date: convertDate(jsonProperty['تاريخ القسط الاول']),
+        first_installment_amount: parseFloat(jsonProperty['مبلغ القسط الاول']) || null,
+        second_installment_date: convertDate(jsonProperty['تاريخ القسط الثاني']),
+        second_installment_amount: parseFloat(jsonProperty['مبلغ القسط الثاني']) || null,
+        installment_end_date: convertDate(jsonProperty['تاريخ نهاية القسط']),
+        contract_type: jsonProperty['نوع العقد'],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+}
+
+// ==================== نهاية تحديث بيانات info2.json ====================
 let contractTypeFilter = null;
 let multiFilterSelectedCity = null;
 let multiFilterSelectedProperties = [];
@@ -795,11 +1536,7 @@ function initializeApp() {
         }
     }, 500);
 
-    // إظهار شاشة التحميل البلورية عند تحميل التطبيق
-    if (currentUser) {
-        console.log('🔮 إظهار شاشة التحميل بعد تهيئة التطبيق');
-        showCrystalLoading();
-    }
+    // ملاحظة: شاشة التحميل ستختفي تلقائياً بعد 5 ثوانٍ أو بعد اختفاء الإشعارات
 }
 
 // الحصول على المدن الفريدة (محسن ليشمل المدن المعرفة)
@@ -2236,8 +2973,6 @@ function renderTable(data) {
         'الارتفاع',
         'رقم حساب الكهرباء',
         'اسم المستأجر',
-        'رقم جوال المستأجر',
-        'رقم جوال إضافي',
         'رقم العقد',
         'نوع العقد',
         'تاريخ البداية',
@@ -2350,10 +3085,6 @@ function renderTable(data) {
                 const remaining = property['عدد الاقساط الكلية'] && property['عدد الاقساط'] ? 
                     (parseInt(property['عدد الاقساط الكلية']) - parseInt(property['عدد الاقساط'])) : '';
                 html += `<td>${remaining}</td>`;
-            } else if (field === 'رقم جوال المستأجر' && property[field]) {
-                html += `<td><a href="tel:${property[field]}" class="phone-link">${property[field]} <i class="fas fa-phone-alt"></i></a></td>`;
-            } else if (field === 'رقم جوال إضافي' && property[field]) {
-                html += `<td><a href="tel:${property[field]}" class="phone-link">${property[field]} <i class="fas fa-phone-alt"></i></a></td>`;
             } else if (field === 'موقع العقار' && property[field]) {
                 html += `<td><a href="#" onclick="openLocation('${property[field]}'); return false;" class="location-link">الخريطة <i class="fas fa-map-marker-alt"></i></a></td>`;
             } else {
@@ -2488,24 +3219,6 @@ function renderCards(data) {
                     <span class="card-label">اسم المستأجر:</span>
                     <span class="card-value">${property['اسم المستأجر'] || ''}</span>
                 </div>
-                ${property['رقم جوال المستأجر'] ? `
-                <div class="card-row">
-                    <span class="card-label"><i class="fas fa-phone"></i> رقم الجوال:</span>
-                    <span class="card-value">
-                        <a href="tel:${property['رقم جوال المستأجر']}" class="phone-link">
-                            ${property['رقم جوال المستأجر']} <i class="fas fa-phone-alt"></i>
-                        </a>
-                    </span>
-                </div>` : ''}
-                ${property['رقم جوال إضافي'] ? `
-                <div class="card-row">
-                    <span class="card-label"><i class="fas fa-phone"></i> رقم جوال إضافي:</span>
-                    <span class="card-value">
-                        <a href="tel:${property['رقم جوال إضافي']}" class="phone-link">
-                            ${property['رقم جوال إضافي']} <i class="fas fa-phone-alt"></i>
-                        </a>
-                    </span>
-                </div>` : ''}
                 <div class="card-row">
                     <span class="card-label">المالك:</span>
                     <span class="card-value">${property['المالك'] || ''}</span>
@@ -3373,7 +4086,7 @@ function showUnitDetails(unitNumber, propertyName, contractNumber = null) {
         if (unit['رقم جوال إضافي']) {
             html += `
         <div class="detail-row">
-            <span class="detail-label"><i class="fas fa-phone"></i> رقم جوال إضافي:</span>
+            <span class="detail-label"><i class="fas fa-mobile-alt"></i> جوال إضافي:</span>
             <span class="detail-value">
                 <a href="tel:${unit['رقم جوال إضافي']}" class="phone-link">
                     ${unit['رقم جوال إضافي']} <i class="fas fa-phone-alt"></i>
@@ -5469,17 +6182,75 @@ async function checkSupabaseAvailability() {
             return false;
         }
 
-        // Test connection with a simple query
-        const { error } = await supabaseClient
-            .from('attachments')
+        console.log('🔍 فحص اتصال Supabase...');
+
+        // Test basic connection first
+        const { data: testData, error: testError } = await supabaseClient
+            .from('properties')
             .select('count', { count: 'exact', head: true });
 
-        if (error) {
-            console.warn('⚠️ جدول المرفقات غير متوفر:', error.message);
+        if (testError) {
+            console.warn('⚠️ خطأ في الاتصال الأساسي:', testError.message);
             return false;
         }
 
-        console.log('✅ Supabase متوفر ويعمل');
+        console.log('✅ الاتصال الأساسي يعمل');
+
+        // Test attachments table
+        const { data: attachmentsData, error: attachmentsError } = await supabaseClient
+            .from('attachments')
+            .select('count', { count: 'exact', head: true });
+
+        if (attachmentsError) {
+            console.warn('⚠️ جدول المرفقات غير متوفر:', attachmentsError.message);
+
+            // Try to create the table if it doesn't exist
+            if (typeof ensureAttachmentsTableExists === 'function') {
+                console.log('🔧 محاولة إنشاء جدول المرفقات...');
+                await ensureAttachmentsTableExists();
+
+                // Test again after creation
+                const { error: retestError } = await supabaseClient
+                    .from('attachments')
+                    .select('count', { count: 'exact', head: true });
+
+                if (retestError) {
+                    console.warn('⚠️ لا يزال جدول المرفقات غير متوفر بعد الإنشاء');
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+
+        console.log('✅ جدول المرفقات متوفر');
+
+        // Test storage bucket
+        try {
+            const { data: buckets, error: bucketError } = await supabaseClient.storage.listBuckets();
+
+            if (bucketError) {
+                console.warn('⚠️ خطأ في فحص مجلدات التخزين:', bucketError.message);
+            } else {
+                const attachmentsBucket = buckets?.find(bucket => bucket.name === 'attachments');
+                if (!attachmentsBucket) {
+                    console.warn('⚠️ مجلد المرفقات غير موجود');
+
+                    // Try to create bucket
+                    if (typeof ensureStorageBucketExists === 'function') {
+                        console.log('🔧 محاولة إنشاء مجلد التخزين...');
+                        await ensureStorageBucketExists();
+                    }
+                } else {
+                    console.log('✅ مجلد التخزين متوفر');
+                }
+            }
+        } catch (storageError) {
+            console.warn('⚠️ خطأ في فحص التخزين:', storageError.message);
+            // Don't fail completely for storage issues
+        }
+
+        console.log('✅ Supabase متوفر ويعمل بشكل كامل');
         return true;
 
     } catch (error) {
@@ -5584,25 +6355,43 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
             // Always try Supabase upload first for cross-device sync
             let uploadSuccess = false;
 
-            if (typeof uploadFileToSupabase === 'function' && supabaseClient) {
-                try {
-                    console.log(`☁️ رفع ${file.name} إلى السحابة...`);
-                    const result = await uploadFileToSupabase(file, propertyKey, notes);
+            // Try Supabase upload first
+            try {
+                console.log(`☁️ رفع ${file.name} إلى السحابة...`);
 
-                    if (result) {
-                        uploadSuccess = true;
-                        cloudUploads++;
-                        console.log(`✅ تم رفع ${file.name} إلى السحابة بنجاح`);
-
-                        // Trigger real-time update event
-                        window.dispatchEvent(new CustomEvent('attachmentAdded', {
-                            detail: { propertyKey, attachment: result }
-                        }));
-                    }
-                } catch (supabaseError) {
-                    console.warn(`⚠️ فشل رفع ${file.name} للسحابة:`, supabaseError);
-                    // Will fallback to local storage
+                // Check if uploadFileToSupabase function exists
+                if (typeof uploadFileToSupabase !== 'function') {
+                    throw new Error('دالة رفع الملفات غير متوفرة');
                 }
+
+                if (!supabaseClient) {
+                    throw new Error('عميل Supabase غير متوفر');
+                }
+
+                const result = await uploadFileToSupabase(file, propertyKey, notes);
+
+                if (result) {
+                    uploadSuccess = true;
+                    cloudUploads++;
+                    console.log(`✅ تم رفع ${file.name} إلى السحابة بنجاح`);
+                    console.log('📊 تفاصيل النتيجة:', result);
+
+                    // Trigger real-time update event
+                    window.dispatchEvent(new CustomEvent('attachmentAdded', {
+                        detail: { propertyKey, attachment: result }
+                    }));
+                } else {
+                    console.warn(`⚠️ رفع ${file.name} أرجع نتيجة فارغة`);
+                    throw new Error('نتيجة رفع الملف فارغة');
+                }
+            } catch (supabaseError) {
+                console.error(`❌ فشل رفع ${file.name} للسحابة:`, supabaseError);
+                console.error('📊 تفاصيل الخطأ:', {
+                    message: supabaseError.message,
+                    stack: supabaseError.stack,
+                    name: supabaseError.name
+                });
+                // Will fallback to local storage
             }
 
             // Fallback to local storage if Supabase fails
@@ -9697,11 +10486,13 @@ async function saveUnitToSupabase(unit, originalUnitNumber, originalPropertyName
             const updateData = {
                 'رقم  الوحدة ': unit['رقم  الوحدة '],
                 'اسم المستأجر': unit['اسم المستأجر'],
-                'رقم جوال المستأجر': unit['رقم جوال المستأجر'],
-                'رقم جوال إضافي': unit['رقم جوال إضافي'],
                 'رقم العقد': unit['رقم العقد'],
                 'قيمة  الايجار ': unit['قيمة  الايجار '],
                 'المساحة': unit['المساحة'],
+                'رقم جوال المستأجر': unit['رقم جوال المستأجر'],
+                'رقم جوال إضافي': unit['رقم جوال إضافي'],
+                tenant_phone: unit['رقم جوال المستأجر'],
+                tenant_phone_2: unit['رقم جوال إضافي'],
                 updated_at: new Date().toISOString()
             };
 
@@ -10063,6 +10854,44 @@ function enterManagementMode() {
                             visibility: visible !important;
                             opacity: 1 !important;
                         ">نقل الوحدات</span>
+                    </button>
+
+                    <!-- زر اختبار رقم الجوال الإضافي -->
+                    <button class="nav-btn" onclick="testPhoneFieldSave(); hideSidebarOnMobile();"
+                            style="
+                                width: 100% !important;
+                                background: #ffffff !important;
+                                color: #2c3e50 !important;
+                                border: 3px solid #e9ecef !important;
+                                margin: 0 0 12px 0 !important;
+                                padding: 18px 25px !important;
+                                border-radius: 12px !important;
+                                min-height: 60px !important;
+                                font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                gap: 20px !important;
+                                cursor: pointer !important;
+                                transition: all 0.3s ease !important;
+                                text-align: right !important;
+                                direction: rtl !important;
+                            ">
+                        <i class="fas fa-mobile-alt" style="color: #28a745 !important; font-size: 1.4rem !important; width: 30px !important; text-align: center !important; font-weight: 900 !important; flex-shrink: 0 !important;"></i>
+                        <span style="
+                            color: #2c3e50 !important;
+                            font-size: 1.1rem !important;
+                            font-weight: 800 !important;
+                            flex: 1 !important;
+                            text-align: right !important;
+                            font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif !important;
+                            letter-spacing: 0.5px !important;
+                            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+                            line-height: 1.2 !important;
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                        ">اختبار رقم الجوال الإضافي</span>
                     </button>
 
                     <!-- زر إدارة سجلات التتبع (للمدير فقط) -->
@@ -16830,6 +17659,14 @@ async function saveIndividualUnitChanges(formData, unitIndex) {
         }
 
         updatedProperty[key] = value || '';
+    }
+
+    // معالجة خاصة لحقول الجوال لضمان الحفظ في Supabase
+    if (updatedProperty['رقم جوال المستأجر']) {
+        updatedProperty['tenant_phone'] = updatedProperty['رقم جوال المستأجر'];
+    }
+    if (updatedProperty['رقم جوال إضافي']) {
+        updatedProperty['tenant_phone_2'] = updatedProperty['رقم جوال إضافي'];
     }
 
     // إضافة معلومات التحديث
@@ -26202,7 +27039,7 @@ async function testPropertySavingSolution() {
         try {
             const testPropertyForSave = {
                 'اسم العقار': 'عقار اختبار الحفظ',
-                'المدينة': 'جدة',
+                'المدينة': '',
                 'رقم  الوحدة ': 'SAVE_TEST_001',
                 'اسم المستأجر': 'مستأجر حفظ',
                 'رقم العقد': 'SAVE_C001',
@@ -29737,6 +30574,204 @@ async function recoverDeletedData() {
 // إضافة الدوال المفقودة للنافذة العامة
 window.fullDataRecovery = fullDataRecovery;
 window.recoverDeletedData = recoverDeletedData;
+
+// ===== SUPABASE HELPER FUNCTIONS =====
+
+// Convert JSON property data to Supabase format
+function convertPropertyToSupabaseFormat(jsonProperty) {
+    return {
+        unit_number: jsonProperty['رقم  الوحدة '] || '',
+        city: jsonProperty['المدينة'] || '',
+        property_name: jsonProperty['اسم العقار'] || '',
+        property_location: jsonProperty['موقع العقار'] || '',
+        height: jsonProperty['الارتفاع'] || null,
+        deed_number: jsonProperty['رقم الصك'] || '',
+        real_estate_registry: jsonProperty['السجل العيني '] || null,
+        deed_area: jsonProperty['مساحةالصك'] || '',
+        owner: jsonProperty['المالك'] || '',
+        tenant_name: jsonProperty['اسم المستأجر'] || null,
+        tenant_phone: jsonProperty['رقم جوال المستأجر'] || null,
+        tenant_phone_2: jsonProperty['رقم جوال إضافي'] || null,
+        contract_number: jsonProperty['رقم العقد'] || null,
+        rent_value: parseFloat(jsonProperty['قيمة  الايجار ']) || null,
+        area: parseFloat(jsonProperty['المساحة']) || null,
+        start_date: parseDate(jsonProperty['تاريخ البداية']) || null,
+        end_date: parseDate(jsonProperty['تاريخ النهاية']) || null,
+        total_amount: parseFloat(jsonProperty['الاجمالى']) || null,
+        electricity_account: jsonProperty['رقم حساب الكهرباء'] || null,
+        remaining_installments: parseInt(jsonProperty['عدد الاقساط المتبقية']) || null,
+        installment_count: parseInt(jsonProperty['عدد الاقساط']) || null,
+
+        // حفظ جميع الأقساط (حتى 10 أقساط)
+        first_installment_date: parseDate(jsonProperty['تاريخ القسط الاول']) || null,
+        first_installment_amount: parseFloat(jsonProperty['مبلغ القسط الاول']) || null,
+        second_installment_date: parseDate(jsonProperty['تاريخ القسط الثاني']) || null,
+        second_installment_amount: parseFloat(jsonProperty['مبلغ القسط الثاني']) || null,
+        third_installment_date: parseDate(jsonProperty['تاريخ القسط الثالث']) || null,
+        third_installment_amount: parseFloat(jsonProperty['مبلغ القسط الثالث']) || null,
+        fourth_installment_date: parseDate(jsonProperty['تاريخ القسط الرابع']) || null,
+        fourth_installment_amount: parseFloat(jsonProperty['مبلغ القسط الرابع']) || null,
+        fifth_installment_date: parseDate(jsonProperty['تاريخ القسط الخامس']) || null,
+        fifth_installment_amount: parseFloat(jsonProperty['مبلغ القسط الخامس']) || null,
+        sixth_installment_date: parseDate(jsonProperty['تاريخ القسط السادس']) || null,
+        sixth_installment_amount: parseFloat(jsonProperty['مبلغ القسط السادس']) || null,
+        seventh_installment_date: parseDate(jsonProperty['تاريخ القسط السابع']) || null,
+        seventh_installment_amount: parseFloat(jsonProperty['مبلغ القسط السابع']) || null,
+        eighth_installment_date: parseDate(jsonProperty['تاريخ القسط الثامن']) || null,
+        eighth_installment_amount: parseFloat(jsonProperty['مبلغ القسط الثامن']) || null,
+        ninth_installment_date: parseDate(jsonProperty['تاريخ القسط التاسع']) || null,
+        ninth_installment_amount: parseFloat(jsonProperty['مبلغ القسط التاسع']) || null,
+        tenth_installment_date: parseDate(jsonProperty['تاريخ القسط العاشر']) || null,
+        tenth_installment_amount: parseFloat(jsonProperty['مبلغ القسط العاشر']) || null,
+
+        contract_type: jsonProperty['نوع العقد'] || 'سكني',
+        last_update_date: jsonProperty['تاريخ آخر تحديث'] || null,
+        update_type: jsonProperty['نوع التحديث'] || null,
+        update_responsible: jsonProperty['المسؤول عن التحديث'] || null,
+        installment_end_date: parseDate(jsonProperty['تاريخ نهاية القسط']) || null
+    };
+}
+
+// Parse date from Arabic format to ISO format
+function parseDate(dateStr) {
+    if (!dateStr || dateStr === '' || dateStr === null) {
+        return null;
+    }
+
+    try {
+        // Handle dd/mm/yyyy format
+        if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]);
+                const year = parseInt(parts[2]);
+
+                if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    const date = new Date(year, month - 1, day);
+                    return date.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+                }
+            }
+        }
+
+        // Handle ISO format (YYYY-MM-DD)
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            return dateStr;
+        }
+
+        console.warn(`Could not parse date: ${dateStr}`);
+        return null;
+    } catch (error) {
+        console.warn(`Error parsing date ${dateStr}:`, error);
+        return null;
+    }
+}
+
+// Add new property to Supabase
+async function addProperty(propertyData) {
+    try {
+        console.log('➕ إضافة عقار جديد إلى قاعدة البيانات...');
+
+        const { data, error } = await supabaseClient
+            .from('properties')
+            .insert([propertyData])
+            .select();
+
+        if (error) {
+            console.error('❌ خطأ في إضافة العقار:', error);
+            throw new Error(`فشل في إضافة العقار: ${error.message}`);
+        }
+
+        console.log('✅ تم إضافة العقار بنجاح إلى قاعدة البيانات');
+        return data[0];
+    } catch (error) {
+        console.error('❌ خطأ في addProperty:', error);
+        throw error;
+    }
+}
+
+// Update property in Supabase
+async function updateProperty(id, updates) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('properties')
+            .update({ ...updates, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            console.error('❌ خطأ في تحديث العقار:', error);
+            throw new Error(`فشل في تحديث العقار: ${error.message}`);
+        }
+
+        console.log('✅ تم تحديث العقار بنجاح في قاعدة البيانات');
+        return data[0];
+    } catch (error) {
+        console.error('❌ خطأ في updateProperty:', error);
+        throw error;
+    }
+}
+
+// ===== SUPABASE SAVE PROPERTY FUNCTION =====
+
+// Save property changes to Supabase when data is modified
+async function savePropertyToSupabase(property) {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متصل، تخطي الحفظ السحابي');
+            return false;
+        }
+
+        console.log('🔄 بدء حفظ العقار في Supabase...');
+        console.log('📋 بيانات العقار:', {
+            unitNumber: property['رقم  الوحدة '],
+            propertyName: property['اسم العقار'],
+            tenant: property['اسم المستأجر']
+        });
+
+        // Convert original format to Supabase format
+        const supabaseProperty = convertPropertyToSupabaseFormat(property);
+
+        // Check if property exists (by unit_number AND property_name for uniqueness)
+        console.log('🔍 البحث عن العقار في قاعدة البيانات...');
+        const { data: existingProperty, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('id')
+            .eq('unit_number', supabaseProperty.unit_number)
+            .eq('property_name', supabaseProperty.property_name)
+            .single();
+
+        if (searchError && searchError.code !== 'PGRST116') {
+            console.error('❌ خطأ في البحث عن العقار:', searchError);
+            throw new Error(`فشل في البحث عن العقار: ${searchError.message}`);
+        }
+
+        if (existingProperty) {
+            // Update existing property
+            console.log('🔄 تحديث عقار موجود، ID:', existingProperty.id);
+            const result = await updateProperty(existingProperty.id, supabaseProperty);
+            console.log('✅ تم تحديث العقار في Supabase:', supabaseProperty.unit_number);
+            return result;
+        } else {
+            // Add new property
+            console.log('➕ إضافة عقار جديد...');
+            const result = await addProperty(supabaseProperty);
+            console.log('✅ تم إضافة العقار إلى Supabase:', supabaseProperty.unit_number);
+            return result;
+        }
+    } catch (error) {
+        console.error('❌ خطأ في حفظ العقار في Supabase:', error);
+        console.error('📊 تفاصيل الخطأ:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
+
+        // إرجاع false بدلاً من رمي الخطأ لمنع فشل العملية بالكامل
+        return false;
+    }
+}
 
 // إضافة مستمع لتحميل الصفحة لإظهار شاشة التحميل
 document.addEventListener('DOMContentLoaded', function() {
