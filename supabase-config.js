@@ -1114,13 +1114,37 @@ async function savePropertyToSupabase(property) {
             console.log('🔄 تحديث عقار موجود، ID:', existingProperty.id);
             const result = await updateProperty(existingProperty.id, supabaseProperty);
             console.log('✅ تم تحديث العقار في Supabase:', supabaseProperty.unit_number);
-            return result;
+
+            if (result) {
+                return {
+                    success: true,
+                    message: 'تم تحديث العقار بنجاح في قاعدة البيانات السحابية',
+                    data: result
+                };
+            } else {
+                return {
+                    success: false,
+                    message: 'فشل في تحديث العقار في قاعدة البيانات السحابية'
+                };
+            }
         } else {
             // Add new property
             console.log('➕ إضافة عقار جديد...');
             const result = await addProperty(supabaseProperty);
             console.log('✅ تم إضافة العقار إلى Supabase:', supabaseProperty.unit_number);
-            return result;
+
+            if (result) {
+                return {
+                    success: true,
+                    message: 'تم إضافة العقار بنجاح إلى قاعدة البيانات السحابية',
+                    data: result
+                };
+            } else {
+                return {
+                    success: false,
+                    message: 'فشل في إضافة العقار إلى قاعدة البيانات السحابية'
+                };
+            }
         }
     } catch (error) {
         console.error('❌ خطأ في حفظ العقار في Supabase:', error);
@@ -1131,8 +1155,12 @@ async function savePropertyToSupabase(property) {
             hint: error.hint
         });
 
-        // إرجاع false بدلاً من رمي الخطأ لمنع فشل العملية بالكامل
-        return false;
+        // إرجاع كائن خطأ بدلاً من false
+        return {
+            success: false,
+            message: `خطأ في الاتصال بقاعدة البيانات: ${error.message}`,
+            error: error
+        };
     }
 }
 

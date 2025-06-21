@@ -4,6 +4,329 @@ let currentCountry = null;
 let currentProperty = null;
 let filterStatus = null;
 
+// ===== STATE MANAGEMENT SYSTEM =====
+// نظام إدارة الحالة للحفاظ على حالة التطبيق بعد إعادة التحميل
+
+const STATE_STORAGE_KEY = 'alsenidi_app_state';
+
+// حفظ حالة التطبيق في localStorage
+function saveAppState() {
+    try {
+        const state = {
+            currentView: currentView,
+            currentCountry: currentCountry,
+            currentProperty: currentProperty,
+            filterStatus: filterStatus,
+            timestamp: Date.now(),
+            // حفظ حالة الشريط الجانبي
+            sidebarVisible: document.getElementById('sidebar')?.style.display !== 'none',
+            // حفظ نص البحث
+            globalSearchValue: document.getElementById('globalSearch')?.value || '',
+            propertySearchValue: document.getElementById('propertySearch')?.value || '',
+            // حفظ حالة النافذة المفتوحة (إن وجدت)
+            openModal: document.querySelector('.modal.show') ? true : false,
+            // حفظ وضع الإدارة
+            isManagementMode: window.isManagementMode || false
+        };
+
+        localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(state));
+        console.log('💾 تم حفظ حالة التطبيق:', state);
+    } catch (error) {
+        console.warn('⚠️ فشل في حفظ حالة التطبيق:', error);
+    }
+}
+
+// استعادة حالة التطبيق من localStorage
+function restoreAppState() {
+    try {
+        const savedState = localStorage.getItem(STATE_STORAGE_KEY);
+        if (!savedState) {
+            console.log('📝 لا توجد حالة محفوظة');
+            return false;
+        }
+
+        const state = JSON.parse(savedState);
+
+        // التحقق من أن الحالة ليست قديمة جداً (أكثر من 24 ساعة)
+        const maxAge = 24 * 60 * 60 * 1000; // 24 ساعة
+        if (Date.now() - state.timestamp > maxAge) {
+            console.log('⏰ الحالة المحفوظة قديمة، سيتم تجاهلها');
+            localStorage.removeItem(STATE_STORAGE_KEY);
+            return false;
+        }
+
+        console.log('🔄 استعادة حالة التطبيق:', state);
+
+        // استعادة المتغيرات العامة
+        currentView = state.currentView || 'cards';
+        currentCountry = state.currentCountry;
+        currentProperty = state.currentProperty;
+        filterStatus = state.filterStatus;
+
+        // استعادة نص البحث
+        setTimeout(() => {
+            const globalSearch = document.getElementById('globalSearch');
+            const propertySearch = document.getElementById('propertySearch');
+
+            if (globalSearch && state.globalSearchValue) {
+                globalSearch.value = state.globalSearchValue;
+            }
+
+            if (propertySearch && state.propertySearchValue) {
+                propertySearch.value = state.propertySearchValue;
+            }
+        }, 100);
+
+        return state;
+    } catch (error) {
+        console.warn('⚠️ فشل في استعادة حالة التطبيق:', error);
+        localStorage.removeItem(STATE_STORAGE_KEY);
+        return false;
+    }
+}
+
+// مسح حالة التطبيق المحفوظة
+function clearAppState() {
+    localStorage.removeItem(STATE_STORAGE_KEY);
+    console.log('🗑️ تم مسح حالة التطبيق المحفوظة');
+}
+
+// حفظ الحالة تلقائياً عند تغيير المتغيرات المهمة
+function autoSaveState() {
+    // حفظ الحالة كل 2 ثانية إذا تغير شيء
+    let lastSavedState = '';
+
+    setInterval(() => {
+        const currentState = JSON.stringify({
+            currentView,
+            currentCountry,
+            currentProperty,
+            filterStatus
+        });
+
+        if (currentState !== lastSavedState) {
+            saveAppState();
+            lastSavedState = currentState;
+        }
+    }, 2000);
+}
+
+// تطبيق الحالة المستعادة على التطبيق
+function applyRestoredState(state) {
+    try {
+        console.log('🔄 تطبيق الحالة المستعادة...', state);
+
+        // استعادة طريقة العرض
+        if (state.currentView && state.currentView !== currentView) {
+            currentView = state.currentView;
+            console.log('📱 استعادة طريقة العرض:', currentView);
+        }
+
+        // استعادة المدينة المختارة
+        if (state.currentCountry !== undefined) {
+            currentCountry = state.currentCountry;
+            console.log('🏙️ استعادة المدينة:', currentCountry);
+
+            // تحديث أزرار المدن
+            setTimeout(() => {
+                initCountryButtons();
+                if (currentCountry) {
+                    selectCountry(currentCountry);
+                }
+            }, 100);
+        }
+
+        // استعادة العقار المختار
+        if (state.currentProperty) {
+            currentProperty = state.currentProperty;
+            console.log('🏢 استعادة العقار:', currentProperty);
+
+            // تحديث قائمة العقارات وتحديد العقار
+            setTimeout(() => {
+                initPropertyList(currentCountry);
+                if (currentProperty) {
+                    selectProperty(currentProperty);
+                }
+            }, 200);
+        }
+
+        // استعادة فلتر الحالة
+        if (state.filterStatus !== undefined) {
+            filterStatus = state.filterStatus;
+            console.log('🔍 استعادة فلتر الحالة:', filterStatus);
+        }
+
+        // استعادة نص البحث
+        setTimeout(() => {
+            if (state.globalSearchValue) {
+                const globalSearch = document.getElementById('globalSearch');
+                if (globalSearch) {
+                    globalSearch.value = state.globalSearchValue;
+                    console.log('🔍 استعادة البحث العام:', state.globalSearchValue);
+                }
+            }
+
+            if (state.propertySearchValue) {
+                const propertySearch = document.getElementById('propertySearch');
+                if (propertySearch) {
+                    propertySearch.value = state.propertySearchValue;
+                    console.log('🔍 استعادة بحث العقارات:', state.propertySearchValue);
+                }
+            }
+        }, 300);
+
+        // استعادة حالة الشريط الجانبي
+        if (state.sidebarVisible !== undefined) {
+            setTimeout(() => {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    if (state.sidebarVisible) {
+                        sidebar.style.display = 'block';
+                        console.log('📋 إظهار الشريط الجانبي');
+                    } else {
+                        sidebar.style.display = 'none';
+                        console.log('📋 إخفاء الشريط الجانبي');
+                    }
+                }
+            }, 400);
+        }
+
+        // إعادة عرض البيانات بالحالة المستعادة
+        setTimeout(() => {
+            renderData();
+            console.log('✅ تم تطبيق الحالة المستعادة بنجاح');
+        }, 500);
+
+    } catch (error) {
+        console.warn('⚠️ خطأ في تطبيق الحالة المستعادة:', error);
+    }
+}
+
+// إضافة مستمعات الأحداث لحفظ الحالة
+function addStateEventListeners() {
+    // حفظ الحالة عند إغلاق الصفحة أو إعادة التحميل
+    window.addEventListener('beforeunload', function() {
+        saveAppState();
+        console.log('💾 تم حفظ الحالة قبل إغلاق الصفحة');
+    });
+
+    // حفظ الحالة عند إخفاء الصفحة (تبديل التبويبات)
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            saveAppState();
+            console.log('💾 تم حفظ الحالة عند إخفاء الصفحة');
+        }
+    });
+
+    // حفظ الحالة عند تغيير البحث العام
+    const globalSearch = document.getElementById('globalSearch');
+    if (globalSearch) {
+        globalSearch.addEventListener('input', function() {
+            // تأخير قصير لتجنب الحفظ المفرط
+            clearTimeout(window.searchSaveTimeout);
+            window.searchSaveTimeout = setTimeout(() => {
+                saveAppState();
+            }, 1000);
+        });
+    }
+
+    // حفظ الحالة عند تغيير بحث العقارات
+    const propertySearch = document.getElementById('propertySearch');
+    if (propertySearch) {
+        propertySearch.addEventListener('input', function() {
+            // تأخير قصير لتجنب الحفظ المفرط
+            clearTimeout(window.propertySearchSaveTimeout);
+            window.propertySearchSaveTimeout = setTimeout(() => {
+                saveAppState();
+            }, 1000);
+        });
+    }
+
+    // حفظ الحالة عند تغيير حجم النافذة (للشريط الجانبي)
+    window.addEventListener('resize', function() {
+        clearTimeout(window.resizeSaveTimeout);
+        window.resizeSaveTimeout = setTimeout(() => {
+            saveAppState();
+        }, 500);
+    });
+
+    console.log('✅ تم إضافة مستمعات أحداث حفظ الحالة');
+}
+
+// مراقب لإضافة زر تسجيل الخروج تلقائياً
+function setupLogoutButtonObserver() {
+    // مراقب DOM للتأكد من إضافة زر تسجيل الخروج
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                // التحقق من وجود header وعدم وجود زر تسجيل الخروج
+                const header = document.querySelector('.header-section.header-actions');
+                const logoutBtn = document.getElementById('logoutBtn');
+
+                if (header && !logoutBtn && currentUser && currentUser !== 'guest') {
+                    console.log('🔍 مراقب DOM: إضافة زر تسجيل الخروج');
+                    setTimeout(() => {
+                        addLogoutButton();
+                        updateMobileUserSection();
+                    }, 100);
+                }
+            }
+        });
+    });
+
+    // بدء مراقبة التغييرات في DOM
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    console.log('👁️ تم تفعيل مراقب زر تسجيل الخروج');
+}
+
+// مسح الحالة مع التأكيد
+function clearAppStateWithConfirmation() {
+    const confirmed = confirm('هل تريد إعادة تعيين حالة التطبيق؟\n\nسيؤدي هذا إلى:\n• إعادة تعيين المدينة المختارة\n• إعادة تعيين العقار المختار\n• إعادة تعيين الفلاتر\n• إعادة تعيين طريقة العرض\n• مسح نصوص البحث');
+
+    if (confirmed) {
+        clearAppState();
+
+        // إعادة تعيين المتغيرات للقيم الافتراضية
+        currentView = 'cards';
+        currentCountry = null;
+        currentProperty = null;
+        filterStatus = null;
+
+        // مسح نصوص البحث
+        const globalSearch = document.getElementById('globalSearch');
+        const propertySearch = document.getElementById('propertySearch');
+
+        if (globalSearch) globalSearch.value = '';
+        if (propertySearch) propertySearch.value = '';
+
+        // إعادة تهيئة التطبيق
+        setTimeout(() => {
+            initCountryButtons();
+            initPropertyList();
+            renderData();
+
+            // إظهار رسالة نجاح
+            alert('✅ تم إعادة تعيين حالة التطبيق بنجاح!');
+        }, 100);
+
+        console.log('🔄 تم إعادة تعيين حالة التطبيق');
+    }
+}
+
+// دالة مساعدة للتحقق من وجود البيانات
+function ensurePropertiesLoaded(functionName = 'unknown') {
+    if (!properties || !Array.isArray(properties)) {
+        console.error(`❌ مصفوفة properties غير موجودة في ${functionName}:`, properties);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        return false;
+    }
+    return true;
+}
+
 // دالة مساعدة لفلترة الحقول المخفية
 function shouldHideField(fieldName) {
     const hiddenFields = [
@@ -24,6 +347,13 @@ function shouldHideField(fieldName) {
 function showCrystalLoading() {
     console.log('🔮 إظهار شاشة التحميل البلورية');
 
+    // التحقق من وجود شاشة تحميل موجودة بالفعل
+    const existingOverlay = document.getElementById('crystalLoadingOverlay');
+    if (existingOverlay) {
+        console.log('⚠️ شاشة التحميل موجودة بالفعل');
+        return;
+    }
+
     // إنشاء عنصر شاشة التحميل
     const loadingOverlay = document.createElement('div');
     loadingOverlay.id = 'crystalLoadingOverlay';
@@ -41,6 +371,12 @@ function showCrystalLoading() {
             <div class="crystal-progress">
                 <div class="crystal-progress-bar"></div>
             </div>
+
+            <!-- زر ابدأ - يظهر بعد 5 ثوان -->
+            <button id="startButton" class="crystal-start-btn" onclick="hideCrystalLoading()" style="display: none;">
+                <i class="fas fa-play"></i>
+                ابدأ
+            </button>
         </div>
         <div class="crystal-particles">
             <div class="crystal-particle"></div>
@@ -57,9 +393,14 @@ function showCrystalLoading() {
     // إضافة الشاشة إلى الصفحة
     document.body.appendChild(loadingOverlay);
 
-    // إخفاء الشاشة بعد 5 ثوانٍ
+    // إظهار زر "ابدأ" بعد 5 ثوانٍ
     setTimeout(() => {
-        hideCrystalLoading();
+        const startButton = document.getElementById('startButton');
+        if (startButton) {
+            startButton.style.display = 'block';
+            startButton.style.animation = 'fadeInUp 0.5s ease-out';
+            console.log('🎯 تم إظهار زر "ابدأ"');
+        }
     }, 5000);
 }
 
@@ -245,6 +586,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // تحديث حالة زر وضع المطور
     updateDeveloperModeButton();
 
+    // ===== استعادة حالة التطبيق =====
+    console.log('🔄 محاولة استعادة حالة التطبيق...');
+    const restoredState = restoreAppState();
+
+    // ===== إضافة زر تسجيل الخروج مبكراً =====
+    setTimeout(() => {
+        if (currentUser && currentUser !== 'guest') {
+            console.log('🔑 إضافة زر تسجيل الخروج مبكراً من DOMContentLoaded');
+            addLogoutButton();
+            updateMobileUserSection();
+        }
+    }, 100);
+
     // استعادة البيانات من localStorage إذا كانت متوفرة
     restoreDataFromLocalStorage();
 
@@ -254,6 +608,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // فحص البيانات للتأكد من الحفظ الدائم
     setTimeout(() => {
         verifyDataPersistence();
+
+        // ===== تطبيق الحالة المستعادة بعد تحميل البيانات =====
+        if (restoredState) {
+            setTimeout(() => {
+                applyRestoredState(restoredState);
+            }, 1000);
+        }
+
+        // بدء نظام الحفظ التلقائي للحالة
+        autoSaveState();
+
+        // إضافة مستمعات الأحداث لحفظ الحالة
+        addStateEventListeners();
+
+        // تفعيل مراقب زر تسجيل الخروج
+        setupLogoutButtonObserver();
+
+        // استدعاء نهائي للتأكد من إضافة زر تسجيل الخروج
+        setTimeout(() => {
+            if (currentUser && currentUser !== 'guest' && !document.getElementById('logoutBtn')) {
+                console.log('🔑 استدعاء نهائي لإضافة زر تسجيل الخروج');
+                addLogoutButton();
+                updateMobileUserSection();
+            }
+        }, 2000);
     }, 1000);
 
     initializeDataLoading()
@@ -789,17 +1168,23 @@ function initializeApp() {
 
     // إضافة زر تسجيل الخروج إذا كان المستخدم مسجل دخول
     setTimeout(() => {
-        if (currentUser) {
+        if (currentUser && currentUser !== 'guest') {
             console.log('🔑 إضافة زر تسجيل الخروج من initializeApp');
             addLogoutButton();
+            updateMobileUserSection();
         }
-    }, 500);
+    }, 100);
 
-    // إظهار شاشة التحميل البلورية عند تحميل التطبيق
-    if (currentUser) {
-        console.log('🔮 إظهار شاشة التحميل بعد تهيئة التطبيق');
-        showCrystalLoading();
-    }
+    // استدعاء إضافي للتأكد من إضافة زر تسجيل الخروج
+    setTimeout(() => {
+        if (currentUser && currentUser !== 'guest' && !document.getElementById('logoutBtn')) {
+            console.log('🔑 استدعاء إضافي لإضافة زر تسجيل الخروج');
+            addLogoutButton();
+            updateMobileUserSection();
+        }
+    }, 1000);
+
+    // تم إزالة شاشة التحميل البلورية من هنا حسب طلب المستخدم
 }
 
 // الحصول على المدن الفريدة (محسن ليشمل المدن المعرفة)
@@ -1329,6 +1714,9 @@ function selectCountry(country) {
     initCountryButtons();
     initPropertyList(currentCountry);
     renderData();
+
+    // حفظ الحالة بعد تغيير المدينة
+    saveAppState();
 }
 
 // اختيار عقار
@@ -1347,21 +1735,27 @@ function selectProperty(propertyName) {
     if (window.innerWidth <= 900) {
         sidebar.classList.remove('active');
     }
+
+    // حفظ الحالة بعد تغيير العقار
+    saveAppState();
 }
 
 // تعيين فلتر الحالة
 function setStatusFilter(status) {
     filterStatus = status;
     renderData();
+
+    // حفظ الحالة بعد تغيير فلتر الحالة
+    saveAppState();
 }
 
 // تبديل طريقة العرض
 function toggleView(view) {
     currentView = view;
-    
+
     const tableBtn = document.getElementById('table-btn');
     const cardsBtn = document.getElementById('cards-btn');
-    
+
     if (view === 'table') {
         tableBtn.classList.add('active');
         cardsBtn.classList.remove('active');
@@ -1369,8 +1763,11 @@ function toggleView(view) {
         tableBtn.classList.remove('active');
         cardsBtn.classList.add('active');
     }
-    
+
     renderData();
+
+    // حفظ الحالة بعد تغيير طريقة العرض
+    saveAppState();
 }
 
 // تبديل عرض الشريط الجانبي
@@ -5206,7 +5603,7 @@ async function deletePropertyAttachmentFromSupabase(attachmentId, propertyKey) {
         }
     } catch (error) {
         console.error('❌ خطأ في حذف مرفق العقار:', error);
-        alert('حدث خطأ في حذف المرفق');
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
     }
 }
 
@@ -8197,7 +8594,8 @@ function refreshDataDisplay() {
 }
 
 function showImportError(message) {
-    alert('خطأ في الاستيراد: ' + message);
+    // تم إزالة رسالة الخطأ حسب طلب المستخدم
+    console.error('خطأ في الاستيراد:', message);
 }
 
 function formatFileSize(bytes) {
@@ -9655,7 +10053,7 @@ async function saveUnitEdit(event) {
 
     } catch (error) {
         console.error('❌ خطأ في حفظ تعديل الوحدة:', error);
-        alert(`❌ حدث خطأ أثناء حفظ التعديلات: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
 
         // إعادة تفعيل الزر
         const saveBtn = form.querySelector('.save-btn');
@@ -11217,6 +11615,11 @@ function addNewUnit() {
 async function deleteUnit(unitNumber, propertyName) {
     console.log('🚀 بدء وظيفة حذف الوحدة:', { unitNumber, propertyName });
 
+    // التحقق من وجود البيانات
+    if (!ensurePropertiesLoaded('deleteUnit')) {
+        return;
+    }
+
     // التحقق من وجود الوحدة
     const unitIndex = properties.findIndex(p =>
         p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName
@@ -11905,8 +12308,8 @@ async function confirmDeleteProperty(propertyName) {
         // إزالة مؤشر التحميل
         loadingModal.remove();
 
-        // إظهار رسالة خطأ
-        showErrorMessage('خطأ في حذف العقار', error.message || 'حدث خطأ غير متوقع أثناء حذف العقار');
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('خطأ في حذف العقار:', error.message || 'حدث خطأ غير متوقع أثناء حذف العقار');
     }
 }
 
@@ -12386,8 +12789,8 @@ async function reloadFromSupabase() {
             loadingModal.remove();
         }
 
-        // إظهار رسالة خطأ
-        showErrorMessage('خطأ في إعادة التحميل', error.message || 'حدث خطأ غير متوقع');
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('خطأ في إعادة التحميل:', error.message || 'حدث خطأ غير متوقع');
     }
 }
 
@@ -12486,7 +12889,8 @@ async function cleanupDatabase() {
             loadingModal.remove();
         }
 
-        showErrorMessage('خطأ في التنظيف', error.message || 'حدث خطأ غير متوقع');
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('خطأ في التنظيف:', error.message || 'حدث خطأ غير متوقع');
     }
 }
 
@@ -15135,7 +15539,7 @@ async function deleteCardAttachmentFromSupabase(attachmentId, cardKey) {
         }
     } catch (error) {
         console.error('❌ خطأ في حذف مرفق البطاقة:', error);
-        alert(`خطأ في حذف المرفق: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
     }
 }
 
@@ -15416,13 +15820,22 @@ async function retryCardUploadToSupabase(cardKey) {
 
     } catch (error) {
         console.error('❌ خطأ في إعادة المحاولة:', error);
-        alert(`خطأ في المزامنة: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
     }
 }
 
 // عرض نافذة تحرير البطاقة
 function showCardEditModal(contractNumber, propertyName, unitNumber) {
     console.log('🔍 بدء البحث عن الوحدة للتعديل:', { contractNumber, propertyName, unitNumber });
+
+    // التحقق من وجود البيانات أولاً
+    if (!properties || !Array.isArray(properties)) {
+        console.error('❌ مصفوفة properties غير موجودة في showCardEditModal:', properties);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        return;
+    }
+
+    console.log('✅ البيانات متوفرة في showCardEditModal، عدد العقارات:', properties.length);
 
     // البحث عن البيانات المطلوب تحريرها مع تسجيل مفصل
     let property;
@@ -15540,6 +15953,11 @@ function showCardEditModal(contractNumber, propertyName, unitNumber) {
 // عرض نافذة تحرير محسنة للوحدات المتعددة - نسخة طبق الأصل من الفردية
 function showMultiUnitEditModal(relatedUnits, primaryUnit) {
     console.log(`🎯 إنشاء نافذة تحرير محسنة لـ ${relatedUnits.length} وحدة`);
+
+    // التحقق من وجود البيانات أولاً
+    if (!ensurePropertiesLoaded('showMultiUnitEditModal')) {
+        return;
+    }
 
     const contractNumber = primaryUnit['رقم العقد'] || '';
     const propertyName = primaryUnit['اسم العقار'] || '';
@@ -15907,35 +16325,90 @@ function linkUnitToGroup(unitNumber) {
 }
 
 // فصل وحدة من المجموعة
-function unlinkUnitFromGroup(unitNumber) {
+async function unlinkUnitFromGroup(unitNumber) {
     if (!unitNumber) {
-        alert('رقم الوحدة غير صحيح');
+        console.error('رقم الوحدة غير صحيح');
         return;
     }
 
     if (window.currentEditingUnits.length <= 1) {
-        alert('لا يمكن فصل الوحدة الوحيدة في المجموعة');
+        console.error('لا يمكن فصل الوحدة الوحيدة في المجموعة');
         return;
     }
 
-    const confirmMessage = `هل أنت متأكد من فصل الوحدة ${unitNumber} من المجموعة؟`;
+    const confirmMessage = `هل أنت متأكد من فصل الوحدة ${unitNumber} من المجموعة؟\n\nسيتم حفظ الفصل فوراً في قاعدة البيانات.`;
     if (!confirm(confirmMessage)) {
         return;
     }
 
-    // إزالة الوحدة من المجموعة
-    window.currentEditingUnits = window.currentEditingUnits.filter(unit =>
-        unit['رقم  الوحدة '] !== unitNumber
+    // البحث عن الوحدة المراد فصلها
+    const unitToUnlink = window.currentEditingUnits.find(unit =>
+        unit['رقم  الوحدة '] === unitNumber
     );
 
-    console.log(`🔓 تم فصل الوحدة ${unitNumber} من المجموعة`);
+    if (!unitToUnlink) {
+        console.error('لم يتم العثور على الوحدة في المجموعة');
+        return;
+    }
 
-    // تحديث العرض
-    updateLinkedUnitsDisplay();
-    updateAvailableUnitsForLinking();
+    console.log(`🔓 بدء فصل الوحدة ${unitNumber} من المجموعة...`);
 
-    // إظهار رسالة نجاح
-    showSuccessMessage('تم الفصل بنجاح', `تم فصل الوحدة ${unitNumber} من المجموعة`);
+    try {
+        // 1. فصل الوحدة في قاعدة البيانات فوراً
+        console.log('☁️ حفظ الفصل في قاعدة البيانات...');
+
+        // إنشاء نسخة من الوحدة مع بيانات فارغة للعقد والمستأجر
+        const unlinkedUnitData = { ...unitToUnlink };
+        unlinkedUnitData['رقم العقد'] = '';
+        unlinkedUnitData['اسم المستأجر'] = '';
+
+        // حفظ الفصل باستخدام الدالة المخصصة
+        const result = await saveUnitLinkingToSupabase(unlinkedUnitData, 'unlink');
+
+        if (!result) {
+            throw new Error('فشل في حفظ الفصل في قاعدة البيانات');
+        }
+
+        console.log('✅ تم حفظ الفصل في قاعدة البيانات بنجاح');
+
+        // 2. حماية الوحدة من إعادة الكتابة
+        if (typeof protectUnlinkedUnit === 'function') {
+            protectUnlinkedUnit(unitNumber, unitToUnlink['اسم العقار']);
+            console.log(`🔒 تم تفعيل حماية الوحدة ${unitNumber} من إعادة الكتابة`);
+        }
+
+        // 3. تحديث البيانات المحلية
+        const localUnitIndex = properties.findIndex(p =>
+            p['رقم  الوحدة '] === unitNumber &&
+            p['اسم العقار'] === unitToUnlink['اسم العقار']
+        );
+
+        if (localUnitIndex !== -1) {
+            properties[localUnitIndex]['رقم العقد'] = '';
+            properties[localUnitIndex]['اسم المستأجر'] = '';
+            saveDataLocally();
+            console.log('✅ تم تحديث البيانات المحلية');
+        }
+
+        // 4. إزالة الوحدة من المجموعة
+        window.currentEditingUnits = window.currentEditingUnits.filter(unit =>
+            unit['رقم  الوحدة '] !== unitNumber
+        );
+
+        console.log(`✅ تم فصل الوحدة ${unitNumber} من المجموعة نهائياً مع الحماية`);
+
+        // 4. تحديث العرض
+        updateLinkedUnitsDisplay();
+        updateAvailableUnitsForLinking();
+
+        // 5. إظهار رسالة نجاح
+        showSuccessMessage('تم الفصل بنجاح', `تم فصل الوحدة ${unitNumber} وحفظ التغييرات في قاعدة البيانات`);
+
+    } catch (error) {
+        console.error('❌ خطأ في فصل الوحدة:', error);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('فشل في فصل الوحدة:', error.message);
+    }
 }
 
 // فصل جميع الوحدات
@@ -16034,59 +16507,121 @@ async function saveMultiUnitEdit(event) {
         return;
     }
 
+    // التحقق من وجود البيانات أولاً
+    if (!ensurePropertiesLoaded('saveMultiUnitEdit')) {
+        return;
+    }
+
     console.log(`💾 بدء حفظ تغييرات ${window.currentEditingUnits.length} وحدة`);
 
     // الحصول على رقم الوحدة الجديد من النموذج
     const newUnitNumber = formData.get('رقم  الوحدة ');
     const primaryUnit = window.currentPrimaryUnit;
 
-    try {
-        // تطبيق العملية على كل وحدة
-        for (let i = 0; i < window.currentEditingUnits.length; i++) {
-            const unit = window.currentEditingUnits[i];
-            const isPrimaryUnit = (unit === primaryUnit);
+    // إظهار شريط التقدم (بدون شاشة التحميل الرئيسية)
+    showProgressModal(`جاري حفظ ${window.currentEditingUnits.length} وحدة...`, async function(updateProgress) {
+        try {
+            let successCount = 0;
+            let errorCount = 0;
 
-            // إنشاء نسخة من formData للوحدة الحالية
-            const unitFormData = new FormData();
+            console.log(`📋 الوحدات المراد حفظها: ${window.currentEditingUnits.length}`);
+            console.log('📝 قائمة الوحدات:', window.currentEditingUnits.map(u => u['رقم  الوحدة ']));
 
-            // نسخ جميع البيانات من النموذج الأصلي
-            for (let [key, value] of formData.entries()) {
-                // معالجة خاصة لرقم الوحدة
-                if (key === 'رقم  الوحدة ') {
-                    if (isPrimaryUnit) {
-                        // للوحدة الأساسية: استخدم الرقم الجديد من النموذج
-                        unitFormData.append(key, newUnitNumber);
-                        console.log(`📝 الوحدة الأساسية: تحديث رقم الوحدة إلى "${newUnitNumber}"`);
-                    } else {
-                        // للوحدات الأخرى: احتفظ برقم الوحدة الأصلي
-                        unitFormData.append(key, unit['رقم  الوحدة '] || '');
-                        console.log(`📝 الوحدة ${unit['رقم  الوحدة ']}: الاحتفاظ برقم الوحدة الأصلي`);
-                    }
-                } else {
-                    // باقي الحقول: نفس القيمة لجميع الوحدات
-                    unitFormData.append(key, value);
+            // تطبيق العملية على كل وحدة
+            for (let i = 0; i < window.currentEditingUnits.length; i++) {
+                const unit = window.currentEditingUnits[i];
+                const isPrimaryUnit = (unit === primaryUnit);
+                const progress = Math.round(((i + 1) / window.currentEditingUnits.length) * 100);
+
+                updateProgress(progress, `حفظ الوحدة ${unit['رقم  الوحدة '] || (i + 1)}...`);
+
+                // التحقق من حماية الوحدة المفصولة
+                const unitNumber = unit['رقم  الوحدة '];
+                const propertyName = unit['اسم العقار'];
+
+                if (typeof isUnitProtected === 'function' && isUnitProtected(unitNumber, propertyName)) {
+                    console.log(`🔒 تخطي الوحدة المحمية: ${unitNumber} (تم فصلها مؤخراً)`);
+                    successCount++;
+                    continue; // تخطي هذه الوحدة
                 }
+
+                try {
+                    // إنشاء نسخة من formData للوحدة الحالية
+                    const unitFormData = new FormData();
+
+                    // نسخ جميع البيانات من النموذج الأصلي
+                    for (let [key, value] of formData.entries()) {
+                        // معالجة خاصة لرقم الوحدة
+                        if (key === 'رقم  الوحدة ') {
+                            if (isPrimaryUnit) {
+                                // للوحدة الأساسية: استخدم الرقم الجديد من النموذج
+                                unitFormData.append(key, newUnitNumber);
+                                console.log(`📝 الوحدة الأساسية: تحديث رقم الوحدة إلى "${newUnitNumber}"`);
+                            } else {
+                                // للوحدات الأخرى: احتفظ برقم الوحدة الأصلي
+                                unitFormData.append(key, unit['رقم  الوحدة '] || '');
+                                console.log(`📝 الوحدة ${unit['رقم  الوحدة ']}: الاحتفاظ برقم الوحدة الأصلي`);
+                            }
+                        } else {
+                            // باقي الحقول: نفس القيمة لجميع الوحدات
+                            unitFormData.append(key, value);
+                        }
+                    }
+
+                    // حفظ الوحدة مع البيانات المخصصة لها
+                    await savePropertyEditForUnit(unit, unitFormData, operationType, isPrimaryUnit);
+                    successCount++;
+                } catch (error) {
+                    console.error(`❌ خطأ في حفظ الوحدة ${unit['رقم  الوحدة ']}:`, error);
+                    errorCount++;
+                }
+
+                // تأخير قصير بين الحفظات
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
 
-            // حفظ الوحدة مع البيانات المخصصة لها
-            await savePropertyEditForUnit(unit, unitFormData, operationType, isPrimaryUnit);
+            // حساب الوحدات المحمية
+            const protectedCount = window.currentEditingUnits.filter(unit => {
+                const unitNumber = unit['رقم  الوحدة '];
+                const propertyName = unit['اسم العقار'];
+                return typeof isUnitProtected === 'function' && isUnitProtected(unitNumber, propertyName);
+            }).length;
+
+            let message = `تم حفظ ${successCount} وحدة بنجاح`;
+
+            if (protectedCount > 0) {
+                message += `\n🔒 تم تخطي ${protectedCount} وحدة مفصولة (محمية من إعادة الكتابة)`;
+            }
+
+            if (errorCount > 0) {
+                message += `\nفشل حفظ ${errorCount} وحدة`;
+            }
+
+            return {
+                success: errorCount === 0,
+                message: message
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: `خطأ في حفظ الوحدات: ${error.message}`
+            };
         }
-
-        // إظهار رسالة نجاح
-        showSuccessMessage('تم الحفظ بنجاح', `تم حفظ تغييرات ${window.currentEditingUnits.length} وحدة بنجاح`);
-
-        // إغلاق النافذة
-        closeModal();
-
-        // تحديث العرض
-        if (typeof displayProperties === 'function') {
-            displayProperties();
+    }, function(result) {
+        if (result.success) {
+            showSuccessMessage('تم حفظ جميع الوحدات!', result.message);
+            closeModal();
+            if (typeof displayProperties === 'function') {
+                displayProperties();
+            }
+            // تحديث العرض بدون إظهار شاشة التحميل الرئيسية
+            renderData();
+            updateTotalStats();
+        } else {
+            // تم إزالة رسالة الخطأ حسب طلب المستخدم
+            console.error('خطأ في الحفظ:', result.message);
         }
-
-    } catch (error) {
-        console.error('❌ خطأ في حفظ الوحدات المتعددة:', error);
-        alert(`خطأ في الحفظ: ${error.message}`);
-    }
+    });
 }
 
 // حفظ وحدة واحدة باستخدام منطق النافذة الفردية
@@ -16094,6 +16629,11 @@ async function savePropertyEditForUnit(unit, formData, operationType) {
     const originalContractNumber = unit['رقم العقد'] || '';
     const originalPropertyName = unit['اسم العقار'] || '';
     const originalUnitNumber = unit['رقم  الوحدة '] || '';
+
+    // التحقق من وجود البيانات أولاً
+    if (!ensurePropertiesLoaded('savePropertyEditForUnit')) {
+        return;
+    }
 
     // البحث عن الوحدة في المصفوفة
     const propertyIndex = properties.findIndex(p =>
@@ -16167,53 +16707,6 @@ async function savePropertyEditForUnit(unit, formData, operationType) {
     }
 
     console.log(`✅ تم حفظ الوحدة ${originalUnitNumber} بنجاح`);
-
-    // إظهار شريط التقدم
-    showProgressModal(`جاري حفظ ${window.currentEditingUnits.length} وحدة...`, async function(updateProgress) {
-        try {
-            let successCount = 0;
-            let errorCount = 0;
-
-            for (let i = 0; i < window.currentEditingUnits.length; i++) {
-                const unit = window.currentEditingUnits[i];
-                const progress = Math.round(((i + 1) / window.currentEditingUnits.length) * 100);
-
-                updateProgress(progress, `حفظ الوحدة ${unit['رقم  الوحدة '] || (i + 1)}...`);
-
-                try {
-                    // تطبيق نوع العملية على كل وحدة
-                    await applyOperationToUnit(unit, operationType, formData);
-                    successCount++;
-                } catch (error) {
-                    console.error(`❌ خطأ في حفظ الوحدة ${unit['رقم  الوحدة ']}:`, error);
-                    errorCount++;
-                }
-
-                // تأخير قصير بين الحفظات
-                await new Promise(resolve => setTimeout(resolve, 300));
-            }
-
-            return {
-                success: errorCount === 0,
-                message: `تم حفظ ${successCount} وحدة بنجاح` +
-                        (errorCount > 0 ? `\nفشل حفظ ${errorCount} وحدة` : '')
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: `خطأ في حفظ الوحدات: ${error.message}`
-            };
-        }
-    }, function(result) {
-        if (result.success) {
-            showSuccessMessage('تم حفظ جميع الوحدات!', result.message);
-            closeModal();
-            renderData();
-            updateTotalStats();
-        } else {
-            showErrorMessage('خطأ في الحفظ', result.message);
-        }
-    });
 }
 
 // تطبيق العملية على وحدة واحدة
@@ -16221,6 +16714,11 @@ async function applyOperationToUnit(unit, operationType, formData) {
     const contractNumber = unit['رقم العقد'] || '';
     const propertyName = unit['اسم العقار'] || '';
     const unitNumber = unit['رقم  الوحدة '] || '';
+
+    // التحقق من وجود البيانات أولاً
+    if (!ensurePropertiesLoaded('applyOperationToUnit')) {
+        return;
+    }
 
     switch (operationType) {
         case OPERATION_TYPES.EDIT_DATA:
@@ -16254,6 +16752,15 @@ async function updateUnitWithFormData(unit, formData) {
     const originalContractNumber = unit['رقم العقد'] || '';
     const originalPropertyName = unit['اسم العقار'] || '';
     const originalUnitNumber = unit['رقم  الوحدة '] || '';
+
+    // التحقق من وجود البيانات أولاً
+    if (!properties || !Array.isArray(properties)) {
+        console.error('❌ مصفوفة properties غير موجودة في updateUnitWithFormData:', properties);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        return false;
+    }
+
+    console.log('✅ البيانات متوفرة في updateUnitWithFormData، عدد العقارات:', properties.length);
 
     // إنشاء كائن البيانات المحدثة
     const updatedData = {
@@ -16370,7 +16877,8 @@ async function emptyAllUnits() {
             renderData();
             updateTotalStats();
         } else {
-            showErrorMessage('خطأ في الإفراغ', result.message);
+            // تم إزالة رسالة الخطأ حسب طلب المستخدم
+            console.error('خطأ في الإفراغ:', result.message);
         }
     });
 }
@@ -16730,7 +17238,8 @@ async function saveAllUnitsChanges() {
             renderData();
             updateTotalStats();
         } else {
-            showErrorMessage('خطأ في الحفظ', result.message);
+            // تم إزالة رسالة الخطأ حسب طلب المستخدم
+            console.error('خطأ في الحفظ:', result.message);
         }
     });
 }
@@ -16774,7 +17283,7 @@ async function saveCurrentUnitChanges() {
 
     } catch (error) {
         console.error(`❌ خطأ في حفظ الوحدة:`, error);
-        showErrorMessage('خطأ في الحفظ', `فشل حفظ الوحدة: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
     }
 }
 
@@ -16784,6 +17293,15 @@ async function saveIndividualUnitChanges(formData, unitIndex) {
     const originalContractNumber = formData.get('originalContractNumber');
     const originalPropertyName = formData.get('originalPropertyName');
     const originalUnitNumber = formData.get('originalUnitNumber');
+
+    // التحقق من وجود البيانات أولاً
+    if (!properties || !Array.isArray(properties)) {
+        console.error('❌ مصفوفة properties غير موجودة في saveIndividualUnitChanges:', properties);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        return false;
+    }
+
+    console.log('✅ البيانات متوفرة في saveIndividualUnitChanges، عدد العقارات:', properties.length);
 
     // العثور على الوحدة في المصفوفة الأساسية
     const propertyIndex = properties.findIndex(p =>
@@ -16888,7 +17406,8 @@ async function setNewClientForAllUnits() {
 
         showSuccessMessage('تم التحديث!', `تم تطبيق العميل الجديد "${newTenantName}" على جميع الوحدات`);
     } catch (error) {
-        showErrorMessage('خطأ', `فشل في تطبيق العميل الجديد: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('فشل في تطبيق العميل الجديد:', error.message);
     }
 }
 
@@ -16923,7 +17442,8 @@ async function renewContractForAllUnits() {
 
         showSuccessMessage('تم التحديث!', `تم تجديد العقد لجميع الوحدات من ${startDate} إلى ${endDate}`);
     } catch (error) {
-        showErrorMessage('خطأ', `فشل في تجديد العقد: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('فشل في تجديد العقد:', error.message);
     }
 }
 
@@ -16955,7 +17475,8 @@ async function emptyAllUnits() {
 
         showSuccessMessage('تم الإفراغ!', 'تم إفراغ جميع الوحدات من معلومات المستأجر والعقد');
     } catch (error) {
-        showErrorMessage('خطأ', `فشل في إفراغ الوحدات: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('فشل في إفراغ الوحدات:', error.message);
     }
 }
 
@@ -17000,7 +17521,8 @@ async function syncDeedInfoForAllUnits() {
 
         showSuccessMessage('تم التزامن!', 'تم مزامنة معلومات الصك لجميع الوحدات');
     } catch (error) {
-        showErrorMessage('خطأ', `فشل في مزامنة معلومات الصك: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('فشل في مزامنة معلومات الصك:', error.message);
     }
 }
 
@@ -17023,7 +17545,8 @@ async function setNewClientForUnit(unitIndex) {
 
         showSuccessMessage('تم التحديث!', `تم تطبيق العميل الجديد على الوحدة ${unit['رقم  الوحدة ']}`);
     } catch (error) {
-        showErrorMessage('خطأ', `فشل في تطبيق العميل الجديد: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('فشل في تطبيق العميل الجديد:', error.message);
     }
 }
 
@@ -17048,7 +17571,8 @@ async function renewContractForUnit(unitIndex) {
 
         showSuccessMessage('تم التحديث!', `تم تجديد العقد للوحدة ${unit['رقم  الوحدة ']}`);
     } catch (error) {
-        showErrorMessage('خطأ', `فشل في تجديد العقد: ${error.message}`);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        console.error('فشل في تجديد العقد:', error.message);
     }
 }
 
@@ -17096,7 +17620,7 @@ async function cleanDuplicateUnits() {
 
     } catch (error) {
         console.error('❌ خطأ في تنظيف البيانات:', error);
-        showErrorMessage('خطأ في التنظيف', error.message);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
     }
 }
 
@@ -17730,6 +18254,15 @@ async function savePropertyEdit(event) {
     const originalPropertyName = formData.get('originalPropertyName');
     const originalUnitNumber = formData.get('originalUnitNumber');
 
+    // التحقق من وجود البيانات أولاً
+    if (!properties || !Array.isArray(properties)) {
+        console.error('❌ مصفوفة properties غير موجودة أو غير صحيحة:', properties);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
+        return;
+    }
+
+    console.log('✅ البيانات متوفرة، عدد العقارات:', properties.length);
+
     // البحث عن العقار المطلوب تحديثه مع تسجيل مفصل
     let propertyIndex = -1;
     let searchMethod = '';
@@ -17957,7 +18490,8 @@ async function savePropertyEdit(event) {
         );
 
         if (existingUnitWithNewNumber) {
-            alert(`❌ خطأ: يوجد وحدة أخرى برقم "${newUnitNumber}" في نفس العقار!\n\nيرجى اختيار رقم وحدة مختلف.`);
+            // تم إزالة رسالة الخطأ حسب طلب المستخدم
+            console.error(`خطأ: يوجد وحدة أخرى برقم "${newUnitNumber}" في نفس العقار!`);
             return;
         }
 
@@ -18021,21 +18555,44 @@ async function savePropertyEdit(event) {
         window.lastSyncResult = null;
     }
 
-    // حساب الإجمالي الجديد بناءً على الأقساط
-    const yearlyData = calculateYearlyTotal(updatedProperty);
-    if (yearlyData.count > 0) {
-        updatedProperty['الاجمالى'] = yearlyData.total;
-        properties[propertyIndex] = updatedProperty;
+    // حساب الإجمالي الجديد بناءً على الأقساط المحدثة
+    console.log('💰 بدء حساب الإجمالي بناءً على البيانات المحدثة...');
+
+    // التحقق من وجود قيمة إجمالي مدخلة يدوياً في النموذج
+    const manualTotal = formData.get('الاجمالى');
+
+    if (manualTotal && manualTotal !== '' && parseFloat(manualTotal) > 0) {
+        // إذا تم إدخال إجمالي يدوياً، استخدمه
+        updatedProperty['الاجمالى'] = parseFloat(manualTotal);
+        console.log(`💰 تم استخدام الإجمالي المدخل يدوياً: ${manualTotal}`);
+    } else if (manualTotal === '' || manualTotal === '0') {
+        // إذا تم حذف الإجمالي يدوياً (قيمة فارغة أو صفر)
+        updatedProperty['الاجمالى'] = null;
+        console.log(`🗑️ تم حذف الإجمالي يدوياً من النموذج`);
+    } else {
+        // إذا لم يتم تعديل الإجمالي يدوياً، احسبه من الأقساط المحدثة
+        const yearlyData = calculateYearlyTotal(updatedProperty);
+        if (yearlyData.count > 0) {
+            updatedProperty['الاجمالى'] = yearlyData.total;
+            console.log(`💰 تم حساب الإجمالي تلقائياً: ${yearlyData.total} (بناءً على ${yearlyData.count} قسط)`);
+        } else {
+            // إذا لم توجد أقساط، احذف الإجمالي
+            updatedProperty['الاجمالى'] = null;
+            console.log(`🗑️ تم حذف الإجمالي لعدم وجود أقساط`);
+        }
     }
 
-
+    // تحديث البيانات في المصفوفة
+    properties[propertyIndex] = updatedProperty;
 
     // إغلاق النافذة أولاً
     closeModal();
 
-    // إظهار شريط التقدم أثناء الحفظ
+    // إظهار شريط التقدم أثناء الحفظ (بدون شاشة التحميل الرئيسية)
     showProgressModal('جاري حفظ التغييرات...', async function(updateProgress) {
         try {
+            console.log('✅ شريط التقدم بدأ بنجاح');
+
             // المرحلة 1: بدء الحفظ
             updateProgress(10, 'بدء عملية الحفظ...');
             await new Promise(resolve => setTimeout(resolve, 300));
@@ -18054,15 +18611,19 @@ async function savePropertyEdit(event) {
             updateProgress(55, 'الاتصال بقاعدة البيانات السحابية...');
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            let supabaseSuccess = false;
+            let supabaseResult = null;
             if (typeof savePropertyToSupabase === 'function') {
                 try {
                     updateProgress(70, 'حفظ في قاعدة البيانات السحابية...');
-                    const result = await savePropertyToSupabase(updatedProperty);
-                    supabaseSuccess = !!result;
+                    supabaseResult = await savePropertyToSupabase(updatedProperty);
+                    console.log('📊 نتيجة حفظ Supabase:', supabaseResult);
                     await new Promise(resolve => setTimeout(resolve, 600));
                 } catch (error) {
                     console.error('خطأ في حفظ Supabase:', error);
+                    supabaseResult = {
+                        success: false,
+                        message: `خطأ في الاتصال: ${error.message}`
+                    };
                 }
             }
 
@@ -18108,11 +18669,39 @@ async function savePropertyEdit(event) {
 
             // إضافة معلومات حفظ Supabase
             if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-                if (supabaseSuccess) {
+                if (supabaseResult && supabaseResult.success) {
                     message += '\n✅ تم حفظ التغييرات في قاعدة البيانات السحابية';
                 } else {
-                    message += '\n⚠️ تحذير: فشل حفظ التغييرات في قاعدة البيانات السحابية';
+                    const errorMsg = supabaseResult ? supabaseResult.message : 'فشل في الحفظ';
+                    message += `\n⚠️ تحذير: ${errorMsg}`;
                 }
+            }
+
+            // إضافة سجل التتبع (داخل شريط التقدم)
+            try {
+                const changes = compareDataAndCreateChanges(originalData, updatedProperty);
+
+                let additionalInfo = {
+                    originalData: originalData,
+                    newData: updatedProperty
+                };
+
+                // معلومات إضافية حسب نوع العملية
+                if (operationType === OPERATION_TYPES.NEW_CLIENT) {
+                    additionalInfo.previousTenant = originalData['اسم المستأجر'];
+                    additionalInfo.newTenant = updatedProperty['اسم المستأجر'];
+                } else if (operationType === OPERATION_TYPES.EMPTY_UNIT) {
+                    additionalInfo.previousTenant = originalData['اسم المستأجر'];
+                    additionalInfo.reason = 'إفراغ وحدة';
+                } else if (operationType === OPERATION_TYPES.RENEW_CONTRACT) {
+                    additionalInfo.previousTenant = originalData['اسم المستأجر'];
+                    additionalInfo.newTenant = updatedProperty['اسم المستأجر'];
+                }
+
+                await addChangeLog(operationType, updatedProperty, changes, additionalInfo);
+                console.log('📝 تم إضافة سجل التتبع للعملية:', operationType);
+            } catch (error) {
+                console.warn('⚠️ خطأ في إضافة سجل التتبع (لن يؤثر على الحفظ):', error);
             }
 
             return { success: true, message: message };
@@ -18121,19 +18710,16 @@ async function savePropertyEdit(event) {
             return { success: false, message: 'حدث خطأ أثناء حفظ التغييرات' };
         }
     }, function(result) {
-        // بعد انتهاء شريط التقدم، إظهار رسالة النجاح
+        // بعد انتهاء شريط التقدم، إظهار رسالة النجاح (بدون شاشة التحميل الرئيسية)
+        console.log('🎯 callback شريط التقدم تم استدعاؤه، النتيجة:', result);
+
         if (result && result.success) {
             if (typeof showSuccessMessageWithCallback === 'function') {
                 showSuccessMessageWithCallback('تم حفظ التغييرات بنجاح!', result.message, function() {
-                    // تحديث الواجهة بعد أن يضغط المستخدم "موافق"
-                    console.log('🔄 تحديث الواجهة بعد تأكيد المستخدم...');
+                    // تحديث إضافي بعد تأكيد المستخدم (بدون شاشة التحميل الرئيسية)
+                    console.log('🔄 تحديث إضافي بعد تأكيد المستخدم...');
                     renderData();
                     updateTotalStats();
-
-                    // إعادة حساب الإجماليات إذا لزم الأمر
-                    if (typeof recalculateAllTotals === 'function') {
-                        recalculateAllTotals();
-                    }
 
                     // مسح نتيجة المزامنة
                     window.lastSyncResult = null;
@@ -18142,53 +18728,19 @@ async function savePropertyEdit(event) {
                 // fallback إلى alert عادي
                 alert(result.message);
 
-                // تحديث الواجهة
-                console.log('🔄 تحديث الواجهة...');
+                // تحديث إضافي (بدون شاشة التحميل الرئيسية)
+                console.log('🔄 تحديث إضافي...');
                 renderData();
                 updateTotalStats();
-
-                if (typeof recalculateAllTotals === 'function') {
-                    recalculateAllTotals();
-                }
 
                 window.lastSyncResult = null;
             }
         } else {
             const errorMessage = result ? result.message : 'حدث خطأ أثناء حفظ التغييرات';
-            if (typeof showErrorMessage === 'function') {
-                showErrorMessage('خطأ في الحفظ', errorMessage);
-            } else {
-                alert(errorMessage);
-            }
+            // تم إزالة رسالة الخطأ حسب طلب المستخدم
+            console.error('خطأ في الحفظ:', errorMessage);
         }
     });
-
-    // إضافة سجل التتبع
-    try {
-        const changes = compareDataAndCreateChanges(originalData, updatedProperty);
-
-        let additionalInfo = {
-            originalData: originalData,
-            newData: updatedProperty
-        };
-
-        // معلومات إضافية حسب نوع العملية
-        if (operationType === OPERATION_TYPES.NEW_CLIENT) {
-            additionalInfo.previousTenant = originalData['اسم المستأجر'];
-            additionalInfo.newTenant = updatedProperty['اسم المستأجر'];
-        } else if (operationType === OPERATION_TYPES.EMPTY_UNIT) {
-            additionalInfo.previousTenant = originalData['اسم المستأجر'];
-            additionalInfo.reason = 'إفراغ وحدة';
-        } else if (operationType === OPERATION_TYPES.RENEW_CONTRACT) {
-            additionalInfo.previousTenant = originalData['اسم المستأجر'];
-            additionalInfo.newTenant = updatedProperty['اسم المستأجر'];
-        }
-
-        await addChangeLog(operationType, updatedProperty, changes, additionalInfo);
-        console.log('📝 تم إضافة سجل التتبع للعملية:', operationType);
-    } catch (error) {
-        console.error('❌ خطأ في إضافة سجل التتبع:', error);
-    }
 }
 
 // ==================== وظائف مساعدة إضافية ====================
@@ -18277,6 +18829,11 @@ function viewPropertyUnits(propertyName) {
 
 // عرض الوحدات المتاحة للربط
 function renderAvailableUnitsForLinking(propertyName, currentContractNumber, currentUnitNumber) {
+    // التحقق من وجود البيانات أولاً
+    if (!ensurePropertiesLoaded('renderAvailableUnitsForLinking')) {
+        return '<p class="no-units">خطأ: البيانات غير متوفرة</p>';
+    }
+
     // الحصول على الوحدات الفارغة أو غير المرتبطة بعقد في نفس العقار
     const availableUnits = properties.filter(p =>
         p['اسم العقار'] === propertyName &&
@@ -18306,6 +18863,11 @@ function renderLinkedUnits(propertyName, contractNumber) {
         return '<p class="no-units">لا توجد وحدات مرتبطة</p>';
     }
 
+    // التحقق من وجود البيانات أولاً
+    if (!ensurePropertiesLoaded('renderLinkedUnits')) {
+        return '<p class="no-units">خطأ: البيانات غير متوفرة</p>';
+    }
+
     const linkedUnits = properties.filter(p =>
         p['اسم العقار'] === propertyName &&
         p['رقم العقد'] === contractNumber
@@ -18327,22 +18889,27 @@ function renderLinkedUnits(propertyName, contractNumber) {
 }
 
 // تبديل ربط الوحدة
-function toggleUnitLinking(unitNumber, propertyName, contractNumber) {
+async function toggleUnitLinking(unitNumber, propertyName, contractNumber) {
     const checkbox = document.querySelector(`input[value="${unitNumber}"][name="linkingUnits"]`);
 
     if (checkbox.checked) {
         // ربط الوحدة
-        linkUnitToContract(unitNumber, propertyName, contractNumber);
+        await linkUnitToContract(unitNumber, propertyName, contractNumber);
     } else {
         // فصل الوحدة
-        unlinkUnit(unitNumber, propertyName, contractNumber);
+        await unlinkUnit(unitNumber, propertyName, contractNumber);
     }
 }
 
 // ربط وحدة بالعقد
-function linkUnitToContract(unitNumber, propertyName, contractNumber) {
+async function linkUnitToContract(unitNumber, propertyName, contractNumber) {
     if (!contractNumber) {
         alert('يجب إدخال رقم العقد أولاً');
+        return;
+    }
+
+    // التحقق من وجود البيانات
+    if (!ensurePropertiesLoaded('linkUnitToContract')) {
         return;
     }
 
@@ -18351,47 +18918,54 @@ function linkUnitToContract(unitNumber, propertyName, contractNumber) {
     );
 
     if (unitIndex !== -1) {
+        // حفظ البيانات القديمة للمقارنة
+        const oldData = { ...properties[unitIndex] };
+
+        // تحديث البيانات محلياً
         properties[unitIndex]['رقم العقد'] = contractNumber;
 
-        // تحديث العرض
-        updateLinkedUnitsDisplay(propertyName, contractNumber);
-        alert(`تم ربط الوحدة ${unitNumber} بالعقد ${contractNumber}`);
-    }
-}
-
-// فصل وحدة من العقد
-async function unlinkUnit(unitNumber, propertyName, contractNumber) {
-    if (!confirm(`هل أنت متأكد من فصل الوحدة ${unitNumber} من العقد؟`)) return;
-
-    const unitIndex = properties.findIndex(p =>
-        p['اسم العقار'] === propertyName &&
-        p['رقم  الوحدة '] === unitNumber &&
-        p['رقم العقد'] === contractNumber
-    );
-
-    if (unitIndex !== -1) {
-        // فصل الوحدة محلياً
-        properties[unitIndex]['رقم العقد'] = '';
-        properties[unitIndex]['اسم المستأجر'] = '';
-
-        // حفظ التغييرات في Supabase
+        // حفظ التغييرات في Supabase باستخدام الدالة المخصصة
         let supabaseSuccess = false;
-        if (typeof savePropertyToSupabase === 'function') {
-            try {
-                const result = await savePropertyToSupabase(properties[unitIndex]);
-                if (result) {
-                    console.log(`✅ تم حفظ فصل الوحدة ${unitNumber} في Supabase`);
-                    supabaseSuccess = true;
-                } else {
-                    console.error(`❌ فشل حفظ فصل الوحدة ${unitNumber} في Supabase`);
-                }
-            } catch (error) {
-                console.error(`❌ خطأ في حفظ فصل الوحدة ${unitNumber}:`, error);
+        let supabaseError = null;
+
+        try {
+            console.log(`💾 بدء حفظ ربط الوحدة ${unitNumber} في Supabase...`);
+            console.log('📋 بيانات الوحدة المحدثة:', {
+                unitNumber: properties[unitIndex]['رقم  الوحدة '],
+                propertyName: properties[unitIndex]['اسم العقار'],
+                contractNumber: properties[unitIndex]['رقم العقد'],
+                tenant: properties[unitIndex]['اسم المستأجر']
+            });
+
+            // استخدام الدالة المخصصة لحفظ ربط الوحدات
+            const result = await saveUnitLinkingToSupabase(properties[unitIndex], 'link');
+
+            if (result) {
+                console.log(`✅ تم حفظ ربط الوحدة ${unitNumber} في Supabase بنجاح`);
+                supabaseSuccess = true;
+            } else {
+                supabaseError = 'فشل في الحفظ';
             }
+
+        } catch (error) {
+            console.error(`❌ خطأ في حفظ ربط الوحدة ${unitNumber}:`, error);
+            supabaseError = error.message;
         }
 
         // حفظ البيانات محلياً
         saveDataLocally();
+
+        // إضافة سجل تتبع للربط
+        try {
+            await addChangeLog('ربط وحدة', properties[unitIndex], oldData, {
+                operation: 'link_unit',
+                unitNumber: unitNumber,
+                contractNumber: contractNumber,
+                propertyName: propertyName
+            });
+        } catch (error) {
+            console.warn('⚠️ فشل في إضافة سجل التتبع لربط الوحدة:', error);
+        }
 
         // تحديث العرض
         updateLinkedUnitsDisplay(propertyName, contractNumber);
@@ -18401,15 +18975,293 @@ async function unlinkUnit(unitNumber, propertyName, contractNumber) {
         initializeApp();
 
         // رسالة النجاح مع تفاصيل الحفظ
-        let message = `تم فصل الوحدة ${unitNumber} من العقد`;
+        let message = `✅ تم ربط الوحدة ${unitNumber} بالعقد ${contractNumber} بنجاح!`;
+
+        // إضافة تفاصيل الحفظ السحابي
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
             if (supabaseSuccess) {
-                message += `\n✅ تم حفظ التغييرات في قاعدة البيانات السحابية`;
-            } else {
-                message += `\n⚠️ تحذير: فشل حفظ التغييرات في قاعدة البيانات السحابية`;
+                message += `\n\n☁️ تم حفظ التغييرات في قاعدة البيانات السحابية`;
+            } else if (supabaseError) {
+                message += `\n\n⚠️ تحذير: مشكلة في الحفظ السحابي`;
+                message += `\nالسبب: ${supabaseError}`;
+                message += `\n\n💡 البيانات محفوظة محلياً وستتم مزامنتها لاحقاً`;
             }
+        } else {
+            message += `\n\n📱 تم الحفظ محلياً (وضع عدم الاتصال)`;
         }
+
         alert(message);
+
+        // إظهار toast للتأكيد
+        showToast(`تم ربط الوحدة ${unitNumber} بنجاح`, 'success');
+    }
+}
+
+// دالة مخصصة لحفظ ربط الوحدات في Supabase
+async function saveUnitLinkingToSupabase(unitData, operationType = 'link') {
+    try {
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        console.log(`💾 حفظ ${operationType === 'link' ? 'ربط' : 'فصل'} الوحدة في Supabase...`);
+
+        // تحضير البيانات للحفظ
+        const supabaseData = {
+            unit_number: unitData['رقم  الوحدة '],
+            property_name: unitData['اسم العقار'],
+            city: unitData['المدينة'] || '',
+            tenant_name: operationType === 'unlink' ? '' : (unitData['اسم المستأجر'] || ''),
+            contract_number: operationType === 'unlink' ? '' : (unitData['رقم العقد'] || ''),
+            rent_value: parseFloat(unitData['قيمة  الايجار ']) || 0,
+            area: parseFloat(unitData['المساحة']) || null,
+            contract_type: unitData['نوع العقد'] || 'سكني',
+            start_date: unitData['تاريخ البداية'] || null,
+            end_date: unitData['تاريخ النهاية'] || null,
+            owner: unitData['المالك'] || '',
+            deed_number: unitData['رقم الصك'] || '',
+            real_estate_registry: unitData['السجل العيني '] || '',
+            updated_at: new Date().toISOString()
+        };
+
+        // للتأكد من فصل الوحدة، نضع القيم فارغة صراحة
+        if (operationType === 'unlink') {
+            supabaseData.tenant_name = '';
+            supabaseData.contract_number = '';
+            console.log('🔓 تم تعيين tenant_name و contract_number كفارغين للفصل');
+        }
+
+        console.log('📋 البيانات المحضرة للحفظ:', {
+            operation: operationType,
+            unit_number: supabaseData.unit_number,
+            tenant_name: supabaseData.tenant_name,
+            contract_number: supabaseData.contract_number
+        });
+
+        // البحث عن السجل الموجود
+        const { data: existingRecord, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('id')
+            .eq('unit_number', supabaseData.unit_number)
+            .eq('property_name', supabaseData.property_name)
+            .single();
+
+        if (searchError && searchError.code !== 'PGRST116') {
+            throw new Error(`خطأ في البحث: ${searchError.message}`);
+        }
+
+        let result;
+        if (existingRecord) {
+            // تحديث السجل الموجود
+            console.log('🔄 تحديث السجل الموجود في Supabase...');
+            const { data, error } = await supabaseClient
+                .from('properties')
+                .update(supabaseData)
+                .eq('id', existingRecord.id)
+                .select();
+
+            if (error) {
+                // تم إزالة رسالة الخطأ حسب طلب المستخدم
+                console.error('خطأ في التحديث:', error.message);
+                throw error;
+            }
+
+            result = data && data.length > 0 ? data[0] : null;
+            console.log('✅ تم تحديث السجل في Supabase');
+
+        } else {
+            // إنشاء سجل جديد
+            console.log('➕ إنشاء سجل جديد في Supabase...');
+            supabaseData.created_at = new Date().toISOString();
+
+            const { data, error } = await supabaseClient
+                .from('properties')
+                .insert([supabaseData])
+                .select();
+
+            if (error) {
+                throw new Error(`خطأ في الإنشاء: ${error.message}`);
+            }
+
+            result = data && data.length > 0 ? data[0] : null;
+            console.log('✅ تم إنشاء سجل جديد في Supabase');
+        }
+
+        // إضافة سجل في tracking_logs إذا كان متوفراً
+        try {
+            if (typeof window.trackingLogsManager !== 'undefined') {
+                const trackingData = {
+                    operation_type: operationType === 'link' ? 'ربط وحدة' : 'فصل وحدة',
+                    unit_number: unitData['رقم  الوحدة '],
+                    property_name: unitData['اسم العقار'],
+                    tenant_name: unitData['اسم المستأجر'] || '',
+                    contract_number: unitData['رقم العقد'] || '',
+                    description: `تم ${operationType === 'link' ? 'ربط' : 'فصل'} الوحدة ${unitData['رقم  الوحدة ']} ${operationType === 'link' ? 'بالعقد' : 'من العقد'} ${unitData['رقم العقد'] || 'غير محدد'}`,
+                    user_name: 'النظام'
+                };
+
+                await window.trackingLogsManager.saveTrackingLogToSupabase(trackingData);
+                console.log('✅ تم حفظ سجل التتبع');
+            }
+        } catch (trackingError) {
+            console.warn('⚠️ فشل في حفظ سجل التتبع:', trackingError);
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error(`❌ خطأ في حفظ ${operationType === 'link' ? 'ربط' : 'فصل'} الوحدة:`, error);
+        throw error;
+    }
+}
+
+// فصل وحدة من العقد
+async function unlinkUnit(unitNumber, propertyName, contractNumber) {
+    // استخدام الفصل المطلق الذي يمنع إعادة الكتابة نهائياً
+    console.log('🔄 تحويل إلى الفصل المطلق...');
+    return await absoluteUnlinkUnit(unitNumber, propertyName, contractNumber);
+}
+
+// دالة الفصل القديمة (للمرجع فقط)
+async function unlinkUnitOld(unitNumber, propertyName, contractNumber) {
+    if (!confirm(`هل أنت متأكد من فصل الوحدة ${unitNumber} من العقد؟`)) return;
+
+    // التحقق من وجود البيانات
+    if (!ensurePropertiesLoaded('unlinkUnitOld')) {
+        return;
+    }
+
+    const unitIndex = properties.findIndex(p =>
+        p['اسم العقار'] === propertyName &&
+        p['رقم  الوحدة '] === unitNumber &&
+        p['رقم العقد'] === contractNumber
+    );
+
+    if (unitIndex !== -1) {
+        // حفظ البيانات القديمة للمقارنة
+        const oldData = { ...properties[unitIndex] };
+
+        // فصل الوحدة محلياً
+        properties[unitIndex]['رقم العقد'] = '';
+        properties[unitIndex]['اسم المستأجر'] = '';
+
+        console.log(`🔓 فصل الوحدة ${unitNumber} محلياً:`, {
+            قبل: { عقد: oldData['رقم العقد'], مستأجر: oldData['اسم المستأجر'] },
+            بعد: { عقد: properties[unitIndex]['رقم العقد'], مستأجر: properties[unitIndex]['اسم المستأجر'] }
+        });
+
+        // حفظ التغييرات في Supabase باستخدام الدالة المخصصة
+        let supabaseSuccess = false;
+        let supabaseError = null;
+
+        try {
+            console.log(`💾 بدء حفظ فصل الوحدة ${unitNumber} في Supabase...`);
+
+            // استخدام الفصل المبسط المباشر
+            if (!supabaseClient) {
+                throw new Error('Supabase غير متصل');
+            }
+
+            // البحث عن الوحدة في Supabase
+            const { data: existingUnit, error: searchError } = await supabaseClient
+                .from('properties')
+                .select('id, unit_number, tenant_name, contract_number')
+                .eq('unit_number', unitNumber)
+                .eq('property_name', propertyName)
+                .single();
+
+            if (searchError) {
+                if (searchError.code === 'PGRST116') {
+                    throw new Error('الوحدة غير موجودة في Supabase');
+                }
+                throw new Error(`خطأ في البحث: ${searchError.message}`);
+            }
+
+            // فصل الوحدة مباشرة
+            const { data: result, error: unlinkError } = await supabaseClient
+                .from('properties')
+                .update({
+                    tenant_name: '',
+                    contract_number: '',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existingUnit.id)
+                .select()
+                .single();
+
+            if (unlinkError) {
+                throw new Error(`خطأ في الفصل: ${unlinkError.message}`);
+            }
+
+            if (result && result.tenant_name === '' && result.contract_number === '') {
+                console.log(`✅ تم حفظ فصل الوحدة ${unitNumber} في Supabase بنجاح`);
+                console.log('📋 البيانات المحفوظة:', {
+                    id: result.id,
+                    unit_number: result.unit_number,
+                    tenant_name: result.tenant_name,
+                    contract_number: result.contract_number
+                });
+                supabaseSuccess = true;
+
+                // إضافة سجل تتبع
+                try {
+                    if (typeof window.trackingLogsManager !== 'undefined') {
+                        const trackingData = {
+                            operation_type: 'فصل وحدة',
+                            unit_number: unitNumber,
+                            property_name: propertyName,
+                            description: `تم فصل الوحدة ${unitNumber} من العقد ${contractNumber}`,
+                            user_name: 'النظام'
+                        };
+
+                        await window.trackingLogsManager.saveTrackingLogToSupabase(trackingData);
+                        console.log('✅ تم حفظ سجل التتبع للفصل');
+                    }
+                } catch (trackingError) {
+                    console.warn('⚠️ فشل في حفظ سجل التتبع:', trackingError);
+                }
+            } else {
+                supabaseError = 'فشل في الفصل - القيم لم تصبح فارغة';
+            }
+
+        } catch (error) {
+            console.error(`❌ خطأ في حفظ فصل الوحدة ${unitNumber}:`, error);
+            supabaseError = error.message;
+        }
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
+
+        // ⚠️ تعطيل الحفظ التلقائي لمنع إعادة كتابة البيانات المفصولة
+        console.log('⚠️ تم تعطيل الحفظ التلقائي مؤقتاً لمنع تضارب البيانات');
+
+        // تحديث العرض
+        updateLinkedUnitsDisplay(propertyName, contractNumber);
+        updateAvailableUnitsDisplay(propertyName, contractNumber, unitNumber);
+
+        // إعادة حساب الحالات
+        initializeApp();
+
+        // رسالة النجاح مع تفاصيل الحفظ
+        let message = `✅ تم فصل الوحدة ${unitNumber} من العقد بنجاح!`;
+
+        // إضافة تفاصيل الحفظ السحابي
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            if (supabaseSuccess) {
+                message += `\n\n☁️ تم حفظ التغييرات في قاعدة البيانات السحابية`;
+            } else if (supabaseError) {
+                message += `\n\n⚠️ تحذير: مشكلة في الحفظ السحابي`;
+                message += `\nالسبب: ${supabaseError}`;
+                message += `\n\n💡 البيانات محفوظة محلياً وستتم مزامنتها لاحقاً`;
+            }
+        } else {
+            message += `\n\n📱 تم الحفظ محلياً (وضع عدم الاتصال)`;
+        }
+
+        alert(message);
+
+        // إظهار toast للتأكيد
+        showToast(`تم فصل الوحدة ${unitNumber} بنجاح`, 'success');
     }
 }
 
@@ -20543,7 +21395,7 @@ function saveAllData() {
         alert('✅ تم حفظ البيانات محلياً بنجاح!');
     } catch (error) {
         console.error('خطأ في حفظ البيانات:', error);
-        alert('❌ حدث خطأ أثناء حفظ البيانات');
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
     }
 }
 
@@ -20567,7 +21419,7 @@ function repairAllData() {
             alert('✅ تم إصلاح البيانات بنجاح!');
         } catch (error) {
             console.error('خطأ في إصلاح البيانات:', error);
-            alert('❌ حدث خطأ أثناء إصلاح البيانات');
+            // تم إزالة رسالة الخطأ حسب طلب المستخدم
         }
     }
 }
@@ -20794,7 +21646,7 @@ async function handleTotalsFileUpload(file) {
 
     } catch (error) {
         console.error('❌ خطأ في معالجة الملف:', error);
-        alert('❌ خطأ في معالجة الملف: ' + error.message);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
 
         // إعادة تعيين منطقة الرفع
         const uploadZone = document.querySelector('.totals-upload-zone');
@@ -21112,7 +21964,7 @@ async function applyTotalsUpdate() {
 
     } catch (error) {
         console.error('❌ خطأ في تطبيق التحديثات:', error);
-        alert('❌ حدث خطأ أثناء تطبيق التحديثات: ' + error.message);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
 
         // إعادة تعيين الزر
         const applyBtn = document.getElementById('applyTotalsBtn');
@@ -21663,7 +22515,7 @@ async function confirmUnitTransfer() {
 
     } catch (error) {
         console.error('❌ خطأ في عملية النقل:', error);
-        alert('❌ حدث خطأ أثناء نقل الوحدات: ' + error.message);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
 
         // إعادة تعيين الزر
         const confirmBtn = document.getElementById('confirmTransferBtn');
@@ -22299,64 +23151,175 @@ function getDayName(date) {
 
 // حفظ سجل التتبع في Supabase
 async function saveChangeLogToSupabase(changeLog) {
-    if (!isTrackingEnabled) return false;
+    if (!isTrackingEnabled) {
+        console.log('ℹ️ تتبع التغييرات معطل');
+        return false;
+    }
 
     try {
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
             // محاولة إنشاء الجدول إذا لم يكن موجوداً
             await createChangeLogsTableIfNotExists();
 
+            console.log('☁️ حفظ سجل التتبع في Supabase:', changeLog.id);
+
+            // تحضير البيانات للحفظ مع التأكد من تطابق أسماء الأعمدة
+            const dataToSave = {
+                id: changeLog.id,
+                timestamp: changeLog.timestamp,
+                operation_type: changeLog.operationType,
+                unit_number: changeLog.unitNumber,
+                property_name: changeLog.propertyName,
+                tenant_name: changeLog.tenantName || changeLog.newTenant,
+                contract_number: changeLog.contractNumber,
+                city: changeLog.city,
+                changes: changeLog.changes || {},
+                additional_info: changeLog.additionalInfo || {},
+                user_name: changeLog.user || changeLog.responsibleUser || 'النظام',
+                description: changeLog.description || `${changeLog.operationType} - ${changeLog.unitNumber}`,
+                date: changeLog.date,
+                time: changeLog.time,
+                day_name: changeLog.dayName,
+                hijri_date: changeLog.hijriDate,
+                new_tenant: changeLog.newTenant,
+                previous_tenant: changeLog.previousTenant,
+                reason: changeLog.reason,
+                source_property: changeLog.sourceProperty,
+                destination_property: changeLog.destinationProperty,
+                responsible_user: changeLog.responsibleUser || changeLog.user
+            };
+
+            console.log('📋 البيانات المُعدة للحفظ:', dataToSave);
+
             const { data, error } = await supabaseClient
                 .from('change_logs')
-                .insert([changeLog]);
+                .insert([dataToSave]);
 
             if (error) {
                 console.warn('⚠️ لم يتم حفظ سجل التتبع في Supabase:', error.message);
-                return false;
+
+                // محاولة إعادة المحاولة مرة واحدة
+                console.log('🔄 محاولة إعادة حفظ السجل...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const { data: retryData, error: retryError } = await supabaseClient
+                    .from('change_logs')
+                    .insert([changeLog]);
+
+                if (retryError) {
+                    console.error('❌ فشل في إعادة المحاولة:', retryError.message);
+                    return false;
+                } else {
+                    console.log('✅ تم حفظ سجل التتبع في Supabase بعد إعادة المحاولة');
+                    return true;
+                }
             }
 
-            console.log('✅ تم حفظ سجل التتبع في Supabase:', changeLog.id);
+            console.log('✅ تم حفظ سجل التتبع في Supabase بنجاح:', changeLog.id);
+
+            // التحقق من الحفظ بقراءة السجل
+            try {
+                const { data: verifyData, error: verifyError } = await supabaseClient
+                    .from('change_logs')
+                    .select('id')
+                    .eq('id', changeLog.id)
+                    .single();
+
+                if (verifyError || !verifyData) {
+                    console.warn('⚠️ لم يتم العثور على السجل بعد الحفظ');
+                    return false;
+                }
+
+                console.log('🔍 تم التحقق من وجود السجل في قاعدة البيانات');
+            } catch (verifyErr) {
+                console.warn('⚠️ خطأ في التحقق من الحفظ:', verifyErr.message);
+            }
+
             return true;
+        } else {
+            console.warn('⚠️ Supabase غير متوفر - لم يتم حفظ سجل التتبع');
+            return false;
         }
     } catch (error) {
-        console.warn('⚠️ خطأ في الاتصال بـ Supabase لحفظ سجل التتبع:', error.message);
+        console.error('❌ خطأ في حفظ سجل التتبع في Supabase:', error);
+        return false;
     }
-
-    return false;
 }
 
 // إنشاء جدول التتبع إذا لم يكن موجوداً
 async function createChangeLogsTableIfNotExists() {
     try {
-        // التحقق من وجود الجدول أولاً
-        const { data: tables, error: tablesError } = await supabaseClient
-            .from('information_schema.tables')
-            .select('table_name')
-            .eq('table_name', 'change_logs')
-            .eq('table_schema', 'public');
+        console.log('🔍 التحقق من وجود جدول سجلات التتبع...');
 
-        if (tablesError) {
-            console.log('📊 لا يمكن التحقق من وجود جدول التتبع، سيتم المتابعة بدونه');
-            return false;
-        }
+        // محاولة بسيطة للوصول للجدول
+        const { data: testData, error: testError } = await supabaseClient
+            .from('change_logs')
+            .select('id')
+            .limit(1);
 
-        if (tables && tables.length > 0) {
-            console.log('✅ جدول التتبع موجود مسبقاً');
+        if (!testError) {
+            console.log('✅ جدول سجلات التتبع موجود ويعمل بشكل صحيح');
             return true;
         }
 
-        console.log('📊 جدول التتبع غير موجود، سيتم الاعتماد على التخزين المحلي فقط');
-        return false;
+        // إذا كان الخطأ يشير إلى عدم وجود الجدول
+        if (testError.message && testError.message.includes('does not exist')) {
+            console.log('📊 جدول سجلات التتبع غير موجود، سيتم إنشاؤه...');
+
+            // محاولة إنشاء الجدول
+            const createTableQuery = `
+                CREATE TABLE IF NOT EXISTS change_logs (
+                    id TEXT PRIMARY KEY,
+                    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    operation_type TEXT NOT NULL,
+                    unit_number TEXT,
+                    property_name TEXT,
+                    tenant_name TEXT,
+                    contract_number TEXT,
+                    city TEXT,
+                    changes JSONB DEFAULT '{}',
+                    additional_info JSONB DEFAULT '{}',
+                    user_name TEXT,
+                    description TEXT,
+                    date TEXT,
+                    time TEXT,
+                    day_name TEXT,
+                    hijri_date TEXT,
+                    new_tenant TEXT,
+                    previous_tenant TEXT,
+                    reason TEXT,
+                    source_property TEXT,
+                    destination_property TEXT,
+                    responsible_user TEXT,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
+            `;
+
+            console.log('⚠️ لا يمكن إنشاء الجدول من التطبيق، يجب إنشاؤه من لوحة تحكم Supabase');
+            return false;
+        }
+
+        console.log('✅ جدول سجلات التتبع متاح للاستخدام');
+        return true;
+
     } catch (error) {
-        console.log('📊 سيتم الاعتماد على التخزين المحلي للتتبع');
-        return false;
+        console.warn('⚠️ خطأ في التحقق من جدول سجلات التتبع:', error.message);
+        console.log('📊 سيتم المتابعة مع افتراض وجود الجدول');
+        return true; // نفترض أن الجدول موجود ونحاول الاستمرار
     }
 }
 
-// تحميل سجلات التتبع من Supabase
-async function loadChangeLogsFromSupabase(limit = 100, offset = 0) {
+// تحميل سجلات التتبع من Supabase (محسن مع تشخيص مفصل)
+async function loadChangeLogsFromSupabase(limit = 500, offset = 0) {
     try {
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            console.log(`☁️ محاولة تحميل سجلات التتبع من Supabase (الحد الأقصى: ${limit})...`);
+            console.log('🔗 معلومات الاتصال:', {
+                url: supabaseClient.supabaseUrl,
+                hasKey: !!supabaseClient.supabaseKey
+            });
+
             const { data, error } = await supabaseClient
                 .from('change_logs')
                 .select('*')
@@ -22364,27 +23327,106 @@ async function loadChangeLogsFromSupabase(limit = 100, offset = 0) {
                 .range(offset, offset + limit - 1);
 
             if (error) {
+                console.error('❌ خطأ في تحميل سجلات التتبع من Supabase:', {
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint,
+                    code: error.code
+                });
+
+                // محاولة تشخيص نوع الخطأ
+                if (error.message.includes('permission denied') || error.message.includes('RLS')) {
+                    console.warn('🔒 مشكلة في الصلاحيات - تحقق من إعدادات RLS في Supabase');
+                } else if (error.message.includes('does not exist')) {
+                    console.warn('📊 جدول change_logs غير موجود في Supabase');
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    console.warn('🌐 مشكلة في الاتصال بالشبكة');
+                }
+
                 console.log('📊 سيتم الاعتماد على سجلات التتبع المحلية');
                 return [];
             }
 
-            console.log(`✅ تم تحميل ${data.length} سجل تتبع من Supabase`);
-            return data;
+            console.log(`✅ تم تحميل ${data.length} سجل تتبع من Supabase بنجاح`);
+
+            // طباعة عينة من البيانات للتشخيص
+            if (data.length > 0) {
+                console.log('📋 عينة من البيانات المحملة:', {
+                    firstRecord: {
+                        id: data[0].id,
+                        operationType: data[0].operation_type,
+                        timestamp: data[0].timestamp,
+                        unitNumber: data[0].unit_number,
+                        propertyName: data[0].property_name
+                    },
+                    totalRecords: data.length
+                });
+            }
+
+            // إضافة معلومات إضافية للسجلات إذا لم تكن موجودة
+            const processedData = data.map(log => {
+                // تحويل أسماء الحقول من snake_case إلى camelCase للتوافق
+                const processedLog = {
+                    id: log.id,
+                    timestamp: log.timestamp,
+                    operationType: log.operation_type || log.operationType,
+                    unitNumber: log.unit_number || log.unitNumber,
+                    propertyName: log.property_name || log.propertyName,
+                    tenantName: log.tenant_name || log.tenantName,
+                    contractNumber: log.contract_number || log.contractNumber,
+                    city: log.city,
+                    changes: log.changes || {},
+                    additionalInfo: log.additional_info || log.additionalInfo || {},
+                    user: log.user_name || log.user || log.responsible_user,
+                    responsibleUser: log.responsible_user || log.user_name || log.user,
+                    description: log.description,
+                    newTenant: log.new_tenant || log.newTenant,
+                    previousTenant: log.previous_tenant || log.previousTenant,
+                    reason: log.reason,
+                    sourceProperty: log.source_property || log.sourceProperty,
+                    destinationProperty: log.destination_property || log.destinationProperty
+                };
+
+                // إضافة معلومات التاريخ إذا لم تكن موجودة
+                if (!processedLog.date && processedLog.timestamp) {
+                    const date = new Date(processedLog.timestamp);
+                    processedLog.date = date.toLocaleDateString('ar-SA');
+                    processedLog.time = date.toLocaleTimeString('ar-SA');
+                    processedLog.dayName = getDayName(date);
+                    processedLog.hijriDate = getHijriDate(date);
+                } else {
+                    // استخدام البيانات الموجودة
+                    processedLog.date = log.date || processedLog.date;
+                    processedLog.time = log.time || processedLog.time;
+                    processedLog.dayName = log.day_name || processedLog.dayName;
+                    processedLog.hijriDate = log.hijri_date || processedLog.hijriDate;
+                }
+
+                return processedLog;
+            });
+
+            console.log(`🔄 تم معالجة ${processedData.length} سجل وتحويلها للتنسيق المطلوب`);
+            return processedData;
+        } else {
+            console.warn('⚠️ Supabase غير متوفر - تحقق من تحميل مكتبة Supabase');
+            return [];
         }
     } catch (error) {
-        console.log('📊 سيتم الاعتماد على سجلات التتبع المحلية');
+        console.error('❌ خطأ عام في تحميل سجلات التتبع من Supabase:', {
+            message: error.message,
+            stack: error.stack
+        });
+        return [];
     }
-
-    return [];
 }
 
-// إضافة سجل تتبع جديد
+// إضافة سجل تتبع جديد - محدث للجدول المخصص
 async function addChangeLog(operationType, unitData, changes = {}, additionalInfo = {}) {
     if (!isTrackingEnabled) return;
 
     const changeLog = createChangeLog(operationType, unitData, changes, additionalInfo);
 
-    // حفظ محلياً
+    // حفظ محلياً (للتوافق مع النظام القديم)
     changeTrackingLogs.unshift(changeLog);
 
     // حفظ في localStorage
@@ -22394,10 +23436,63 @@ async function addChangeLog(operationType, unitData, changes = {}, additionalInf
         console.warn('⚠️ لم يتم حفظ سجلات التتبع محلياً:', error);
     }
 
-    // حفظ في Supabase
+    // حفظ في الجدول المخصص الجديد
+    await saveTrackingLogToNewTable(changeLog, unitData);
+
+    // حفظ في النظام القديم للتوافق
     await saveChangeLogToSupabase(changeLog);
 
     console.log('📝 تم إضافة سجل تتبع:', operationType, '- الوحدة:', changeLog.unitNumber);
+}
+
+// حفظ سجل التتبع في الجدول المخصص الجديد
+async function saveTrackingLogToNewTable(changeLog, unitData) {
+    try {
+        // التحقق من وجود مدير سجلات التتبع
+        if (typeof window.trackingLogsManager === 'undefined') {
+            console.warn('⚠️ مدير سجلات التتبع غير متوفر');
+            return;
+        }
+
+        // تحضير البيانات للجدول الجديد
+        const trackingLogData = {
+            operation_type: changeLog.operationType,
+            timestamp: changeLog.timestamp,
+
+            // معلومات الوحدة/العقار
+            unit_number: unitData['رقم  الوحدة '] || changeLog.unitNumber,
+            property_name: unitData['اسم العقار'] || changeLog.propertyName,
+            contract_number: unitData['رقم العقد'] || null,
+            city: unitData['المدينة'] || null,
+
+            // معلومات المستأجر
+            tenant_name: unitData['اسم المستأجر'] || null,
+            tenant_phone: unitData['رقم جوال المستأجر'] || null,
+            tenant_phone_2: unitData['رقم جوال إضافي'] || null,
+
+            // معلومات العقد
+            rent_value: unitData['قيمة  الايجار '] || null,
+            start_date: unitData['تاريخ البداية'] || null,
+            end_date: unitData['تاريخ النهاية'] || null,
+            contract_type: unitData['نوع العقد'] || null,
+
+            // معلومات التغييرات
+            changes: changeLog.changes || {},
+            additional_info: changeLog.additionalInfo || {},
+
+            // معلومات المستخدم
+            user_name: changeLog.responsibleUser || getCurrentUser(),
+            description: changeLog.description || `${changeLog.operationType} - ${changeLog.unitNumber}`,
+            source: 'web_app'
+        };
+
+        // حفظ في الجدول المخصص
+        await window.trackingLogsManager.saveTrackingLogToSupabase(trackingLogData);
+
+        console.log('✅ تم حفظ سجل التتبع في الجدول المخصص');
+    } catch (error) {
+        console.error('❌ خطأ في حفظ سجل التتبع في الجدول المخصص:', error);
+    }
 }
 
 // مقارنة البيانات وإنشاء سجل التغييرات
@@ -22492,13 +23587,164 @@ function addTrackingFieldsToExistingData() {
     }
 }
 
-// إنشاء بيانات تجريبية للتتبع (للاختبار)
-function createSampleTrackingData() {
-    // مسح البيانات التجريبية القديمة
-    changeTrackingLogs = changeTrackingLogs.filter(log => !log.id.includes('sample'));
-    console.log('🗑️ تم مسح البيانات التجريبية القديمة');
+// دالة لإنشاء بيانات تجريبية وعرض سجل التتبع مباشرة (محسنة)
+async function createSampleTrackingDataAndShow() {
+    try {
+        console.log('🎯 بدء إنشاء بيانات تجريبية وعرض سجل التتبع...');
 
-    console.log('📊 إنشاء بيانات تجريبية للتتبع...');
+        // إظهار رسالة تحميل
+        showToast('جاري إنشاء البيانات التجريبية وحفظها في Supabase...', 'info');
+
+        // اختبار الاتصال بـ Supabase أولاً
+        console.log('🔗 اختبار الاتصال بـ Supabase...');
+        if (typeof supabaseClient === 'undefined' || !supabaseClient) {
+            throw new Error('Supabase غير متوفر');
+        }
+
+        // إنشاء بيانات تجريبية وحفظها في Supabase مباشرة
+        console.log('📊 إنشاء البيانات التجريبية وحفظها في Supabase...');
+        const savedCount = await createAndSaveSampleTrackingData();
+
+        if (savedCount === 0) {
+            throw new Error('لم يتم حفظ أي سجل في Supabase');
+        }
+
+        // انتظار قصير للتأكد من حفظ البيانات
+        console.log('⏳ انتظار حفظ البيانات في Supabase...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // التحقق من وجود السجلات في Supabase
+        console.log('🔍 التحقق من وجود السجلات في Supabase...');
+        const cloudLogs = await loadChangeLogsFromSupabase(10);
+        console.log(`📊 تم العثور على ${cloudLogs.length} سجل في Supabase`);
+
+        if (cloudLogs.length === 0) {
+            showToast('تحذير: لم يتم العثور على سجلات في Supabase', 'warning');
+        }
+
+        // عرض سجل التتبع
+        console.log('📋 عرض سجل التتبع من Supabase...');
+        await showChangeTrackingModal();
+
+        console.log('✅ تم إنشاء البيانات التجريبية وحفظها في Supabase وعرض سجل التتبع بنجاح');
+        showToast(`تم إنشاء ${savedCount} سجل تجريبي وحفظها في Supabase بنجاح!`, 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في إنشاء البيانات التجريبية:', error);
+        showToast('حدث خطأ في إنشاء البيانات التجريبية: ' + error.message, 'error');
+    }
+}
+
+// دالة اختبار شاملة لتشخيص مشكلة سجلات التتبع
+async function testTrackingFunction() {
+    console.log('🧪 بدء اختبار شامل لنظام سجلات التتبع...');
+
+    // اختبار 1: التحقق من Supabase
+    console.log('1️⃣ اختبار اتصال Supabase...');
+    if (typeof supabaseClient === 'undefined' || !supabaseClient) {
+        console.error('❌ Supabase غير متوفر');
+        alert('خطأ: Supabase غير متوفر');
+        return;
+    }
+    console.log('✅ Supabase متوفر');
+
+    // اختبار 2: التحقق من جدول change_logs
+    console.log('2️⃣ اختبار الوصول لجدول change_logs...');
+    try {
+        const { data: testData, error: testError } = await supabaseClient
+            .from('change_logs')
+            .select('id')
+            .limit(1);
+
+        if (testError) {
+            console.error('❌ خطأ في الوصول للجدول:', testError);
+            alert(`خطأ في الوصول للجدول: ${testError.message}`);
+            return;
+        }
+        console.log('✅ يمكن الوصول لجدول change_logs');
+        console.log('📊 عدد السجلات الموجودة:', testData?.length || 0);
+    } catch (error) {
+        console.error('❌ خطأ في اختبار الجدول:', error);
+        alert(`خطأ في اختبار الجدول: ${error.message}`);
+        return;
+    }
+
+    // اختبار 3: محاولة تحميل السجلات
+    console.log('3️⃣ اختبار تحميل السجلات...');
+    try {
+        const logs = await loadChangeLogsFromSupabase(10);
+        console.log('✅ تم تحميل السجلات بنجاح:', logs.length);
+
+        if (logs.length > 0) {
+            console.log('📋 عينة من السجلات:', logs[0]);
+        }
+    } catch (error) {
+        console.error('❌ خطأ في تحميل السجلات:', error);
+        alert(`خطأ في تحميل السجلات: ${error.message}`);
+        return;
+    }
+
+    // اختبار 4: محاولة إنشاء سجل تجريبي
+    console.log('4️⃣ اختبار إنشاء سجل تجريبي...');
+    try {
+        const testLog = {
+            id: 'test_' + Date.now(),
+            timestamp: new Date().toISOString(),
+            operation_type: 'اختبار النظام',
+            unit_number: 'TEST-001',
+            property_name: 'عقار تجريبي',
+            tenant_name: 'مستأجر تجريبي',
+            user_name: 'نظام الاختبار',
+            description: 'سجل اختبار للتحقق من عمل النظام',
+            date: new Date().toLocaleDateString('ar-SA'),
+            time: new Date().toLocaleTimeString('ar-SA')
+        };
+
+        const success = await saveChangeLogToSupabase(testLog);
+        if (success) {
+            console.log('✅ تم إنشاء سجل تجريبي بنجاح');
+
+            // محاولة تحميل السجل المُنشأ
+            const updatedLogs = await loadChangeLogsFromSupabase(5);
+            const foundTestLog = updatedLogs.find(log => log.id === testLog.id);
+
+            if (foundTestLog) {
+                console.log('✅ تم العثور على السجل التجريبي في قاعدة البيانات');
+                console.log('🎉 النظام يعمل بشكل صحيح!');
+                alert('🎉 اختبار ناجح! النظام يعمل بشكل صحيح');
+            } else {
+                console.warn('⚠️ لم يتم العثور على السجل التجريبي');
+                alert('⚠️ تم حفظ السجل لكن لم يتم العثور عليه عند التحميل');
+            }
+        } else {
+            console.error('❌ فشل في إنشاء سجل تجريبي');
+            alert('❌ فشل في إنشاء سجل تجريبي');
+        }
+    } catch (error) {
+        console.error('❌ خطأ في اختبار إنشاء السجل:', error);
+        alert(`خطأ في اختبار إنشاء السجل: ${error.message}`);
+    }
+
+    // اختبار 5: عرض واجهة سجل التتبع
+    console.log('5️⃣ اختبار عرض واجهة سجل التتبع...');
+    try {
+        await showChangeTrackingModal();
+        console.log('✅ تم عرض واجهة سجل التتبع بنجاح');
+    } catch (error) {
+        console.error('❌ خطأ في عرض واجهة سجل التتبع:', error);
+        alert(`خطأ في عرض واجهة سجل التتبع: ${error.message}`);
+    }
+}
+
+// إنشاء بيانات تجريبية وحفظها في Supabase مباشرة
+async function createAndSaveSampleTrackingData() {
+    try {
+        console.log('🔄 بدء إنشاء البيانات التجريبية وحفظها في Supabase...');
+
+        // حذف البيانات التجريبية القديمة من Supabase أولاً
+        await cleanupSampleDataFromSupabase();
+
+        console.log('📊 إنشاء بيانات تجريبية للتتبع...');
 
     // إنشاء بيانات تجريبية متنوعة بتواريخ الشهر الحالي
     const today = new Date();
@@ -22518,12 +23764,12 @@ function createSampleTrackingData() {
             city: 'الرياض',
             contractNumber: 'C001',
             changes: {
-                'اسم المستأجر': {
+                'tenant_name': {
                     old: 'أحمد محمد',
                     new: 'محمد أحمد',
                     fieldName: 'اسم المستأجر'
                 },
-                'قيمة  الايجار ': {
+                'rent_amount': {
                     old: '2000',
                     new: '2200',
                     fieldName: 'قيمة الإيجار'
@@ -22591,12 +23837,12 @@ function createSampleTrackingData() {
             city: 'مكة المكرمة',
             contractNumber: 'C005',
             changes: {
-                'تاريخ نهاية العقد': {
+                'contract_end_date': {
                     old: '31/12/2024',
                     new: '31/12/2025',
                     fieldName: 'تاريخ نهاية العقد'
                 },
-                'قيمة  الايجار ': {
+                'rent_amount': {
                     old: '1800',
                     new: '1900',
                     fieldName: 'قيمة الإيجار'
@@ -22607,15 +23853,33 @@ function createSampleTrackingData() {
         }
     ];
 
-    // إضافة البيانات التجريبية
+    // حفظ البيانات التجريبية مباشرة في Supabase
+    console.log('☁️ حفظ البيانات التجريبية في Supabase...');
+    let savedCount = 0;
+
+    for (const sampleLog of sampleLogs) {
+        try {
+            const success = await saveChangeLogToSupabase(sampleLog);
+            if (success) {
+                savedCount++;
+                console.log(`✅ تم حفظ السجل ${savedCount}/${sampleLogs.length} في Supabase`);
+            }
+        } catch (error) {
+            console.warn(`⚠️ فشل حفظ السجل في Supabase:`, error);
+        }
+    }
+
+    console.log(`📊 تم حفظ ${savedCount} من أصل ${sampleLogs.length} سجل تجريبي في Supabase`);
+
+    // إضافة البيانات للتخزين المحلي كنسخة احتياطية فقط
     changeTrackingLogs.unshift(...sampleLogs);
 
-    // حفظ في localStorage
-    try {
-        localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
-        console.log(`📊 تم إنشاء ${sampleLogs.length} سجل تتبع تجريبي`);
+    // إرجاع عدد السجلات المحفوظة بنجاح
+    return savedCount;
+
     } catch (error) {
-        console.warn('⚠️ لم يتم حفظ البيانات التجريبية محلياً:', error);
+        console.error('❌ خطأ في إنشاء البيانات التجريبية:', error);
+        throw error;
     }
 }
 
@@ -22650,26 +23914,50 @@ let isTrackingViewActive = false;
 
 // عرض سجلات التتبع في القسم الرئيسي
 async function showChangeTrackingModal() {
-    console.log('🔍 بدء عرض سجلات التتبع في القسم الرئيسي...');
-    console.log('📊 عدد السجلات المحلية:', changeTrackingLogs.length);
+    console.log('🔍 بدء عرض سجلات التتبع من Supabase...');
 
-    // حذف أي بيانات تجريبية موجودة
-    cleanupSampleTrackingData();
+    // إظهار مؤشر التحميل
+    showToast('جاري تحميل سجلات التتبع من Supabase...', 'info');
 
-    // تحميل السجلات من Supabase
-    const cloudLogs = await loadChangeLogsFromSupabase(50);
-    console.log('☁️ عدد السجلات السحابية:', cloudLogs.length);
+    let uniqueLogs = []; // تعريف المتغير في البداية
 
-    // دمج السجلات المحلية والسحابية
-    const allLogs = [...cloudLogs, ...changeTrackingLogs];
-    console.log('📋 إجمالي السجلات قبل إزالة المكررات:', allLogs.length);
+    try {
+        // تحميل السجلات من Supabase (المصدر الأساسي)
+        const cloudLogs = await loadChangeLogsFromSupabase(200); // زيادة العدد لعرض المزيد من السجلات
+        console.log('☁️ عدد السجلات من Supabase:', cloudLogs.length);
 
-    // إزالة المكررات وترتيب حسب التاريخ
-    const uniqueLogs = allLogs.filter((log, index, self) =>
-        index === self.findIndex(l => l.id === log.id)
-    ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // إضافة السجلات المحلية كنسخة احتياطية فقط (في حالة عدم وجود اتصال)
+        const localLogs = cloudLogs.length === 0 ? changeTrackingLogs : [];
+        console.log('💾 عدد السجلات المحلية المستخدمة:', localLogs.length);
 
-    console.log('✅ إجمالي السجلات بعد إزالة المكررات:', uniqueLogs.length);
+        // دمج السجلات (أولوية للسجلات السحابية)
+        const allLogs = [...cloudLogs, ...localLogs];
+        console.log('📋 إجمالي السجلات قبل إزالة المكررات:', allLogs.length);
+
+        // إزالة المكررات وترتيب حسب التاريخ
+        uniqueLogs = allLogs.filter((log, index, self) =>
+            index === self.findIndex(l => l.id === log.id)
+        ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        console.log('✅ إجمالي السجلات بعد إزالة المكررات:', uniqueLogs.length);
+
+        if (uniqueLogs.length > 0) {
+            showToast(`تم تحميل ${uniqueLogs.length} سجل تتبع من Supabase`, 'success');
+        } else {
+            showToast('لا توجد سجلات تتبع متاحة', 'warning');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في تحميل سجلات التتبع:', error);
+        showToast('حدث خطأ في تحميل سجلات التتبع', 'error');
+
+        // استخدام السجلات المحلية كبديل
+        uniqueLogs = changeTrackingLogs.filter((log, index, self) =>
+            index === self.findIndex(l => l.id === log.id)
+        ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        console.log('📱 استخدام السجلات المحلية:', uniqueLogs.length);
+    }
 
     // حفظ المحتوى الحالي
     const mainContent = document.getElementById('content');
@@ -22877,7 +24165,7 @@ async function refreshTrackingLogs() {
 
 // ===== نظام إدارة سجلات التتبع (للمدير فقط) =====
 
-// عرض نافذة إدارة سجلات التتبع
+// عرض نافذة إدارة سجلات التتبع - محدث للجدول المخصص
 async function showTrackingManagementModal() {
     console.log('🔧 عرض نافذة إدارة سجلات التتبع...');
 
@@ -22890,16 +24178,74 @@ async function showTrackingManagementModal() {
     // تنظيف البيانات التجريبية أولاً
     cleanupSampleTrackingData();
 
-    // تحميل جميع السجلات
+    // تحميل السجلات من الجدول المخصص الجديد
+    let newTableLogs = [];
+    if (typeof window.trackingLogsManager !== 'undefined') {
+        try {
+            newTableLogs = await window.trackingLogsManager.loadTrackingLogsFromSupabase(1000);
+            console.log(`📥 تم تحميل ${newTableLogs.length} سجل من الجدول المخصص`);
+        } catch (error) {
+            console.error('❌ خطأ في تحميل السجلات من الجدول المخصص:', error);
+        }
+    }
+
+    // تحميل السجلات من النظام القديم للتوافق
     const cloudLogs = await loadChangeLogsFromSupabase(1000);
-    const allLogs = [...cloudLogs, ...changeTrackingLogs];
+    const allLogs = [...newTableLogs, ...cloudLogs, ...changeTrackingLogs];
 
-    // إزالة المكررات
-    const uniqueLogs = allLogs.filter((log, index, self) =>
-        index === self.findIndex(l => l.id === log.id)
-    ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // إزالة المكررات وتحويل السجلات الجديدة للتنسيق القديم
+    const processedLogs = [];
+    const seenIds = new Set();
 
-    console.log(`📊 إجمالي السجلات للإدارة: ${uniqueLogs.length}`);
+    allLogs.forEach(log => {
+        let processedLog;
+
+        // إذا كان السجل من الجدول الجديد، حوله للتنسيق القديم
+        if (log.operation_type && log.unit_number !== undefined) {
+            processedLog = {
+                id: log.id,
+                operationType: log.operation_type,
+                timestamp: log.timestamp,
+                unitNumber: log.unit_number || 'غير محدد',
+                propertyName: log.property_name || 'غير محدد',
+                tenantName: log.tenant_name || 'غير محدد',
+                contractNumber: log.contract_number || '',
+                city: log.city || '',
+                changes: log.changes || {},
+                additionalInfo: log.additional_info || {},
+                responsibleUser: log.user_name || 'النظام',
+                description: log.description || '',
+                source: 'new_table'
+            };
+        } else {
+            // السجل من النظام القديم
+            processedLog = {
+                ...log,
+                source: 'old_system'
+            };
+        }
+
+        // تجنب التكرار
+        if (!seenIds.has(processedLog.id)) {
+            seenIds.add(processedLog.id);
+            processedLogs.push(processedLog);
+        }
+    });
+
+    // ترتيب السجلات حسب التاريخ
+    const uniqueLogs = processedLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    console.log(`📊 إجمالي السجلات للإدارة: ${uniqueLogs.length} (${newTableLogs.length} من الجدول الجديد، ${cloudLogs.length} من النظام القديم)`);
+
+    // تحميل إحصائيات الجدول الجديد
+    let newTableStats = null;
+    if (typeof window.trackingLogsManager !== 'undefined') {
+        try {
+            newTableStats = await window.trackingLogsManager.getTrackingLogsStats();
+        } catch (error) {
+            console.error('❌ خطأ في تحميل إحصائيات الجدول الجديد:', error);
+        }
+    }
 
     const modalHtml = `
         <div class="modal-overlay" style="display:flex; z-index: 10000;">
@@ -22909,6 +24255,35 @@ async function showTrackingManagementModal() {
                 <div class="modal-header">
                     <h2><i class="fas fa-cogs"></i> إدارة سجلات التتبع</h2>
                     <p class="management-warning">⚠️ تحذير: هذه الصفحة للمدير فقط - يمكن حذف السجلات نهائياً</p>
+
+                    ${newTableStats ? `
+                    <div class="tracking-stats-summary" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; border: 2px solid #e9ecef;">
+                        <h4><i class="fas fa-chart-bar"></i> إحصائيات الجدول المخصص</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px;">
+                            <div class="stat-item" style="text-align: center; background: white; padding: 10px; border-radius: 5px;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #007bff;">${newTableStats.total_logs || 0}</div>
+                                <div style="font-size: 0.9rem; color: #666;">إجمالي السجلات</div>
+                            </div>
+                            <div class="stat-item" style="text-align: center; background: white; padding: 10px; border-radius: 5px;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #28a745;">${newTableStats.logs_today || 0}</div>
+                                <div style="font-size: 0.9rem; color: #666;">سجلات اليوم</div>
+                            </div>
+                            <div class="stat-item" style="text-align: center; background: white; padding: 10px; border-radius: 5px;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #ffc107;">${newTableStats.logs_this_week || 0}</div>
+                                <div style="font-size: 0.9rem; color: #666;">سجلات الأسبوع</div>
+                            </div>
+                            <div class="stat-item" style="text-align: center; background: white; padding: 10px; border-radius: 5px;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #dc3545;">${newTableStats.logs_this_month || 0}</div>
+                                <div style="font-size: 0.9rem; color: #666;">سجلات الشهر</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                            <strong>العملية الأكثر شيوعاً:</strong> ${newTableStats.most_common_operation || 'غير محدد'} |
+                            <strong>المستخدم الأكثر نشاطاً:</strong> ${newTableStats.most_active_user || 'غير محدد'}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
                     <div class="logs-stats">
                         <span class="stat-item">إجمالي السجلات: <strong id="totalLogsCount">${uniqueLogs.length}</strong></span>
                         <span class="stat-item">المحددة: <strong id="selectedLogsCount">0</strong></span>
@@ -23130,7 +24505,7 @@ function selectByType() {
     updateSelectedCount();
 }
 
-// حذف سجل واحد
+// حذف سجل واحد - محدث للجدول المخصص
 async function deleteIndividualLog(logId) {
     if (!confirm('هل أنت متأكد من حذف هذا السجل؟\nلا يمكن التراجع عن هذا الإجراء.')) {
         return;
@@ -23139,6 +24514,22 @@ async function deleteIndividualLog(logId) {
     console.log(`🗑️ حذف السجل: ${logId}`);
 
     try {
+        let deletedFromNewTable = false;
+        let deletedFromOldSystem = false;
+
+        // حذف من الجدول المخصص الجديد
+        if (typeof window.trackingLogsManager !== 'undefined') {
+            try {
+                const result = await window.trackingLogsManager.deleteTrackingLog(logId);
+                if (result) {
+                    deletedFromNewTable = true;
+                    console.log('✅ تم حذف السجل من الجدول المخصص');
+                }
+            } catch (error) {
+                console.warn('⚠️ خطأ في حذف السجل من الجدول المخصص:', error);
+            }
+        }
+
         // حذف من المصفوفة المحلية
         const localIndex = changeTrackingLogs.findIndex(log => log.id === logId);
         if (localIndex !== -1) {
@@ -23146,15 +24537,22 @@ async function deleteIndividualLog(logId) {
             localStorage.setItem('changeTrackingLogs', JSON.stringify(changeTrackingLogs.slice(0, 1000)));
         }
 
-        // حذف من Supabase
+        // حذف من النظام القديم (للتوافق)
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-            const { error } = await supabaseClient
-                .from('change_logs')
-                .delete()
-                .eq('id', logId);
+            try {
+                const { error } = await supabaseClient
+                    .from('change_logs')
+                    .delete()
+                    .eq('id', logId);
 
-            if (error) {
-                console.warn('⚠️ لم يتم حذف السجل من Supabase:', error);
+                if (!error) {
+                    deletedFromOldSystem = true;
+                    console.log('✅ تم حذف السجل من النظام القديم');
+                } else {
+                    console.warn('⚠️ لم يتم حذف السجل من النظام القديم:', error);
+                }
+            } catch (error) {
+                console.warn('⚠️ خطأ في حذف السجل من النظام القديم:', error);
             }
         }
 
@@ -23168,7 +24566,17 @@ async function deleteIndividualLog(logId) {
         updateLogsCount();
         updateSelectedCount();
 
-        showToast('تم حذف السجل بنجاح', 'success');
+        // رسالة النجاح مع تفاصيل الحذف
+        let successMessage = 'تم حذف السجل بنجاح';
+        if (deletedFromNewTable && deletedFromOldSystem) {
+            successMessage += ' من جميع الأنظمة';
+        } else if (deletedFromNewTable) {
+            successMessage += ' من الجدول المخصص';
+        } else if (deletedFromOldSystem) {
+            successMessage += ' من النظام القديم';
+        }
+
+        showToast(successMessage, 'success');
 
     } catch (error) {
         console.error('❌ خطأ في حذف السجل:', error);
@@ -23637,6 +25045,1522 @@ function viewLogDetails(logId) {
 }
 
 // ===== نهاية نظام إدارة سجلات التتبع =====
+
+// ===== اختبار نظام سجلات التتبع الجديد =====
+
+// دالة اختبار الاتصال بالجدول الجديد
+async function testTrackingLogsConnection() {
+    console.log('🧪 اختبار الاتصال بجدول tracking_logs...');
+
+    try {
+        // التحقق من وجود مدير سجلات التتبع
+        if (typeof window.trackingLogsManager === 'undefined') {
+            console.error('❌ مدير سجلات التتبع غير محمل');
+            return false;
+        }
+
+        // التحقق من وجود الجدول
+        const tableExists = await window.trackingLogsManager.ensureTrackingLogsTableExists();
+        if (!tableExists) {
+            console.error('❌ جدول tracking_logs غير موجود');
+            return false;
+        }
+
+        // اختبار إدراج سجل
+        const testLog = {
+            operation_type: 'اختبار الاتصال',
+            unit_number: 'TEST-CONNECTION',
+            property_name: 'اختبار النظام',
+            description: 'اختبار الاتصال بالجدول الجديد',
+            user_name: 'نظام الاختبار'
+        };
+
+        const result = await window.trackingLogsManager.saveTrackingLogToSupabase(testLog);
+        if (result) {
+            console.log('✅ تم حفظ سجل الاختبار بنجاح:', result.id);
+
+            // حذف سجل الاختبار
+            await window.trackingLogsManager.deleteTrackingLog(result.id);
+            console.log('✅ تم حذف سجل الاختبار');
+
+            return true;
+        } else {
+            console.error('❌ فشل في حفظ سجل الاختبار');
+            return false;
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في اختبار الاتصال:', error);
+        return false;
+    }
+}
+
+// دالة لإجبار حفظ سجل تتبع جديد
+async function forceCreateTrackingLog() {
+    console.log('🔧 إجبار إنشاء سجل تتبع...');
+
+    try {
+        // تفعيل التتبع إذا كان معطل
+        const wasTrackingEnabled = isTrackingEnabled;
+        isTrackingEnabled = true;
+
+        const unitData = {
+            'رقم  الوحدة ': 'FORCE-TEST-' + Date.now(),
+            'اسم العقار': 'اختبار إجباري',
+            'اسم المستأجر': 'مستأجر اختبار',
+            'رقم جوال المستأجر': '0501234567',
+            'رقم جوال إضافي': '0507654321',
+            'المدينة': 'الرياض'
+        };
+
+        await addChangeLog('اختبار إجباري', unitData, { forced: true }, { test: true });
+
+        // إعادة حالة التتبع الأصلية
+        isTrackingEnabled = wasTrackingEnabled;
+
+        console.log('✅ تم إنشاء سجل التتبع الإجباري');
+        showToast('تم إنشاء سجل تتبع تجريبي - تحقق من جدول tracking_logs', 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في إنشاء سجل التتبع الإجباري:', error);
+        showToast('فشل في إنشاء سجل التتبع: ' + error.message, 'error');
+    }
+}
+
+// دالة لعرض حالة نظام التتبع
+function showTrackingStatus() {
+    console.log('📊 حالة نظام التتبع:');
+    console.log('- isTrackingEnabled:', isTrackingEnabled);
+    console.log('- trackingLogsManager متوفر:', typeof window.trackingLogsManager !== 'undefined');
+    console.log('- supabaseClient متوفر:', typeof supabaseClient !== 'undefined');
+    console.log('- عدد السجلات المحلية:', changeTrackingLogs.length);
+
+    showToast(`التتبع: ${isTrackingEnabled ? 'مفعل' : 'معطل'} | المدير: ${typeof window.trackingLogsManager !== 'undefined' ? 'متوفر' : 'غير متوفر'}`, 'info');
+}
+
+// دالة اختبار مباشرة للجدول الجديد (تتجاوز جميع الشروط)
+async function directTestNewTable() {
+    console.log('🔧 اختبار مباشر للجدول الجديد...');
+
+    try {
+        // التحقق من وجود المدير
+        if (typeof window.trackingLogsManager === 'undefined') {
+            console.error('❌ مدير سجلات التتبع غير محمل');
+            showToast('مدير سجلات التتبع غير محمل', 'error');
+            return;
+        }
+
+        // إنشاء سجل تجريبي مباشرة
+        const testLogData = {
+            operation_type: 'اختبار مباشر',
+            unit_number: 'DIRECT-TEST-' + Date.now(),
+            property_name: 'اختبار مباشر للجدول',
+            tenant_name: 'مستأجر اختبار مباشر',
+            tenant_phone: '0501111111',
+            tenant_phone_2: '0502222222',
+            city: 'الرياض',
+            contract_number: 'TEST-CONTRACT-' + Date.now(),
+            rent_value: 1500.00,
+            contract_type: 'سكني',
+            description: 'اختبار مباشر لحفظ السجل في الجدول الجديد',
+            changes: {
+                test: true,
+                timestamp: new Date().toISOString(),
+                method: 'direct_test'
+            },
+            additional_info: {
+                source: 'direct_test_function',
+                browser: navigator.userAgent,
+                url: window.location.href
+            },
+            user_name: 'مختبر النظام'
+        };
+
+        console.log('📝 بيانات السجل التجريبي:', testLogData);
+
+        // حفظ مباشر في الجدول الجديد
+        const result = await window.trackingLogsManager.saveTrackingLogToSupabase(testLogData);
+
+        if (result && result.id) {
+            console.log('✅ تم حفظ السجل بنجاح:', result.id);
+            showToast(`تم حفظ السجل بنجاح! ID: ${result.id}`, 'success');
+
+            // عرض رابط للجدول في Supabase
+            console.log('🔗 تحقق من الجدول في Supabase: Table Editor → tracking_logs');
+
+        } else {
+            console.error('❌ فشل في حفظ السجل');
+            showToast('فشل في حفظ السجل', 'error');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في الاختبار المباشر:', error);
+        showToast('خطأ في الاختبار: ' + error.message, 'error');
+    }
+}
+
+// دالة حفظ مباشرة جداً في Supabase (تتجاوز جميع الأنظمة)
+async function ultraDirectSave() {
+    console.log('🚀 حفظ مباشر جداً في Supabase...');
+
+    try {
+        // التحقق من Supabase
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // بيانات بسيطة جداً
+        const simpleData = {
+            operation_type: 'حفظ مباشر',
+            unit_number: 'ULTRA-' + Date.now(),
+            property_name: 'اختبار الحفظ المباشر',
+            description: 'اختبار الحفظ المباشر في tracking_logs',
+            user_name: 'نظام الاختبار المباشر'
+        };
+
+        console.log('📝 البيانات للحفظ:', simpleData);
+
+        // حفظ مباشر في Supabase
+        const { data, error } = await supabaseClient
+            .from('tracking_logs')
+            .insert([simpleData])
+            .select();
+
+        if (error) {
+            throw new Error(`خطأ Supabase: ${error.message}`);
+        }
+
+        if (data && data[0]) {
+            console.log('✅ تم الحفظ المباشر بنجاح!', data[0]);
+            showToast(`✅ نجح الحفظ المباشر! ID: ${data[0].id}`, 'success');
+
+            // عرض رابط للتحقق
+            console.log('🔗 تحقق من الجدول في Supabase Dashboard → Table Editor → tracking_logs');
+
+            return data[0];
+        } else {
+            throw new Error('لم يتم إرجاع بيانات من Supabase');
+        }
+
+    } catch (error) {
+        console.error('❌ فشل الحفظ المباشر:', error);
+        showToast(`❌ فشل الحفظ المباشر: ${error.message}`, 'error');
+        return null;
+    }
+}
+
+// دالة اختبار ربط الوحدات مع تشخيص مفصل
+async function testUnitLinking() {
+    console.log('🔗 اختبار ربط الوحدات مع تشخيص مفصل...');
+
+    try {
+        // 1. التحقق من المتطلبات الأساسية
+        console.log('📋 فحص المتطلبات الأساسية:');
+        console.log('- properties array:', Array.isArray(properties), 'عدد العقارات:', properties?.length || 0);
+        console.log('- supabaseClient:', typeof supabaseClient !== 'undefined' && supabaseClient !== null);
+        console.log('- savePropertyToSupabase:', typeof savePropertyToSupabase === 'function');
+        console.log('- addChangeLog:', typeof addChangeLog === 'function');
+
+        if (!Array.isArray(properties) || properties.length === 0) {
+            throw new Error('لا توجد عقارات للاختبار');
+        }
+
+        // 2. البحث عن وحدات مناسبة للاختبار
+        console.log('🔍 البحث عن وحدات مناسبة للاختبار...');
+
+        // البحث عن وحدة فارغة
+        const emptyUnit = properties.find(p =>
+            p['رقم  الوحدة '] &&
+            (!p['اسم المستأجر'] || p['اسم المستأجر'].trim() === '') &&
+            (!p['رقم العقد'] || p['رقم العقد'].trim() === '')
+        );
+
+        if (!emptyUnit) {
+            // إنشاء وحدة اختبار
+            const testUnit = {
+                'رقم  الوحدة ': 'TEST-LINK-' + Date.now(),
+                'اسم العقار': 'عقار اختبار الربط',
+                'المدينة': 'الرياض',
+                'اسم المستأجر': '',
+                'رقم العقد': '',
+                'المساحة': 100,
+                'قيمة  الايجار ': 0,
+                'نوع العقد': 'سكني'
+            };
+
+            properties.push(testUnit);
+            console.log('✅ تم إنشاء وحدة اختبار:', testUnit['رقم  الوحدة ']);
+        }
+
+        const targetUnit = emptyUnit || properties[properties.length - 1];
+        const testContractNumber = 'CONTRACT-TEST-' + Date.now();
+
+        console.log('🎯 الوحدة المستهدفة:', {
+            unitNumber: targetUnit['رقم  الوحدة '],
+            propertyName: targetUnit['اسم العقار'],
+            currentTenant: targetUnit['اسم المستأجر'] || 'فارغ',
+            currentContract: targetUnit['رقم العقد'] || 'بدون عقد'
+        });
+
+        // 3. اختبار ربط الوحدة
+        console.log('🔗 بدء اختبار ربط الوحدة...');
+
+        const unitIndex = properties.findIndex(p =>
+            p['اسم العقار'] === targetUnit['اسم العقار'] &&
+            p['رقم  الوحدة '] === targetUnit['رقم  الوحدة ']
+        );
+
+        if (unitIndex === -1) {
+            throw new Error('لم يتم العثور على الوحدة في المصفوفة');
+        }
+
+        // حفظ البيانات القديمة
+        const oldData = { ...properties[unitIndex] };
+
+        // تحديث البيانات محلياً
+        properties[unitIndex]['رقم العقد'] = testContractNumber;
+        properties[unitIndex]['اسم المستأجر'] = 'مستأجر اختبار الربط';
+
+        console.log('✅ تم تحديث البيانات محلياً');
+
+        // 4. اختبار حفظ في Supabase
+        console.log('☁️ اختبار حفظ في Supabase...');
+
+        if (typeof savePropertyToSupabase === 'function') {
+            const saveResult = await savePropertyToSupabase(properties[unitIndex]);
+
+            if (saveResult) {
+                console.log('✅ نجح حفظ الوحدة في Supabase');
+                showToast('✅ نجح حفظ الوحدة في Supabase', 'success');
+            } else {
+                console.error('❌ فشل حفظ الوحدة في Supabase');
+                showToast('❌ فشل حفظ الوحدة في Supabase', 'error');
+            }
+        } else {
+            console.error('❌ دالة savePropertyToSupabase غير متوفرة');
+            showToast('❌ دالة savePropertyToSupabase غير متوفرة', 'error');
+        }
+
+        // 5. اختبار إضافة سجل التتبع
+        console.log('📝 اختبار إضافة سجل التتبع...');
+
+        if (typeof addChangeLog === 'function') {
+            try {
+                await addChangeLog('اختبار ربط وحدة', properties[unitIndex], oldData, {
+                    operation: 'test_link_unit',
+                    unitNumber: targetUnit['رقم  الوحدة '],
+                    contractNumber: testContractNumber,
+                    propertyName: targetUnit['اسم العقار']
+                });
+                console.log('✅ نجح إضافة سجل التتبع');
+                showToast('✅ نجح إضافة سجل التتبع', 'success');
+            } catch (logError) {
+                console.error('❌ فشل إضافة سجل التتبع:', logError);
+                showToast('❌ فشل إضافة سجل التتبع: ' + logError.message, 'error');
+            }
+        } else {
+            console.error('❌ دالة addChangeLog غير متوفرة');
+        }
+
+        // 6. حفظ محلياً
+        saveDataLocally();
+
+        // 7. تحديث العرض
+        initializeApp();
+
+        console.log('🎉 اكتمل اختبار ربط الوحدات بنجاح!');
+        showToast(`🎉 تم ربط الوحدة ${targetUnit['رقم  الوحدة ']} بالعقد ${testContractNumber}`, 'success');
+
+        return {
+            success: true,
+            unitNumber: targetUnit['رقم  الوحدة '],
+            contractNumber: testContractNumber,
+            propertyName: targetUnit['اسم العقار']
+        };
+
+    } catch (error) {
+        console.error('❌ فشل اختبار ربط الوحدات:', error);
+        showToast('❌ فشل اختبار ربط الوحدات: ' + error.message, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة اختبار سريعة لحفظ ربط الوحدات في Supabase
+async function quickTestUnitLinkingSave() {
+    console.log('⚡ اختبار سريع لحفظ ربط الوحدات في Supabase...');
+
+    try {
+        // التحقق من الاتصال
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // إنشاء بيانات اختبار
+        const testUnitData = {
+            'رقم  الوحدة ': 'QUICK-TEST-' + Date.now(),
+            'اسم العقار': 'عقار اختبار سريع',
+            'المدينة': 'الرياض',
+            'اسم المستأجر': 'مستأجر اختبار سريع',
+            'رقم العقد': 'CONTRACT-QUICK-' + Date.now(),
+            'قيمة  الايجار ': 2000,
+            'المساحة': 120,
+            'نوع العقد': 'سكني'
+        };
+
+        console.log('📝 بيانات الاختبار:', testUnitData);
+
+        // حفظ مباشر باستخدام الدالة المخصصة
+        const result = await saveUnitLinkingToSupabase(testUnitData, 'link');
+
+        if (result) {
+            console.log('✅ نجح الاختبار السريع!', result);
+            showToast(`✅ نجح حفظ ربط الوحدة في Supabase! ID: ${result.id}`, 'success');
+
+            // عرض رابط للتحقق
+            console.log('🔗 تحقق من الجدول في Supabase Dashboard → Table Editor → properties');
+
+            return { success: true, result: result };
+        } else {
+            throw new Error('لم يتم إرجاع نتيجة من الحفظ');
+        }
+
+    } catch (error) {
+        console.error('❌ فشل الاختبار السريع:', error);
+        showToast(`❌ فشل الاختبار السريع: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة اختبار سريعة لفصل الوحدات من Supabase
+async function quickTestUnitUnlinkingSave() {
+    console.log('⚡ اختبار سريع لفصل الوحدات في Supabase...');
+
+    try {
+        // التحقق من الاتصال
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // البحث عن وحدة مربوطة للاختبار
+        const linkedUnit = properties.find(p =>
+            p['رقم العقد'] &&
+            p['رقم العقد'].trim() !== '' &&
+            p['اسم المستأجر'] &&
+            p['اسم المستأجر'].trim() !== ''
+        );
+
+        let testUnitData;
+
+        if (linkedUnit) {
+            // استخدام وحدة موجودة
+            testUnitData = { ...linkedUnit };
+            console.log('📋 استخدام وحدة موجودة للاختبار:', testUnitData['رقم  الوحدة ']);
+        } else {
+            // إنشاء وحدة اختبار مربوطة أولاً
+            testUnitData = {
+                'رقم  الوحدة ': 'UNLINK-TEST-' + Date.now(),
+                'اسم العقار': 'عقار اختبار الفصل',
+                'المدينة': 'الرياض',
+                'اسم المستأجر': 'مستأجر اختبار الفصل',
+                'رقم العقد': 'CONTRACT-UNLINK-' + Date.now(),
+                'قيمة  الايجار ': 1800,
+                'المساحة': 100,
+                'نوع العقد': 'سكني'
+            };
+
+            // حفظ الوحدة المربوطة أولاً
+            console.log('📝 إنشاء وحدة مربوطة للاختبار...');
+            await saveUnitLinkingToSupabase(testUnitData, 'link');
+
+            // إضافة للمصفوفة المحلية
+            properties.push(testUnitData);
+        }
+
+        console.log('📝 بيانات الوحدة قبل الفصل:', {
+            unitNumber: testUnitData['رقم  الوحدة '],
+            propertyName: testUnitData['اسم العقار'],
+            contractNumber: testUnitData['رقم العقد'],
+            tenant: testUnitData['اسم المستأجر']
+        });
+
+        // فصل الوحدة (إزالة العقد والمستأجر)
+        const unlinkedData = { ...testUnitData };
+        unlinkedData['رقم العقد'] = '';
+        unlinkedData['اسم المستأجر'] = '';
+
+        console.log('🔓 بدء فصل الوحدة...');
+
+        // حفظ الفصل باستخدام الدالة المخصصة
+        const result = await saveUnitLinkingToSupabase(unlinkedData, 'unlink');
+
+        if (result) {
+            console.log('✅ نجح اختبار فصل الوحدة!', result);
+            showToast(`✅ نجح فصل الوحدة ${testUnitData['رقم  الوحدة ']} في Supabase!`, 'success');
+
+            // عرض رابط للتحقق
+            console.log('🔗 تحقق من الجدول في Supabase Dashboard → Table Editor → properties');
+            console.log('📋 ابحث عن الوحدة:', testUnitData['رقم  الوحدة ']);
+            console.log('🔍 يجب أن تجد contract_number و tenant_name فارغين');
+
+            return {
+                success: true,
+                result: result,
+                unitNumber: testUnitData['رقم  الوحدة '],
+                operation: 'unlink'
+            };
+        } else {
+            throw new Error('لم يتم إرجاع نتيجة من الحفظ');
+        }
+
+    } catch (error) {
+        console.error('❌ فشل اختبار فصل الوحدة:', error);
+        showToast(`❌ فشل اختبار فصل الوحدة: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة اختبار شاملة لربط وفصل الوحدات
+async function comprehensiveUnitLinkingTest() {
+    console.log('🔄 اختبار شامل لربط وفصل الوحدات...');
+
+    try {
+        const testResults = {
+            link: false,
+            unlink: false,
+            tracking: false
+        };
+
+        // المرحلة 1: اختبار الربط
+        console.log('🔗 المرحلة 1: اختبار ربط الوحدة...');
+        const linkResult = await quickTestUnitLinkingSave();
+
+        if (linkResult.success) {
+            testResults.link = true;
+            console.log('✅ نجح اختبار الربط');
+
+            // المرحلة 2: اختبار الفصل
+            console.log('🔓 المرحلة 2: اختبار فصل الوحدة...');
+            const unlinkResult = await quickTestUnitUnlinkingSave();
+
+            if (unlinkResult.success) {
+                testResults.unlink = true;
+                console.log('✅ نجح اختبار الفصل');
+
+                // المرحلة 3: التحقق من سجلات التتبع
+                console.log('📝 المرحلة 3: التحقق من سجلات التتبع...');
+                if (typeof window.trackingLogsManager !== 'undefined') {
+                    testResults.tracking = true;
+                    console.log('✅ نظام سجلات التتبع متوفر');
+                }
+            }
+        }
+
+        // عرض النتائج
+        const successCount = Object.values(testResults).filter(Boolean).length;
+        const totalTests = Object.keys(testResults).length;
+
+        let message = `🎯 نتائج الاختبار الشامل:\n\n`;
+        message += `✅ الربط: ${testResults.link ? 'نجح' : 'فشل'}\n`;
+        message += `✅ الفصل: ${testResults.unlink ? 'نجح' : 'فشل'}\n`;
+        message += `✅ سجلات التتبع: ${testResults.tracking ? 'متوفر' : 'غير متوفر'}\n\n`;
+        message += `📊 النتيجة: ${successCount}/${totalTests} اختبارات نجحت`;
+
+        if (successCount === totalTests) {
+            message += `\n\n🎉 جميع الاختبارات نجحت! النظام يعمل بشكل مثالي`;
+            showToast('🎉 جميع اختبارات ربط/فصل الوحدات نجحت!', 'success');
+        } else {
+            message += `\n\n⚠️ بعض الاختبارات فشلت، تحقق من Console للتفاصيل`;
+            showToast('⚠️ بعض اختبارات ربط/فصل الوحدات فشلت', 'warning');
+        }
+
+        console.log(message);
+        alert(message);
+
+        return testResults;
+
+    } catch (error) {
+        console.error('❌ خطأ في الاختبار الشامل:', error);
+        showToast(`❌ خطأ في الاختبار الشامل: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة اختبار مباشرة لفصل الوحدات في Supabase
+async function directUnlinkTest() {
+    console.log('🔓 اختبار مباشر لفصل الوحدات في Supabase...');
+
+    try {
+        // التحقق من الاتصال
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // البحث عن وحدة مربوطة في Supabase
+        console.log('🔍 البحث عن وحدة مربوطة في Supabase...');
+        const { data: linkedUnits, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .not('contract_number', 'is', null)
+            .not('contract_number', 'eq', '')
+            .not('tenant_name', 'is', null)
+            .not('tenant_name', 'eq', '')
+            .limit(1);
+
+        if (searchError) {
+            throw new Error(`خطأ في البحث: ${searchError.message}`);
+        }
+
+        let targetUnit;
+
+        if (linkedUnits && linkedUnits.length > 0) {
+            // استخدام وحدة موجودة
+            targetUnit = linkedUnits[0];
+            console.log('✅ تم العثور على وحدة مربوطة:', {
+                unit_number: targetUnit.unit_number,
+                tenant_name: targetUnit.tenant_name,
+                contract_number: targetUnit.contract_number
+            });
+        } else {
+            // إنشاء وحدة مربوطة للاختبار
+            console.log('➕ إنشاء وحدة مربوطة للاختبار...');
+            const testUnitData = {
+                unit_number: 'DIRECT-UNLINK-TEST-' + Date.now(),
+                property_name: 'عقار اختبار الفصل المباشر',
+                city: 'الرياض',
+                tenant_name: 'مستأجر اختبار الفصل',
+                contract_number: 'CONTRACT-UNLINK-' + Date.now(),
+                rent_value: 1500,
+                area: 90,
+                contract_type: 'سكني',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            const { data: newUnit, error: createError } = await supabaseClient
+                .from('properties')
+                .insert([testUnitData])
+                .select()
+                .single();
+
+            if (createError) {
+                throw new Error(`خطأ في إنشاء الوحدة: ${createError.message}`);
+            }
+
+            targetUnit = newUnit;
+            console.log('✅ تم إنشاء وحدة مربوطة للاختبار:', targetUnit.unit_number);
+        }
+
+        // الآن فصل الوحدة مباشرة
+        console.log('🔓 بدء فصل الوحدة مباشرة...');
+
+        const unlinkData = {
+            tenant_name: '',
+            contract_number: '',
+            updated_at: new Date().toISOString()
+        };
+
+        console.log('📝 بيانات الفصل:', unlinkData);
+
+        const { data: unlinkedUnit, error: unlinkError } = await supabaseClient
+            .from('properties')
+            .update(unlinkData)
+            .eq('id', targetUnit.id)
+            .select()
+            .single();
+
+        if (unlinkError) {
+            throw new Error(`خطأ في فصل الوحدة: ${unlinkError.message}`);
+        }
+
+        console.log('✅ تم فصل الوحدة مباشرة بنجاح!', {
+            id: unlinkedUnit.id,
+            unit_number: unlinkedUnit.unit_number,
+            tenant_name: unlinkedUnit.tenant_name,
+            contract_number: unlinkedUnit.contract_number
+        });
+
+        // التحقق من النتيجة
+        if (unlinkedUnit.tenant_name === '' && unlinkedUnit.contract_number === '') {
+            console.log('🎉 تأكيد: الوحدة تم فصلها بنجاح في Supabase');
+            showToast(`✅ تم فصل الوحدة ${unlinkedUnit.unit_number} مباشرة في Supabase!`, 'success');
+
+            // إضافة سجل تتبع
+            try {
+                if (typeof window.trackingLogsManager !== 'undefined') {
+                    const trackingData = {
+                        operation_type: 'فصل وحدة مباشر',
+                        unit_number: unlinkedUnit.unit_number,
+                        property_name: unlinkedUnit.property_name,
+                        description: `تم فصل الوحدة ${unlinkedUnit.unit_number} مباشرة من Supabase`,
+                        user_name: 'اختبار مباشر'
+                    };
+
+                    await window.trackingLogsManager.saveTrackingLogToSupabase(trackingData);
+                    console.log('✅ تم حفظ سجل التتبع للفصل المباشر');
+                }
+            } catch (trackingError) {
+                console.warn('⚠️ فشل في حفظ سجل التتبع:', trackingError);
+            }
+
+            return {
+                success: true,
+                unit: unlinkedUnit,
+                operation: 'direct_unlink'
+            };
+        } else {
+            throw new Error('فشل في فصل الوحدة - القيم لم تصبح فارغة');
+        }
+
+    } catch (error) {
+        console.error('❌ فشل الاختبار المباشر للفصل:', error);
+        showToast(`❌ فشل الاختبار المباشر للفصل: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة للتحقق من حالة الوحدة في Supabase
+async function checkUnitStatusInSupabase(unitNumber, propertyName) {
+    try {
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        console.log(`🔍 التحقق من حالة الوحدة في Supabase: ${unitNumber} - ${propertyName}`);
+
+        const { data: unit, error } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                console.log('⚠️ الوحدة غير موجودة في Supabase');
+                return { exists: false };
+            }
+            throw new Error(`خطأ في البحث: ${error.message}`);
+        }
+
+        const status = {
+            exists: true,
+            unit_number: unit.unit_number,
+            property_name: unit.property_name,
+            tenant_name: unit.tenant_name || '',
+            contract_number: unit.contract_number || '',
+            is_linked: !!(unit.tenant_name && unit.contract_number),
+            updated_at: unit.updated_at
+        };
+
+        console.log('📋 حالة الوحدة في Supabase:', status);
+
+        return status;
+
+    } catch (error) {
+        console.error('❌ خطأ في التحقق من حالة الوحدة:', error);
+        return { error: error.message };
+    }
+}
+
+// دالة اختبار شاملة للفصل مع التحقق
+async function comprehensiveUnlinkTest(unitNumber, propertyName) {
+    console.log('🔄 اختبار شامل لفصل الوحدة مع التحقق...');
+
+    try {
+        // 1. التحقق من الحالة قبل الفصل
+        console.log('📋 المرحلة 1: التحقق من الحالة قبل الفصل...');
+        const statusBefore = await checkUnitStatusInSupabase(unitNumber, propertyName);
+
+        if (!statusBefore.exists) {
+            throw new Error('الوحدة غير موجودة في Supabase');
+        }
+
+        if (!statusBefore.is_linked) {
+            console.log('⚠️ الوحدة غير مربوطة أصلاً');
+            showToast('الوحدة غير مربوطة أصلاً', 'warning');
+            return { success: false, reason: 'not_linked' };
+        }
+
+        console.log('✅ الوحدة مربوطة، يمكن فصلها');
+
+        // 2. تنفيذ الفصل
+        console.log('🔓 المرحلة 2: تنفيذ الفصل...');
+
+        // البحث عن الوحدة في المصفوفة المحلية
+        const unitIndex = properties.findIndex(p =>
+            p['اسم العقار'] === propertyName && p['رقم  الوحدة '] === unitNumber
+        );
+
+        if (unitIndex === -1) {
+            throw new Error('الوحدة غير موجودة في البيانات المحلية');
+        }
+
+        // تنفيذ الفصل
+        await unlinkUnit(unitNumber, propertyName, statusBefore.contract_number);
+
+        // 3. التحقق من الحالة بعد الفصل
+        console.log('🔍 المرحلة 3: التحقق من الحالة بعد الفصل...');
+
+        // انتظار قليل للتأكد من تحديث البيانات
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const statusAfter = await checkUnitStatusInSupabase(unitNumber, propertyName);
+
+        if (statusAfter.error) {
+            throw new Error(`خطأ في التحقق بعد الفصل: ${statusAfter.error}`);
+        }
+
+        // 4. تحليل النتائج
+        console.log('📊 المرحلة 4: تحليل النتائج...');
+
+        const results = {
+            before: statusBefore,
+            after: statusAfter,
+            success: !statusAfter.is_linked,
+            changes: {
+                tenant_cleared: statusBefore.tenant_name !== statusAfter.tenant_name,
+                contract_cleared: statusBefore.contract_number !== statusAfter.contract_number
+            }
+        };
+
+        console.log('📈 نتائج الاختبار الشامل:', results);
+
+        if (results.success) {
+            console.log('🎉 نجح الفصل بالكامل!');
+            showToast(`✅ تم فصل الوحدة ${unitNumber} بنجاح في Supabase`, 'success');
+        } else {
+            console.error('❌ فشل الفصل - الوحدة ما زالت مربوطة');
+            showToast(`❌ فشل فصل الوحدة ${unitNumber} - ما زالت مربوطة`, 'error');
+        }
+
+        return results;
+
+    } catch (error) {
+        console.error('❌ خطأ في الاختبار الشامل للفصل:', error);
+        showToast(`❌ خطأ في اختبار الفصل: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة فصل مبسطة جداً للوحدات في Supabase
+async function simpleUnlinkUnit(unitNumber, propertyName) {
+    console.log(`🔓 فصل مبسط للوحدة: ${unitNumber} - ${propertyName}`);
+
+    try {
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // البحث عن الوحدة أولاً
+        console.log('🔍 البحث عن الوحدة في Supabase...');
+        const { data: existingUnit, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName)
+            .single();
+
+        if (searchError) {
+            if (searchError.code === 'PGRST116') {
+                throw new Error('الوحدة غير موجودة في Supabase');
+            }
+            throw new Error(`خطأ في البحث: ${searchError.message}`);
+        }
+
+        console.log('📋 الوحدة الموجودة:', {
+            id: existingUnit.id,
+            unit_number: existingUnit.unit_number,
+            tenant_name: existingUnit.tenant_name,
+            contract_number: existingUnit.contract_number
+        });
+
+        // فصل الوحدة مباشرة
+        console.log('🔓 فصل الوحدة مباشرة...');
+        const { data: unlinkedUnit, error: unlinkError } = await supabaseClient
+            .from('properties')
+            .update({
+                tenant_name: '',
+                contract_number: '',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', existingUnit.id)
+            .select()
+            .single();
+
+        if (unlinkError) {
+            throw new Error(`خطأ في الفصل: ${unlinkError.message}`);
+        }
+
+        console.log('✅ تم فصل الوحدة بنجاح:', {
+            id: unlinkedUnit.id,
+            unit_number: unlinkedUnit.unit_number,
+            tenant_name: unlinkedUnit.tenant_name,
+            contract_number: unlinkedUnit.contract_number,
+            updated_at: unlinkedUnit.updated_at
+        });
+
+        // التحقق من النجاح
+        if (unlinkedUnit.tenant_name === '' && unlinkedUnit.contract_number === '') {
+            console.log('🎉 تأكيد: تم فصل الوحدة بنجاح في Supabase');
+            showToast(`✅ تم فصل الوحدة ${unitNumber} بنجاح في Supabase`, 'success');
+
+            // تحديث البيانات المحلية أيضاً
+            const localUnitIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName
+            );
+
+            if (localUnitIndex !== -1) {
+                properties[localUnitIndex]['رقم العقد'] = '';
+                properties[localUnitIndex]['اسم المستأجر'] = '';
+                saveDataLocally();
+                console.log('✅ تم تحديث البيانات المحلية أيضاً');
+            }
+
+            return {
+                success: true,
+                unit: unlinkedUnit,
+                operation: 'simple_unlink'
+            };
+        } else {
+            throw new Error('فشل في فصل الوحدة - القيم لم تصبح فارغة');
+        }
+
+    } catch (error) {
+        console.error('❌ فشل الفصل المبسط:', error);
+        showToast(`❌ فشل فصل الوحدة: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة لاختبار فصل وحدة موجودة
+async function testUnlinkExistingUnit() {
+    console.log('🧪 اختبار فصل وحدة موجودة...');
+
+    try {
+        // البحث عن وحدة مربوطة
+        const linkedUnit = properties.find(p =>
+            p['رقم العقد'] &&
+            p['رقم العقد'].trim() !== '' &&
+            p['اسم المستأجر'] &&
+            p['اسم المستأجر'].trim() !== ''
+        );
+
+        if (!linkedUnit) {
+            throw new Error('لا توجد وحدات مربوطة للاختبار');
+        }
+
+        console.log('🎯 الوحدة المختارة للاختبار:', {
+            unitNumber: linkedUnit['رقم  الوحدة '],
+            propertyName: linkedUnit['اسم العقار'],
+            tenant: linkedUnit['اسم المستأجر'],
+            contract: linkedUnit['رقم العقد']
+        });
+
+        // فصل الوحدة باستخدام الدالة المبسطة
+        const result = await simpleUnlinkUnit(
+            linkedUnit['رقم  الوحدة '],
+            linkedUnit['اسم العقار']
+        );
+
+        if (result.success) {
+            console.log('🎉 نجح اختبار فصل الوحدة الموجودة!');
+            showToast('🎉 نجح اختبار فصل الوحدة الموجودة!', 'success');
+        } else {
+            console.error('❌ فشل اختبار فصل الوحدة الموجودة');
+            showToast('❌ فشل اختبار فصل الوحدة الموجودة', 'error');
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error('❌ خطأ في اختبار فصل الوحدة الموجودة:', error);
+        showToast(`❌ خطأ في الاختبار: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة حفظ مخصصة للفصل تمنع إعادة الكتابة
+async function saveUnlinkToSupabaseOnly(unitNumber, propertyName) {
+    console.log(`🔒 حفظ فصل مخصص للوحدة: ${unitNumber} - ${propertyName}`);
+
+    try {
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // البحث عن الوحدة في Supabase
+        const { data: existingUnit, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('id, unit_number, property_name, tenant_name, contract_number')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName)
+            .single();
+
+        if (searchError) {
+            if (searchError.code === 'PGRST116') {
+                throw new Error('الوحدة غير موجودة في Supabase');
+            }
+            throw new Error(`خطأ في البحث: ${searchError.message}`);
+        }
+
+        console.log('📋 الوحدة قبل الفصل:', {
+            id: existingUnit.id,
+            tenant_name: existingUnit.tenant_name,
+            contract_number: existingUnit.contract_number
+        });
+
+        // فصل الوحدة مباشرة في Supabase فقط
+        const { data: unlinkedUnit, error: unlinkError } = await supabaseClient
+            .from('properties')
+            .update({
+                tenant_name: '',
+                contract_number: '',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', existingUnit.id)
+            .select()
+            .single();
+
+        if (unlinkError) {
+            throw new Error(`خطأ في الفصل: ${unlinkError.message}`);
+        }
+
+        console.log('✅ تم فصل الوحدة في Supabase:', {
+            id: unlinkedUnit.id,
+            tenant_name: unlinkedUnit.tenant_name,
+            contract_number: unlinkedUnit.contract_number,
+            updated_at: unlinkedUnit.updated_at
+        });
+
+        // التحقق من النجاح
+        if (unlinkedUnit.tenant_name === '' && unlinkedUnit.contract_number === '') {
+            console.log('🎉 تأكيد: تم فصل الوحدة بنجاح في Supabase فقط');
+
+            // إضافة سجل تتبع
+            try {
+                if (typeof window.trackingLogsManager !== 'undefined') {
+                    const trackingData = {
+                        operation_type: 'فصل وحدة نهائي',
+                        unit_number: unitNumber,
+                        property_name: propertyName,
+                        description: `تم فصل الوحدة ${unitNumber} نهائياً في Supabase`,
+                        user_name: 'النظام المحسن'
+                    };
+
+                    await window.trackingLogsManager.saveTrackingLogToSupabase(trackingData);
+                    console.log('✅ تم حفظ سجل التتبع للفصل النهائي');
+                }
+            } catch (trackingError) {
+                console.warn('⚠️ فشل في حفظ سجل التتبع:', trackingError);
+            }
+
+            return {
+                success: true,
+                unit: unlinkedUnit,
+                operation: 'unlink_supabase_only'
+            };
+        } else {
+            throw new Error('فشل في فصل الوحدة - القيم لم تصبح فارغة');
+        }
+
+    } catch (error) {
+        console.error('❌ فشل حفظ الفصل المخصص:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة فصل محسنة تمنع إعادة الكتابة
+async function improvedUnlinkUnit(unitNumber, propertyName, contractNumber) {
+    console.log(`🔓 فصل محسن للوحدة: ${unitNumber}`);
+
+    if (!confirm(`هل أنت متأكد من فصل الوحدة ${unitNumber} من العقد؟`)) return;
+
+    const unitIndex = properties.findIndex(p =>
+        p['اسم العقار'] === propertyName &&
+        p['رقم  الوحدة '] === unitNumber &&
+        p['رقم العقد'] === contractNumber
+    );
+
+    if (unitIndex !== -1) {
+        try {
+            // 1. فصل في Supabase أولاً
+            console.log('🔒 المرحلة 1: فصل في Supabase...');
+            const supabaseResult = await saveUnlinkToSupabaseOnly(unitNumber, propertyName);
+
+            if (!supabaseResult.success) {
+                throw new Error(`فشل الفصل السحابي: ${supabaseResult.error}`);
+            }
+
+            console.log('✅ نجح الفصل السحابي');
+
+            // 2. تحديث البيانات المحلية
+            console.log('📱 المرحلة 2: تحديث البيانات المحلية...');
+            properties[unitIndex]['رقم العقد'] = '';
+            properties[unitIndex]['اسم المستأجر'] = '';
+
+            // 3. حفظ محلياً
+            saveDataLocally();
+
+            // 4. تحديث العرض
+            updateLinkedUnitsDisplay(propertyName, contractNumber);
+            updateAvailableUnitsDisplay(propertyName, contractNumber, unitNumber);
+            initializeApp();
+
+            // 5. رسالة النجاح
+            const message = `✅ تم فصل الوحدة ${unitNumber} بنجاح!\n\n☁️ تم الحفظ في قاعدة البيانات السحابية\n📱 تم تحديث البيانات المحلية`;
+
+            alert(message);
+            showToast(`تم فصل الوحدة ${unitNumber} بنجاح`, 'success');
+
+            console.log('🎉 تم إكمال فصل الوحدة بنجاح');
+
+        } catch (error) {
+            console.error('❌ خطأ في فصل الوحدة المحسن:', error);
+            alert(`❌ فشل في فصل الوحدة: ${error.message}`);
+            showToast(`فشل في فصل الوحدة: ${error.message}`, 'error');
+        }
+    } else {
+        alert('لم يتم العثور على الوحدة');
+    }
+}
+
+// قائمة الوحدات المفصولة حديثاً (لمنع إعادة الكتابة)
+let recentlyUnlinkedUnits = new Set();
+
+// دالة لإضافة وحدة للقائمة المحمية
+function protectUnlinkedUnit(unitNumber, propertyName) {
+    const unitKey = `${unitNumber}|${propertyName}`;
+    recentlyUnlinkedUnits.add(unitKey);
+    console.log(`🔒 تم حماية الوحدة من إعادة الكتابة: ${unitKey}`);
+
+    // إزالة الحماية بعد 5 دقائق
+    setTimeout(() => {
+        recentlyUnlinkedUnits.delete(unitKey);
+        console.log(`🔓 تم إزالة حماية الوحدة: ${unitKey}`);
+    }, 5 * 60 * 1000);
+}
+
+// دالة للتحقق من حماية الوحدة
+function isUnitProtected(unitNumber, propertyName) {
+    const unitKey = `${unitNumber}|${propertyName}`;
+    return recentlyUnlinkedUnits.has(unitKey);
+}
+
+// دالة فصل نهائية محسنة مع الحماية
+async function finalImprovedUnlinkUnit(unitNumber, propertyName, contractNumber) {
+    console.log(`🔓 فصل نهائي محسن للوحدة: ${unitNumber}`);
+
+    if (!confirm(`هل أنت متأكد من فصل الوحدة ${unitNumber} من العقد؟`)) return;
+
+    try {
+        // 1. حماية الوحدة من إعادة الكتابة
+        protectUnlinkedUnit(unitNumber, propertyName);
+
+        // 2. فصل في Supabase أولاً
+        console.log('🔒 المرحلة 1: فصل في Supabase...');
+        const supabaseResult = await saveUnlinkToSupabaseOnly(unitNumber, propertyName);
+
+        if (!supabaseResult.success) {
+            throw new Error(`فشل الفصل السحابي: ${supabaseResult.error}`);
+        }
+
+        console.log('✅ نجح الفصل السحابي');
+
+        // 3. تحديث البيانات المحلية بعد التأكد من نجاح الفصل السحابي
+        console.log('📱 المرحلة 2: تحديث البيانات المحلية...');
+        const unitIndex = properties.findIndex(p =>
+            p['اسم العقار'] === propertyName &&
+            p['رقم  الوحدة '] === unitNumber
+        );
+
+        if (unitIndex !== -1) {
+            // تحديث البيانات المحلية لتطابق Supabase
+            properties[unitIndex]['رقم العقد'] = '';
+            properties[unitIndex]['اسم المستأجر'] = '';
+
+            // حفظ محلياً فقط
+            saveDataLocally();
+            console.log('✅ تم تحديث البيانات المحلية');
+        }
+
+        // 4. منع أي حفظ تلقائي لمدة 10 دقائق
+        window.preventAutoSave = true;
+        setTimeout(() => {
+            window.preventAutoSave = false;
+            console.log('🔓 تم إلغاء منع الحفظ التلقائي');
+        }, 10 * 60 * 1000);
+
+        console.log('🔒 تم منع الحفظ التلقائي لمدة 10 دقائق');
+
+        // 5. تحديث العرض
+        updateLinkedUnitsDisplay(propertyName, contractNumber);
+        updateAvailableUnitsDisplay(propertyName, contractNumber, unitNumber);
+        initializeApp();
+
+        // 6. رسالة النجاح
+        const message = `✅ تم فصل الوحدة ${unitNumber} بنجاح!\n\n☁️ تم الحفظ في قاعدة البيانات السحابية\n📱 تم تحديث البيانات المحلية\n🔒 تم حماية الوحدة من إعادة الكتابة لمدة 5 دقائق\n⏰ تم منع الحفظ التلقائي لمدة 10 دقائق`;
+
+        alert(message);
+        showToast(`تم فصل الوحدة ${unitNumber} بنجاح`, 'success');
+
+        console.log('🎉 تم إكمال فصل الوحدة بنجاح مع الحماية الكاملة');
+
+        return { success: true, protected: true };
+
+    } catch (error) {
+        console.error('❌ خطأ في الفصل النهائي المحسن:', error);
+        alert(`❌ فشل في فصل الوحدة: ${error.message}`);
+        showToast(`فشل في فصل الوحدة: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة wrapper لحماية savePropertyToSupabase
+const originalSavePropertyToSupabase = window.savePropertyToSupabase;
+
+window.savePropertyToSupabase = async function(property) {
+    // التحقق من منع الحفظ التلقائي
+    if (window.preventAutoSave) {
+        const unitNumber = property['رقم  الوحدة '];
+        const propertyName = property['اسم العقار'];
+
+        // التحقق من حماية الوحدة
+        if (isUnitProtected(unitNumber, propertyName)) {
+            console.log(`🔒 تم منع حفظ الوحدة المحمية: ${unitNumber}`);
+            return { success: true, skipped: true, reason: 'protected_unit' };
+        }
+    }
+
+    // استخدام الدالة الأصلية
+    if (typeof originalSavePropertyToSupabase === 'function') {
+        return await originalSavePropertyToSupabase(property);
+    } else {
+        console.warn('⚠️ الدالة الأصلية savePropertyToSupabase غير متوفرة');
+        return { success: false, error: 'الدالة الأصلية غير متوفرة' };
+    }
+};
+
+// دالة لإعادة تعيين الحماية
+function resetUnlinkProtection() {
+    window.preventAutoSave = false;
+    recentlyUnlinkedUnits.clear();
+    console.log('🔓 تم إعادة تعيين جميع الحمايات');
+    showToast('تم إعادة تعيين حماية الفصل', 'info');
+}
+
+// دالة فصل نهائية مطلقة
+async function absoluteUnlinkUnit(unitNumber, propertyName, contractNumber) {
+    console.log(`🔓 فصل مطلق للوحدة: ${unitNumber}`);
+
+    if (!confirm(`هل أنت متأكد من فصل الوحدة ${unitNumber} من العقد نهائياً؟\n\nهذا الفصل سيكون دائماً ولن يمكن إعادة كتابته تلقائياً.`)) return;
+
+    // التحقق من وجود البيانات
+    if (!ensurePropertiesLoaded('absoluteUnlinkUnit')) {
+        return;
+    }
+
+    try {
+        // 1. حماية مطلقة للوحدة
+        protectUnlinkedUnit(unitNumber, propertyName);
+        window.preventAutoSave = true;
+
+        console.log('🔒 تم تفعيل الحماية المطلقة');
+
+        // 2. فصل في Supabase مباشرة
+        console.log('☁️ فصل مباشر في Supabase...');
+
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // البحث عن الوحدة
+        const { data: existingUnit, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('id, unit_number, tenant_name, contract_number')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName)
+            .single();
+
+        if (searchError) {
+            if (searchError.code === 'PGRST116') {
+                throw new Error('الوحدة غير موجودة في Supabase');
+            }
+            throw new Error(`خطأ في البحث: ${searchError.message}`);
+        }
+
+        console.log('📋 الوحدة قبل الفصل:', {
+            id: existingUnit.id,
+            tenant_name: existingUnit.tenant_name,
+            contract_number: existingUnit.contract_number
+        });
+
+        // فصل مباشر
+        const { data: unlinkedUnit, error: unlinkError } = await supabaseClient
+            .from('properties')
+            .update({
+                tenant_name: '',
+                contract_number: '',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', existingUnit.id)
+            .select()
+            .single();
+
+        if (unlinkError) {
+            throw new Error(`خطأ في الفصل: ${unlinkError.message}`);
+        }
+
+        console.log('✅ تم فصل الوحدة في Supabase:', {
+            id: unlinkedUnit.id,
+            tenant_name: unlinkedUnit.tenant_name,
+            contract_number: unlinkedUnit.contract_number
+        });
+
+        // 3. تحديث البيانات المحلية
+        console.log('📱 تحديث البيانات المحلية...');
+        const unitIndex = properties.findIndex(p =>
+            p['اسم العقار'] === propertyName &&
+            p['رقم  الوحدة '] === unitNumber
+        );
+
+        if (unitIndex !== -1) {
+            properties[unitIndex]['رقم العقد'] = '';
+            properties[unitIndex]['اسم المستأجر'] = '';
+            saveDataLocally();
+            console.log('✅ تم تحديث البيانات المحلية');
+        }
+
+        // 4. إضافة سجل تتبع
+        try {
+            if (typeof window.trackingLogsManager !== 'undefined') {
+                const trackingData = {
+                    operation_type: 'فصل وحدة مطلق',
+                    unit_number: unitNumber,
+                    property_name: propertyName,
+                    description: `تم فصل الوحدة ${unitNumber} نهائياً مع حماية مطلقة`,
+                    user_name: 'النظام المطلق'
+                };
+
+                await window.trackingLogsManager.saveTrackingLogToSupabase(trackingData);
+                console.log('✅ تم حفظ سجل التتبع للفصل المطلق');
+            }
+        } catch (trackingError) {
+            console.warn('⚠️ فشل في حفظ سجل التتبع:', trackingError);
+        }
+
+        // 5. تحديث العرض
+        updateLinkedUnitsDisplay(propertyName, contractNumber);
+        updateAvailableUnitsDisplay(propertyName, contractNumber, unitNumber);
+        initializeApp();
+
+        // 6. رسالة النجاح
+        const message = `✅ تم فصل الوحدة ${unitNumber} نهائياً!\n\n☁️ تم الحفظ في قاعدة البيانات السحابية\n📱 تم تحديث البيانات المحلية\n🔒 تم تفعيل الحماية المطلقة\n⚠️ لن يتم إعادة ربط هذه الوحدة تلقائياً\n\n💡 لإعادة تعيين الحماية، استخدم "إعادة تعيين الحماية" من القائمة`;
+
+        alert(message);
+        showToast(`تم فصل الوحدة ${unitNumber} نهائياً`, 'success');
+
+        console.log('🎉 تم إكمال الفصل المطلق بنجاح');
+
+        return { success: true, absolute: true };
+
+    } catch (error) {
+        console.error('❌ خطأ في الفصل المطلق:', error);
+        alert(`❌ فشل في فصل الوحدة: ${error.message}`);
+        showToast(`فشل في فصل الوحدة: ${error.message}`, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة مراقبة محاولات إعادة الكتابة
+function monitorRewriteAttempts() {
+    console.log('👁️ بدء مراقبة محاولات إعادة الكتابة...');
+
+    // مراقبة كل 30 ثانية
+    const monitorInterval = setInterval(async () => {
+        if (recentlyUnlinkedUnits.size === 0) {
+            return; // لا توجد وحدات محمية
+        }
+
+        console.log(`🔍 فحص ${recentlyUnlinkedUnits.size} وحدة محمية...`);
+
+        for (const unitKey of recentlyUnlinkedUnits) {
+            const [unitNumber, propertyName] = unitKey.split('|');
+
+            try {
+                // فحص حالة الوحدة في Supabase
+                const { data: unit, error } = await supabaseClient
+                    .from('properties')
+                    .select('tenant_name, contract_number, updated_at')
+                    .eq('unit_number', unitNumber)
+                    .eq('property_name', propertyName)
+                    .single();
+
+                if (error) {
+                    console.warn(`⚠️ خطأ في فحص الوحدة ${unitNumber}:`, error);
+                    continue;
+                }
+
+                // التحقق من إعادة الربط
+                if (unit.tenant_name && unit.tenant_name !== '' && unit.contract_number && unit.contract_number !== '') {
+                    console.warn(`🚨 تم اكتشاف إعادة ربط للوحدة المحمية: ${unitNumber}`);
+                    console.warn('📋 البيانات الحالية:', {
+                        tenant_name: unit.tenant_name,
+                        contract_number: unit.contract_number,
+                        updated_at: unit.updated_at
+                    });
+
+                    // إعادة فصل الوحدة فوراً
+                    console.log('🔄 إعادة فصل الوحدة فوراً...');
+
+                    const { error: refixError } = await supabaseClient
+                        .from('properties')
+                        .update({
+                            tenant_name: '',
+                            contract_number: '',
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('unit_number', unitNumber)
+                        .eq('property_name', propertyName);
+
+                    if (refixError) {
+                        console.error(`❌ فشل في إعادة فصل الوحدة ${unitNumber}:`, refixError);
+                        showToast(`❌ فشل في حماية الوحدة ${unitNumber}`, 'error');
+                    } else {
+                        console.log(`✅ تم إعادة فصل الوحدة ${unitNumber} بنجاح`);
+                        showToast(`🔒 تم حماية الوحدة ${unitNumber} من إعادة الربط`, 'warning');
+
+                        // إضافة سجل تتبع
+                        try {
+                            if (typeof window.trackingLogsManager !== 'undefined') {
+                                const trackingData = {
+                                    operation_type: 'حماية من إعادة الربط',
+                                    unit_number: unitNumber,
+                                    property_name: propertyName,
+                                    description: `تم منع إعادة ربط الوحدة ${unitNumber} وإعادة فصلها تلقائياً`,
+                                    user_name: 'نظام الحماية'
+                                };
+
+                                await window.trackingLogsManager.saveTrackingLogToSupabase(trackingData);
+                            }
+                        } catch (trackingError) {
+                            console.warn('⚠️ فشل في حفظ سجل الحماية:', trackingError);
+                        }
+                    }
+                }
+
+            } catch (monitorError) {
+                console.error(`❌ خطأ في مراقبة الوحدة ${unitNumber}:`, monitorError);
+            }
+        }
+
+    }, 30000); // كل 30 ثانية
+
+    // حفظ معرف المراقبة
+    window.unlinkMonitorInterval = monitorInterval;
+
+    console.log('✅ تم تفعيل مراقبة محاولات إعادة الكتابة');
+}
+
+// بدء المراقبة عند تحميل الصفحة
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            monitorRewriteAttempts();
+        }
+    }, 5000); // انتظار 5 ثوان لتحميل Supabase
+});
+
+// دالة لإيقاف المراقبة
+function stopUnlinkMonitoring() {
+    if (window.unlinkMonitorInterval) {
+        clearInterval(window.unlinkMonitorInterval);
+        window.unlinkMonitorInterval = null;
+        console.log('🛑 تم إيقاف مراقبة محاولات إعادة الكتابة');
+        showToast('تم إيقاف مراقبة الحماية', 'info');
+    }
+}
+
+// دالة تشخيص شاملة للنظام
+function comprehensiveDiagnosis() {
+    console.log('🔍 تشخيص شامل لنظام سجلات التتبع...');
+    console.log('=' .repeat(50));
+
+    // 1. فحص المتغيرات الأساسية
+    console.log('📋 المتغيرات الأساسية:');
+    console.log('- isTrackingEnabled:', isTrackingEnabled);
+    console.log('- changeTrackingLogs.length:', changeTrackingLogs.length);
+
+    // 2. فحص مكتبة Supabase
+    console.log('📦 مكتبة Supabase:');
+    console.log('- supabase متوفر:', typeof supabase !== 'undefined');
+    console.log('- supabaseClient متوفر:', typeof supabaseClient !== 'undefined');
+    console.log('- supabaseClient قيمة:', supabaseClient);
+
+    // 3. فحص مدير سجلات التتبع
+    console.log('🔧 مدير سجلات التتبع:');
+    console.log('- trackingLogsManager متوفر:', typeof window.trackingLogsManager !== 'undefined');
+    if (typeof window.trackingLogsManager !== 'undefined') {
+        console.log('- الدوال المتوفرة:', Object.keys(window.trackingLogsManager));
+    }
+
+    // 4. فحص الدوال المطلوبة
+    console.log('⚙️ الدوال المطلوبة:');
+    console.log('- addChangeLog متوفر:', typeof addChangeLog === 'function');
+    console.log('- saveTrackingLogToNewTable متوفر:', typeof saveTrackingLogToNewTable === 'function');
+
+    // 5. فحص URL الحالي
+    console.log('🌐 معلومات الصفحة:');
+    console.log('- URL:', window.location.href);
+    console.log('- Protocol:', window.location.protocol);
+
+    console.log('=' .repeat(50));
+
+    // عرض النتيجة للمستخدم
+    const diagnosis = {
+        tracking: isTrackingEnabled,
+        supabase: typeof supabaseClient !== 'undefined' && supabaseClient !== null,
+        manager: typeof window.trackingLogsManager !== 'undefined',
+        functions: typeof addChangeLog === 'function' && typeof saveTrackingLogToNewTable === 'function'
+    };
+
+    const issues = [];
+    if (!diagnosis.tracking) issues.push('التتبع معطل');
+    if (!diagnosis.supabase) issues.push('Supabase غير متصل');
+    if (!diagnosis.manager) issues.push('مدير سجلات التتبع غير محمل');
+    if (!diagnosis.functions) issues.push('الدوال المطلوبة غير متوفرة');
+
+    if (issues.length === 0) {
+        showToast('✅ جميع المكونات تعمل بشكل صحيح', 'success');
+    } else {
+        showToast(`⚠️ مشاكل: ${issues.join(', ')}`, 'warning');
+    }
+
+    return diagnosis;
+}
+
+// تشغيل اختبار الاتصال عند تحميل الصفحة
+window.addEventListener('load', async () => {
+    // انتظار تحميل جميع المكتبات
+    setTimeout(async () => {
+        console.log('🔄 بدء اختبار نظام سجلات التتبع...');
+
+        // تشخيص شامل أولاً
+        const diagnosis = comprehensiveDiagnosis();
+
+        // اختبار الاتصال إذا كان كل شيء يبدو جيد
+        if (diagnosis.supabase && diagnosis.manager) {
+            const connectionTest = await testTrackingLogsConnection();
+
+            if (connectionTest) {
+                console.log('🎉 نظام سجلات التتبع جاهز ويعمل!');
+            } else {
+                console.warn('⚠️ مشكلة في نظام سجلات التتبع');
+            }
+        } else {
+            console.warn('⚠️ لا يمكن اختبار الاتصال - مكونات مفقودة');
+        }
+    }, 3000); // انتظار 3 ثوان
+});
 
 // ===== نظام البحث في العقارات =====
 
@@ -27015,16 +29939,28 @@ function renderChangeDetails(log) {
         return '';
     }
 
-    return Object.entries(log.changes).map(([field, change]) => `
-        <div class="change-detail-item">
-            <div class="change-detail-label">${change.fieldName}:</div>
-            <div class="change-detail-value">
-                <span class="change-detail-old">${change.old || 'فارغ'}</span>
-                →
-                <span class="change-detail-new">${change.new || 'فارغ'}</span>
+    return Object.entries(log.changes).map(([field, change]) => {
+        // التحقق من صحة بيانات التغيير
+        if (!change || typeof change !== 'object') {
+            console.warn('⚠️ بيانات تغيير غير صحيحة:', field, change);
+            return '';
+        }
+
+        const fieldName = change.fieldName || field || 'حقل غير محدد';
+        const oldValue = change.old || 'فارغ';
+        const newValue = change.new || 'فارغ';
+
+        return `
+            <div class="change-detail-item">
+                <div class="change-detail-label">${fieldName}:</div>
+                <div class="change-detail-value">
+                    <span class="change-detail-old">${oldValue}</span>
+                    →
+                    <span class="change-detail-new">${newValue}</span>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).filter(item => item !== '').join('');
 }
 
 // فلترة سجلات التتبع المحسنة والمصححة
@@ -27208,9 +30144,11 @@ async function exportTrackingLogs() {
         'العقار الوجهة': log.destinationProperty || '',
         'السبب': log.reason || '',
         'التغييرات': Object.keys(log.changes || {}).length > 0 ?
-            Object.entries(log.changes).map(([field, change]) =>
-                `${change.fieldName}: ${change.old} → ${change.new}`
-            ).join('; ') : ''
+            Object.entries(log.changes).map(([field, change]) => {
+                if (!change || typeof change !== 'object') return '';
+                const fieldName = change.fieldName || field || 'حقل غير محدد';
+                return `${fieldName}: ${change.old || 'فارغ'} → ${change.new || 'فارغ'}`;
+            }).filter(item => item !== '').join('; ') : ''
     }));
 
     // إنشاء ملف Excel
@@ -27369,6 +30307,14 @@ function initializePermissionSystem() {
                 if (hoursDiff < .10) {
                     // الجلسة صالحة
                     setCurrentUser(userData.username);
+
+                    // إضافة زر تسجيل الخروج فور استعادة الجلسة
+                    setTimeout(() => {
+                        addLogoutButton();
+                        updateMobileUserSection();
+                        console.log('🔑 إضافة زر تسجيل الخروج من initializePermissionSystem');
+                    }, 300);
+
                     return;
                 }
             }
@@ -27443,9 +30389,11 @@ function handleLogin(event) {
         // إظهار رسالة ترحيب
         showWelcomeMessage(users[username].fullName);
 
-        // تحديث قسم المستخدم في الهاتف
+        // تحديث قسم المستخدم في الهاتف وإضافة زر تسجيل الخروج
         setTimeout(() => {
             updateMobileUserSection();
+            addLogoutButton();
+            console.log('🔑 إضافة زر تسجيل الخروج من handleLogin');
         }, 100);
 
         // مسح النموذج
@@ -27478,6 +30426,12 @@ function setCurrentUser(username) {
             }, 500);
         }
 
+        // إضافة زر تسجيل الخروج فور تسجيل الدخول
+        setTimeout(() => {
+            addLogoutButton();
+            updateMobileUserSection();
+        }, 100);
+
         console.log(`✅ تم تسجيل دخول المستخدم: ${users[username].fullName}`);
     }
 }
@@ -27497,6 +30451,15 @@ function applyUserPermissions() {
         hideLimitedUserElements();
     } else {
         body.classList.add('admin-user');
+    }
+
+    // إضافة كلاس خاص لعمر لإظهار أزرار الاختبار والحماية
+    if (currentUser === 'عمر') {
+        body.classList.add('user-omar');
+        console.log('🔧 تم تفعيل أزرار الاختبار والحماية لعمر');
+    } else {
+        body.classList.remove('user-omar');
+        console.log('🔒 تم إخفاء أزرار الاختبار والحماية');
     }
 
     // تحديث وظيفة getCurrentUser
@@ -27758,6 +30721,9 @@ function logout() {
         currentUser = null;
         userPermissions = null;
 
+        // إزالة كلاسات المستخدم
+        document.body.classList.remove('user-omar', 'admin-user', 'limited-user');
+
         // إعادة تحميل الصفحة
         location.reload();
     }
@@ -27962,14 +30928,46 @@ window.showDataImportModal = function() {
     if (originalShowDataImportModal) originalShowDataImportModal();
 };
 
+// التحقق من المصادقة
+function checkAuthentication() {
+    console.log('🔐 التحقق من المصادقة...');
+
+    // التحقق من وجود مستخدم محفوظ في localStorage
+    const savedUser = localStorage.getItem('currentUser');
+
+    if (savedUser && users[savedUser]) {
+        console.log('✅ تم العثور على مستخدم محفوظ:', savedUser);
+        setCurrentUser(savedUser);
+        return true;
+    } else {
+        console.log('❌ لا يوجد مستخدم محفوظ، سيتم استخدام صلاحيات افتراضية');
+        // تعيين صلاحيات افتراضية للمستخدم غير المسجل
+        currentUser = 'guest';
+        userPermissions = {
+            viewData: true,
+            editData: true,
+            deleteData: true,
+            manageProperties: true,
+            manageAttachments: true,
+            exportData: true,
+            importData: true,
+            manageSettings: true
+        };
+        return false;
+    }
+}
+
 // تهيئة نظام الصلاحيات عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
     // تأخير قصير للتأكد من تحميل جميع العناصر
     setTimeout(() => {
+        // التحقق من المصادقة أولاً
+        checkAuthentication();
+
         initializePermissionSystem();
 
         // إضافة زر تسجيل الخروج إذا كان المستخدم مسجل دخول
-        if (currentUser) {
+        if (currentUser && currentUser !== 'guest') {
             addLogoutButton();
             updateMobileUserSection();
         }
@@ -28519,7 +31517,7 @@ function confirmFixAllDuplicates() {
     } catch (error) {
         console.error('❌ خطأ في إصلاح التكرار:', error);
         loadingModal.remove();
-        alert('❌ حدث خطأ أثناء إصلاح التكرار: ' + error.message);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
     }
 }
 
@@ -28597,7 +31595,7 @@ function setNewClient(contractNumber, propertyName, unitNumber) {
 
     } catch (error) {
         console.error('❌ خطأ في تعيين عميل جديد:', error);
-        alert('❌ حدث خطأ أثناء تعيين عميل جديد: ' + error.message);
+        // تم إزالة رسالة الخطأ حسب طلب المستخدم
     }
 }
 
@@ -29749,11 +32747,6 @@ document.addEventListener('DOMContentLoaded', function() {
         showCrystalLoading();
     }
 
-    // التحقق من المصادقة أولاً
-    checkAuthentication();
-
-    // إضافة زر تسجيل الخروج بعد تأخير
-    setTimeout(() => {
-        addLogoutButton();
-    }, 1000);
+    // تم نقل checkAuthentication() إلى مستمع DOMContentLoaded الأول
+    // لتجنب التكرار
 });

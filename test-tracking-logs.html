@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام سجلات التتبع المخصص</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            direction: rtl;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.success {
+            background: #28a745;
+        }
+        .test-button.error {
+            background: #dc3545;
+        }
+        .test-button.warning {
+            background: #ffc107;
+            color: #000;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار نظام سجلات التتبع المخصص</h1>
+        <p>هذه الصفحة لاختبار جدول سجلات التتبع الجديد في Supabase</p>
+
+        <!-- اختبار الاتصال -->
+        <div class="test-section">
+            <h3>🔌 اختبار الاتصال</h3>
+            <button class="test-button" onclick="testConnection()">اختبار الاتصال بـ Supabase</button>
+            <button class="test-button" onclick="testTableExists()">التحقق من وجود الجدول</button>
+            <button class="test-button" onclick="testManagerLoaded()">التحقق من تحميل المدير</button>
+        </div>
+
+        <!-- اختبار العمليات الأساسية -->
+        <div class="test-section">
+            <h3>📝 اختبار العمليات الأساسية</h3>
+            <button class="test-button" onclick="testInsertLog()">إدراج سجل تجريبي</button>
+            <button class="test-button" onclick="testLoadLogs()">تحميل السجلات</button>
+            <button class="test-button" onclick="testSearchLogs()">البحث في السجلات</button>
+            <button class="test-button" onclick="testDeleteLog()">حذف سجل تجريبي</button>
+        </div>
+
+        <!-- اختبار الإحصائيات -->
+        <div class="test-section">
+            <h3>📊 اختبار الإحصائيات</h3>
+            <button class="test-button" onclick="testGetStats()">الحصول على الإحصائيات</button>
+            <button class="test-button" onclick="testCleanupOldLogs()">تنظيف السجلات القديمة</button>
+        </div>
+
+        <!-- اختبار التكامل -->
+        <div class="test-section">
+            <h3>🔗 اختبار التكامل</h3>
+            <button class="test-button" onclick="testAddChangeLog()">اختبار addChangeLog</button>
+            <button class="test-button" onclick="testTrackingManagement()">اختبار نافذة الإدارة</button>
+        </div>
+
+        <!-- عرض الإحصائيات -->
+        <div class="test-section">
+            <h3>📈 الإحصائيات الحالية</h3>
+            <div id="statsContainer" class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalLogs">-</div>
+                    <div class="stat-label">إجمالي السجلات</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="todayLogs">-</div>
+                    <div class="stat-label">سجلات اليوم</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="weekLogs">-</div>
+                    <div class="stat-label">سجلات الأسبوع</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="monthLogs">-</div>
+                    <div class="stat-label">سجلات الشهر</div>
+                </div>
+            </div>
+            <button class="test-button" onclick="refreshStats()">تحديث الإحصائيات</button>
+        </div>
+
+        <!-- أزرار التحكم -->
+        <div class="test-section">
+            <h3>🛠️ أدوات التحكم</h3>
+            <button class="test-button" onclick="runAllTests()">تشغيل جميع الاختبارات</button>
+            <button class="test-button warning" onclick="clearResults()">مسح النتائج</button>
+            <button class="test-button error" onclick="clearAllTestLogs()">حذف جميع السجلات التجريبية</button>
+        </div>
+
+        <!-- عرض النتائج -->
+        <div class="results" id="results">
+جاهز لبدء الاختبارات...
+
+استخدم الأزرار أعلاه لاختبار مختلف جوانب نظام سجلات التتبع الجديد.
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="tracking-logs-manager.js"></script>
+
+    <script>
+        let testLogId = null;
+
+        // دالة لإضافة نتيجة
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const statusClass = type === 'success' ? 'success' : 
+                               type === 'error' ? 'error' : 
+                               type === 'warning' ? 'warning' : 'info';
+            
+            results.innerHTML += `[${timestamp}] ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // مسح النتائج
+        function clearResults() {
+            document.getElementById('results').innerHTML = 'تم مسح النتائج...\n';
+        }
+
+        // اختبار الاتصال بـ Supabase
+        async function testConnection() {
+            addResult('🔌 اختبار الاتصال بـ Supabase...', 'info');
+            
+            try {
+                if (typeof supabaseClient === 'undefined') {
+                    throw new Error('supabaseClient غير معرف');
+                }
+                
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    throw new Error(`خطأ في الاتصال: ${error.message}`);
+                }
+                
+                addResult('✅ الاتصال بـ Supabase يعمل بنجاح', 'success');
+            } catch (error) {
+                addResult(`❌ فشل الاتصال بـ Supabase: ${error.message}`, 'error');
+            }
+        }
+
+        // التحقق من وجود الجدول
+        async function testTableExists() {
+            addResult('🔍 التحقق من وجود جدول tracking_logs...', 'info');
+            
+            try {
+                if (typeof window.trackingLogsManager === 'undefined') {
+                    throw new Error('مدير سجلات التتبع غير محمل');
+                }
+                
+                const exists = await window.trackingLogsManager.ensureTrackingLogsTableExists();
+                
+                if (exists) {
+                    addResult('✅ جدول tracking_logs موجود ويعمل', 'success');
+                } else {
+                    addResult('❌ جدول tracking_logs غير موجود أو لا يعمل', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ خطأ في التحقق من الجدول: ${error.message}`, 'error');
+            }
+        }
+
+        // التحقق من تحميل المدير
+        function testManagerLoaded() {
+            addResult('📦 التحقق من تحميل مدير سجلات التتبع...', 'info');
+            
+            if (typeof window.trackingLogsManager !== 'undefined') {
+                addResult('✅ مدير سجلات التتبع محمل بنجاح', 'success');
+                addResult(`📋 الدوال المتاحة: ${Object.keys(window.trackingLogsManager).join(', ')}`, 'info');
+            } else {
+                addResult('❌ مدير سجلات التتبع غير محمل', 'error');
+            }
+        }
+
+        // إدراج سجل تجريبي
+        async function testInsertLog() {
+            addResult('📝 إدراج سجل تجريبي...', 'info');
+            
+            try {
+                const testLog = {
+                    operation_type: 'اختبار النظام',
+                    unit_number: 'TEST-' + Date.now(),
+                    property_name: 'عقار تجريبي',
+                    tenant_name: 'مستأجر تجريبي',
+                    tenant_phone: '0501234567',
+                    tenant_phone_2: '0507654321',
+                    description: 'سجل تجريبي لاختبار النظام',
+                    changes: { test: true, timestamp: new Date().toISOString() },
+                    additional_info: { source: 'test_page' }
+                };
+                
+                const result = await window.trackingLogsManager.saveTrackingLogToSupabase(testLog);
+                
+                if (result && result.id) {
+                    testLogId = result.id;
+                    addResult(`✅ تم إدراج السجل التجريبي بنجاح: ${result.id}`, 'success');
+                } else {
+                    addResult('❌ فشل في إدراج السجل التجريبي', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ خطأ في إدراج السجل: ${error.message}`, 'error');
+            }
+        }
+
+        // تحميل السجلات
+        async function testLoadLogs() {
+            addResult('📥 تحميل السجلات...', 'info');
+            
+            try {
+                const logs = await window.trackingLogsManager.loadTrackingLogsFromSupabase(10);
+                
+                addResult(`✅ تم تحميل ${logs.length} سجل`, 'success');
+                
+                if (logs.length > 0) {
+                    addResult(`📋 آخر سجل: ${logs[0].operation_type} - ${logs[0].unit_number}`, 'info');
+                }
+            } catch (error) {
+                addResult(`❌ خطأ في تحميل السجلات: ${error.message}`, 'error');
+            }
+        }
+
+        // البحث في السجلات
+        async function testSearchLogs() {
+            addResult('🔍 البحث في السجلات...', 'info');
+            
+            try {
+                const searchResults = await window.trackingLogsManager.searchTrackingLogs({
+                    operation_type: 'اختبار النظام',
+                    limit: 5
+                });
+                
+                addResult(`✅ تم العثور على ${searchResults.length} سجل اختبار`, 'success');
+            } catch (error) {
+                addResult(`❌ خطأ في البحث: ${error.message}`, 'error');
+            }
+        }
+
+        // حذف سجل تجريبي
+        async function testDeleteLog() {
+            if (!testLogId) {
+                addResult('⚠️ لا يوجد سجل تجريبي للحذف. قم بإدراج سجل أولاً', 'warning');
+                return;
+            }
+            
+            addResult(`🗑️ حذف السجل التجريبي: ${testLogId}...`, 'info');
+            
+            try {
+                const result = await window.trackingLogsManager.deleteTrackingLog(testLogId);
+                
+                if (result) {
+                    addResult('✅ تم حذف السجل التجريبي بنجاح', 'success');
+                    testLogId = null;
+                } else {
+                    addResult('❌ فشل في حذف السجل التجريبي', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ خطأ في حذف السجل: ${error.message}`, 'error');
+            }
+        }
+
+        // الحصول على الإحصائيات
+        async function testGetStats() {
+            addResult('📊 تحميل الإحصائيات...', 'info');
+            
+            try {
+                const stats = await window.trackingLogsManager.getTrackingLogsStats();
+                
+                if (stats) {
+                    addResult('✅ تم تحميل الإحصائيات بنجاح', 'success');
+                    addResult(`📈 إجمالي السجلات: ${stats.total_logs}`, 'info');
+                    addResult(`📅 سجلات اليوم: ${stats.logs_today}`, 'info');
+                    addResult(`📊 العملية الأكثر شيوعاً: ${stats.most_common_operation}`, 'info');
+                    
+                    // تحديث العرض
+                    updateStatsDisplay(stats);
+                } else {
+                    addResult('❌ فشل في تحميل الإحصائيات', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ خطأ في تحميل الإحصائيات: ${error.message}`, 'error');
+            }
+        }
+
+        // تحديث عرض الإحصائيات
+        function updateStatsDisplay(stats) {
+            document.getElementById('totalLogs').textContent = stats.total_logs || 0;
+            document.getElementById('todayLogs').textContent = stats.logs_today || 0;
+            document.getElementById('weekLogs').textContent = stats.logs_this_week || 0;
+            document.getElementById('monthLogs').textContent = stats.logs_this_month || 0;
+        }
+
+        // تحديث الإحصائيات
+        async function refreshStats() {
+            await testGetStats();
+        }
+
+        // تنظيف السجلات القديمة
+        async function testCleanupOldLogs() {
+            addResult('🧹 اختبار تنظيف السجلات القديمة...', 'info');
+            
+            try {
+                const deletedCount = await window.trackingLogsManager.cleanupOldTrackingLogs(1); // حذف الأقدم من يوم واحد
+                
+                addResult(`✅ تم حذف ${deletedCount} سجل قديم`, 'success');
+            } catch (error) {
+                addResult(`❌ خطأ في تنظيف السجلات: ${error.message}`, 'error');
+            }
+        }
+
+        // اختبار addChangeLog
+        async function testAddChangeLog() {
+            addResult('🔗 اختبار دالة addChangeLog...', 'info');
+            
+            try {
+                if (typeof addChangeLog === 'function') {
+                    const unitData = {
+                        'رقم  الوحدة ': 'TEST-INTEGRATION',
+                        'اسم العقار': 'عقار اختبار التكامل',
+                        'اسم المستأجر': 'مستأجر اختبار',
+                        'رقم جوال المستأجر': '0501111111',
+                        'رقم جوال إضافي': '0502222222'
+                    };
+                    
+                    await addChangeLog('اختبار التكامل', unitData, { test: true }, { integration: true });
+                    
+                    addResult('✅ تم اختبار addChangeLog بنجاح', 'success');
+                } else {
+                    addResult('❌ دالة addChangeLog غير متوفرة', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ خطأ في اختبار addChangeLog: ${error.message}`, 'error');
+            }
+        }
+
+        // اختبار نافذة الإدارة
+        function testTrackingManagement() {
+            addResult('🔧 اختبار نافذة إدارة سجلات التتبع...', 'info');
+            
+            try {
+                if (typeof showTrackingManagementModal === 'function') {
+                    addResult('✅ دالة showTrackingManagementModal متوفرة', 'success');
+                    addResult('💡 يمكنك فتح نافذة الإدارة من التطبيق الرئيسي', 'info');
+                } else {
+                    addResult('❌ دالة showTrackingManagementModal غير متوفرة', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ خطأ في اختبار نافذة الإدارة: ${error.message}`, 'error');
+            }
+        }
+
+        // تشغيل جميع الاختبارات
+        async function runAllTests() {
+            addResult('🚀 بدء تشغيل جميع الاختبارات...', 'info');
+            addResult('=' .repeat(50), 'info');
+            
+            await testConnection();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testManagerLoaded();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testTableExists();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testInsertLog();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testLoadLogs();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testSearchLogs();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testGetStats();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testAddChangeLog();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testTrackingManagement();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testDeleteLog();
+            
+            addResult('=' .repeat(50), 'info');
+            addResult('🎉 انتهت جميع الاختبارات!', 'success');
+        }
+
+        // حذف جميع السجلات التجريبية
+        async function clearAllTestLogs() {
+            if (!confirm('هل أنت متأكد من حذف جميع السجلات التجريبية؟')) {
+                return;
+            }
+            
+            addResult('🗑️ حذف جميع السجلات التجريبية...', 'warning');
+            
+            try {
+                const testLogs = await window.trackingLogsManager.searchTrackingLogs({
+                    operation_type: 'اختبار النظام'
+                });
+                
+                let deletedCount = 0;
+                for (const log of testLogs) {
+                    const result = await window.trackingLogsManager.deleteTrackingLog(log.id);
+                    if (result) deletedCount++;
+                }
+                
+                addResult(`✅ تم حذف ${deletedCount} سجل تجريبي`, 'success');
+            } catch (error) {
+                addResult(`❌ خطأ في حذف السجلات التجريبية: ${error.message}`, 'error');
+            }
+        }
+
+        // تحميل الإحصائيات عند تحميل الصفحة
+        window.addEventListener('load', async () => {
+            addResult('🔄 تحميل الصفحة...', 'info');
+            await new Promise(resolve => setTimeout(resolve, 1000)); // انتظار تحميل المكتبات
+            await refreshStats();
+        });
+    </script>
+</body>
+</html>

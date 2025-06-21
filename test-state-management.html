@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام حفظ الحالة</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+            direction: rtl;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .state-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔄 اختبار نظام حفظ واستعادة الحالة</h1>
+        
+        <div class="test-section">
+            <h3>📋 معلومات النظام</h3>
+            <p>هذا النظام يحفظ حالة التطبيق تلقائياً ويستعيدها عند إعادة تحميل الصفحة.</p>
+            <p><strong>الحالة المحفوظة تشمل:</strong></p>
+            <ul>
+                <li>المدينة المختارة</li>
+                <li>العقار المختار</li>
+                <li>طريقة العرض (جدول/بطاقات)</li>
+                <li>فلتر الحالة</li>
+                <li>نص البحث العام</li>
+                <li>نص بحث العقارات</li>
+                <li>حالة الشريط الجانبي</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبارات النظام</h3>
+            
+            <button class="test-button" onclick="testSaveState()">💾 اختبار حفظ الحالة</button>
+            <button class="test-button" onclick="testRestoreState()">🔄 اختبار استعادة الحالة</button>
+            <button class="test-button" onclick="testClearState()">🗑️ اختبار مسح الحالة</button>
+            <button class="test-button" onclick="showCurrentState()">👁️ عرض الحالة الحالية</button>
+            <button class="test-button" onclick="simulateReload()">🔄 محاكاة إعادة التحميل</button>
+            
+            <div id="testResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 الحالة المحفوظة</h3>
+            <div id="stateDisplay" class="state-display">لا توجد حالة محفوظة</div>
+            <button class="test-button" onclick="refreshStateDisplay()">🔄 تحديث العرض</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 روابط الاختبار</h3>
+            <button class="test-button" onclick="openMainApp()">🏠 فتح التطبيق الرئيسي</button>
+            <button class="test-button" onclick="openMainAppNewTab()">🆕 فتح في تبويب جديد</button>
+        </div>
+    </div>
+
+    <script>
+        // محاكاة وظائف إدارة الحالة
+        const STATE_STORAGE_KEY = 'alsenidi_app_state';
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('testResults');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function testSaveState() {
+            try {
+                const testState = {
+                    currentView: 'table',
+                    currentCountry: 'الرياض',
+                    currentProperty: 'عقار تجريبي',
+                    filterStatus: 'جاري',
+                    globalSearchValue: 'بحث تجريبي',
+                    propertySearchValue: 'عقار',
+                    sidebarVisible: true,
+                    timestamp: Date.now()
+                };
+
+                localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(testState));
+                log('✅ تم حفظ حالة تجريبية بنجاح', 'success');
+                refreshStateDisplay();
+            } catch (error) {
+                log(`❌ فشل في حفظ الحالة: ${error.message}`, 'error');
+            }
+        }
+
+        function testRestoreState() {
+            try {
+                const savedState = localStorage.getItem(STATE_STORAGE_KEY);
+                if (!savedState) {
+                    log('⚠️ لا توجد حالة محفوظة للاستعادة', 'error');
+                    return;
+                }
+
+                const state = JSON.parse(savedState);
+                log('✅ تم استعادة الحالة بنجاح', 'success');
+                log(`📊 البيانات المستعادة: ${Object.keys(state).length} عنصر`, 'info');
+                
+                // عرض تفاصيل الحالة المستعادة
+                Object.entries(state).forEach(([key, value]) => {
+                    log(`   ${key}: ${value}`, 'info');
+                });
+                
+            } catch (error) {
+                log(`❌ فشل في استعادة الحالة: ${error.message}`, 'error');
+            }
+        }
+
+        function testClearState() {
+            try {
+                localStorage.removeItem(STATE_STORAGE_KEY);
+                log('✅ تم مسح الحالة المحفوظة', 'success');
+                refreshStateDisplay();
+            } catch (error) {
+                log(`❌ فشل في مسح الحالة: ${error.message}`, 'error');
+            }
+        }
+
+        function showCurrentState() {
+            try {
+                const savedState = localStorage.getItem(STATE_STORAGE_KEY);
+                if (!savedState) {
+                    log('📝 لا توجد حالة محفوظة حالياً', 'info');
+                    return;
+                }
+
+                const state = JSON.parse(savedState);
+                const age = Date.now() - state.timestamp;
+                const ageMinutes = Math.floor(age / (1000 * 60));
+                
+                log(`📊 الحالة المحفوظة (عمرها ${ageMinutes} دقيقة):`, 'info');
+                Object.entries(state).forEach(([key, value]) => {
+                    if (key !== 'timestamp') {
+                        log(`   ${key}: ${value}`, 'info');
+                    }
+                });
+                
+            } catch (error) {
+                log(`❌ خطأ في عرض الحالة: ${error.message}`, 'error');
+            }
+        }
+
+        function refreshStateDisplay() {
+            const display = document.getElementById('stateDisplay');
+            try {
+                const savedState = localStorage.getItem(STATE_STORAGE_KEY);
+                if (!savedState) {
+                    display.textContent = 'لا توجد حالة محفوظة';
+                    return;
+                }
+
+                const state = JSON.parse(savedState);
+                display.textContent = JSON.stringify(state, null, 2);
+            } catch (error) {
+                display.textContent = `خطأ في عرض الحالة: ${error.message}`;
+            }
+        }
+
+        function simulateReload() {
+            log('🔄 محاكاة إعادة تحميل الصفحة...', 'info');
+            
+            // حفظ حالة تجريبية
+            testSaveState();
+            
+            setTimeout(() => {
+                // محاكاة استعادة الحالة
+                log('🔄 استعادة الحالة بعد إعادة التحميل...', 'info');
+                testRestoreState();
+            }, 1000);
+        }
+
+        function openMainApp() {
+            window.location.href = 'index.html';
+        }
+
+        function openMainAppNewTab() {
+            window.open('index.html', '_blank');
+        }
+
+        // تحديث العرض عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 تم تحميل صفحة اختبار نظام الحالة', 'success');
+            refreshStateDisplay();
+        });
+    </script>
+</body>
+</html>
