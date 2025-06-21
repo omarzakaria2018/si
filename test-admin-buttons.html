@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إخفاء أزرار الاختبار والحماية</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+            direction: rtl;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .status-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .admin-only-omar {
+            display: none !important;
+        }
+        body.user-omar .admin-only-omar {
+            display: block !important;
+        }
+        .demo-dropdown {
+            background: #343a40;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .dropdown-item {
+            padding: 8px 12px;
+            margin: 2px 0;
+            background: #495057;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .dropdown-item:hover {
+            background: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔒 اختبار إخفاء أزرار الاختبار والحماية</h1>
+        
+        <div class="test-section">
+            <h3>📋 وصف الميزة</h3>
+            <p><strong>الهدف:</strong> إخفاء أزرار الاختبار والحماية عن جميع المستخدمين عدا "عمر".</p>
+            <p><strong>الأزرار المخفية:</strong></p>
+            <ul>
+                <li>🧪 اختبار سجلات التتبع</li>
+                <li>🔄 إعادة تعيين الحماية</li>
+                <li>⛔ إيقاف مراقبة الحماية</li>
+                <li>🐛 اختبار الدالة</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبارات النظام</h3>
+            
+            <button class="test-button" onclick="testCurrentUser()">👤 فحص المستخدم الحالي</button>
+            <button class="test-button" onclick="simulateOmarLogin()">🔑 محاكاة دخول عمر</button>
+            <button class="test-button" onclick="simulateOtherUserLogin()">👥 محاكاة دخول مستخدم آخر</button>
+            <button class="test-button" onclick="testButtonVisibility()">👁️ فحص ظهور الأزرار</button>
+            <button class="test-button" onclick="openMainApp()">🏠 فتح التطبيق الرئيسي</button>
+            
+            <div id="testResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 حالة النظام</h3>
+            <div id="systemStatus" class="status-display">جاري فحص النظام...</div>
+            <button class="test-button" onclick="refreshSystemStatus()">🔄 تحديث الحالة</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 محاكاة القائمة المنسدلة</h3>
+            <div class="demo-dropdown">
+                <div style="font-weight: bold; margin-bottom: 10px;">قائمة الإعدادات (محاكاة)</div>
+                
+                <div class="dropdown-item">
+                    <i class="fas fa-calendar-check"></i>
+                    تحديث التاريخ (مرئي للجميع)
+                </div>
+                
+                <div class="dropdown-item admin-only-omar">
+                    <i class="fas fa-vial"></i>
+                    اختبار سجلات التتبع (عمر فقط)
+                </div>
+                
+                <div class="dropdown-item admin-only-omar">
+                    <i class="fas fa-refresh"></i>
+                    إعادة تعيين الحماية (عمر فقط)
+                </div>
+                
+                <div class="dropdown-item admin-only-omar">
+                    <i class="fas fa-stop"></i>
+                    إيقاف مراقبة الحماية (عمر فقط)
+                </div>
+                
+                <div class="dropdown-item admin-only-omar">
+                    <i class="fas fa-bug"></i>
+                    اختبار الدالة (عمر فقط)
+                </div>
+                
+                <div class="dropdown-item">
+                    <i class="fas fa-file-import"></i>
+                    استيراد بيانات (مرئي للجميع)
+                </div>
+            </div>
+            
+            <button class="test-button" onclick="toggleOmarMode()">🔄 تبديل وضع عمر</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 نصائح الاختبار</h3>
+            <ol>
+                <li>افتح التطبيق الرئيسي في تبويب جديد</li>
+                <li>سجل دخول بمستخدم غير "عمر" (مثل: مساعد، محدود)</li>
+                <li>افتح قائمة الإعدادات - يجب ألا ترى الأزرار الأربعة</li>
+                <li>سجل خروج وادخل باسم "عمر"</li>
+                <li>افتح قائمة الإعدادات - يجب أن ترى جميع الأزرار</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('testResults');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function testCurrentUser() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                try {
+                    const userData = JSON.parse(savedUser);
+                    log(`👤 مستخدم محفوظ: ${userData.username}`, 'success');
+                    
+                    if (userData.username === 'عمر') {
+                        log('🔧 المستخدم الحالي هو عمر - يجب أن تظهر أزرار الاختبار', 'success');
+                    } else {
+                        log('🔒 المستخدم الحالي ليس عمر - يجب أن تختفي أزرار الاختبار', 'info');
+                    }
+                } catch (error) {
+                    log('❌ خطأ في قراءة بيانات المستخدم المحفوظة', 'error');
+                }
+            } else {
+                log('👤 لا يوجد مستخدم محفوظ', 'warning');
+            }
+        }
+
+        function simulateOmarLogin() {
+            const userData = {
+                username: 'عمر',
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            document.body.classList.add('user-omar');
+            log('✅ تم محاكاة تسجيل دخول عمر', 'success');
+            log('🔧 تم تفعيل وضع عمر - يجب أن تظهر الأزرار المخفية أعلاه', 'info');
+        }
+
+        function simulateOtherUserLogin() {
+            const userData = {
+                username: 'مساعد',
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            document.body.classList.remove('user-omar');
+            log('✅ تم محاكاة تسجيل دخول مستخدم آخر', 'success');
+            log('🔒 تم إلغاء وضع عمر - يجب أن تختفي الأزرار المخفية أعلاه', 'info');
+        }
+
+        function testButtonVisibility() {
+            const adminButtons = document.querySelectorAll('.admin-only-omar');
+            const isOmarMode = document.body.classList.contains('user-omar');
+            
+            log(`🔍 فحص ظهور ${adminButtons.length} زر مخصص لعمر...`, 'info');
+            
+            if (isOmarMode) {
+                log('✅ وضع عمر مفعل - يجب أن تظهر الأزرار', 'success');
+            } else {
+                log('🔒 وضع عمر غير مفعل - يجب أن تختفي الأزرار', 'warning');
+            }
+            
+            adminButtons.forEach((button, index) => {
+                const isVisible = window.getComputedStyle(button).display !== 'none';
+                const shouldBeVisible = isOmarMode;
+                
+                if (isVisible === shouldBeVisible) {
+                    log(`✅ الزر ${index + 1}: حالة الظهور صحيحة`, 'success');
+                } else {
+                    log(`❌ الزر ${index + 1}: حالة الظهور خاطئة`, 'error');
+                }
+            });
+        }
+
+        function openMainApp() {
+            window.open('index.html', '_blank');
+            log('🏠 تم فتح التطبيق الرئيسي في تبويب جديد', 'info');
+        }
+
+        function refreshSystemStatus() {
+            const statusDiv = document.getElementById('systemStatus');
+            const savedUser = localStorage.getItem('currentUser');
+            const isOmarMode = document.body.classList.contains('user-omar');
+            
+            let status = '';
+            status += `📅 الوقت الحالي: ${new Date().toLocaleString()}\n`;
+            status += `👤 مستخدم محفوظ: ${savedUser ? '✅' : '❌'}\n`;
+            
+            if (savedUser) {
+                try {
+                    const userData = JSON.parse(savedUser);
+                    status += `📝 اسم المستخدم: ${userData.username}\n`;
+                    status += `🔧 وضع عمر: ${userData.username === 'عمر' ? '✅' : '❌'}\n`;
+                } catch (error) {
+                    status += `❌ خطأ في قراءة بيانات المستخدم\n`;
+                }
+            }
+            
+            status += `🎯 كلاس user-omar: ${isOmarMode ? '✅' : '❌'}\n`;
+            status += `👁️ أزرار عمر مرئية: ${isOmarMode ? '✅' : '❌'}\n`;
+            
+            statusDiv.textContent = status;
+        }
+
+        function toggleOmarMode() {
+            const isCurrentlyOmar = document.body.classList.contains('user-omar');
+            
+            if (isCurrentlyOmar) {
+                simulateOtherUserLogin();
+            } else {
+                simulateOmarLogin();
+            }
+            
+            refreshSystemStatus();
+        }
+
+        // تحديث الحالة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 تم تحميل صفحة اختبار إخفاء أزرار الاختبار', 'success');
+            refreshSystemStatus();
+            testCurrentUser();
+        });
+    </script>
+</body>
+</html>
