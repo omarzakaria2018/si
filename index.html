@@ -48,16 +48,16 @@
                 نوع العقد
               </div>
               <div class="dropdown-divider"></div>
-              <div class="dropdown-item" onclick="forceCreateTrackingLog(); closeAllDropdowns();">
+              <div class="dropdown-item admin-only-omar" onclick="forceCreateTrackingLog(); closeAllDropdowns();">
                 <i class="fas fa-vial"></i>
                 اختبار سجلات التتبع
               </div>
 
-              <div class="dropdown-item" onclick="resetUnlinkProtection(); closeAllDropdowns();" style="background: #fff3e0;">
+              <div class="dropdown-item admin-only-omar" onclick="resetUnlinkProtection(); closeAllDropdowns();" style="background: #fff3e0;">
                 <i class="fas fa-refresh"></i>
                 إعادة تعيين الحماية
               </div>
-              <div class="dropdown-item" onclick="stopUnlinkMonitoring(); closeAllDropdowns();" style="background: #ffebee;">
+              <div class="dropdown-item admin-only-omar" onclick="stopUnlinkMonitoring(); closeAllDropdowns();" style="background: #ffebee;">
                 <i class="fas fa-stop"></i>
                 إيقاف مراقبة الحماية
               </div>
@@ -70,7 +70,7 @@
                 <i class="fas fa-clipboard-list"></i>
                 سجل التتبع
               </div>
-              <div class="dropdown-item" onclick="testTrackingFunction(); closeAllDropdowns();" style="background: #ffeb3b; color: #333;">
+              <div class="dropdown-item admin-only-omar" onclick="testTrackingFunction(); closeAllDropdowns();" style="background: #ffeb3b; color: #333;">
                 <i class="fas fa-bug"></i>
                 اختبار الدالة
               </div>
@@ -107,7 +107,7 @@
           </div>
 
           <!-- زر إدارة العقارات -->
-          <button class="header-main-btn management-btn" onclick="showPropertyManagerFromDropdown()">
+          <button class="header-main-btn management-btn admin-only-feature" onclick="showPropertyManagerFromDropdown()">
             <i class="fas fa-cogs"></i>
             إدارة العقارات
           </button>
@@ -144,7 +144,7 @@
                 <i class="fas fa-tools"></i>
                 إصلاح بيانات
               </div>
-              <div class="dropdown-item" onclick="fixStatisticsNow(); closeAllDropdowns();">
+              <div class="dropdown-item admin-only-feature" onclick="fixStatisticsNow(); closeAllDropdowns();">
                 <i class="fas fa-calculator"></i>
                 إصلاح الإحصائيات
               </div>
@@ -179,7 +179,7 @@
           <button id="attachmentsManagerBtn" class="export-btn hideable-header-btn" style="background:linear-gradient(to left,#1e88e5,#0d47a1);margin-right:8px;">
             <i class="fas fa-folder-open"></i> إدارة المرفقات
           </button>
-          <button id="propertyManagerBtn" class="export-btn hideable-header-btn" style="background:linear-gradient(to left,#28a745,#20c997);margin-right:8px;">
+          <button id="propertyManagerBtn" class="export-btn hideable-header-btn admin-only-feature" style="background:linear-gradient(to left,#28a745,#20c997);margin-right:8px;">
             <i class="fas fa-building"></i> إدارة العقارات
           </button>
 
@@ -193,10 +193,10 @@
           <button id="cleanStorageBtn" class="export-btn hideable-header-btn" onclick="showStorageCleanupModal()" style="background:linear-gradient(to left,#6c757d,#495057);margin-right:8px;">
             <i class="fas fa-broom"></i> تنظيف التخزين
           </button>
-          <button id="updateDatesBtn" class="export-btn hideable-header-btn" onclick="showDateUpdateModal()" style="background:linear-gradient(to left,#28a745,#20c997);margin-right:8px;">
+          <button id="updateDatesBtn" class="export-btn hideable-header-btn admin-only-feature" onclick="showDateUpdateModal()" style="background:linear-gradient(to left,#28a745,#20c997);margin-right:8px;">
             <i class="fas fa-calendar-alt"></i> تحديث التواريخ
           </button>
-          <button id="fixStatisticsBtn" class="export-btn hideable-header-btn" onclick="fixStatisticsNow()" style="background:linear-gradient(to left,#17a2b8,#138496);margin-right:8px;">
+          <button id="fixStatisticsBtn" class="export-btn hideable-header-btn admin-only-feature" onclick="fixStatisticsNow()" style="background:linear-gradient(to left,#17a2b8,#138496);margin-right:8px;">
             <i class="fas fa-calculator"></i> إصلاح الإحصائيات
           </button>
 
@@ -304,7 +304,7 @@
           </button>
         </li>
         <li>
-          <button id="mobile-property-manager-btn">
+          <button id="mobile-property-manager-btn" class="admin-only-feature">
             <i class="fas fa-building"></i> إدارة العقارات
           </button>
         </li>
@@ -314,7 +314,7 @@
           </button>
         </li>
         <li>
-          <button id="mobile-date-update-btn" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; openDateUpdateModal();">
+          <button id="mobile-date-update-btn" class="admin-only-feature" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; openDateUpdateModal();">
             <i class="fas fa-calendar-edit"></i> تحديث التواريخ
           </button>
         </li>
@@ -324,8 +324,13 @@
           </button>
         </li>
         <li>
-          <button id="mobile-fix-statistics-btn" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; fixStatisticsNow();">
+          <button id="mobile-fix-statistics-btn" class="admin-only-feature" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; fixStatisticsNow();">
             <i class="fas fa-calculator"></i> إصلاح الإحصائيات
+          </button>
+        </li>
+        <li>
+          <button id="mobile-clear-state-btn" class="admin-only-feature" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; clearAppStateWithConfirmation();">
+            <i class="fas fa-refresh"></i> إعادة تعيين الحالة
           </button>
         </li>
       </ol>

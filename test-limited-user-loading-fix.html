@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح شاشة التحميل للمستخدم محدود الصلاحية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            margin: 10px 0 0 0;
+            font-size: 1.1rem;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .test-button.urgent {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .test-button.urgent:hover {
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .results {
+            background: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px 0;
+        }
+
+        .log-entry.success { color: #2ecc71; }
+        .log-entry.error { color: #e74c3c; }
+        .log-entry.warning { color: #f39c12; }
+        .log-entry.info { color: #3498db; }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .status-indicator.good { background: #2ecc71; }
+        .status-indicator.bad { background: #e74c3c; }
+        .status-indicator.unknown { background: #95a5a6; }
+
+        .timer {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .fix-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .fix-info h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+
+        .fix-info ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .fix-info li {
+            margin: 5px 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 اختبار إصلاح شاشة التحميل</h1>
+            <p>اختبار التحديث الجديد لإخفاء شاشة التحميل تلقائياً للمستخدمين محدودي الصلاحية</p>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 ملخص التحديث المحسن</h3>
+            <div class="fix-info">
+                <h4>🎯 المشكلة الأصلية:</h4>
+                <ul>
+                    <li>المستخدمون محدودو الصلاحية يواجهون تأخير في ظهور زر "ابدأ"</li>
+                    <li>شاشة التحميل تبقى مرئية لفترة أطول من المطلوب (أكثر من 5 ثوانٍ)</li>
+                    <li>تجربة مستخدم غير مثلى للمستخدمين محدودي الصلاحية</li>
+                </ul>
+
+                <h4>✅ الحل المحسن المطبق:</h4>
+                <ul>
+                    <li><strong>إخفاء فوري عند تسجيل الدخول:</strong> شاشة التحميل تختفي بعد 5 ثوانٍ مباشرة من تسجيل الدخول</li>
+                    <li><strong>آلية احتياطية:</strong> فحص دوري للتأكد من إخفاء الشاشة حتى لو تأخر تعيين المستخدم</li>
+                    <li><strong>تسجيل مفصل:</strong> إضافة تسجيل للتشخيص وتتبع حالة المستخدم</li>
+                    <li><strong>الحفاظ على الآلية الأصلية:</strong> المستخدمون الآخرون لا يزالون يحتاجون للنقر على زر "ابدأ"</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 أدوات الاختبار</h3>
+            
+            <button class="test-button urgent" onclick="openMainAppAndTest()">
+                🚨 فتح التطبيق الرئيسي واختبار فوري
+            </button>
+            
+            <button class="test-button" onclick="simulateLimitedUserLogin()">
+                👤 محاكاة تسجيل دخول مستخدم محدود
+            </button>
+            
+            <button class="test-button" onclick="testLoadingScreenTiming()">
+                ⏱️ اختبار توقيت شاشة التحميل
+            </button>
+
+            <button class="test-button" onclick="forceHideLoadingScreen()">
+                🔧 إجبار إخفاء شاشة التحميل
+            </button>
+
+            <button class="test-button" onclick="clearResults()">
+                🧹 مسح النتائج
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>⏱️ مؤقت الاختبار</h3>
+            <div class="timer" id="testTimer">00:00</div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 نتائج الاختبار</h3>
+            <div id="testResults" class="results">اضغط على "فتح التطبيق الرئيسي واختبار فوري" لبدء الاختبار...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 إرشادات الاختبار</h3>
+            <ol>
+                <li><strong>افتح التطبيق الرئيسي:</strong> اضغط الزر الأحمر أعلاه</li>
+                <li><strong>سجل دخول كمستخدم محدود:</strong> استخدم sa12345 كاسم مستخدم وكلمة مرور</li>
+                <li><strong>راقب شاشة التحميل:</strong> يجب أن تختفي تلقائياً بعد 5 ثوانٍ بالضبط</li>
+                <li><strong>تحقق من التوقيت:</strong> استخدم مؤقت المتصفح أو الساعة للتأكد</li>
+                <li><strong>اختبر مع مستخدمين آخرين:</strong> تأكد أن المستخدمين الآخرين لا يزالون يحتاجون للنقر على زر "ابدأ"</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>🛠️ أوامر Console للفحص المتقدم</h3>
+            <div class="results">
+// فحص المستخدم الحالي
+console.log('المستخدم:', currentUser);
+console.log('النوع:', users[currentUser]?.role);
+console.log('بيانات المستخدم الكاملة:', users[currentUser]);
+
+// فحص شاشة التحميل
+const loadingScreen = document.getElementById('crystalLoadingOverlay');
+console.log('شاشة التحميل موجودة:', !!loadingScreen);
+console.log('شاشة التحميل مرئية:', loadingScreen && !loadingScreen.classList.contains('fade-out'));
+
+// اختبار الإخفاء التلقائي
+if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
+    console.log('✅ مستخدم محدود - سيتم الإخفاء التلقائي');
+} else {
+    console.log('ℹ️ مستخدم عادي - يحتاج للنقر على زر ابدأ');
+}
+
+// فحص زر ابدأ
+const startButton = document.getElementById('startButton');
+console.log('زر ابدأ موجود:', !!startButton);
+console.log('زر ابدأ مرئي:', startButton && startButton.style.display !== 'none');
+
+// اختبار إخفاء فوري للمستخدم محدود الصلاحية
+if (currentUser === 'sa12345') {
+    console.log('🚨 اختبار إخفاء فوري...');
+    setTimeout(() => hideCrystalLoading(), 100);
+}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testStartTime = null;
+        let testTimer = null;
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            results.appendChild(logEntry);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function startTimer() {
+            testStartTime = Date.now();
+            testTimer = setInterval(() => {
+                const elapsed = Date.now() - testStartTime;
+                const seconds = Math.floor(elapsed / 1000);
+                const milliseconds = Math.floor((elapsed % 1000) / 10);
+                document.getElementById('testTimer').textContent = 
+                    `${seconds.toString().padStart(2, '0')}:${milliseconds.toString().padStart(2, '0')}`;
+            }, 10);
+        }
+
+        function stopTimer() {
+            if (testTimer) {
+                clearInterval(testTimer);
+                testTimer = null;
+            }
+        }
+
+        function openMainAppAndTest() {
+            log('🚀 فتح التطبيق الرئيسي...', 'info');
+            
+            const testWindow = window.open('index.html', '_blank', 'width=1200,height=800');
+            
+            if (testWindow) {
+                log('✅ تم فتح التطبيق الرئيسي', 'success');
+                log('⏳ انتظار تحميل التطبيق...', 'info');
+                log('💡 سجل دخول بـ sa12345 لاختبار المستخدم محدود الصلاحية', 'info');
+                log('⏱️ راقب شاشة التحميل - يجب أن تختفي بعد 5 ثوانٍ بالضبط', 'warning');
+            } else {
+                log('❌ فشل في فتح التطبيق الرئيسي', 'error');
+            }
+        }
+
+        function simulateLimitedUserLogin() {
+            log('👤 محاكاة تسجيل دخول مستخدم محدود...', 'info');
+            
+            try {
+                if (window.opener && window.opener.setCurrentUser) {
+                    window.opener.setCurrentUser('sa12345');
+                    log('✅ تم تطبيق المستخدم محدود الصلاحية', 'success');
+                    log('🔮 ابحث عن شاشة التحميل في التطبيق الرئيسي', 'info');
+                } else {
+                    log('⚠️ لا يمكن الوصول للتطبيق الرئيسي', 'warning');
+                    log('💡 افتح التطبيق الرئيسي أولاً', 'info');
+                }
+            } catch (error) {
+                log('❌ خطأ في محاكاة تسجيل الدخول: ' + error.message, 'error');
+            }
+        }
+
+        function testLoadingScreenTiming() {
+            log('⏱️ بدء اختبار توقيت شاشة التحميل...', 'info');
+            startTimer();
+            
+            try {
+                if (window.opener && window.opener.showCrystalLoading) {
+                    window.opener.showCrystalLoading();
+                    log('✅ تم تشغيل شاشة التحميل', 'success');
+                    
+                    // مراقبة الإخفاء
+                    const checkInterval = setInterval(() => {
+                        const overlay = window.opener.document.getElementById('crystalLoadingOverlay');
+                        if (!overlay || overlay.classList.contains('fade-out')) {
+                            const duration = Date.now() - testStartTime;
+                            clearInterval(checkInterval);
+                            stopTimer();
+                            
+                            log(`⏱️ تم إخفاء شاشة التحميل بعد ${(duration/1000).toFixed(1)} ثانية`, 'success');
+                            
+                            if (duration >= 4900 && duration <= 5100) {
+                                log('🎉 التوقيت مثالي! (5 ثوانٍ ± 0.1)', 'success');
+                            } else if (duration < 4900) {
+                                log('⚠️ التوقيت أسرع من المتوقع', 'warning');
+                            } else {
+                                log('⚠️ التوقيت أبطأ من المتوقع', 'warning');
+                            }
+                        }
+                    }, 100);
+                    
+                    // إيقاف المراقبة بعد 10 ثوانٍ
+                    setTimeout(() => {
+                        clearInterval(checkInterval);
+                        stopTimer();
+                        log('⏰ انتهت مهلة مراقبة شاشة التحميل', 'warning');
+                    }, 10000);
+                } else {
+                    log('❌ لا يمكن الوصول لدالة شاشة التحميل', 'error');
+                    stopTimer();
+                }
+            } catch (error) {
+                log('❌ خطأ في اختبار التوقيت: ' + error.message, 'error');
+                stopTimer();
+            }
+        }
+
+        function forceHideLoadingScreen() {
+            log('🔧 إجبار إخفاء شاشة التحميل...', 'info');
+
+            try {
+                if (window.opener && window.opener.hideCrystalLoading) {
+                    window.opener.hideCrystalLoading();
+                    log('✅ تم إجبار إخفاء شاشة التحميل', 'success');
+
+                    // التحقق من النتيجة
+                    setTimeout(() => {
+                        const overlay = window.opener.document.getElementById('crystalLoadingOverlay');
+                        if (!overlay || overlay.classList.contains('fade-out')) {
+                            log('✅ تم إخفاء شاشة التحميل بنجاح', 'success');
+                        } else {
+                            log('⚠️ شاشة التحميل لا تزال مرئية', 'warning');
+                        }
+                    }, 1000);
+                } else {
+                    log('❌ لا يمكن الوصول لدالة إخفاء شاشة التحميل', 'error');
+                }
+            } catch (error) {
+                log('❌ خطأ في إجبار الإخفاء: ' + error.message, 'error');
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('testTimer').textContent = '00:00';
+            stopTimer();
+            log('🧹 تم مسح النتائج', 'info');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔧 أداة اختبار إصلاح شاشة التحميل جاهزة', 'success');
+            log('💡 اضغط "فتح التطبيق الرئيسي واختبار فوري" للبدء', 'info');
+        });
+    </script>
+</body>
+</html>

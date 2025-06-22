@@ -4,6 +4,378 @@ let currentCountry = null;
 let currentProperty = null;
 let filterStatus = null;
 
+// ===== STATE MANAGEMENT SYSTEM =====
+// نظام إدارة الحالة للحفاظ على حالة التطبيق بعد إعادة التحميل
+
+const STATE_STORAGE_KEY = 'alsenidi_app_state';
+
+// حفظ حالة التطبيق في localStorage
+function saveAppState() {
+    try {
+        const state = {
+            currentView: currentView,
+            currentCountry: currentCountry,
+            currentProperty: currentProperty,
+            filterStatus: filterStatus,
+            timestamp: Date.now(),
+            // حفظ حالة الشريط الجانبي
+            sidebarVisible: document.getElementById('sidebar')?.style.display !== 'none',
+            // حفظ نص البحث
+            globalSearchValue: document.getElementById('globalSearch')?.value || '',
+            propertySearchValue: document.getElementById('propertySearch')?.value || '',
+            // حفظ حالة النافذة المفتوحة (إن وجدت)
+            openModal: document.querySelector('.modal.show') ? true : false,
+            // حفظ وضع الإدارة
+            isManagementMode: window.isManagementMode || false
+        };
+
+        localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(state));
+        console.log('💾 تم حفظ حالة التطبيق:', state);
+    } catch (error) {
+        console.warn('⚠️ فشل في حفظ حالة التطبيق:', error);
+    }
+}
+
+// استعادة حالة التطبيق من localStorage
+function restoreAppState() {
+    try {
+        const savedState = localStorage.getItem(STATE_STORAGE_KEY);
+        if (!savedState) {
+            console.log('📝 لا توجد حالة محفوظة');
+            return false;
+        }
+
+        const state = JSON.parse(savedState);
+
+        // التحقق من أن الحالة ليست قديمة جداً (أكثر من 24 ساعة)
+        const maxAge = 24 * 60 * 60 * 1000; // 24 ساعة
+        if (Date.now() - state.timestamp > maxAge) {
+            console.log('⏰ الحالة المحفوظة قديمة، سيتم تجاهلها');
+            localStorage.removeItem(STATE_STORAGE_KEY);
+            return false;
+        }
+
+        console.log('🔄 استعادة حالة التطبيق:', state);
+
+        // استعادة المتغيرات العامة
+        currentView = state.currentView || 'cards';
+        currentCountry = state.currentCountry;
+        currentProperty = state.currentProperty;
+        filterStatus = state.filterStatus;
+
+        // استعادة نص البحث
+        setTimeout(() => {
+            const globalSearch = document.getElementById('globalSearch');
+            const propertySearch = document.getElementById('propertySearch');
+
+            if (globalSearch && state.globalSearchValue) {
+                globalSearch.value = state.globalSearchValue;
+            }
+
+            if (propertySearch && state.propertySearchValue) {
+                propertySearch.value = state.propertySearchValue;
+            }
+        }, 100);
+
+        return state;
+    } catch (error) {
+        console.warn('⚠️ فشل في استعادة حالة التطبيق:', error);
+        localStorage.removeItem(STATE_STORAGE_KEY);
+        return false;
+    }
+}
+
+// مسح حالة التطبيق المحفوظة
+function clearAppState() {
+    localStorage.removeItem(STATE_STORAGE_KEY);
+    console.log('🗑️ تم مسح حالة التطبيق المحفوظة');
+}
+
+// حفظ الحالة تلقائياً عند تغيير المتغيرات المهمة
+function autoSaveState() {
+    // حفظ الحالة كل 2 ثانية إذا تغير شيء
+    let lastSavedState = '';
+
+    setInterval(() => {
+        const currentState = JSON.stringify({
+            currentView,
+            currentCountry,
+            currentProperty,
+            filterStatus
+        });
+
+        if (currentState !== lastSavedState) {
+            saveAppState();
+            lastSavedState = currentState;
+        }
+    }, 2000);
+}
+
+// تطبيق الحالة المستعادة على التطبيق
+function applyRestoredState(state) {
+    try {
+        console.log('🔄 تطبيق الحالة المستعادة...', state);
+
+        // استعادة طريقة العرض
+        if (state.currentView && state.currentView !== currentView) {
+            currentView = state.currentView;
+            console.log('📱 استعادة طريقة العرض:', currentView);
+        }
+
+        // استعادة المدينة المختارة
+        if (state.currentCountry !== undefined) {
+            currentCountry = state.currentCountry;
+            console.log('🏙️ استعادة المدينة:', currentCountry);
+
+            // تحديث أزرار المدن
+            setTimeout(() => {
+                initCountryButtons();
+                if (currentCountry) {
+                    selectCountry(currentCountry);
+                }
+            }, 100);
+        }
+
+        // استعادة العقار المختار
+        if (state.currentProperty) {
+            currentProperty = state.currentProperty;
+            console.log('🏢 استعادة العقار:', currentProperty);
+
+            // تحديث قائمة العقارات وتحديد العقار
+            setTimeout(() => {
+                initPropertyList(currentCountry);
+                if (currentProperty) {
+                    selectProperty(currentProperty);
+                }
+            }, 200);
+        }
+
+        // استعادة فلتر الحالة
+        if (state.filterStatus !== undefined) {
+            filterStatus = state.filterStatus;
+            console.log('🔍 استعادة فلتر الحالة:', filterStatus);
+        }
+
+        // استعادة نص البحث
+        setTimeout(() => {
+            if (state.globalSearchValue) {
+                const globalSearch = document.getElementById('globalSearch');
+                if (globalSearch) {
+                    globalSearch.value = state.globalSearchValue;
+                    console.log('🔍 استعادة البحث العام:', state.globalSearchValue);
+                }
+            }
+
+            if (state.propertySearchValue) {
+                const propertySearch = document.getElementById('propertySearch');
+                if (propertySearch) {
+                    propertySearch.value = state.propertySearchValue;
+                    console.log('🔍 استعادة بحث العقارات:', state.propertySearchValue);
+                }
+            }
+        }, 300);
+
+        // استعادة حالة الشريط الجانبي
+        if (state.sidebarVisible !== undefined) {
+            setTimeout(() => {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    if (state.sidebarVisible) {
+                        sidebar.style.display = 'block';
+                        console.log('📋 إظهار الشريط الجانبي');
+                    } else {
+                        sidebar.style.display = 'none';
+                        console.log('📋 إخفاء الشريط الجانبي');
+                    }
+                }
+            }, 400);
+        }
+
+        // إعادة عرض البيانات بالحالة المستعادة
+        setTimeout(() => {
+            renderData();
+            console.log('✅ تم تطبيق الحالة المستعادة بنجاح');
+        }, 500);
+
+    } catch (error) {
+        console.warn('⚠️ خطأ في تطبيق الحالة المستعادة:', error);
+    }
+}
+
+// إضافة مستمعات الأحداث لحفظ الحالة
+function addStateEventListeners() {
+    // حفظ الحالة عند إغلاق الصفحة أو إعادة التحميل
+    window.addEventListener('beforeunload', function() {
+        saveAppState();
+        console.log('💾 تم حفظ الحالة قبل إغلاق الصفحة');
+    });
+
+    // حفظ الحالة عند إخفاء الصفحة (تبديل التبويبات)
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            saveAppState();
+            console.log('💾 تم حفظ الحالة عند إخفاء الصفحة');
+        }
+    });
+
+    // حفظ الحالة عند تغيير البحث العام
+    const globalSearch = document.getElementById('globalSearch');
+    if (globalSearch) {
+        globalSearch.addEventListener('input', function() {
+            // تأخير قصير لتجنب الحفظ المفرط
+            clearTimeout(window.searchSaveTimeout);
+            window.searchSaveTimeout = setTimeout(() => {
+                saveAppState();
+            }, 1000);
+        });
+    }
+
+    // حفظ الحالة عند تغيير بحث العقارات
+    const propertySearch = document.getElementById('propertySearch');
+    if (propertySearch) {
+        propertySearch.addEventListener('input', function() {
+            // تأخير قصير لتجنب الحفظ المفرط
+            clearTimeout(window.propertySearchSaveTimeout);
+            window.propertySearchSaveTimeout = setTimeout(() => {
+                saveAppState();
+            }, 1000);
+        });
+    }
+
+    // حفظ الحالة عند تغيير حجم النافذة (للشريط الجانبي)
+    window.addEventListener('resize', function() {
+        clearTimeout(window.resizeSaveTimeout);
+        window.resizeSaveTimeout = setTimeout(() => {
+            saveAppState();
+        }, 500);
+    });
+
+    console.log('✅ تم إضافة مستمعات أحداث حفظ الحالة');
+}
+
+// مراقب لإضافة زر تسجيل الخروج تلقائياً
+function setupLogoutButtonObserver() {
+    // مراقب DOM للتأكد من إضافة زر تسجيل الخروج
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                // التحقق من وجود header وعدم وجود زر تسجيل الخروج
+                const header = document.querySelector('.header-section.header-actions');
+                const logoutBtn = document.getElementById('logoutBtn');
+
+                if (header && !logoutBtn && currentUser && currentUser !== 'guest') {
+                    console.log('🔍 مراقب DOM: إضافة زر تسجيل الخروج');
+                    setTimeout(() => {
+                        addLogoutButton();
+                        updateMobileUserSection();
+                    }, 100);
+                }
+            }
+        });
+    });
+
+    // بدء مراقبة التغييرات في DOM
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    console.log('👁️ تم تفعيل مراقب زر تسجيل الخروج');
+}
+
+// مراقب لتطبيق قيود الوصول على الأزرار الإدارية للمستخدم محدود الصلاحية
+function setupAdminButtonsObserver() {
+    if (!currentUser || !users[currentUser] || users[currentUser].role !== 'limited') {
+        return; // لا حاجة للمراقب إذا لم يكن المستخدم محدود الصلاحية
+    }
+
+    console.log('👁️ تفعيل مراقب قيود الوصول للأزرار الإدارية...');
+
+    // مراقب DOM لتطبيق قيود الوصول على الأزرار الجديدة
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                // تطبيق قيود على الأزرار الجديدة
+                setTimeout(() => {
+                    restrictAdminButtonsForLimitedUser();
+                }, 100);
+            }
+        });
+    });
+
+    // بدء مراقبة التغييرات في DOM
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    console.log('✅ تم تفعيل مراقب قيود الوصول للأزرار الإدارية');
+}
+
+// دالة لتطبيق قيود الوصول على الأزرار الإدارية (بدلاً من إخفائها)
+function hideAdminButtonsForLimitedUser() {
+    // هذه الدالة تم استبدالها بـ restrictAdminButtonsForLimitedUser
+    // لكن نحتفظ بها للتوافق مع الاستدعاءات الموجودة
+    if (!currentUser || !users[currentUser] || users[currentUser].role !== 'limited') {
+        return;
+    }
+
+    console.log('🔄 تحويل إلى دالة تقييد الوصول...');
+    restrictAdminButtonsForLimitedUser();
+}
+
+// دالة عامة لتطبيق قيود الوصول على الأزرار للمستخدم محدود الصلاحية
+window.fixLimitedUserButtons = function() {
+    console.log('🚨 تطبيق قيود الوصول على الأزرار للمستخدم محدود الصلاحية');
+
+    // التأكد من إضافة الكلاس
+    document.body.classList.add('limited-user');
+    console.log('✅ تم إضافة كلاس limited-user');
+
+    // تطبيق قيود الوصول بدلاً من الإخفاء
+    restrictAdminButtonsForLimitedUser();
+
+    // تفعيل المراقب
+    setupAdminButtonsObserver();
+
+    console.log('🎉 تم تطبيق قيود الوصول بنجاح!');
+    console.log('💡 الأزرار الآن ظاهرة لكن محمية - ستظهر رسالة عدم الصلاحية عند النقر');
+};
+
+// مسح الحالة مع التأكيد
+function clearAppStateWithConfirmation() {
+    const confirmed = confirm('هل تريد إعادة تعيين حالة التطبيق؟\n\nسيؤدي هذا إلى:\n• إعادة تعيين المدينة المختارة\n• إعادة تعيين العقار المختار\n• إعادة تعيين الفلاتر\n• إعادة تعيين طريقة العرض\n• مسح نصوص البحث');
+
+    if (confirmed) {
+        clearAppState();
+
+        // إعادة تعيين المتغيرات للقيم الافتراضية
+        currentView = 'cards';
+        currentCountry = null;
+        currentProperty = null;
+        filterStatus = null;
+
+        // مسح نصوص البحث
+        const globalSearch = document.getElementById('globalSearch');
+        const propertySearch = document.getElementById('propertySearch');
+
+        if (globalSearch) globalSearch.value = '';
+        if (propertySearch) propertySearch.value = '';
+
+        // إعادة تهيئة التطبيق
+        setTimeout(() => {
+            initCountryButtons();
+            initPropertyList();
+            renderData();
+
+            // إظهار رسالة نجاح
+            alert('✅ تم إعادة تعيين حالة التطبيق بنجاح!');
+        }, 100);
+
+        console.log('🔄 تم إعادة تعيين حالة التطبيق');
+    }
+}
+
 // دالة مساعدة للتحقق من وجود البيانات
 function ensurePropertiesLoaded(functionName = 'unknown') {
     if (!properties || !Array.isArray(properties)) {
@@ -80,14 +452,51 @@ function showCrystalLoading() {
     // إضافة الشاشة إلى الصفحة
     document.body.appendChild(loadingOverlay);
 
-    // إظهار زر "ابدأ" بعد 5 ثوانٍ
+    // إظهار زر "ابدأ" بعد 5 ثوانٍ (للمستخدمين العاديين فقط)
     setTimeout(() => {
-        const startButton = document.getElementById('startButton');
-        if (startButton) {
-            startButton.style.display = 'block';
-            startButton.style.animation = 'fadeInUp 0.5s ease-out';
-            console.log('🎯 تم إظهار زر "ابدأ"');
+        // تسجيل معلومات المستخدم للتشخيص
+        console.log('🔍 فحص المستخدم الحالي:', {
+            currentUser: currentUser,
+            userExists: currentUser && users[currentUser],
+            userRole: currentUser && users[currentUser] ? users[currentUser].role : 'غير محدد',
+            isLimited: currentUser && users[currentUser] && users[currentUser].role === 'limited'
+        });
+
+        // للمستخدمين محدودي الصلاحية: إخفاء الشاشة تلقائياً فوراً
+        if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
+            console.log('👤 مستخدم محدود الصلاحية - إخفاء شاشة التحميل فوراً');
+            hideCrystalLoading();
+        } else {
+            // إظهار زر "ابدأ" للمستخدمين العاديين فقط
+            const startButton = document.getElementById('startButton');
+            if (startButton) {
+                startButton.style.display = 'block';
+                startButton.style.animation = 'fadeInUp 0.5s ease-out';
+                console.log('🎯 تم إظهار زر "ابدأ" للمستخدم العادي');
+            }
+            console.log('ℹ️ مستخدم عادي أو غير محدد - يحتاج للنقر على زر ابدأ');
         }
+
+        // آلية إضافية: فحص دوري للمستخدم محدود الصلاحية
+        // في حالة تأخر تعيين المستخدم
+        let checkCount = 0;
+        const maxChecks = 10; // فحص لمدة 10 ثوانٍ إضافية
+
+        const periodicCheck = setInterval(() => {
+            checkCount++;
+
+            if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
+                console.log('👤 تم اكتشاف مستخدم محدود الصلاحية متأخراً - إخفاء الشاشة');
+                clearInterval(periodicCheck);
+                hideCrystalLoading();
+                return;
+            }
+
+            if (checkCount >= maxChecks) {
+                console.log('⏰ انتهت مهلة الفحص الدوري للمستخدم محدود الصلاحية');
+                clearInterval(periodicCheck);
+            }
+        }, 1000);
     }, 5000);
 }
 
@@ -273,6 +682,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // تحديث حالة زر وضع المطور
     updateDeveloperModeButton();
 
+    // ===== استعادة حالة التطبيق =====
+    console.log('🔄 محاولة استعادة حالة التطبيق...');
+    const restoredState = restoreAppState();
+
+    // ===== إضافة زر تسجيل الخروج مبكراً =====
+    setTimeout(() => {
+        if (currentUser && currentUser !== 'guest') {
+            console.log('🔑 إضافة زر تسجيل الخروج مبكراً من DOMContentLoaded');
+            addLogoutButton();
+            updateMobileUserSection();
+        }
+    }, 100);
+
     // استعادة البيانات من localStorage إذا كانت متوفرة
     restoreDataFromLocalStorage();
 
@@ -282,6 +704,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // فحص البيانات للتأكد من الحفظ الدائم
     setTimeout(() => {
         verifyDataPersistence();
+
+        // ===== تطبيق الحالة المستعادة بعد تحميل البيانات =====
+        if (restoredState) {
+            setTimeout(() => {
+                applyRestoredState(restoredState);
+            }, 1000);
+        }
+
+        // بدء نظام الحفظ التلقائي للحالة
+        autoSaveState();
+
+        // إضافة مستمعات الأحداث لحفظ الحالة
+        addStateEventListeners();
+
+        // تفعيل مراقب زر تسجيل الخروج
+        setupLogoutButtonObserver();
+
+        // استدعاء نهائي للتأكد من إضافة زر تسجيل الخروج
+        setTimeout(() => {
+            if (currentUser && currentUser !== 'guest' && !document.getElementById('logoutBtn')) {
+                console.log('🔑 استدعاء نهائي لإضافة زر تسجيل الخروج');
+                addLogoutButton();
+                updateMobileUserSection();
+            }
+
+            // تطبيق نهائي لقيود الوصول للأزرار للمستخدم محدود الصلاحية
+            if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
+                console.log('🔒 تطبيق نهائي لقيود الوصول للأزرار الإدارية');
+                restrictAdminButtonsForLimitedUser();
+                setupAdminButtonsObserver();
+            }
+        }, 2000);
     }, 1000);
 
     initializeDataLoading()
@@ -817,11 +1271,27 @@ function initializeApp() {
 
     // إضافة زر تسجيل الخروج إذا كان المستخدم مسجل دخول
     setTimeout(() => {
-        if (currentUser) {
+        if (currentUser && currentUser !== 'guest') {
             console.log('🔑 إضافة زر تسجيل الخروج من initializeApp');
             addLogoutButton();
+            updateMobileUserSection();
         }
-    }, 500);
+    }, 100);
+
+    // استدعاء إضافي للتأكد من إضافة زر تسجيل الخروج
+    setTimeout(() => {
+        if (currentUser && currentUser !== 'guest' && !document.getElementById('logoutBtn')) {
+            console.log('🔑 استدعاء إضافي لإضافة زر تسجيل الخروج');
+            addLogoutButton();
+            updateMobileUserSection();
+        }
+
+        // تطبيق قيود الوصول للأزرار للمستخدم محدود الصلاحية
+        if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
+            console.log('🔒 تطبيق قيود الوصول للأزرار الإدارية');
+            restrictAdminButtonsForLimitedUser();
+        }
+    }, 1000);
 
     // تم إزالة شاشة التحميل البلورية من هنا حسب طلب المستخدم
 }
@@ -1353,6 +1823,9 @@ function selectCountry(country) {
     initCountryButtons();
     initPropertyList(currentCountry);
     renderData();
+
+    // حفظ الحالة بعد تغيير المدينة
+    saveAppState();
 }
 
 // اختيار عقار
@@ -1371,21 +1844,27 @@ function selectProperty(propertyName) {
     if (window.innerWidth <= 900) {
         sidebar.classList.remove('active');
     }
+
+    // حفظ الحالة بعد تغيير العقار
+    saveAppState();
 }
 
 // تعيين فلتر الحالة
 function setStatusFilter(status) {
     filterStatus = status;
     renderData();
+
+    // حفظ الحالة بعد تغيير فلتر الحالة
+    saveAppState();
 }
 
 // تبديل طريقة العرض
 function toggleView(view) {
     currentView = view;
-    
+
     const tableBtn = document.getElementById('table-btn');
     const cardsBtn = document.getElementById('cards-btn');
-    
+
     if (view === 'table') {
         tableBtn.classList.add('active');
         cardsBtn.classList.remove('active');
@@ -1393,8 +1872,11 @@ function toggleView(view) {
         tableBtn.classList.remove('active');
         cardsBtn.classList.add('active');
     }
-    
+
     renderData();
+
+    // حفظ الحالة بعد تغيير طريقة العرض
+    saveAppState();
 }
 
 // تبديل عرض الشريط الجانبي
@@ -11338,22 +11820,40 @@ async function confirmDeleteUnit(unitNumber, propertyName, unitIndex) {
         const unit = properties[unitIndex];
         console.log('🗑️ بدء عملية حذف الوحدة:', unitNumber, 'من العقار:', propertyName);
 
-        // 1. استخدام الحذف المتقدم الجديد
+        // 1. استخدام الحذف القوي الجديد أولاً
+        console.log('💪 استخدام الحذف القوي لضمان الحذف النهائي من Supabase...');
+
+        let forceDeleteResult = { success: false };
+        if (typeof forceDeleteUnitFromSupabase === 'function') {
+            try {
+                forceDeleteResult = await forceDeleteUnitFromSupabase(unit);
+                console.log('💪 نتيجة الحذف القوي:', forceDeleteResult);
+            } catch (error) {
+                console.error('❌ خطأ في الحذف القوي:', error);
+            }
+        }
+
+        // 2. استخدام الحذف المتقدم كبديل
         console.log('🔧 استخدام الحذف المتقدم مع معالجة الروابط...');
 
         const enhancedResult = await enhancedDeleteUnit(unit);
 
-        if (enhancedResult.success) {
-            console.log('✅ تم الحذف المتقدم بنجاح');
+        // تحديد نجاح العملية
+        const isSuccessful = forceDeleteResult.success || enhancedResult.success;
+        const deletedFromSupabase = forceDeleteResult.deletedCount || enhancedResult.cloudDeleted || 0;
+
+        if (isSuccessful) {
+            console.log('✅ تم الحذف بنجاح');
 
             // إزالة مؤشر التحميل
             loadingModal.remove();
 
-            // إظهار رسالة نجاح
-            showSuccessMessage(
-                'تم حذف الوحدة بنجاح',
-                `تم حذف الوحدة وجميع البيانات المرتبطة نهائياً (محلي: ${enhancedResult.localDeleted || 0}, سحابي: ${enhancedResult.cloudDeleted || 0})`
-            );
+            // إظهار رسالة نجاح مفصلة
+            const successMessage = deletedFromSupabase > 0
+                ? `تم حذف الوحدة نهائياً من قاعدة البيانات (${deletedFromSupabase} سجل) والبيانات المحلية`
+                : 'تم حذف الوحدة من البيانات المحلية (لم توجد في قاعدة البيانات)';
+
+            showSuccessMessage('تم حذف الوحدة بنجاح', successMessage);
 
             // تحديث الواجهة
             if (document.getElementById('units-tab')) {
@@ -11370,7 +11870,7 @@ async function confirmDeleteUnit(unitNumber, propertyName, unitIndex) {
 
             return; // انتهى بنجاح
         } else {
-            console.warn('⚠️ فشل الحذف المتقدم، سيتم المتابعة بالطريقة التقليدية');
+            console.warn('⚠️ فشل الحذف المتقدم والقوي، سيتم المتابعة بالطريقة التقليدية');
         }
 
         // 2. Delete from Supabase with advanced foreign key handling
@@ -29934,6 +30434,14 @@ function initializePermissionSystem() {
                 if (hoursDiff < .10) {
                     // الجلسة صالحة
                     setCurrentUser(userData.username);
+
+                    // إضافة زر تسجيل الخروج فور استعادة الجلسة
+                    setTimeout(() => {
+                        addLogoutButton();
+                        updateMobileUserSection();
+                        console.log('🔑 إضافة زر تسجيل الخروج من initializePermissionSystem');
+                    }, 300);
+
                     return;
                 }
             }
@@ -30005,12 +30513,23 @@ function handleLogin(event) {
         console.log('🔮 إظهار شاشة التحميل بعد تسجيل الدخول الناجح');
         showCrystalLoading();
 
+        // للمستخدمين محدودي الصلاحية: إخفاء الشاشة بعد ثانية واحدة فقط
+        if (users[username].role === 'limited') {
+            console.log('👤 مستخدم محدود الصلاحية - سيتم إخفاء الشاشة بعد ثانية واحدة');
+            setTimeout(() => {
+                console.log('👤 إخفاء شاشة التحميل للمستخدم محدود الصلاحية');
+                hideCrystalLoading();
+            }, 1000);
+        }
+
         // إظهار رسالة ترحيب
         showWelcomeMessage(users[username].fullName);
 
-        // تحديث قسم المستخدم في الهاتف
+        // تحديث قسم المستخدم في الهاتف وإضافة زر تسجيل الخروج
         setTimeout(() => {
             updateMobileUserSection();
+            addLogoutButton();
+            console.log('🔑 إضافة زر تسجيل الخروج من handleLogin');
         }, 100);
 
         // مسح النموذج
@@ -30036,12 +30555,33 @@ function setCurrentUser(username) {
         // تطبيق الصلاحيات على الواجهة
         applyUserPermissions();
 
-        // تفعيل مراقب المرفقات للمستخدم محدود الصلاحيات
+        // تطبيق قيود الوصول للأزرار الإدارية للمستخدم محدود الصلاحية
         if (users[username].role === 'limited') {
+            console.log('🔒 تطبيق قيود الوصول للأزرار الإدارية...');
+            restrictAdminButtonsForLimitedUser();
+
+            // تطبيق قيود متكررة للتأكد
+            setTimeout(() => restrictAdminButtonsForLimitedUser(), 100);
+            setTimeout(() => restrictAdminButtonsForLimitedUser(), 300);
+            setTimeout(() => restrictAdminButtonsForLimitedUser(), 500);
+            setTimeout(() => restrictAdminButtonsForLimitedUser(), 1000);
+
+            // تفعيل مراقب المرفقات
             setTimeout(() => {
                 setupAttachmentsPermissionObserver();
             }, 500);
+
+            // تفعيل مراقب الأزرار الإدارية
+            setTimeout(() => {
+                setupAdminButtonsObserver();
+            }, 1000);
         }
+
+        // إضافة زر تسجيل الخروج فور تسجيل الدخول
+        setTimeout(() => {
+            addLogoutButton();
+            updateMobileUserSection();
+        }, 100);
 
         console.log(`✅ تم تسجيل دخول المستخدم: ${users[username].fullName}`);
     }
@@ -30060,8 +30600,30 @@ function applyUserPermissions() {
     if (users[currentUser].role === 'limited') {
         body.classList.add('limited-user');
         hideLimitedUserElements();
+
+        // تطبيق قيود الوصول مع تأخير
+        setTimeout(() => {
+            restrictAdminButtonsForLimitedUser();
+        }, 500);
+
+        setTimeout(() => {
+            restrictAdminButtonsForLimitedUser();
+        }, 1000);
+
+        setTimeout(() => {
+            restrictAdminButtonsForLimitedUser();
+        }, 2000);
     } else {
         body.classList.add('admin-user');
+    }
+
+    // إضافة كلاس خاص لعمر لإظهار أزرار الاختبار والحماية
+    if (currentUser === 'عمر') {
+        body.classList.add('user-omar');
+        console.log('🔧 تم تفعيل أزرار الاختبار والحماية لعمر');
+    } else {
+        body.classList.remove('user-omar');
+        console.log('🔒 تم إخفاء أزرار الاختبار والحماية');
     }
 
     // تحديث وظيفة getCurrentUser
@@ -30070,24 +30632,17 @@ function applyUserPermissions() {
     };
 }
 
-// إخفاء العناصر للمستخدم محدود الصلاحيات
+// تطبيق قيود الوصول للمستخدم محدود الصلاحيات (بدون إخفاء الأزرار)
 function hideLimitedUserElements() {
-    // إخفاء زر إدارة العقارات
-    const propertyManagerBtns = document.querySelectorAll('#propertyManagerBtn, .property-manager-btn');
-    propertyManagerBtns.forEach(btn => {
-        if (btn) btn.style.display = 'none';
-    });
+    console.log('🔒 تطبيق قيود الوصول للمستخدم محدود الصلاحيات...');
 
-    // إخفاء أزرار التحرير والحذف في البطاقات
+    // تطبيق قيود على الأزرار الإدارية بدلاً من إخفائها
+    restrictAdminButtonsForLimitedUser();
+
+    // إخفاء أزرار التحرير والحذف في البطاقات فقط
     const editBtns = document.querySelectorAll('.edit-btn, .delete-btn, .add-btn');
     editBtns.forEach(btn => {
         if (btn) btn.style.display = 'none';
-    });
-
-    // إخفاء عناصر الإدارة في القوائم المنسدلة
-    const managementItems = document.querySelectorAll('[onclick*="showPropertyManager"], [onclick*="showDataImport"], [onclick*="cleanStorage"]');
-    managementItems.forEach(item => {
-        if (item) item.style.display = 'none';
     });
 
     // إخفاء زر إدارة سجلات التتبع
@@ -30099,7 +30654,93 @@ function hideLimitedUserElements() {
     // تطبيق قيود المرفقات
     applyAttachmentsRestrictions();
 
-    console.log('🔒 تم تطبيق قيود المستخدم محدود الصلاحيات');
+    console.log('✅ تم تطبيق قيود الوصول للمستخدم محدود الصلاحيات');
+}
+
+// تطبيق قيود على الأزرار الإدارية للمستخدم محدود الصلاحية
+function restrictAdminButtonsForLimitedUser() {
+    console.log('🔒 تطبيق قيود الوصول على الأزرار الإدارية...');
+
+    // قائمة الأزرار الإدارية المحظورة
+    const restrictedButtons = [
+        // أزرار إدارة العقارات
+        { selector: '#propertyManagerBtn', name: 'إدارة العقارات' },
+        { selector: '.management-btn', name: 'إدارة العقارات' },
+        { selector: '#mobile-property-manager-btn', name: 'إدارة العقارات' },
+
+        // أزرار تحديث التواريخ
+        { selector: '#updateDatesBtn', name: 'تحديث التواريخ' },
+        { selector: '#mobile-date-update-btn', name: 'تحديث التواريخ' },
+
+        // أزرار إصلاح الإحصائيات
+        { selector: '#fixStatisticsBtn', name: 'إصلاح الإحصائيات' },
+        { selector: '#mobile-fix-statistics-btn', name: 'إصلاح الإحصائيات' },
+
+        // أزرار إعادة تعيين الحالة
+        { selector: '#mobile-clear-state-btn', name: 'إعادة تعيين الحالة' }
+    ];
+
+    restrictedButtons.forEach(buttonInfo => {
+        const buttons = document.querySelectorAll(buttonInfo.selector);
+        buttons.forEach(button => {
+            if (button) {
+                // إزالة جميع معالجات الأحداث السابقة
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+
+                // إضافة معالج جديد يظهر رسالة عدم الصلاحية
+                newButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showNoPermissionMessage(`ليس لديك صلاحية للوصول إلى "${buttonInfo.name}"`);
+                    return false;
+                });
+
+                // إضافة كلاس للتصميم المحظور
+                newButton.classList.add('restricted-button');
+                newButton.title = `ليس لديك صلاحية للوصول إلى "${buttonInfo.name}"`;
+
+                console.log(`🔒 تم تقييد الوصول لزر: ${buttonInfo.name}`);
+            }
+        });
+    });
+
+    // تطبيق قيود على عناصر القائمة المنسدلة
+    const dropdownItems = [
+        { selector: '[onclick*="showPropertyManager"]', name: 'إدارة العقارات' },
+        { selector: '[onclick*="fixStatisticsNow"]', name: 'إصلاح الإحصائيات' },
+        { selector: '[onclick*="showDateUpdateModal"]', name: 'تحديث التواريخ' },
+        { selector: '[onclick*="openDateUpdateModal"]', name: 'تحديث التواريخ' },
+        { selector: '[onclick*="clearAppStateWithConfirmation"]', name: 'إعادة تعيين الحالة' }
+    ];
+
+    dropdownItems.forEach(itemInfo => {
+        const items = document.querySelectorAll(itemInfo.selector);
+        items.forEach(item => {
+            if (item) {
+                // إزالة onclick السابق
+                item.removeAttribute('onclick');
+
+                // إضافة معالج جديد
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showNoPermissionMessage(`ليس لديك صلاحية للوصول إلى "${itemInfo.name}"`);
+                    closeAllDropdowns(); // إغلاق القائمة المنسدلة
+                    return false;
+                });
+
+                // إضافة مؤشر بصري
+                item.style.opacity = '0.6';
+                item.style.cursor = 'not-allowed';
+                item.title = `ليس لديك صلاحية للوصول إلى "${itemInfo.name}"`;
+
+                console.log(`🔒 تم تقييد الوصول لعنصر القائمة: ${itemInfo.name}`);
+            }
+        });
+    });
+
+    console.log('✅ تم تطبيق قيود الوصول على جميع الأزرار الإدارية');
 }
 
 // تطبيق قيود المرفقات للمستخدم محدود الصلاحيات
@@ -30244,7 +30885,7 @@ function checkPermission(action) {
 }
 
 // إظهار رسالة عدم وجود صلاحيات
-function showNoPermissionMessage() {
+function showNoPermissionMessage(customMessage = null) {
     // إزالة أي رسالة سابقة
     const existingMessage = document.querySelector('.no-permission-message');
     if (existingMessage) {
@@ -30254,19 +30895,90 @@ function showNoPermissionMessage() {
     // إنشاء رسالة جديدة
     const message = document.createElement('div');
     message.className = 'no-permission-message';
+
+    const messageText = customMessage || 'ليس لديك صلاحية للقيام بهذا الإجراء';
+
     message.innerHTML = `
-        <i class="fas fa-lock" style="margin-left: 8px;"></i>
-        ليس لديك صلاحية للقيام بهذا الإجراء
+        <div style="display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-lock" style="margin-left: 8px; color: #dc3545;"></i>
+            <span>${messageText}</span>
+        </div>
     `;
+
+    // تحسين تصميم الرسالة
+    message.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #fff, #f8f9fa);
+        color: #721c24;
+        padding: 20px 30px;
+        border-radius: 10px;
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+        z-index: 10000;
+        font-weight: 600;
+        font-size: 16px;
+        border: 2px solid #dc3545;
+        min-width: 300px;
+        text-align: center;
+        animation: slideInScale 0.3s ease-out;
+    `;
+
+    // إضافة CSS للأنيميشن
+    if (!document.querySelector('#noPermissionAnimation')) {
+        const style = document.createElement('style');
+        style.id = 'noPermissionAnimation';
+        style.textContent = `
+            @keyframes slideInScale {
+                0% {
+                    opacity: 0;
+                    transform: translate(-50%, -50%) scale(0.8);
+                }
+                100% {
+                    opacity: 1;
+                    transform: translate(-50%, -50%) scale(1);
+                }
+            }
+
+            .no-permission-message:hover {
+                transform: translate(-50%, -50%) scale(1.02) !important;
+                transition: transform 0.2s ease;
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     document.body.appendChild(message);
 
-    // إزالة الرسالة بعد 3 ثوان
+    // إضافة صوت تنبيه (اختياري)
+    try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+        audio.volume = 0.1;
+        audio.play().catch(() => {}); // تجاهل الأخطاء إذا لم يُسمح بالصوت
+    } catch (e) {}
+
+    // تحديد مدة عرض الرسالة حسب نوع المستخدم
+    let displayDuration = 4000; // 4 ثوان للمستخدمين العاديين
+
+    // للمستخدم محدود الصلاحية: إخفاء الرسالة بعد ثانيتين فقط
+    if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
+        displayDuration = 2000; // ثانيتان فقط
+    }
+
+    // إزالة الرسالة
     setTimeout(() => {
         if (message.parentNode) {
-            message.remove();
+            message.style.animation = 'slideInScale 0.3s ease-out reverse';
+            setTimeout(() => {
+                if (message.parentNode) {
+                    message.remove();
+                }
+            }, 300);
         }
-    }, 3000);
+    }, displayDuration);
+
+    console.log('🔒 تم عرض رسالة عدم الصلاحية:', messageText);
 }
 
 // إظهار رسالة ترحيب
@@ -30299,7 +31011,16 @@ function showWelcomeMessage(fullName) {
         message.style.transform = 'translateX(0)';
     }, 100);
 
-    // إخفاء الرسالة بعد 4 ثوان
+    // تحديد مدة عرض الرسالة حسب نوع المستخدم
+    let displayDuration = 4000; // 4 ثوان للمستخدمين العاديين
+
+    // للمستخدم محدود الصلاحية: إخفاء الرسالة بعد ثانيتين فقط
+    if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
+        displayDuration = 2000; // ثانيتان فقط
+        console.log('👤 مستخدم محدود الصلاحية - إخفاء رسالة الترحيب بعد ثانيتين');
+    }
+
+    // إخفاء الرسالة
     setTimeout(() => {
         message.style.transform = 'translateX(100%)';
         setTimeout(() => {
@@ -30307,7 +31028,7 @@ function showWelcomeMessage(fullName) {
                 message.remove();
             }
         }, 300);
-    }, 4000);
+    }, displayDuration);
 }
 
 // تسجيل الخروج
@@ -30322,6 +31043,9 @@ function logout() {
         // إعادة تعيين المتغيرات
         currentUser = null;
         userPermissions = null;
+
+        // إزالة كلاسات المستخدم
+        document.body.classList.remove('user-omar', 'admin-user', 'limited-user');
 
         // إعادة تحميل الصفحة
         location.reload();
