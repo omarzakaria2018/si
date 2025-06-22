@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 فحص مشكلة المستخدم محدود الصلاحية</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+            direction: rtl;
+        }
+        .debug-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .debug-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .debug-button:hover {
+            background: #0056b3;
+        }
+        .urgent-button {
+            background: #dc3545;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .warning { color: #ffc107; font-weight: bold; }
+        .info { color: #17a2b8; font-weight: bold; }
+        .status-box {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status-good { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-bad { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status-unknown { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔍 فحص مشكلة المستخدم محدود الصلاحية</h1>
+        
+        <div class="debug-section">
+            <h3>🚨 المشكلة المبلغ عنها</h3>
+            <p><strong>المشكلة:</strong> الأزرار الإدارية ما زالت ظاهرة للمستخدم محدود الصلاحية</p>
+            <p><strong>الأزرار المفترض إخفاؤها:</strong></p>
+            <ul>
+                <li>🏢 إدارة العقارات</li>
+                <li>📅 تحديث التواريخ</li>
+                <li>📊 إصلاح الإحصائيات</li>
+                <li>🔄 إعادة تعيين الحالة</li>
+            </ul>
+        </div>
+
+        <div id="statusBox" class="status-box status-unknown">
+            🔄 جاري فحص حالة النظام...
+        </div>
+
+        <div class="debug-section">
+            <h3>🧪 أدوات الفحص السريع</h3>
+            
+            <button class="debug-button urgent-button" onclick="openMainAppAndTest()">
+                🚨 فتح التطبيق الرئيسي واختبار فوري
+            </button>
+            
+            <button class="debug-button" onclick="checkCurrentState()">
+                🔍 فحص الحالة الحالية
+            </button>
+            
+            <button class="debug-button" onclick="simulateLogin()">
+                👤 محاكاة تسجيل دخول sa12345
+            </button>
+            
+            <button class="debug-button" onclick="forceHideButtons()">
+                🔒 إجبار إخفاء الأزرار
+            </button>
+            
+            <button class="debug-button" onclick="clearResults()">
+                🧹 مسح النتائج
+            </button>
+        </div>
+
+        <div class="debug-section">
+            <h3>📊 نتائج الفحص</h3>
+            <div id="debugResults" class="results">اضغط على "فحص الحالة الحالية" لبدء الفحص...</div>
+        </div>
+
+        <div class="debug-section">
+            <h3>🔧 إرشادات الإصلاح</h3>
+            <ol>
+                <li><strong>افتح التطبيق الرئيسي:</strong> اضغط الزر الأحمر أعلاه</li>
+                <li><strong>سجل دخول:</strong> استخدم sa12345 كاسم مستخدم وكلمة مرور</li>
+                <li><strong>تحقق من الأزرار:</strong> ابحث عن الأزرار الأربعة المذكورة</li>
+                <li><strong>إذا كانت ظاهرة:</strong> افتح Console واكتب: <code>hideAdminButtonsForLimitedUser()</code></li>
+                <li><strong>للتحقق من الكلاس:</strong> اكتب: <code>document.body.classList.contains('limited-user')</code></li>
+            </ol>
+        </div>
+
+        <div class="debug-section">
+            <h3>🛠️ أوامر Console للإصلاح الفوري</h3>
+            <div class="results">
+// تحقق من المستخدم الحالي
+console.log('المستخدم:', currentUser);
+console.log('النوع:', users[currentUser]?.role);
+
+// تحقق من الكلاس
+console.log('كلاس limited-user:', document.body.classList.contains('limited-user'));
+
+// إجبار إضافة الكلاس
+document.body.classList.add('limited-user');
+
+// إجبار إخفاء الأزرار
+hideAdminButtonsForLimitedUser();
+
+// فحص الأزرار المخفية
+const adminButtons = document.querySelectorAll('.admin-only-feature');
+console.log('عدد الأزرار الإدارية:', adminButtons.length);
+adminButtons.forEach((btn, i) => {
+    console.log(`الزر ${i+1}:`, btn.textContent?.trim(), 'مخفي:', getComputedStyle(btn).display === 'none');
+});
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('debugResults');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            results.textContent += logEntry;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'unknown') {
+            const statusBox = document.getElementById('statusBox');
+            statusBox.textContent = message;
+            statusBox.className = `status-box status-${type}`;
+        }
+
+        function clearResults() {
+            document.getElementById('debugResults').textContent = '';
+            log('🧹 تم مسح النتائج', 'info');
+        }
+
+        function checkCurrentState() {
+            log('🔍 بدء فحص الحالة الحالية...', 'info');
+            
+            // فحص إذا كان التطبيق الرئيسي مفتوح
+            try {
+                if (window.opener && window.opener.currentUser) {
+                    log('✅ تم العثور على التطبيق الرئيسي', 'success');
+                    log(`👤 المستخدم الحالي: ${window.opener.currentUser}`, 'info');
+                    log(`🔑 نوع المستخدم: ${window.opener.users[window.opener.currentUser]?.role}`, 'info');
+                    
+                    const hasLimitedClass = window.opener.document.body.classList.contains('limited-user');
+                    log(`🏷️ كلاس limited-user: ${hasLimitedClass}`, hasLimitedClass ? 'success' : 'error');
+                    
+                    const adminButtons = window.opener.document.querySelectorAll('.admin-only-feature');
+                    log(`🔍 عدد الأزرار الإدارية: ${adminButtons.length}`, 'info');
+                    
+                    let hiddenCount = 0;
+                    adminButtons.forEach((btn, i) => {
+                        const isHidden = window.opener.getComputedStyle(btn).display === 'none';
+                        if (isHidden) hiddenCount++;
+                        log(`   الزر ${i+1}: ${btn.textContent?.trim()} - ${isHidden ? 'مخفي ✅' : 'ظاهر ❌'}`, isHidden ? 'success' : 'error');
+                    });
+                    
+                    log(`📊 النتيجة: ${hiddenCount}/${adminButtons.length} أزرار مخفية`, hiddenCount === adminButtons.length ? 'success' : 'error');
+                    
+                    if (hiddenCount === adminButtons.length) {
+                        updateStatus('✅ جميع الأزرار مخفية بنجاح', 'good');
+                    } else {
+                        updateStatus('❌ بعض الأزرار ما زالت ظاهرة', 'bad');
+                    }
+                } else {
+                    log('⚠️ لم يتم العثور على التطبيق الرئيسي', 'warning');
+                    log('💡 اضغط "فتح التطبيق الرئيسي واختبار فوري" أولاً', 'info');
+                    updateStatus('⚠️ التطبيق الرئيسي غير مفتوح', 'unknown');
+                }
+            } catch (error) {
+                log('❌ خطأ في الوصول للتطبيق الرئيسي: ' + error.message, 'error');
+                updateStatus('❌ خطأ في الفحص', 'bad');
+            }
+        }
+
+        function openMainAppAndTest() {
+            log('🚨 فتح التطبيق الرئيسي للاختبار الفوري...', 'info');
+            
+            const testWindow = window.open('index.html', 'mainApp', 'width=1200,height=800');
+            
+            if (testWindow) {
+                log('✅ تم فتح التطبيق الرئيسي', 'success');
+                log('⏳ انتظار تحميل التطبيق...', 'info');
+                
+                setTimeout(() => {
+                    try {
+                        if (testWindow.setCurrentUser && testWindow.users) {
+                            log('🔑 تطبيق المستخدم محدود الصلاحية...', 'info');
+                            testWindow.setCurrentUser('sa12345');
+                            
+                            setTimeout(() => {
+                                log('🔍 فحص الأزرار...', 'info');
+                                checkCurrentState();
+                            }, 2000);
+                        } else {
+                            log('⚠️ التطبيق لم يحمل بعد، جرب الفحص يدوياً', 'warning');
+                        }
+                    } catch (error) {
+                        log('⚠️ لا يمكن التحكم في التطبيق تلقائياً، جرب يدوياً', 'warning');
+                        log('💡 سجل دخول بـ sa12345 وتحقق من الأزرار', 'info');
+                    }
+                }, 3000);
+            } else {
+                log('❌ فشل في فتح التطبيق الرئيسي', 'error');
+                updateStatus('❌ فشل في فتح التطبيق', 'bad');
+            }
+        }
+
+        function simulateLogin() {
+            log('👤 محاكاة تسجيل دخول sa12345...', 'info');
+            
+            try {
+                if (window.opener && window.opener.setCurrentUser) {
+                    window.opener.setCurrentUser('sa12345');
+                    log('✅ تم تطبيق المستخدم محدود الصلاحية', 'success');
+                    
+                    setTimeout(() => {
+                        checkCurrentState();
+                    }, 1000);
+                } else {
+                    log('⚠️ لا يمكن الوصول للتطبيق الرئيسي', 'warning');
+                }
+            } catch (error) {
+                log('❌ خطأ في محاكاة تسجيل الدخول: ' + error.message, 'error');
+            }
+        }
+
+        function forceHideButtons() {
+            log('🔒 إجبار إخفاء الأزرار...', 'info');
+            
+            try {
+                if (window.opener && window.opener.hideAdminButtonsForLimitedUser) {
+                    window.opener.document.body.classList.add('limited-user');
+                    window.opener.hideAdminButtonsForLimitedUser();
+                    log('✅ تم إجبار إخفاء الأزرار', 'success');
+                    
+                    setTimeout(() => {
+                        checkCurrentState();
+                    }, 500);
+                } else {
+                    log('⚠️ لا يمكن الوصول لوظائف التطبيق الرئيسي', 'warning');
+                }
+            } catch (error) {
+                log('❌ خطأ في إجبار الإخفاء: ' + error.message, 'error');
+            }
+        }
+
+        // تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔍 أداة فحص مشكلة المستخدم محدود الصلاحية جاهزة', 'success');
+            log('💡 اضغط "فتح التطبيق الرئيسي واختبار فوري" للبدء', 'info');
+            updateStatus('🔄 جاهز للفحص', 'unknown');
+        });
+    </script>
+</body>
+</html>

@@ -284,6 +284,14 @@ async function getTrackingLogsStats() {
 // حذف سجلات التتبع القديمة
 async function cleanupOldTrackingLogs(daysToKeep = 365) {
     try {
+        // التحقق من صلاحيات المستخدم
+        if (typeof window !== 'undefined' && window.checkPermission) {
+            if (!window.checkPermission('deleteTrackingLogs')) {
+                console.warn('🔒 المستخدم لا يملك صلاحية تنظيف سجلات التتبع');
+                return 0;
+            }
+        }
+
         if (!supabaseClient) {
             console.warn('⚠️ Supabase غير متصل');
             return 0;
@@ -316,6 +324,14 @@ async function cleanupOldTrackingLogs(daysToKeep = 365) {
 // حذف سجل تتبع محدد
 async function deleteTrackingLog(logId) {
     try {
+        // التحقق من صلاحيات المستخدم
+        if (typeof window !== 'undefined' && window.checkPermission) {
+            if (!window.checkPermission('deleteTrackingLogs')) {
+                console.warn('🔒 المستخدم لا يملك صلاحية حذف سجلات التتبع');
+                return false;
+            }
+        }
+
         if (!supabaseClient) {
             console.warn('⚠️ Supabase غير متصل');
             return false;

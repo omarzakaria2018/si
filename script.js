@@ -283,6 +283,70 @@ function setupLogoutButtonObserver() {
     console.log('👁️ تم تفعيل مراقب زر تسجيل الخروج');
 }
 
+// مراقب لتطبيق قيود الوصول على الأزرار الإدارية للمستخدم محدود الصلاحية
+function setupAdminButtonsObserver() {
+    if (!currentUser || !users[currentUser] || users[currentUser].role !== 'limited') {
+        return; // لا حاجة للمراقب إذا لم يكن المستخدم محدود الصلاحية
+    }
+
+    console.log('👁️ تفعيل مراقب قيود الوصول للأزرار الإدارية...');
+
+    // مراقب DOM لتطبيق قيود الوصول على الأزرار الجديدة
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                // تطبيق قيود على الأزرار الجديدة
+                setTimeout(() => {
+                    restrictAdminButtonsForLimitedUser();
+                    // إزالة المساحات الفارغة بعد تطبيق القيود (معطل مؤقتاً لحل مشكلة الجوال)
+                    // setTimeout(() => {
+                    //     removeEmptySpacesFromHiddenElements();
+                    //     advancedSpaceRemoval();
+                    // }, 100);
+                }, 100);
+            }
+        });
+    });
+
+    // بدء مراقبة التغييرات في DOM
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    console.log('✅ تم تفعيل مراقب قيود الوصول للأزرار الإدارية');
+}
+
+// دالة لتطبيق قيود الوصول على الأزرار الإدارية (بدلاً من إخفائها)
+function hideAdminButtonsForLimitedUser() {
+    // هذه الدالة تم استبدالها بـ restrictAdminButtonsForLimitedUser
+    // لكن نحتفظ بها للتوافق مع الاستدعاءات الموجودة
+    if (!currentUser || !users[currentUser] || users[currentUser].role !== 'limited') {
+        return;
+    }
+
+    console.log('🔄 تحويل إلى دالة تقييد الوصول...');
+    restrictAdminButtonsForLimitedUser();
+}
+
+// دالة عامة لتطبيق قيود الوصول على الأزرار للمستخدم محدود الصلاحية
+window.fixLimitedUserButtons = function() {
+    console.log('🚨 تطبيق قيود الوصول على الأزرار للمستخدم محدود الصلاحية');
+
+    // التأكد من إضافة الكلاس
+    document.body.classList.add('limited-user');
+    console.log('✅ تم إضافة كلاس limited-user');
+
+    // تطبيق قيود الوصول بدلاً من الإخفاء
+    restrictAdminButtonsForLimitedUser();
+
+    // تفعيل المراقب
+    setupAdminButtonsObserver();
+
+    console.log('🎉 تم تطبيق قيود الوصول بنجاح!');
+    console.log('💡 الأزرار الآن ظاهرة لكن محمية - ستظهر رسالة عدم الصلاحية عند النقر');
+};
+
 // مسح الحالة مع التأكيد
 function clearAppStateWithConfirmation() {
     const confirmed = confirm('هل تريد إعادة تعيين حالة التطبيق؟\n\nسيؤدي هذا إلى:\n• إعادة تعيين المدينة المختارة\n• إعادة تعيين العقار المختار\n• إعادة تعيين الفلاتر\n• إعادة تعيين طريقة العرض\n• مسح نصوص البحث');
@@ -422,6 +486,68 @@ function hideCrystalLoading() {
 }
 
 // ==================== نهاية شاشة التحميل البلورية ====================
+
+// مؤشر تحميل سريع للمستخدم محدود الصلاحيات
+function showQuickLoadingForLimitedUser() {
+    console.log('⚡ إظهار مؤشر تحميل سريع للمستخدم محدود الصلاحيات');
+
+    // التحقق من وجود مؤشر تحميل موجود بالفعل
+    const existingLoader = document.getElementById('quickLimitedUserLoader');
+    if (existingLoader) {
+        return;
+    }
+
+    // إنشاء مؤشر التحميل السريع
+    const quickLoader = document.createElement('div');
+    quickLoader.id = 'quickLimitedUserLoader';
+    quickLoader.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        backdrop-filter: blur(2px);
+    `;
+
+    quickLoader.innerHTML = `
+        <div style="text-align: center; padding: 30px;">
+            <div style="width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+            <div style="color: #007bff; font-size: 16px; font-weight: 500;">تطبيق إعدادات المستخدم...</div>
+            <div style="color: #666; font-size: 14px; margin-top: 5px;">يرجى الانتظار قليلاً</div>
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+
+    document.body.appendChild(quickLoader);
+}
+
+// إخفاء مؤشر التحميل السريع
+function hideQuickLoadingForLimitedUser() {
+    console.log('⚡ إخفاء مؤشر التحميل السريع');
+
+    const quickLoader = document.getElementById('quickLimitedUserLoader');
+    if (quickLoader) {
+        quickLoader.style.opacity = '0';
+        quickLoader.style.transition = 'opacity 0.3s ease';
+
+        setTimeout(() => {
+            if (quickLoader.parentNode) {
+                quickLoader.parentNode.removeChild(quickLoader);
+            }
+        }, 300);
+    }
+}
+
 let contractTypeFilter = null;
 let multiFilterSelectedCity = null;
 let multiFilterSelectedProperties = [];
@@ -631,6 +757,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('🔑 استدعاء نهائي لإضافة زر تسجيل الخروج');
                 addLogoutButton();
                 updateMobileUserSection();
+            }
+
+            // تطبيق نهائي لقيود الوصول للأزرار للمستخدم محدود الصلاحية
+            if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
+                console.log('🔒 تطبيق نهائي لقيود الوصول للأزرار الإدارية');
+                restrictAdminButtonsForLimitedUser();
+                setupAdminButtonsObserver();
             }
         }, 2000);
     }, 1000);
@@ -1181,6 +1314,12 @@ function initializeApp() {
             console.log('🔑 استدعاء إضافي لإضافة زر تسجيل الخروج');
             addLogoutButton();
             updateMobileUserSection();
+        }
+
+        // تطبيق قيود الوصول للأزرار للمستخدم محدود الصلاحية
+        if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
+            console.log('🔒 تطبيق قيود الوصول للأزرار الإدارية');
+            restrictAdminButtonsForLimitedUser();
         }
     }, 1000);
 
@@ -11711,22 +11850,40 @@ async function confirmDeleteUnit(unitNumber, propertyName, unitIndex) {
         const unit = properties[unitIndex];
         console.log('🗑️ بدء عملية حذف الوحدة:', unitNumber, 'من العقار:', propertyName);
 
-        // 1. استخدام الحذف المتقدم الجديد
+        // 1. استخدام الحذف القوي الجديد أولاً
+        console.log('💪 استخدام الحذف القوي لضمان الحذف النهائي من Supabase...');
+
+        let forceDeleteResult = { success: false };
+        if (typeof forceDeleteUnitFromSupabase === 'function') {
+            try {
+                forceDeleteResult = await forceDeleteUnitFromSupabase(unit);
+                console.log('💪 نتيجة الحذف القوي:', forceDeleteResult);
+            } catch (error) {
+                console.error('❌ خطأ في الحذف القوي:', error);
+            }
+        }
+
+        // 2. استخدام الحذف المتقدم كبديل
         console.log('🔧 استخدام الحذف المتقدم مع معالجة الروابط...');
 
         const enhancedResult = await enhancedDeleteUnit(unit);
 
-        if (enhancedResult.success) {
-            console.log('✅ تم الحذف المتقدم بنجاح');
+        // تحديد نجاح العملية
+        const isSuccessful = forceDeleteResult.success || enhancedResult.success;
+        const deletedFromSupabase = forceDeleteResult.deletedCount || enhancedResult.cloudDeleted || 0;
+
+        if (isSuccessful) {
+            console.log('✅ تم الحذف بنجاح');
 
             // إزالة مؤشر التحميل
             loadingModal.remove();
 
-            // إظهار رسالة نجاح
-            showSuccessMessage(
-                'تم حذف الوحدة بنجاح',
-                `تم حذف الوحدة وجميع البيانات المرتبطة نهائياً (محلي: ${enhancedResult.localDeleted || 0}, سحابي: ${enhancedResult.cloudDeleted || 0})`
-            );
+            // إظهار رسالة نجاح مفصلة
+            const successMessage = deletedFromSupabase > 0
+                ? `تم حذف الوحدة نهائياً من قاعدة البيانات (${deletedFromSupabase} سجل) والبيانات المحلية`
+                : 'تم حذف الوحدة من البيانات المحلية (لم توجد في قاعدة البيانات)';
+
+            showSuccessMessage('تم حذف الوحدة بنجاح', successMessage);
 
             // تحديث الواجهة
             if (document.getElementById('units-tab')) {
@@ -11743,7 +11900,7 @@ async function confirmDeleteUnit(unitNumber, propertyName, unitIndex) {
 
             return; // انتهى بنجاح
         } else {
-            console.warn('⚠️ فشل الحذف المتقدم، سيتم المتابعة بالطريقة التقليدية');
+            console.warn('⚠️ فشل الحذف المتقدم والقوي، سيتم المتابعة بالطريقة التقليدية');
         }
 
         // 2. Delete from Supabase with advanced foreign key handling
@@ -30283,10 +30440,16 @@ const users = {
             editData: false,
             deleteData: false,
             manageProperties: false,
-            manageAttachments: true,
-            exportData: false,
+            manageAttachments: false, // تم تقييد إدارة المرفقات
+            exportData: true, // السماح بالتصدير فقط
             importData: false,
-            manageSettings: false
+            manageSettings: false,
+            // صلاحيات محددة للميزات المطلوب تقييدها
+            resetStatus: false,
+            fixStatistics: false,
+            updateDates: false,
+            accessTrackingLogs: false,
+            deleteTrackingLogs: false
         }
     }
 };
@@ -30382,9 +30545,11 @@ function handleLogin(event) {
         // إخفاء نافذة تسجيل الدخول
         hideLoginModal();
 
-        // إظهار شاشة التحميل البلورية بعد تسجيل الدخول
-        console.log('🔮 إظهار شاشة التحميل بعد تسجيل الدخول الناجح');
-        showCrystalLoading();
+        // إظهار شاشة التحميل البلورية بعد تسجيل الدخول (للمدراء فقط)
+        if (users[username].role !== 'limited') {
+            console.log('🔮 إظهار شاشة التحميل بعد تسجيل الدخول الناجح');
+            showCrystalLoading();
+        }
 
         // إظهار رسالة ترحيب
         showWelcomeMessage(users[username].fullName);
@@ -30416,14 +30581,31 @@ function setCurrentUser(username) {
         currentUser = username;
         userPermissions = users[username].permissions;
 
+        // إظهار مؤشر تحميل سريع للمستخدم محدود الصلاحيات
+        if (users[username].role === 'limited') {
+            showQuickLoadingForLimitedUser();
+        }
+
+        // تعيين المستخدم الحالي في Supabase للتحقق من الصلاحيات
+        setSupabaseUserContext(username);
+
         // تطبيق الصلاحيات على الواجهة
         applyUserPermissions();
 
-        // تفعيل مراقب المرفقات للمستخدم محدود الصلاحيات
+        // تطبيق قيود الوصول للأزرار الإدارية للمستخدم محدود الصلاحية
         if (users[username].role === 'limited') {
+            console.log('🔒 تطبيق قيود الوصول للأزرار الإدارية...');
+
+            // تطبيق القيود فوراً
+            restrictAdminButtonsForLimitedUser();
+
+            // تطبيق قيود إضافية بتأخير قصير واحد فقط
             setTimeout(() => {
+                restrictAdminButtonsForLimitedUser();
                 setupAttachmentsPermissionObserver();
-            }, 500);
+                setupAdminButtonsObserver();
+                hideQuickLoadingForLimitedUser(); // إخفاء مؤشر التحميل
+            }, 200);
         }
 
         // إضافة زر تسجيل الخروج فور تسجيل الدخول
@@ -30448,7 +30630,22 @@ function applyUserPermissions() {
     // إضافة كلاس حسب نوع المستخدم
     if (users[currentUser].role === 'limited') {
         body.classList.add('limited-user');
+
+        // تطبيق القيود فوراً بدون تأخير
         hideLimitedUserElements();
+        restrictAdminButtonsForLimitedUser();
+
+        // تطبيق قيود إضافية بتأخير قصير فقط
+        setTimeout(() => {
+            hideLimitedUserElements(); // تطبيق إضافي للتأكد
+            restrictAdminButtonsForLimitedUser();
+            simpleSpaceRemoval();
+        }, 100);
+
+        // تطبيق إضافي للقيود بعد تحميل كامل للصفحة
+        setTimeout(() => {
+            hideLimitedUserElements();
+        }, 500);
     } else {
         body.classList.add('admin-user');
     }
@@ -30468,36 +30665,380 @@ function applyUserPermissions() {
     };
 }
 
-// إخفاء العناصر للمستخدم محدود الصلاحيات
-function hideLimitedUserElements() {
-    // إخفاء زر إدارة العقارات
-    const propertyManagerBtns = document.querySelectorAll('#propertyManagerBtn, .property-manager-btn');
-    propertyManagerBtns.forEach(btn => {
-        if (btn) btn.style.display = 'none';
-    });
+// تعيين سياق المستخدم في Supabase للتحقق من الصلاحيات
+async function setSupabaseUserContext(username) {
+    try {
+        if (supabaseClient && username) {
+            // تعيين المستخدم الحالي في سياق Supabase
+            await supabaseClient.rpc('set_config', {
+                setting_name: 'app.current_user',
+                setting_value: username,
+                is_local: true
+            });
+            console.log(`🔐 تم تعيين سياق المستخدم في Supabase: ${username}`);
+        }
+    } catch (error) {
+        console.warn('⚠️ لا يمكن تعيين سياق المستخدم في Supabase:', error);
+        // هذا ليس خطأ حرج، يمكن المتابعة بدون سياق Supabase
+    }
+}
 
-    // إخفاء أزرار التحرير والحذف في البطاقات
+// تطبيق قيود الوصول للمستخدم محدود الصلاحيات (بدون إخفاء الأزرار)
+function hideLimitedUserElements() {
+    console.log('🔒 تطبيق قيود الوصول للمستخدم محدود الصلاحيات...');
+
+    // تطبيق قيود على الأزرار الإدارية بدلاً من إخفائها
+    restrictAdminButtonsForLimitedUser();
+
+    // إخفاء أزرار التحرير والحذف في البطاقات فقط
     const editBtns = document.querySelectorAll('.edit-btn, .delete-btn, .add-btn');
     editBtns.forEach(btn => {
         if (btn) btn.style.display = 'none';
     });
 
-    // إخفاء عناصر الإدارة في القوائم المنسدلة
-    const managementItems = document.querySelectorAll('[onclick*="showPropertyManager"], [onclick*="showDataImport"], [onclick*="cleanStorage"]');
-    managementItems.forEach(item => {
-        if (item) item.style.display = 'none';
+    // إخفاء أزرار إدارة سجلات التتبع
+    const trackingButtons = document.querySelectorAll('#trackingManagementBtn, #changeTrackingBtn, #mobile-change-tracking-btn');
+    trackingButtons.forEach(btn => {
+        if (btn) btn.style.display = 'none';
     });
 
-    // إخفاء زر إدارة سجلات التتبع
-    const trackingManagementBtn = document.getElementById('trackingManagementBtn');
-    if (trackingManagementBtn) {
-        trackingManagementBtn.style.display = 'none';
-    }
+    // إخفاء أزرار استيراد البيانات وتنظيف التخزين
+    const restrictedButtons = document.querySelectorAll('#dataImportBtn, #mobile-data-import-btn, #cleanStorageBtn');
+    restrictedButtons.forEach(btn => {
+        if (btn) btn.style.display = 'none';
+    });
+
+    // إخفاء جميع الأزرار الإدارية في القائمة المحمولة
+    const mobileAdminButtons = document.querySelectorAll(`
+        #mobile-property-manager-btn, #mobile-change-tracking-btn, #mobile-date-update-btn,
+        #mobile-data-import-btn, #mobile-fix-statistics-btn, #mobile-clear-state-btn,
+        #mobile-attachments-btn
+    `);
+
+    mobileAdminButtons.forEach(btn => {
+        if (btn) {
+            btn.style.display = 'none';
+            // إخفاء العنصر li الذي يحتوي على الزر
+            const parentLi = btn.closest('li');
+            if (parentLi) {
+                parentLi.style.display = 'none';
+            }
+        }
+    });
 
     // تطبيق قيود المرفقات
     applyAttachmentsRestrictions();
 
-    console.log('🔒 تم تطبيق قيود المستخدم محدود الصلاحيات');
+    // إزالة المساحات الفارغة فوراً
+    simpleSpaceRemoval();
+
+    console.log('✅ تم تطبيق قيود الوصول للمستخدم محدود الصلاحيات');
+}
+
+
+
+// تطبيق قيود على الأزرار الإدارية للمستخدم محدود الصلاحية
+function restrictAdminButtonsForLimitedUser() {
+    console.log('🔒 تطبيق قيود الوصول على الأزرار الإدارية...');
+
+    // قائمة الأزرار الإدارية المحظورة
+    const restrictedButtons = [
+        // أزرار إدارة العقارات
+        { selector: '#propertyManagerBtn', name: 'إدارة العقارات' },
+        { selector: '.management-btn', name: 'إدارة العقارات' },
+        { selector: '#mobile-property-manager-btn', name: 'إدارة العقارات' },
+
+        // أزرار تحديث التواريخ
+        { selector: '#updateDatesBtn', name: 'تحديث التواريخ' },
+        { selector: '#mobile-date-update-btn', name: 'تحديث التواريخ' },
+
+        // أزرار إصلاح الإحصائيات
+        { selector: '#fixStatisticsBtn', name: 'إصلاح الإحصائيات' },
+        { selector: '#mobile-fix-statistics-btn', name: 'إصلاح الإحصائيات' },
+
+        // أزرار إعادة تعيين الحالة
+        { selector: '#mobile-clear-state-btn', name: 'إعادة تعيين الحالة' },
+
+        // أزرار سجلات التتبع والمراجعة
+        { selector: '#trackingManagementBtn', name: 'إدارة سجلات التتبع' },
+        { selector: '#mobile-change-tracking-btn', name: 'سجل التتبع' },
+        { selector: '#changeTrackingBtn', name: 'سجل التتبع' },
+
+        // أزرار استيراد البيانات
+        { selector: '#dataImportBtn', name: 'استيراد البيانات' },
+        { selector: '#mobile-data-import-btn', name: 'استيراد البيانات' },
+
+        // أزرار تنظيف التخزين
+        { selector: '#cleanStorageBtn', name: 'تنظيف التخزين' }
+    ];
+
+    restrictedButtons.forEach(buttonInfo => {
+        const buttons = document.querySelectorAll(buttonInfo.selector);
+        buttons.forEach(button => {
+            if (button) {
+                // إزالة جميع معالجات الأحداث السابقة
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+
+                // إضافة معالج جديد يظهر رسالة عدم الصلاحية
+                newButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showNoPermissionMessage(`ليس لديك صلاحية للوصول إلى "${buttonInfo.name}"`);
+                    return false;
+                });
+
+                // إضافة كلاس للتصميم المحظور
+                newButton.classList.add('restricted-button');
+                newButton.title = `ليس لديك صلاحية للوصول إلى "${buttonInfo.name}"`;
+
+                console.log(`🔒 تم تقييد الوصول لزر: ${buttonInfo.name}`);
+            }
+        });
+    });
+
+    // تطبيق قيود على عناصر القائمة المنسدلة
+    const dropdownItems = [
+        { selector: '[onclick*="showPropertyManager"]', name: 'إدارة العقارات' },
+        { selector: '[onclick*="fixStatisticsNow"]', name: 'إصلاح الإحصائيات' },
+        { selector: '[onclick*="showDateUpdateModal"]', name: 'تحديث التواريخ' },
+        { selector: '[onclick*="openDateUpdateModal"]', name: 'تحديث التواريخ' },
+        { selector: '[onclick*="clearAppStateWithConfirmation"]', name: 'إعادة تعيين الحالة' }
+    ];
+
+    dropdownItems.forEach(itemInfo => {
+        const items = document.querySelectorAll(itemInfo.selector);
+        items.forEach(item => {
+            if (item) {
+                // إزالة onclick السابق
+                item.removeAttribute('onclick');
+
+                // إضافة معالج جديد
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showNoPermissionMessage(`ليس لديك صلاحية للوصول إلى "${itemInfo.name}"`);
+                    closeAllDropdowns(); // إغلاق القائمة المنسدلة
+                    return false;
+                });
+
+                // إضافة مؤشر بصري
+                item.style.opacity = '0.6';
+                item.style.cursor = 'not-allowed';
+                item.title = `ليس لديك صلاحية للوصول إلى "${itemInfo.name}"`;
+
+                console.log(`🔒 تم تقييد الوصول لعنصر القائمة: ${itemInfo.name}`);
+            }
+        });
+    });
+
+    console.log('✅ تم تطبيق قيود الوصول على جميع الأزرار الإدارية');
+
+    // إزالة المساحات الفارغة بطريقة آمنة
+    simpleSpaceRemoval();
+}
+
+// دالة بسيطة وآمنة لإزالة المساحات الفارغة
+function simpleSpaceRemoval() {
+    console.log('🧹 إزالة بسيطة للمساحات الفارغة...');
+
+    // إضافة كلاس CSS للحاويات لتحسين التخطيط
+    const headerActions = document.querySelector('.header-actions');
+    if (headerActions && !headerActions.classList.contains('space-optimized')) {
+        headerActions.classList.add('space-optimized');
+        headerActions.style.display = 'flex';
+        headerActions.style.flexWrap = 'wrap';
+        headerActions.style.gap = '8px';
+        headerActions.style.alignItems = 'center';
+    }
+
+    // إزالة عناصر li الفارغة من القائمة المحمولة
+    const mobileList = document.querySelector('.mobile-dropdown-list');
+    if (mobileList) {
+        const emptyItems = mobileList.querySelectorAll('li:has(.admin-only-feature)');
+        emptyItems.forEach(item => {
+            const hiddenButton = item.querySelector('.admin-only-feature');
+            if (hiddenButton && window.getComputedStyle(hiddenButton).display === 'none') {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    console.log('✅ تم تطبيق الإزالة البسيطة للمساحات الفارغة');
+}
+
+
+
+// دالة لإزالة المساحات الفارغة من العناصر المخفية
+function removeEmptySpacesFromHiddenElements() {
+    console.log('🧹 إزالة المساحات الفارغة من العناصر المخفية...');
+
+    // إزالة المساحات من الهيدر
+    const headerActions = document.querySelector('.header-section.header-actions');
+    if (headerActions) {
+        // إعادة ترتيب العناصر المرئية فقط
+        const visibleElements = Array.from(headerActions.children).filter(child => {
+            const computedStyle = window.getComputedStyle(child);
+            return computedStyle.display !== 'none' && computedStyle.visibility !== 'hidden';
+        });
+
+        // إزالة جميع العناصر
+        headerActions.innerHTML = '';
+
+        // إعادة إضافة العناصر المرئية فقط
+        visibleElements.forEach(element => {
+            headerActions.appendChild(element);
+        });
+    }
+
+    // إزالة المساحات من القوائم المنسدلة
+    const dropdownContents = document.querySelectorAll('.dropdown-content');
+    dropdownContents.forEach(dropdown => {
+        const visibleItems = Array.from(dropdown.children).filter(child => {
+            const computedStyle = window.getComputedStyle(child);
+            return computedStyle.display !== 'none' && computedStyle.visibility !== 'hidden';
+        });
+
+        dropdown.innerHTML = '';
+        visibleItems.forEach(item => {
+            dropdown.appendChild(item);
+        });
+    });
+
+    // إزالة المساحات من القائمة المحمولة
+    const mobileList = document.querySelector('.mobile-dropdown-list');
+    if (mobileList) {
+        const visibleItems = Array.from(mobileList.children).filter(child => {
+            const computedStyle = window.getComputedStyle(child);
+            const hasHiddenButton = child.querySelector('.admin-only-feature');
+            return computedStyle.display !== 'none' && !hasHiddenButton;
+        });
+
+        mobileList.innerHTML = '';
+        visibleItems.forEach(item => {
+            mobileList.appendChild(item);
+        });
+    }
+
+    // إزالة الفواصل المتتالية
+    removeConsecutiveDividers();
+
+    console.log('✅ تم إزالة المساحات الفارغة بنجاح');
+}
+
+// دالة متقدمة لإزالة المساحات الفارغة بشكل شامل
+function advancedSpaceRemoval() {
+    console.log('🧹 تطبيق إزالة متقدمة للمساحات الفارغة...');
+
+    // إزالة المساحات من جميع الحاويات
+    const containers = [
+        '.header-section.header-actions',
+        '.header-row',
+        '.dropdown-content',
+        '.mobile-dropdown-list',
+        '.header-countries .countries-container'
+    ];
+
+    containers.forEach(selector => {
+        const container = document.querySelector(selector);
+        if (container) {
+            // إزالة العناصر المخفية تماماً
+            const hiddenElements = container.querySelectorAll('.admin-only-feature');
+            hiddenElements.forEach(element => {
+                if (window.getComputedStyle(element).display === 'none') {
+                    element.remove();
+                }
+            });
+
+            // إعادة ترتيب العناصر المرئية
+            const visibleElements = Array.from(container.children).filter(child => {
+                const style = window.getComputedStyle(child);
+                return style.display !== 'none' && style.visibility !== 'hidden';
+            });
+
+            // تطبيق flexbox للترتيب المحسن
+            container.style.display = 'flex';
+            container.style.flexWrap = 'wrap';
+            container.style.gap = '8px';
+            container.style.alignItems = 'center';
+
+            // إزالة المارجن من جميع العناصر
+            visibleElements.forEach(element => {
+                element.style.margin = '0';
+            });
+        }
+    });
+
+    // إزالة الفواصل المتتالية والزائدة
+    const dropdowns = document.querySelectorAll('.dropdown-content');
+    dropdowns.forEach(dropdown => {
+        const dividers = dropdown.querySelectorAll('.dropdown-divider');
+        let lastWasDivider = false;
+
+        Array.from(dropdown.children).forEach(child => {
+            if (child.classList.contains('dropdown-divider')) {
+                if (lastWasDivider || child === dropdown.firstElementChild || child === dropdown.lastElementChild) {
+                    child.remove();
+                } else {
+                    lastWasDivider = true;
+                }
+            } else if (window.getComputedStyle(child).display !== 'none') {
+                lastWasDivider = false;
+            }
+        });
+    });
+
+    // تحسين القائمة المحمولة
+    const mobileList = document.querySelector('.mobile-dropdown-list');
+    if (mobileList) {
+        const items = Array.from(mobileList.children);
+        items.forEach(item => {
+            const hasHiddenButton = item.querySelector('.admin-only-feature');
+            if (hasHiddenButton) {
+                const buttonStyle = window.getComputedStyle(hasHiddenButton);
+                if (buttonStyle.display === 'none') {
+                    item.remove();
+                }
+            }
+        });
+    }
+
+    console.log('✅ تم تطبيق الإزالة المتقدمة للمساحات الفارغة');
+}
+
+// دالة لإزالة الفواصل المتتالية في القوائم المنسدلة
+function removeConsecutiveDividers() {
+    const dropdowns = document.querySelectorAll('.dropdown-content');
+
+    dropdowns.forEach(dropdown => {
+        const children = Array.from(dropdown.children);
+        let lastWasDivider = false;
+
+        children.forEach(child => {
+            if (child.classList.contains('dropdown-divider')) {
+                if (lastWasDivider) {
+                    // إزالة الفاصل المتكرر
+                    child.remove();
+                } else {
+                    lastWasDivider = true;
+                }
+            } else {
+                lastWasDivider = false;
+            }
+        });
+
+        // إزالة الفاصل في البداية أو النهاية
+        const firstChild = dropdown.firstElementChild;
+        const lastChild = dropdown.lastElementChild;
+
+        if (firstChild && firstChild.classList.contains('dropdown-divider')) {
+            firstChild.remove();
+        }
+
+        if (lastChild && lastChild.classList.contains('dropdown-divider')) {
+            lastChild.remove();
+        }
+    });
 }
 
 // تطبيق قيود المرفقات للمستخدم محدود الصلاحيات
@@ -30642,7 +31183,7 @@ function checkPermission(action) {
 }
 
 // إظهار رسالة عدم وجود صلاحيات
-function showNoPermissionMessage() {
+function showNoPermissionMessage(customMessage = null) {
     // إزالة أي رسالة سابقة
     const existingMessage = document.querySelector('.no-permission-message');
     if (existingMessage) {
@@ -30652,19 +31193,82 @@ function showNoPermissionMessage() {
     // إنشاء رسالة جديدة
     const message = document.createElement('div');
     message.className = 'no-permission-message';
+
+    const messageText = customMessage || 'ليس لديك صلاحية للقيام بهذا الإجراء';
+
     message.innerHTML = `
-        <i class="fas fa-lock" style="margin-left: 8px;"></i>
-        ليس لديك صلاحية للقيام بهذا الإجراء
+        <div style="display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-lock" style="margin-left: 8px; color: #dc3545;"></i>
+            <span>${messageText}</span>
+        </div>
     `;
+
+    // تحسين تصميم الرسالة
+    message.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #fff, #f8f9fa);
+        color: #721c24;
+        padding: 20px 30px;
+        border-radius: 10px;
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+        z-index: 10000;
+        font-weight: 600;
+        font-size: 16px;
+        border: 2px solid #dc3545;
+        min-width: 300px;
+        text-align: center;
+        animation: slideInScale 0.3s ease-out;
+    `;
+
+    // إضافة CSS للأنيميشن
+    if (!document.querySelector('#noPermissionAnimation')) {
+        const style = document.createElement('style');
+        style.id = 'noPermissionAnimation';
+        style.textContent = `
+            @keyframes slideInScale {
+                0% {
+                    opacity: 0;
+                    transform: translate(-50%, -50%) scale(0.8);
+                }
+                100% {
+                    opacity: 1;
+                    transform: translate(-50%, -50%) scale(1);
+                }
+            }
+
+            .no-permission-message:hover {
+                transform: translate(-50%, -50%) scale(1.02) !important;
+                transition: transform 0.2s ease;
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     document.body.appendChild(message);
 
-    // إزالة الرسالة بعد 3 ثوان
+    // إضافة صوت تنبيه (اختياري)
+    try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+        audio.volume = 0.1;
+        audio.play().catch(() => {}); // تجاهل الأخطاء إذا لم يُسمح بالصوت
+    } catch (e) {}
+
+    // إزالة الرسالة بعد 4 ثوان
     setTimeout(() => {
         if (message.parentNode) {
-            message.remove();
+            message.style.animation = 'slideInScale 0.3s ease-out reverse';
+            setTimeout(() => {
+                if (message.parentNode) {
+                    message.remove();
+                }
+            }, 300);
         }
-    }, 3000);
+    }, 4000);
+
+    console.log('🔒 تم عرض رسالة عدم الصلاحية:', messageText);
 }
 
 // إظهار رسالة ترحيب
@@ -30928,6 +31532,65 @@ window.showDataImportModal = function() {
     if (originalShowDataImportModal) originalShowDataImportModal();
 };
 
+// حماية وظائف إعادة تعيين الحالة
+const originalClearAppStateWithConfirmation = window.clearAppStateWithConfirmation;
+window.clearAppStateWithConfirmation = function() {
+    if (!checkPermission('resetStatus')) {
+        showNoPermissionMessage('ليس لديك صلاحية لإعادة تعيين حالة التطبيق');
+        return;
+    }
+    if (originalClearAppStateWithConfirmation) originalClearAppStateWithConfirmation();
+};
+
+// حماية وظائف إصلاح الإحصائيات
+const originalFixStatisticsNow = window.fixStatisticsNow;
+window.fixStatisticsNow = function() {
+    if (!checkPermission('fixStatistics')) {
+        showNoPermissionMessage('ليس لديك صلاحية لإصلاح الإحصائيات');
+        return;
+    }
+    if (originalFixStatisticsNow) originalFixStatisticsNow();
+};
+
+// حماية وظائف تحديث التواريخ
+const originalShowDateUpdateModal = window.showDateUpdateModal;
+window.showDateUpdateModal = function() {
+    if (!checkPermission('updateDates')) {
+        showNoPermissionMessage('ليس لديك صلاحية لتحديث التواريخ');
+        return;
+    }
+    if (originalShowDateUpdateModal) originalShowDateUpdateModal();
+};
+
+const originalOpenDateUpdateModal = window.openDateUpdateModal;
+window.openDateUpdateModal = function() {
+    if (!checkPermission('updateDates')) {
+        showNoPermissionMessage('ليس لديك صلاحية لتحديث التواريخ');
+        return;
+    }
+    if (originalOpenDateUpdateModal) originalOpenDateUpdateModal();
+};
+
+// حماية وظائف سجلات التتبع
+const originalCreateSampleTrackingDataAndShow = window.createSampleTrackingDataAndShow;
+window.createSampleTrackingDataAndShow = function() {
+    if (!checkPermission('accessTrackingLogs')) {
+        showNoPermissionMessage('ليس لديك صلاحية للوصول إلى سجلات التتبع');
+        return;
+    }
+    if (originalCreateSampleTrackingDataAndShow) originalCreateSampleTrackingDataAndShow();
+};
+
+// حماية وظائف حذف سجلات التتبع
+const originalDeleteTrackingLog = window.deleteTrackingLog;
+window.deleteTrackingLog = function(logId) {
+    if (!checkPermission('deleteTrackingLogs')) {
+        showNoPermissionMessage('ليس لديك صلاحية لحذف سجلات التتبع');
+        return;
+    }
+    if (originalDeleteTrackingLog) originalDeleteTrackingLog(logId);
+};
+
 // التحقق من المصادقة
 function checkAuthentication() {
     console.log('🔐 التحقق من المصادقة...');
@@ -30935,11 +31598,34 @@ function checkAuthentication() {
     // التحقق من وجود مستخدم محفوظ في localStorage
     const savedUser = localStorage.getItem('currentUser');
 
-    if (savedUser && users[savedUser]) {
-        console.log('✅ تم العثور على مستخدم محفوظ:', savedUser);
-        setCurrentUser(savedUser);
-        return true;
-    } else {
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            const username = userData.username || savedUser;
+
+            if (users[username]) {
+                console.log('✅ تم العثور على مستخدم محفوظ:', username);
+
+                // التحقق من صحة الجلسة (اختياري - يمكن تعطيله لتسريع التحميل)
+                const loginTime = userData.loginTime ? new Date(userData.loginTime) : new Date();
+                const now = new Date();
+                const hoursDiff = (now - loginTime) / (1000 * 60 * 60);
+
+                if (hoursDiff < 24) { // جلسة صالحة لمدة 24 ساعة
+                    setCurrentUser(username);
+                    return true;
+                } else {
+                    console.log('⏰ انتهت صلاحية الجلسة، سيتم تسجيل الخروج');
+                    localStorage.removeItem('currentUser');
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ خطأ في تحليل بيانات المستخدم المحفوظة:', error);
+            localStorage.removeItem('currentUser');
+        }
+    }
+
+    {
         console.log('❌ لا يوجد مستخدم محفوظ، سيتم استخدام صلاحيات افتراضية');
         // تعيين صلاحيات افتراضية للمستخدم غير المسجل
         currentUser = 'guest';
@@ -30980,6 +31666,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // إنشاء بيانات تجريبية للتتبع (للاختبار)
         createSampleTrackingData();
+
+
     }, 1000);
 });
 

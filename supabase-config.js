@@ -484,20 +484,37 @@ async function deletePropertyFromSupabase(propertyData, retryCount = 0) {
                     .limit(10);
 
                 console.log('📋 Sample of existing database records:', sampleData);
+
+                // إضافة بحث شامل للتأكد من عدم وجود الوحدة
+                console.log('🔍 إجراء بحث شامل للتأكد من عدم وجود الوحدة...');
+                const { data: allMatches } = await supabaseClient
+                    .from('properties')
+                    .select('*')
+                    .or(`unit_number.eq.${propertyData['رقم  الوحدة ']},property_name.eq.${propertyData['اسم العقار']}`);
+
+                if (allMatches && allMatches.length > 0) {
+                    console.log('🔍 تم العثور على وحدات مشابهة:', allMatches);
+                    foundProperties = allMatches;
+                    successfulStrategy = 'Comprehensive Search';
+                } else {
+                    console.log('✅ تأكيد: الوحدة غير موجودة في قاعدة البيانات');
+                }
             } catch (debugError) {
                 console.error('❌ Failed to fetch sample data:', debugError.message);
             }
 
-            // إصلاح: عدم فشل العملية إذا لم توجد في قاعدة البيانات
-            console.log('✅ Property not found in database, treating as successful local-only deletion');
-            return {
-                success: true,
-                reason: 'LOCAL_ONLY',
-                message: 'Property not found in database - local deletion successful',
-                deletedCount: 0,
-                totalFound: 0,
-                searchedWith: searchStrategies.map(s => s.query)
-            };
+            // إذا لم نجد شيء حتى بعد البحث الشامل
+            if (foundProperties.length === 0) {
+                console.log('✅ Property not found in database, treating as successful local-only deletion');
+                return {
+                    success: true,
+                    reason: 'NOT_FOUND_IN_DB',
+                    message: 'Property not found in database - local deletion successful',
+                    deletedCount: 0,
+                    totalFound: 0,
+                    searchedWith: searchStrategies.map(s => s.query)
+                };
+            }
         }
 
         // Step 4: Remove duplicates and delete records with foreign key handling
@@ -638,6 +655,150 @@ async function deletePropertyFromSupabase(propertyData, retryCount = 0) {
             message: error.message,
             stack: error.stack,
             retryCount
+        };
+    }
+}
+
+// دالة حذف قوية للوحدة من Supabase مع ضمان الحذف النهائي
+async function forceDeleteUnitFromSupabase(unitData) {
+    try {
+        if (!supabaseClient) {
+            console.warn('🚫 Supabase client not initialized');
+            return { success: false, reason: 'NO_CLIENT' };
+        }
+
+        console.log('💪 بدء الحذف القوي للوحدة من Supabase...');
+        console.log('📋 بيانات الوحدة للحذف:', {
+            unitNumber: unitData['رقم  الوحدة '],
+            propertyName: unitData['اسم العقار'],
+            city: unitData['المدينة'],
+            tenant: unitData['اسم المستأجر']
+        });
+
+        // الخطوة 1: البحث الشامل عن جميع السجلات المطابقة
+        const searchQueries = [
+            // بحث برقم الوحدة واسم العقار
+            supabaseClient.from('properties').select('*')
+                .eq('unit_number', unitData['رقم  الوحدة '])
+                .eq('property_name', unitData['اسم العقار']),
+
+            // بحث برقم الوحدة فقط
+            supabaseClient.from('properties').select('*')
+                .eq('unit_number', unitData['رقم  الوحدة ']),
+
+            // بحث باسم المستأجر إذا كان موجود
+            ...(unitData['اسم المستأجر'] ? [
+                supabaseClient.from('properties').select('*')
+                    .eq('tenant_name', unitData['اسم المستأجر'])
+                    .eq('property_name', unitData['اسم العقار'])
+            ] : []),
+
+            // بحث برقم العقد إذا كان موجود
+            ...(unitData['رقم العقد'] ? [
+                supabaseClient.from('properties').select('*')
+                    .eq('contract_number', unitData['رقم العقد'])
+            ] : [])
+        ];
+
+        let allFoundRecords = [];
+
+        for (let i = 0; i < searchQueries.length; i++) {
+            try {
+                const { data, error } = await searchQueries[i];
+                if (!error && data && data.length > 0) {
+                    console.log(`🔍 البحث ${i + 1}: وجد ${data.length} سجل`);
+                    allFoundRecords = [...allFoundRecords, ...data];
+                }
+            } catch (searchError) {
+                console.warn(`⚠️ خطأ في البحث ${i + 1}:`, searchError.message);
+            }
+        }
+
+        // إزالة التكرارات
+        const uniqueRecords = allFoundRecords.filter((record, index, self) =>
+            index === self.findIndex(r => r.id === record.id)
+        );
+
+        console.log(`📊 تم العثور على ${uniqueRecords.length} سجل فريد للحذف`);
+
+        if (uniqueRecords.length === 0) {
+            console.log('✅ لا توجد سجلات في قاعدة البيانات للحذف');
+            return {
+                success: true,
+                reason: 'NOT_FOUND',
+                message: 'No records found in database',
+                deletedCount: 0
+            };
+        }
+
+        // الخطوة 2: حذف جميع السجلات المطابقة
+        let deletedCount = 0;
+        const deletionResults = [];
+
+        for (const record of uniqueRecords) {
+            try {
+                console.log(`🗑️ حذف السجل ID: ${record.id}, الوحدة: ${record.unit_number}`);
+
+                // حذف البيانات المرتبطة أولاً
+                // 1. حذف سجلات النشاط
+                const { error: activityError } = await supabaseClient
+                    .from('activity_log')
+                    .delete()
+                    .eq('property_id', record.id);
+
+                if (activityError) {
+                    console.warn(`⚠️ تحذير في حذف سجلات النشاط:`, activityError.message);
+                }
+
+                // 2. حذف المرفقات
+                const { error: attachmentError } = await supabaseClient
+                    .from('attachments')
+                    .delete()
+                    .eq('property_id', record.id);
+
+                if (attachmentError) {
+                    console.warn(`⚠️ تحذير في حذف المرفقات:`, attachmentError.message);
+                }
+
+                // 3. حذف السجل الرئيسي
+                const { error: deleteError } = await supabaseClient
+                    .from('properties')
+                    .delete()
+                    .eq('id', record.id);
+
+                if (deleteError) {
+                    console.error(`❌ فشل حذف السجل ${record.id}:`, deleteError.message);
+                    deletionResults.push({ id: record.id, success: false, error: deleteError.message });
+                } else {
+                    deletedCount++;
+                    console.log(`✅ تم حذف السجل ${record.id} بنجاح`);
+                    deletionResults.push({ id: record.id, success: true });
+                }
+
+            } catch (error) {
+                console.error(`❌ خطأ في حذف السجل ${record.id}:`, error.message);
+                deletionResults.push({ id: record.id, success: false, error: error.message });
+            }
+        }
+
+        console.log(`📊 نتائج الحذف القوي: ${deletedCount}/${uniqueRecords.length} سجل محذوف`);
+
+        return {
+            success: deletedCount > 0,
+            reason: deletedCount > 0 ? 'FORCE_DELETED' : 'DELETION_FAILED',
+            message: `Force deleted ${deletedCount} of ${uniqueRecords.length} records`,
+            deletedCount,
+            totalFound: uniqueRecords.length,
+            deletionResults
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ خطير في الحذف القوي:', error);
+        return {
+            success: false,
+            reason: 'CRITICAL_ERROR',
+            message: error.message,
+            error: error
         };
     }
 }

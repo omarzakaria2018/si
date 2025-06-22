@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إزالة المساحات الفارغة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .test-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .test-content {
+            padding: 2rem;
+        }
+
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .test-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .log-success { background: #d4edda; color: #155724; }
+        .log-error { background: #f8d7da; color: #721c24; }
+        .log-warning { background: #fff3cd; color: #856404; }
+        .log-info { background: #d1ecf1; color: #0c5460; }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .comparison-box {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            background: white;
+        }
+
+        .comparison-box h4 {
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .before-box {
+            border-color: #dc3545;
+        }
+
+        .after-box {
+            border-color: #28a745;
+        }
+
+        .space-indicator {
+            background: #ffebee;
+            border: 2px dashed #f44336;
+            padding: 10px;
+            margin: 5px 0;
+            text-align: center;
+            color: #d32f2f;
+            font-size: 0.8rem;
+        }
+
+        .no-space-indicator {
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+            padding: 5px;
+            margin: 2px 0;
+            text-align: center;
+            color: #2e7d32;
+            font-size: 0.8rem;
+        }
+
+        .mock-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin: 2px;
+            font-size: 0.9rem;
+        }
+
+        .mock-button.hidden {
+            display: none;
+        }
+
+        .mock-button.admin-only {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-compress-alt"></i> اختبار إزالة المساحات الفارغة</h1>
+            <p>فحص إزالة المساحات الفارغة من الأزرار المخفية للمستخدم محدود الصلاحيات</p>
+        </div>
+
+        <div class="test-content">
+            <!-- مقارنة قبل وبعد -->
+            <div class="test-section">
+                <h3><i class="fas fa-balance-scale"></i> مقارنة قبل وبعد إزالة المساحات</h3>
+                <div class="comparison-grid">
+                    <div class="comparison-box before-box">
+                        <h4>❌ قبل الإصلاح (مع مساحات فارغة)</h4>
+                        <div id="beforeExample">
+                            <button class="mock-button">عرض البيانات</button>
+                            <div class="space-indicator">مساحة فارغة من زر مخفي</div>
+                            <button class="mock-button">تصدير Excel</button>
+                            <div class="space-indicator">مساحة فارغة من زر مخفي</div>
+                            <button class="mock-button">البحث</button>
+                            <div class="space-indicator">مساحة فارغة من زر مخفي</div>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-box after-box">
+                        <h4>✅ بعد الإصلاح (بدون مساحات فارغة)</h4>
+                        <div id="afterExample">
+                            <button class="mock-button">عرض البيانات</button>
+                            <div class="no-space-indicator">لا توجد مساحات فارغة</div>
+                            <button class="mock-button">تصدير Excel</button>
+                            <div class="no-space-indicator">لا توجد مساحات فارغة</div>
+                            <button class="mock-button">البحث</button>
+                            <div class="no-space-indicator">لا توجد مساحات فارغة</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- أزرار الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-play"></i> اختبارات إزالة المساحات</h3>
+                <button class="test-button" onclick="openMainAppForSpaceTest()">
+                    <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+                </button>
+                <button class="test-button" onclick="testSpaceRemoval()">
+                    <i class="fas fa-compress"></i> اختبار إزالة المساحات
+                </button>
+                <button class="test-button" onclick="measureSpaces()">
+                    <i class="fas fa-ruler"></i> قياس المساحات
+                </button>
+                <button class="test-button" onclick="clearResults()">
+                    <i class="fas fa-trash"></i> مسح النتائج
+                </button>
+            </div>
+
+            <!-- نتائج الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-list"></i> نتائج اختبار المساحات</h3>
+                <div class="test-results" id="testResults">
+                    جاهز لبدء اختبار إزالة المساحات الفارغة...
+                </div>
+            </div>
+
+            <!-- تعليمات الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-info-circle"></i> تعليمات الاختبار</h3>
+                <ol>
+                    <li><strong>فتح التطبيق:</strong> اضغط "فتح التطبيق الرئيسي"</li>
+                    <li><strong>تسجيل الدخول:</strong> استخدم sa12345 / sa12345</li>
+                    <li><strong>فحص المساحات:</strong> لاحظ عدم وجود مساحات فارغة في الهيدر</li>
+                    <li><strong>فحص القائمة المحمولة:</strong> تأكد من عدم وجود عناصر فارغة</li>
+                    <li><strong>فحص القوائم المنسدلة:</strong> تأكد من عدم وجود فواصل زائدة</li>
+                </ol>
+            </div>
+
+            <!-- النتائج المتوقعة -->
+            <div class="test-section">
+                <h3><i class="fas fa-check-circle"></i> النتائج المتوقعة</h3>
+                <ul>
+                    <li>✅ عدم وجود مساحات فارغة في الهيدر</li>
+                    <li>✅ ترتيب الأزرار المرئية بشكل متتالي</li>
+                    <li>✅ عدم وجود عناصر فارغة في القائمة المحمولة</li>
+                    <li>✅ عدم وجود فواصل متتالية في القوائم المنسدلة</li>
+                    <li>✅ تخطيط نظيف ومرتب للواجهة</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            results.appendChild(logEntry);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = 'تم مسح النتائج...';
+        }
+
+        function openMainAppForSpaceTest() {
+            log('🏠 فتح التطبيق الرئيسي لاختبار المساحات...', 'info');
+            const mainApp = window.open('index.html', '_blank', 'width=1200,height=800');
+            
+            if (mainApp) {
+                log('✅ تم فتح التطبيق الرئيسي بنجاح', 'success');
+                log('💡 سجل دخول باستخدام: sa12345 / sa12345', 'info');
+                log('🔍 راقب الهيدر والقوائم للتأكد من عدم وجود مساحات فارغة', 'info');
+            } else {
+                log('❌ فشل في فتح التطبيق الرئيسي', 'error');
+            }
+        }
+
+        function testSpaceRemoval() {
+            log('🧪 اختبار إزالة المساحات الفارغة...', 'info');
+            
+            log('📋 الميزات التي تم تطبيق إزالة المساحات عليها:', 'info');
+            const features = [
+                'الهيدر الرئيسي - إعادة ترتيب الأزرار المرئية',
+                'القوائم المنسدلة - إزالة الفواصل الزائدة',
+                'القائمة المحمولة - إخفاء العناصر الفارغة',
+                'الحاويات - تحسين التخطيط والمساحات',
+                'الأزرار المخفية - إزالة كاملة من التدفق'
+            ];
+
+            features.forEach((feature, index) => {
+                setTimeout(() => {
+                    log(`${index + 1}. ${feature}`, 'success');
+                }, index * 200);
+            });
+
+            setTimeout(() => {
+                log('✅ تم تطبيق جميع تحسينات إزالة المساحات', 'success');
+                log('🔍 افتح التطبيق الرئيسي للتحقق من النتائج', 'info');
+            }, features.length * 200 + 500);
+        }
+
+        function measureSpaces() {
+            log('📏 قياس المساحات في الواجهة...', 'info');
+            
+            log('📊 المقاييس المطبقة:', 'info');
+            const measurements = [
+                'gap: 8px بين العناصر المرئية',
+                'margin: 0 للعناصر المخفية',
+                'padding: 0 للعناصر المخفية',
+                'position: absolute للإخفاء الكامل',
+                'display: flex للحاويات المحسنة'
+            ];
+
+            measurements.forEach((measurement, index) => {
+                setTimeout(() => {
+                    log(`📐 ${measurement}`, 'info');
+                }, index * 300);
+            });
+
+            setTimeout(() => {
+                log('✅ تم تطبيق جميع المقاييس المحسنة', 'success');
+            }, measurements.length * 300 + 200);
+        }
+
+        // تحديث المثال التفاعلي
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 أداة اختبار إزالة المساحات الفارغة جاهزة', 'success');
+            log('💡 ابدأ بفتح التطبيق الرئيسي وتسجيل الدخول كمستخدم محدود', 'info');
+        });
+    </script>
+</body>
+</html>

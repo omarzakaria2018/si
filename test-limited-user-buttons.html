@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إخفاء الأزرار عن المستخدم محدود الصلاحية</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+            direction: rtl;
+        }
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .limited-button {
+            background: #ffc107;
+            color: #212529;
+        }
+        .limited-button:hover {
+            background: #e0a800;
+        }
+        .admin-button {
+            background: #28a745;
+        }
+        .admin-button:hover {
+            background: #218838;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .results-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .demo-buttons {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .demo-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .admin-only-feature {
+            display: block !important;
+        }
+        body.limited-user .admin-only-feature {
+            display: none !important;
+        }
+        .user-status {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        .user-status.limited {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔒 اختبار إخفاء الأزرار عن المستخدم محدود الصلاحية</h1>
+        
+        <div class="test-section">
+            <h3>📋 وصف الميزة</h3>
+            <p><strong>الهدف:</strong> إخفاء الأزرار الإدارية عن المستخدم محدود الصلاحية في جميع الشاشات.</p>
+            <p><strong>الأزرار المخفية:</strong></p>
+            <ul>
+                <li>🏢 إدارة العقارات</li>
+                <li>📅 تحديث التواريخ</li>
+                <li>📊 إصلاح الإحصائيات</li>
+                <li>🔄 إعادة تعيين الحالة</li>
+            </ul>
+        </div>
+
+        <div id="userStatus" class="user-status">
+            حالة المستخدم: غير محدد
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبار تبديل المستخدم</h3>
+            
+            <button class="test-button admin-button" onclick="simulateAdminUser()">👨‍💼 محاكاة مستخدم إداري</button>
+            <button class="test-button limited-button" onclick="simulateLimitedUser()">👤 محاكاة مستخدم محدود الصلاحية</button>
+            <button class="test-button" onclick="resetUserMode()">🔄 إعادة تعيين</button>
+            <button class="test-button" onclick="openMainApp()">🏠 فتح التطبيق الرئيسي</button>
+            <button class="test-button" onclick="testRealApp()">🧪 اختبار التطبيق الحقيقي</button>
+            
+            <div id="testResults" class="results-display">جاري تحميل أدوات الاختبار...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 محاكاة الأزرار الإدارية</h3>
+            <div class="demo-buttons">
+                <h4>الأزرار في الشاشة الرئيسية:</h4>
+                
+                <button class="demo-button admin-only-feature">
+                    <i class="fas fa-building"></i> إدارة العقارات
+                </button>
+                
+                <button class="demo-button admin-only-feature">
+                    <i class="fas fa-calendar-alt"></i> تحديث التواريخ
+                </button>
+                
+                <button class="demo-button admin-only-feature">
+                    <i class="fas fa-calculator"></i> إصلاح الإحصائيات
+                </button>
+                
+                <button class="demo-button admin-only-feature">
+                    <i class="fas fa-refresh"></i> إعادة تعيين الحالة
+                </button>
+                
+                <button class="demo-button">
+                    <i class="fas fa-eye"></i> عرض البيانات (مرئي للجميع)
+                </button>
+                
+                <button class="demo-button">
+                    <i class="fas fa-download"></i> تصدير Excel (مرئي للجميع)
+                </button>
+            </div>
+            
+            <h4>الأزرار في قائمة الجوال:</h4>
+            <div class="demo-buttons">
+                <button class="demo-button admin-only-feature">
+                    <i class="fas fa-building"></i> إدارة العقارات (جوال)
+                </button>
+                
+                <button class="demo-button admin-only-feature">
+                    <i class="fas fa-calendar-edit"></i> تحديث التواريخ (جوال)
+                </button>
+                
+                <button class="demo-button admin-only-feature">
+                    <i class="fas fa-calculator"></i> إصلاح الإحصائيات (جوال)
+                </button>
+                
+                <button class="demo-button admin-only-feature">
+                    <i class="fas fa-refresh"></i> إعادة تعيين الحالة (جوال)
+                </button>
+                
+                <button class="demo-button">
+                    <i class="fas fa-search"></i> البحث (مرئي للجميع)
+                </button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 نتائج الاختبار</h3>
+            <button class="test-button" onclick="testButtonVisibility()">🔍 فحص ظهور الأزرار</button>
+            <button class="test-button" onclick="countVisibleButtons()">📊 عد الأزرار المرئية</button>
+            <button class="test-button" onclick="testUserPermissions()">🔐 اختبار الصلاحيات</button>
+            <div id="testSummary" class="results-display">اضغط على "فحص ظهور الأزرار" لرؤية النتائج</div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 تعليمات الاختبار</h3>
+            <ol>
+                <li><strong>اختبار المستخدم الإداري:</strong>
+                    <ul>
+                        <li>اضغط "محاكاة مستخدم إداري"</li>
+                        <li>يجب أن تظهر جميع الأزرار الإدارية ✅</li>
+                    </ul>
+                </li>
+                <li><strong>اختبار المستخدم محدود الصلاحية:</strong>
+                    <ul>
+                        <li>اضغط "محاكاة مستخدم محدود الصلاحية"</li>
+                        <li>يجب أن تختفي الأزرار الإدارية الأربعة ❌</li>
+                        <li>يجب أن تبقى الأزرار العامة مرئية ✅</li>
+                    </ul>
+                </li>
+                <li><strong>اختبار التطبيق الرئيسي:</strong>
+                    <ul>
+                        <li>افتح التطبيق الرئيسي</li>
+                        <li>سجل دخول بمستخدم محدود الصلاحية (sa12345)</li>
+                        <li>تحقق من اختفاء الأزرار في جميع الشاشات</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            results.textContent += logEntry;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function updateUserStatus(userType, description) {
+            const statusDiv = document.getElementById('userStatus');
+            statusDiv.textContent = `حالة المستخدم: ${description}`;
+            
+            if (userType === 'limited') {
+                statusDiv.className = 'user-status limited';
+            } else {
+                statusDiv.className = 'user-status';
+            }
+        }
+
+        function simulateAdminUser() {
+            document.body.classList.remove('limited-user');
+            updateUserStatus('admin', 'مستخدم إداري (جميع الأزرار مرئية)');
+            log('👨‍💼 تم تفعيل وضع المستخدم الإداري', 'success');
+            log('✅ يجب أن تظهر جميع الأزرار الإدارية الآن', 'info');
+        }
+
+        function simulateLimitedUser() {
+            document.body.classList.add('limited-user');
+            updateUserStatus('limited', 'مستخدم محدود الصلاحية (الأزرار الإدارية مخفية)');
+            log('👤 تم تفعيل وضع المستخدم محدود الصلاحية', 'warning');
+            log('🔒 يجب أن تختفي الأزرار الإدارية الأربعة الآن', 'info');
+        }
+
+        function resetUserMode() {
+            document.body.classList.remove('limited-user');
+            updateUserStatus('reset', 'تم إعادة التعيين');
+            log('🔄 تم إعادة تعيين وضع المستخدم', 'info');
+        }
+
+        function testButtonVisibility() {
+            const adminButtons = document.querySelectorAll('.admin-only-feature');
+            const isLimitedUser = document.body.classList.contains('limited-user');
+            
+            log('🔍 فحص ظهور الأزرار الإدارية...', 'info');
+            log(`👤 وضع المستخدم: ${isLimitedUser ? 'محدود الصلاحية' : 'إداري'}`, 'info');
+            log(`📊 عدد الأزرار الإدارية: ${adminButtons.length}`, 'info');
+            
+            let visibleCount = 0;
+            let hiddenCount = 0;
+            
+            adminButtons.forEach((button, index) => {
+                const isVisible = window.getComputedStyle(button).display !== 'none';
+                const buttonText = button.textContent.trim();
+                
+                if (isVisible) {
+                    visibleCount++;
+                    log(`✅ الزر ${index + 1}: "${buttonText}" - مرئي`, isLimitedUser ? 'error' : 'success');
+                } else {
+                    hiddenCount++;
+                    log(`❌ الزر ${index + 1}: "${buttonText}" - مخفي`, isLimitedUser ? 'success' : 'error');
+                }
+            });
+            
+            log(`📈 النتيجة: ${visibleCount} مرئي، ${hiddenCount} مخفي`, 'info');
+            
+            if (isLimitedUser && hiddenCount === adminButtons.length) {
+                log('🎉 ممتاز! جميع الأزرار الإدارية مخفية للمستخدم محدود الصلاحية', 'success');
+            } else if (!isLimitedUser && visibleCount === adminButtons.length) {
+                log('🎉 ممتاز! جميع الأزرار الإدارية مرئية للمستخدم الإداري', 'success');
+            } else {
+                log('⚠️ هناك مشكلة في إظهار/إخفاء الأزرار', 'error');
+            }
+        }
+
+        function countVisibleButtons() {
+            const allButtons = document.querySelectorAll('.demo-button');
+            const adminButtons = document.querySelectorAll('.admin-only-feature');
+            const regularButtons = Array.from(allButtons).filter(btn => !btn.classList.contains('admin-only-feature'));
+            
+            let visibleAdmin = 0;
+            let visibleRegular = 0;
+            
+            adminButtons.forEach(btn => {
+                if (window.getComputedStyle(btn).display !== 'none') {
+                    visibleAdmin++;
+                }
+            });
+            
+            regularButtons.forEach(btn => {
+                if (window.getComputedStyle(btn).display !== 'none') {
+                    visibleRegular++;
+                }
+            });
+            
+            const summary = document.getElementById('testSummary');
+            summary.textContent = `📊 إحصائيات الأزرار:\n\n` +
+                `🔧 الأزرار الإدارية: ${visibleAdmin}/${adminButtons.length} مرئية\n` +
+                `👁️ الأزرار العامة: ${visibleRegular}/${regularButtons.length} مرئية\n` +
+                `📱 إجمالي الأزرار: ${visibleAdmin + visibleRegular}/${allButtons.length} مرئية\n\n` +
+                `الحالة: ${document.body.classList.contains('limited-user') ? 'مستخدم محدود الصلاحية' : 'مستخدم إداري'}`;
+        }
+
+        function testUserPermissions() {
+            const isLimitedUser = document.body.classList.contains('limited-user');
+            
+            log('🔐 اختبار صلاحيات المستخدم...', 'info');
+            
+            const permissions = {
+                'إدارة العقارات': !isLimitedUser,
+                'تحديث التواريخ': !isLimitedUser,
+                'إصلاح الإحصائيات': !isLimitedUser,
+                'إعادة تعيين الحالة': !isLimitedUser,
+                'عرض البيانات': true,
+                'تصدير Excel': true
+            };
+            
+            Object.entries(permissions).forEach(([action, allowed]) => {
+                const status = allowed ? '✅ مسموح' : '❌ ممنوع';
+                log(`${action}: ${status}`, allowed ? 'success' : 'warning');
+            });
+        }
+
+        function openMainApp() {
+            window.open('index.html', '_blank');
+            log('🏠 تم فتح التطبيق الرئيسي في تبويب جديد', 'info');
+            log('💡 سجل دخول بـ sa12345 لاختبار المستخدم محدود الصلاحية', 'info');
+            log('🔍 ابحث عن الأزرار التالية - يجب أن تكون مخفية:', 'info');
+            log('   - إدارة العقارات', 'info');
+            log('   - تحديث التواريخ', 'info');
+            log('   - إصلاح الإحصائيات', 'info');
+            log('   - إعادة تعيين الحالة', 'info');
+        }
+
+        function testRealApp() {
+            log('🧪 اختبار التطبيق الحقيقي...', 'info');
+
+            // محاولة الوصول للتطبيق الرئيسي
+            const testWindow = window.open('index.html', '_blank', 'width=1200,height=800');
+
+            setTimeout(() => {
+                try {
+                    // محاولة تطبيق المستخدم محدود الصلاحية
+                    if (testWindow.setCurrentUser && testWindow.users) {
+                        testWindow.setCurrentUser('sa12345');
+                        log('✅ تم تطبيق المستخدم محدود الصلاحية في التطبيق', 'success');
+
+                        setTimeout(() => {
+                            // فحص الأزرار
+                            const adminButtons = testWindow.document.querySelectorAll('.admin-only-feature');
+                            log(`📊 تم العثور على ${adminButtons.length} زر إداري`, 'info');
+
+                            let hiddenCount = 0;
+                            adminButtons.forEach(btn => {
+                                const isHidden = testWindow.getComputedStyle(btn).display === 'none';
+                                if (isHidden) hiddenCount++;
+                            });
+
+                            log(`🔒 ${hiddenCount}/${adminButtons.length} زر مخفي`, hiddenCount === adminButtons.length ? 'success' : 'error');
+
+                        }, 2000);
+                    } else {
+                        log('⚠️ لا يمكن الوصول لوظائف التطبيق الرئيسي', 'warning');
+                    }
+                } catch (error) {
+                    log('⚠️ لا يمكن الوصول للتطبيق الرئيسي (CORS)', 'warning');
+                }
+            }, 3000);
+        }
+
+        // تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 تم تحميل أدوات اختبار إخفاء الأزرار', 'success');
+            log('💡 استخدم الأزرار أعلاه لاختبار إخفاء الأزرار الإدارية', 'info');
+            updateUserStatus('default', 'افتراضي (جميع الأزرار مرئية)');
+        });
+    </script>
+</body>
+</html>
