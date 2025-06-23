@@ -89,6 +89,11 @@ async function testSupabaseConnection() {
 
         console.log('✅ Supabase connection test completed');
 
+        // تنظيف السجلات المكررة بعد التأكد من الاتصال
+        setTimeout(async () => {
+            await cleanupDuplicateProperties();
+        }, 3000);
+
     } catch (error) {
         console.error('❌ Connection test error:', error);
         console.log('🔧 Attempting to fix common issues...');
@@ -1258,16 +1263,50 @@ async function savePropertyToSupabase(property) {
 
         // Check if property exists (by unit_number AND property_name for uniqueness)
         console.log('🔍 البحث عن العقار في قاعدة البيانات...');
-        const { data: existingProperty, error: searchError } = await supabaseClient
+        const { data: existingProperties, error: searchError } = await supabaseClient
             .from('properties')
-            .select('id')
+            .select('id, created_at')
             .eq('unit_number', supabaseProperty.unit_number)
             .eq('property_name', supabaseProperty.property_name)
-            .single();
+            .order('created_at', { ascending: false });
 
-        if (searchError && searchError.code !== 'PGRST116') {
+        if (searchError) {
             console.error('❌ خطأ في البحث عن العقار:', searchError);
             throw new Error(`فشل في البحث عن العقار: ${searchError.message}`);
+        }
+
+        // 🔧 إصلاح: التعامل مع السجلات المكررة
+        let existingProperty = null;
+        if (existingProperties && existingProperties.length > 0) {
+            // إذا وُجدت سجلات مكررة، استخدم الأحدث واحذف الباقي
+            existingProperty = existingProperties[0]; // الأحدث
+
+            if (existingProperties.length > 1) {
+                console.warn(`⚠️ وُجدت ${existingProperties.length} سجلات مكررة للوحدة ${supabaseProperty.unit_number}`);
+                console.log('🗑️ حذف السجلات المكررة...');
+
+                // حذف السجلات المكررة (الاحتفاظ بالأحدث فقط)
+                const duplicateIds = existingProperties.slice(1).map(p => p.id);
+                for (const duplicateId of duplicateIds) {
+                    try {
+                        // حذف سجلات النشاط المرتبطة أولاً
+                        await supabaseClient
+                            .from('activity_log')
+                            .delete()
+                            .eq('property_id', duplicateId);
+
+                        // حذف السجل المكرر
+                        await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('id', duplicateId);
+
+                        console.log(`✅ تم حذف السجل المكرر: ${duplicateId}`);
+                    } catch (deleteError) {
+                        console.error(`❌ فشل في حذف السجل المكرر ${duplicateId}:`, deleteError);
+                    }
+                }
+            }
         }
 
         if (existingProperty) {
@@ -1325,6 +1364,82 @@ async function savePropertyToSupabase(property) {
     }
 }
 
+// دالة تنظيف السجلات المكررة في قاعدة البيانات
+async function cleanupDuplicateProperties() {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متصل');
+            return false;
+        }
+
+        console.log('🧹 بدء تنظيف السجلات المكررة...');
+
+        // البحث عن الوحدات المكررة
+        const { data: duplicates, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('unit_number, property_name, COUNT(*) as count')
+            .group('unit_number, property_name')
+            .having('COUNT(*) > 1');
+
+        if (searchError) {
+            console.error('❌ خطأ في البحث عن المكررات:', searchError);
+            return false;
+        }
+
+        if (!duplicates || duplicates.length === 0) {
+            console.log('✅ لا توجد سجلات مكررة');
+            return true;
+        }
+
+        console.log(`🔍 وُجدت ${duplicates.length} مجموعة من السجلات المكررة`);
+
+        let cleanedCount = 0;
+        for (const duplicate of duplicates) {
+            try {
+                // الحصول على جميع السجلات المكررة لهذه الوحدة
+                const { data: allRecords } = await supabaseClient
+                    .from('properties')
+                    .select('id, created_at')
+                    .eq('unit_number', duplicate.unit_number)
+                    .eq('property_name', duplicate.property_name)
+                    .order('created_at', { ascending: false });
+
+                if (allRecords && allRecords.length > 1) {
+                    // الاحتفاظ بالأحدث وحذف الباقي
+                    const recordsToDelete = allRecords.slice(1);
+
+                    for (const record of recordsToDelete) {
+                        // حذف سجلات النشاط أولاً
+                        await supabaseClient
+                            .from('activity_log')
+                            .delete()
+                            .eq('property_id', record.id);
+
+                        // حذف السجل المكرر
+                        await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('id', record.id);
+
+                        cleanedCount++;
+                    }
+
+                    console.log(`✅ تم تنظيف ${recordsToDelete.length} سجل مكرر للوحدة ${duplicate.unit_number}`);
+                }
+            } catch (error) {
+                console.error(`❌ خطأ في تنظيف الوحدة ${duplicate.unit_number}:`, error);
+            }
+        }
+
+        console.log(`🎉 تم تنظيف ${cleanedCount} سجل مكرر بنجاح`);
+        return true;
+
+    } catch (error) {
+        console.error('❌ خطأ في تنظيف السجلات المكررة:', error);
+        return false;
+    }
+}
+
 // Auto-save function that can be called when properties array changes
 async function autoSaveAllProperties() {
     try {
@@ -1374,6 +1489,756 @@ async function syncPropertyChange(property, changeType = 'UPDATE') {
     } catch (error) {
         console.error('❌ Error syncing property change:', error);
         return false;
+    }
+}
+
+// 🔧 إضافة: دالة خاصة لنقل الوحدات مع الحفاظ على جميع البيانات
+async function transferUnitInSupabase(unitNumber, sourceProperty, destinationProperty, unitData) {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متصل، تخطي النقل السحابي');
+            return { success: false, reason: 'Supabase not connected' };
+        }
+
+        console.log(`🔄 نقل الوحدة ${unitNumber} في Supabase من "${sourceProperty}" إلى "${destinationProperty}"`);
+
+        // البحث عن السجل الأصلي بناءً على رقم الوحدة والعقار الأصلي
+        const { data: existingRecords, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', sourceProperty)
+            .order('created_at', { ascending: false });
+
+        if (searchError) {
+            console.error('❌ خطأ في البحث عن الوحدة الأصلية:', searchError);
+            return { success: false, reason: `Search error: ${searchError.message}` };
+        }
+
+        if (!existingRecords || existingRecords.length === 0) {
+            console.warn(`⚠️ لم يتم العثور على الوحدة ${unitNumber} في العقار "${sourceProperty}"`);
+            // إنشاء سجل جديد بدلاً من الفشل
+            const supabaseProperty = convertPropertyToSupabaseFormat(unitData);
+            const { data: newRecord, error: insertError } = await supabaseClient
+                .from('properties')
+                .insert([supabaseProperty])
+                .select();
+
+            if (insertError) {
+                console.error('❌ خطأ في إنشاء سجل جديد:', insertError);
+                return { success: false, reason: `Insert error: ${insertError.message}` };
+            }
+
+            console.log(`✅ تم إنشاء سجل جديد للوحدة ${unitNumber} في العقار "${destinationProperty}"`);
+            return { success: true, action: 'created', data: newRecord[0] };
+        }
+
+        // استخدام السجل الأحدث إذا وُجدت سجلات متعددة
+        const originalRecord = existingRecords[0];
+        console.log(`📋 تم العثور على السجل الأصلي، ID: ${originalRecord.id}`);
+
+        // 🔧 إصلاح: تحديث السجل الموجود بدلاً من إنشاء سجل جديد
+        const updatedData = {
+            ...originalRecord, // الحفاظ على جميع البيانات الأصلية
+            ...convertPropertyToSupabaseFormat(unitData), // دمج البيانات الجديدة
+            property_name: destinationProperty, // تحديث اسم العقار
+            id: originalRecord.id, // الحفاظ على المعرف الأصلي
+            updated_at: new Date().toISOString()
+        };
+
+        // تحديث السجل الموجود
+        const { data: updatedRecord, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(updatedData)
+            .eq('id', originalRecord.id)
+            .select();
+
+        if (updateError) {
+            console.error('❌ خطأ في تحديث السجل:', updateError);
+            return { success: false, reason: `Update error: ${updateError.message}` };
+        }
+
+        console.log(`✅ تم نقل الوحدة ${unitNumber} بنجاح في Supabase (تحديث السجل الموجود)`);
+
+        // حذف السجلات المكررة إذا وُجدت
+        if (existingRecords.length > 1) {
+            console.log(`🗑️ حذف ${existingRecords.length - 1} سجل مكرر...`);
+            const duplicateIds = existingRecords.slice(1).map(record => record.id);
+
+            for (const duplicateId of duplicateIds) {
+                try {
+                    await supabaseClient
+                        .from('properties')
+                        .delete()
+                        .eq('id', duplicateId);
+                    console.log(`✅ تم حذف السجل المكرر: ${duplicateId}`);
+                } catch (deleteError) {
+                    console.error(`❌ فشل في حذف السجل المكرر ${duplicateId}:`, deleteError);
+                }
+            }
+        }
+
+        return {
+            success: true,
+            action: 'transferred',
+            data: updatedRecord[0],
+            originalId: originalRecord.id,
+            preservedData: true
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في البحث عن الوحدة في Supabase:', error);
+        return { success: false, reason: `Transfer error: ${error.message}` };
+    }
+}
+
+// 🔧 إضافة: دالة حذف نهائي للوحدات المكررة من Supabase
+async function deleteUnitFromSupabaseCompletely(unitNumber, propertyName) {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متصل');
+            return { success: false, reason: 'Supabase not connected' };
+        }
+
+        console.log(`🗑️ حذف نهائي للوحدة ${unitNumber} من العقار "${propertyName}" في Supabase...`);
+
+        // البحث عن جميع السجلات المطابقة
+        const { data: recordsToDelete, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('id, unit_number, property_name, created_at')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName);
+
+        if (searchError) {
+            console.error('❌ خطأ في البحث عن السجلات للحذف:', searchError);
+            return { success: false, reason: `Search error: ${searchError.message}` };
+        }
+
+        if (!recordsToDelete || recordsToDelete.length === 0) {
+            console.log(`ℹ️ لا توجد سجلات للوحدة ${unitNumber} في العقار "${propertyName}"`);
+            return { success: true, reason: 'No records found to delete', deletedCount: 0 };
+        }
+
+        console.log(`🔍 تم العثور على ${recordsToDelete.length} سجل للحذف`);
+
+        let deletedCount = 0;
+        let errors = [];
+
+        // حذف كل سجل بشكل منفصل
+        for (const record of recordsToDelete) {
+            try {
+                // حذف سجلات النشاط المرتبطة أولاً
+                const { error: activityDeleteError } = await supabaseClient
+                    .from('activity_log')
+                    .delete()
+                    .eq('property_id', record.id);
+
+                if (activityDeleteError) {
+                    console.warn(`⚠️ تحذير: فشل في حذف سجلات النشاط للسجل ${record.id}:`, activityDeleteError);
+                }
+
+                // حذف السجل الأساسي
+                const { error: deleteError } = await supabaseClient
+                    .from('properties')
+                    .delete()
+                    .eq('id', record.id);
+
+                if (deleteError) {
+                    console.error(`❌ فشل في حذف السجل ${record.id}:`, deleteError);
+                    errors.push(`${record.id}: ${deleteError.message}`);
+                } else {
+                    deletedCount++;
+                    console.log(`✅ تم حذف السجل ${record.id} بنجاح`);
+                }
+
+            } catch (recordError) {
+                console.error(`❌ خطأ في حذف السجل ${record.id}:`, recordError);
+                errors.push(`${record.id}: ${recordError.message}`);
+            }
+        }
+
+        const result = {
+            success: deletedCount > 0,
+            deletedCount,
+            totalFound: recordsToDelete.length,
+            errors: errors.length > 0 ? errors : null
+        };
+
+        if (deletedCount > 0) {
+            console.log(`✅ تم حذف ${deletedCount} من ${recordsToDelete.length} سجل بنجاح`);
+        }
+
+        if (errors.length > 0) {
+            console.error(`❌ فشل في حذف ${errors.length} سجل:`, errors);
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error('❌ خطأ في الحذف النهائي من Supabase:', error);
+        return { success: false, reason: `Delete error: ${error.message}` };
+    }
+}
+
+// 🔧 إضافة: دالة تنظيف شاملة للسجلات المكررة في Supabase
+async function cleanupAllDuplicateUnits() {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متصل');
+            return { success: false, reason: 'Supabase not connected' };
+        }
+
+        console.log('🧹 بدء تنظيف شامل للسجلات المكررة في Supabase...');
+
+        // البحث عن جميع الوحدات المكررة
+        const { data: allUnits, error: fetchError } = await supabaseClient
+            .from('properties')
+            .select('unit_number, property_name, id, created_at')
+            .order('unit_number', { ascending: true })
+            .order('property_name', { ascending: true })
+            .order('created_at', { ascending: false });
+
+        if (fetchError) {
+            console.error('❌ خطأ في جلب البيانات:', fetchError);
+            return { success: false, reason: `Fetch error: ${fetchError.message}` };
+        }
+
+        if (!allUnits || allUnits.length === 0) {
+            console.log('ℹ️ لا توجد وحدات في قاعدة البيانات');
+            return { success: true, reason: 'No units found', cleanedCount: 0 };
+        }
+
+        // تجميع الوحدات حسب رقم الوحدة واسم العقار
+        const unitGroups = {};
+        allUnits.forEach(unit => {
+            const key = `${unit.unit_number}_${unit.property_name}`;
+            if (!unitGroups[key]) {
+                unitGroups[key] = [];
+            }
+            unitGroups[key].push(unit);
+        });
+
+        let totalCleaned = 0;
+        let errors = [];
+
+        // معالجة كل مجموعة
+        for (const [key, units] of Object.entries(unitGroups)) {
+            if (units.length > 1) {
+                console.log(`🔍 وُجدت ${units.length} سجلات مكررة للمفتاح: ${key}`);
+
+                // الاحتفاظ بالأحدث وحذف الباقي
+                const unitsToDelete = units.slice(1);
+
+                for (const unit of unitsToDelete) {
+                    try {
+                        // حذف سجلات النشاط المرتبطة أولاً
+                        await supabaseClient
+                            .from('activity_log')
+                            .delete()
+                            .eq('property_id', unit.id);
+
+                        // حذف السجل المكرر
+                        const { error: deleteError } = await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('id', unit.id);
+
+                        if (deleteError) {
+                            console.error(`❌ فشل في حذف السجل ${unit.id}:`, deleteError);
+                            errors.push(`${unit.id}: ${deleteError.message}`);
+                        } else {
+                            totalCleaned++;
+                            console.log(`✅ تم حذف السجل المكرر: ${unit.id} (${unit.unit_number} - ${unit.property_name})`);
+                        }
+
+                    } catch (deleteError) {
+                        console.error(`❌ خطأ في حذف السجل ${unit.id}:`, deleteError);
+                        errors.push(`${unit.id}: ${deleteError.message}`);
+                    }
+                }
+            }
+        }
+
+        const result = {
+            success: totalCleaned > 0 || errors.length === 0,
+            cleanedCount: totalCleaned,
+            totalGroups: Object.keys(unitGroups).length,
+            duplicateGroups: Object.values(unitGroups).filter(group => group.length > 1).length,
+            errors: errors.length > 0 ? errors : null
+        };
+
+        console.log(`🎉 تنظيف شامل مكتمل: تم حذف ${totalCleaned} سجل مكرر من ${result.duplicateGroups} مجموعة`);
+
+        if (errors.length > 0) {
+            console.error(`❌ فشل في حذف ${errors.length} سجل:`, errors.slice(0, 5));
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error('❌ خطأ في التنظيف الشامل:', error);
+        return { success: false, reason: `Cleanup error: ${error.message}` };
+    }
+}
+
+// 🔧 دالة خاصة لتحديث اسم العقار في Supabase (بدون إنشاء نسخ مكررة)
+async function updatePropertyNameInSupabase(oldPropertyName, newPropertyName, unitData) {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متصل');
+            return { success: false, reason: 'Supabase not connected' };
+        }
+
+        const unitNumber = unitData['رقم  الوحدة '];
+        console.log(`🔄 تحديث اسم العقار في Supabase للوحدة ${unitNumber}: "${oldPropertyName}" → "${newPropertyName}"`);
+
+        // البحث عن السجل الموجود باستخدام الاسم القديم
+        const { data: existingRecords, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', oldPropertyName)
+            .order('created_at', { ascending: false });
+
+        if (searchError) {
+            console.error('❌ خطأ في البحث عن السجل:', searchError);
+            return { success: false, reason: `Search error: ${searchError.message}` };
+        }
+
+        if (!existingRecords || existingRecords.length === 0) {
+            console.warn(`⚠️ لم يتم العثور على سجل للوحدة ${unitNumber} في العقار "${oldPropertyName}"`);
+
+            // إنشاء سجل جديد بالاسم الجديد
+            const supabaseProperty = convertPropertyToSupabaseFormat(unitData);
+            const { data: newRecord, error: insertError } = await supabaseClient
+                .from('properties')
+                .insert([supabaseProperty])
+                .select();
+
+            if (insertError) {
+                console.error('❌ خطأ في إنشاء سجل جديد:', insertError);
+                return { success: false, reason: `Insert error: ${insertError.message}` };
+            }
+
+            console.log(`✅ تم إنشاء سجل جديد للوحدة ${unitNumber} بالاسم الجديد "${newPropertyName}"`);
+            return {
+                success: true,
+                action: 'created',
+                data: newRecord[0],
+                message: 'تم إنشاء سجل جديد بالاسم الجديد'
+            };
+        }
+
+        // استخدام السجل الأحدث
+        const existingRecord = existingRecords[0];
+        console.log(`📋 تم العثور على السجل الموجود، ID: ${existingRecord.id}`);
+
+        // تحديث السجل الموجود بالاسم الجديد
+        const updatedData = {
+            ...existingRecord,
+            ...convertPropertyToSupabaseFormat(unitData),
+            property_name: newPropertyName, // الاسم الجديد
+            id: existingRecord.id, // الحفاظ على المعرف
+            updated_at: new Date().toISOString()
+        };
+
+        const { data: updatedRecord, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(updatedData)
+            .eq('id', existingRecord.id)
+            .select();
+
+        if (updateError) {
+            console.error('❌ خطأ في تحديث السجل:', updateError);
+            return { success: false, reason: `Update error: ${updateError.message}` };
+        }
+
+        console.log(`✅ تم تحديث اسم العقار للوحدة ${unitNumber} في Supabase بنجاح`);
+
+        // حذف السجلات المكررة إذا وُجدت
+        if (existingRecords.length > 1) {
+            console.log(`🗑️ حذف ${existingRecords.length - 1} سجل مكرر...`);
+            const duplicateIds = existingRecords.slice(1).map(record => record.id);
+
+            for (const duplicateId of duplicateIds) {
+                try {
+                    // حذف سجلات النشاط المرتبطة
+                    await supabaseClient
+                        .from('activity_log')
+                        .delete()
+                        .eq('property_id', duplicateId);
+
+                    // حذف السجل المكرر
+                    await supabaseClient
+                        .from('properties')
+                        .delete()
+                        .eq('id', duplicateId);
+
+                    console.log(`✅ تم حذف السجل المكرر: ${duplicateId}`);
+                } catch (deleteError) {
+                    console.error(`❌ فشل في حذف السجل المكرر ${duplicateId}:`, deleteError);
+                }
+            }
+        }
+
+        // التحقق من عدم وجود سجلات بالاسم الجديد مسبقاً
+        const { data: duplicateCheck, error: duplicateError } = await supabaseClient
+            .from('properties')
+            .select('id')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', newPropertyName)
+            .neq('id', existingRecord.id);
+
+        if (duplicateError) {
+            console.warn('⚠️ تحذير: فشل في فحص السجلات المكررة:', duplicateError);
+        } else if (duplicateCheck && duplicateCheck.length > 0) {
+            console.log(`🗑️ حذف ${duplicateCheck.length} سجل مكرر بالاسم الجديد...`);
+
+            for (const duplicate of duplicateCheck) {
+                try {
+                    await supabaseClient
+                        .from('activity_log')
+                        .delete()
+                        .eq('property_id', duplicate.id);
+
+                    await supabaseClient
+                        .from('properties')
+                        .delete()
+                        .eq('id', duplicate.id);
+
+                    console.log(`✅ تم حذف السجل المكرر بالاسم الجديد: ${duplicate.id}`);
+                } catch (deleteError) {
+                    console.error(`❌ فشل في حذف السجل المكرر ${duplicate.id}:`, deleteError);
+                }
+            }
+        }
+
+        return {
+            success: true,
+            action: 'updated',
+            data: updatedRecord[0],
+            originalId: existingRecord.id,
+            message: 'تم تحديث اسم العقار بنجاح'
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث اسم العقار في Supabase:', error);
+        return { success: false, reason: `Update error: ${error.message}` };
+    }
+}
+
+// 🧹 دالة تنظيف السجلات المكررة لعقار محدد
+async function cleanupDuplicatePropertiesForName(propertyName) {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متصل');
+            return { success: false, reason: 'Supabase not connected' };
+        }
+
+        console.log(`🧹 تنظيف السجلات المكررة للعقار: "${propertyName}"`);
+
+        // البحث عن جميع الوحدات في هذا العقار
+        const { data: allUnits, error: fetchError } = await supabaseClient
+            .from('properties')
+            .select('unit_number, property_name, id, created_at')
+            .eq('property_name', propertyName)
+            .order('unit_number', { ascending: true })
+            .order('created_at', { ascending: false });
+
+        if (fetchError) {
+            console.error('❌ خطأ في جلب وحدات العقار:', fetchError);
+            return { success: false, reason: `Fetch error: ${fetchError.message}` };
+        }
+
+        if (!allUnits || allUnits.length === 0) {
+            console.log(`ℹ️ لا توجد وحدات في العقار "${propertyName}"`);
+            return { success: true, reason: 'No units found', cleanedCount: 0 };
+        }
+
+        // تجميع الوحدات حسب رقم الوحدة
+        const unitGroups = {};
+        allUnits.forEach(unit => {
+            const unitNumber = unit.unit_number;
+            if (!unitGroups[unitNumber]) {
+                unitGroups[unitNumber] = [];
+            }
+            unitGroups[unitNumber].push(unit);
+        });
+
+        let totalCleaned = 0;
+        let errors = [];
+
+        // معالجة كل مجموعة وحدات
+        for (const [unitNumber, units] of Object.entries(unitGroups)) {
+            if (units.length > 1) {
+                console.log(`🔍 وُجدت ${units.length} سجلات مكررة للوحدة ${unitNumber} في العقار "${propertyName}"`);
+
+                // الاحتفاظ بالأحدث وحذف الباقي
+                const unitsToDelete = units.slice(1);
+
+                for (const unit of unitsToDelete) {
+                    try {
+                        // حذف سجلات النشاط المرتبطة أولاً
+                        await supabaseClient
+                            .from('activity_log')
+                            .delete()
+                            .eq('property_id', unit.id);
+
+                        // حذف السجل المكرر
+                        const { error: deleteError } = await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('id', unit.id);
+
+                        if (deleteError) {
+                            console.error(`❌ فشل في حذف السجل المكرر ${unit.id}:`, deleteError);
+                            errors.push(`${unit.id}: ${deleteError.message}`);
+                        } else {
+                            totalCleaned++;
+                            console.log(`✅ تم حذف السجل المكرر للوحدة ${unitNumber}: ${unit.id}`);
+                        }
+
+                    } catch (deleteError) {
+                        console.error(`❌ خطأ في حذف السجل المكرر ${unit.id}:`, deleteError);
+                        errors.push(`${unit.id}: ${deleteError.message}`);
+                    }
+                }
+            }
+        }
+
+        const result = {
+            success: true,
+            propertyName,
+            totalUnits: allUnits.length,
+            cleanedCount: totalCleaned,
+            errors: errors.length > 0 ? errors : null
+        };
+
+        if (totalCleaned > 0) {
+            console.log(`✅ تم تنظيف ${totalCleaned} سجل مكرر للعقار "${propertyName}"`);
+        } else {
+            console.log(`✅ لا توجد سجلات مكررة في العقار "${propertyName}"`);
+        }
+
+        if (errors.length > 0) {
+            console.error(`❌ فشل في حذف ${errors.length} سجل:`, errors);
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error('❌ خطأ في تنظيف السجلات المكررة للعقار:', error);
+        return { success: false, reason: `Cleanup error: ${error.message}` };
+    }
+}
+
+// 🔧 إضافة: دالة تحديث الوحدة مع الحفاظ على جميع البيانات
+async function updateUnitPropertyName(originalRecord, destinationProperty, unitData) {
+    try {
+        if (!supabaseClient || !originalRecord) {
+            return { success: false, reason: 'Missing parameters' };
+        }
+
+        console.log(`🔄 تحديث اسم العقار للوحدة ${originalRecord.unit_number} إلى "${destinationProperty}"`);
+
+        // دمج البيانات الأصلية مع البيانات الجديدة مع الحفاظ على جميع الحقول
+        const mergedData = {
+            // البيانات الأصلية من Supabase
+            ...originalRecord,
+            // البيانات المحدثة من النظام المحلي
+            ...convertPropertyToSupabaseFormat(unitData),
+            // تحديث اسم العقار
+            property_name: destinationProperty,
+            // الحفاظ على المعرف الأصلي
+            id: originalRecord.id,
+            // تحديث وقت التعديل
+            updated_at: new Date().toISOString()
+        };
+
+        // تحديث السجل الموجود
+        const { data: updatedRecord, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(mergedData)
+            .eq('id', originalRecord.id)
+            .select();
+
+        if (updateError) {
+            console.error('❌ خطأ في تحديث السجل:', updateError);
+            return { success: false, reason: `Update error: ${updateError.message}` };
+        }
+
+        console.log(`✅ تم تحديث الوحدة ${originalRecord.unit_number} بنجاح في Supabase`);
+        return {
+            success: true,
+            action: 'updated',
+            data: updatedRecord[0],
+            preservedData: true
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث الوحدة في Supabase:', error);
+        return { success: false, reason: `Update error: ${error.message}` };
+    }
+}
+
+// 🔧 إضافة: دالة تحديث الوحدة مع الحفاظ على جميع البيانات
+async function updateUnitPropertyName(originalRecord, destinationProperty, unitData) {
+    try {
+        if (!supabaseClient || !originalRecord) {
+            return { success: false, reason: 'Missing parameters' };
+        }
+
+        console.log(`🔄 تحديث اسم العقار للوحدة ${originalRecord.unit_number} إلى "${destinationProperty}"`);
+
+        // دمج البيانات الأصلية مع البيانات الجديدة مع الحفاظ على جميع الحقول
+        const mergedData = {
+            // البيانات الأصلية من Supabase
+            ...originalRecord,
+            // البيانات المحدثة من النظام المحلي
+            ...convertPropertyToSupabaseFormat(unitData),
+            // تحديث اسم العقار
+            property_name: destinationProperty,
+            // الحفاظ على المعرف الأصلي
+            id: originalRecord.id,
+            // تحديث وقت التعديل
+            updated_at: new Date().toISOString(),
+            // إضافة معلومات النقل للتتبع
+            transfer_history: JSON.stringify({
+                from: originalRecord.property_name,
+                to: destinationProperty,
+                transferred_at: new Date().toISOString(),
+                transferred_by: 'system'
+            })
+        };
+
+        // تحديث السجل الموجود
+        const { data: updatedRecord, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(mergedData)
+            .eq('id', originalRecord.id)
+            .select();
+
+        if (updateError) {
+            console.error('❌ خطأ في تحديث السجل:', updateError);
+            return { success: false, reason: `Update error: ${updateError.message}` };
+        }
+
+        console.log(`✅ تم تحديث الوحدة ${originalRecord.unit_number} بنجاح في Supabase`);
+        return {
+            success: true,
+            action: 'updated',
+            data: updatedRecord[0],
+            preservedData: true
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث الوحدة في Supabase:', error);
+        return { success: false, reason: `Update error: ${error.message}` };
+    }
+}
+
+// 🔧 إضافة: دالة خاصة لنقل الوحدات مع الحفاظ على جميع البيانات
+async function transferUnitInSupabase(unitNumber, sourceProperty, destinationProperty, unitData) {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متصل، تخطي النقل السحابي');
+            return { success: false, reason: 'Supabase not connected' };
+        }
+
+        console.log(`🔄 نقل الوحدة ${unitNumber} في Supabase من "${sourceProperty}" إلى "${destinationProperty}"`);
+
+        // البحث عن السجل الأصلي بناءً على رقم الوحدة والعقار الأصلي
+        const { data: existingRecords, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', sourceProperty)
+            .order('created_at', { ascending: false });
+
+        if (searchError) {
+            console.error('❌ خطأ في البحث عن الوحدة الأصلية:', searchError);
+            return { success: false, reason: `Search error: ${searchError.message}` };
+        }
+
+        if (!existingRecords || existingRecords.length === 0) {
+            console.warn(`⚠️ لم يتم العثور على الوحدة ${unitNumber} في العقار "${sourceProperty}"`);
+            // إنشاء سجل جديد بدلاً من الفشل
+            const supabaseProperty = convertPropertyToSupabaseFormat(unitData);
+            const { data: newRecord, error: insertError } = await supabaseClient
+                .from('properties')
+                .insert([supabaseProperty])
+                .select();
+
+            if (insertError) {
+                console.error('❌ خطأ في إنشاء سجل جديد:', insertError);
+                return { success: false, reason: `Insert error: ${insertError.message}` };
+            }
+
+            console.log(`✅ تم إنشاء سجل جديد للوحدة ${unitNumber} في العقار "${destinationProperty}"`);
+            return { success: true, action: 'created', data: newRecord[0] };
+        }
+
+        // استخدام السجل الأحدث إذا وُجدت سجلات متعددة
+        const originalRecord = existingRecords[0];
+        console.log(`📋 تم العثور على السجل الأصلي، ID: ${originalRecord.id}`);
+
+        // تحضير البيانات المحدثة مع الحفاظ على جميع البيانات الأصلية
+        const updatedData = {
+            ...originalRecord, // الحفاظ على جميع البيانات الأصلية
+            property_name: destinationProperty, // تحديث اسم العقار فقط
+            updated_at: new Date().toISOString(),
+            // إضافة معلومات النقل للتتبع
+            transfer_history: JSON.stringify({
+                from: sourceProperty,
+                to: destinationProperty,
+                transferred_at: new Date().toISOString(),
+                transferred_by: 'system'
+            })
+        };
+
+        // تحديث السجل الموجود
+        const { data: updatedRecord, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(updatedData)
+            .eq('id', originalRecord.id)
+            .select();
+
+        if (updateError) {
+            console.error('❌ خطأ في تحديث السجل:', updateError);
+            return { success: false, reason: `Update error: ${updateError.message}` };
+        }
+
+        console.log(`✅ تم نقل الوحدة ${unitNumber} بنجاح في Supabase`);
+
+        // حذف السجلات المكررة إذا وُجدت
+        if (existingRecords.length > 1) {
+            console.log(`🗑️ حذف ${existingRecords.length - 1} سجل مكرر...`);
+            const duplicateIds = existingRecords.slice(1).map(record => record.id);
+
+            for (const duplicateId of duplicateIds) {
+                try {
+                    await supabaseClient
+                        .from('properties')
+                        .delete()
+                        .eq('id', duplicateId);
+                    console.log(`✅ تم حذف السجل المكرر: ${duplicateId}`);
+                } catch (deleteError) {
+                    console.error(`❌ فشل في حذف السجل المكرر ${duplicateId}:`, deleteError);
+                }
+            }
+        }
+
+        return {
+            success: true,
+            action: 'transferred',
+            data: updatedRecord[0],
+            originalId: originalRecord.id,
+            preservedData: true
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في نقل الوحدة في Supabase:', error);
+        return { success: false, reason: `Transfer error: ${error.message}` };
     }
 }
 

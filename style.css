@@ -5502,11 +5502,11 @@ footer {
     }
 
     .management-sidebar .city-filter-list {
-        margin-top: 15px !important;
+        margin-top: 10px !important;
         background: #f8f9fa !important;
-        border-radius: 12px !important;
-        padding: 15px !important;
-        max-height: 250px !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        max-height: none !important;
         overflow-y: auto !important;
         border: 1px solid #e9ecef !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
@@ -11432,23 +11432,27 @@ td .remaining-installments {
     margin-right: 0 !important;
 }
 
-/* قائمة التصفية القابلة للطي */
+/* قائمة التصفية المبسطة والهادئة */
 .city-filter-list {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.12));
-    border-radius: 0 0 12px 12px;
-    margin-top: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .city-filter-list.show {
-    max-height: 1000px;
+    max-height: none;
     overflow: visible;
-    padding: 8px 0;
+    padding: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 /* حاوي المدن */
@@ -11462,79 +11466,77 @@ td .remaining-installments {
 
 /* خيارات المدن */
 .city-filter-list .city-option {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    margin: 3px 10px;
-    border-radius: 10px;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 20px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    color: var(--primary-color);
-    font-size: 1rem;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    color: #495057;
+    font-size: 13px;
     font-weight: 500;
-    position: relative;
-    border: 1px solid transparent;
+    border: 1px solid #e9ecef;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .city-filter-list .city-option:hover {
-    background: linear-gradient(135deg, rgba(42, 75, 155, 0.1), rgba(42, 75, 155, 0.05));
-    color: var(--primary-color);
-    transform: translateX(8px);
-    border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(42, 75, 155, 0.2);
+    background: #007bff;
+    color: #ffffff;
+    border-color: #007bff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
 }
 
 .city-filter-list .city-option.active {
-    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    background: #28a745;
     color: #ffffff;
     font-weight: 600;
-    border-color: var(--accent-color);
-    box-shadow: 0 4px 12px rgba(42, 75, 155, 0.3);
-    transform: translateX(5px);
+    border-color: #28a745;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    transform: none;
 }
 
 .city-filter-list .city-option i {
-    margin-left: 12px;
-    color: var(--accent-color);
-    font-size: 1.1rem;
-    min-width: 20px;
-    text-align: center;
+    color: #6c757d;
+    font-size: 12px;
+    flex-shrink: 0;
 }
 
-.city-filter-list .city-option.active i {
+.city-filter-list .city-option.active i,
+.city-filter-list .city-option:hover i {
     color: #ffffff;
 }
 
 .city-filter-list .city-option span {
-    flex: 1;
     font-weight: inherit;
     color: inherit;
-    margin: 0 8px;
+    flex-shrink: 0;
 }
 
 .city-filter-list .city-count {
-    background: rgba(42, 75, 155, 0.1);
-    color: var(--primary-color);
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    min-width: 28px;
+    background: #e9ecef;
+    color: #495057;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 18px;
     text-align: center;
-    border: 1px solid var(--primary-color);
+    border: none;
+    flex-shrink: 0;
 }
 
 .city-filter-list .city-option:hover .city-count {
-    background: rgba(42, 75, 155, 0.2);
-    color: var(--primary-color);
-    border-color: var(--primary-color);
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
 }
 
 .city-filter-list .city-option.active .city-count {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.2);
     color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.5);
 }
 
 /* معلومات التصفية */
@@ -11592,7 +11594,8 @@ td .remaining-installments {
 /* تحسينات للأجهزة المحمولة */
 @media (max-width: 768px) {
     .city-filter-list.show {
-        max-height: 1000px;
+        max-height: none;
+        padding: 12px;
     }
 
     .cities-container {
@@ -11601,26 +11604,89 @@ td .remaining-installments {
     }
 
     .city-filter-list .city-option {
-        padding: 10px 14px;
-        font-size: 0.95rem;
-        margin: 2px 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 15px;
     }
 
     .city-filter-list .city-option i {
-        font-size: 1rem;
-        margin-left: 10px;
+        font-size: 11px;
     }
 
     .city-filter-list .city-count {
-        font-size: 0.75rem;
-        padding: 3px 6px;
-        min-width: 24px;
+        font-size: 10px;
+        padding: 1px 4px;
+        min-width: 16px;
     }
 
     .filter-badge {
         font-size: 0.8rem;
         padding: 4px 8px;
     }
+}
+
+/* تحسينات إضافية لتصميم المدن */
+.city-filter-list .city-option {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.city-filter-list .city-option:hover {
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+.city-filter-list .city-option.active {
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+/* تأثير انتقال سلس للقائمة */
+.city-filter-list {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.city-filter-list.show {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* تحسين تصميم زر "جميع المدن" */
+.city-filter-list .all-cities {
+    background: #28a745 !important;
+    color: white !important;
+    border: 1px solid #28a745 !important;
+    font-weight: 600 !important;
+}
+
+.city-filter-list .all-cities:hover {
+    background: #218838 !important;
+    border-color: #218838 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(33, 136, 56, 0.3) !important;
+}
+
+.city-filter-list .all-cities.active {
+    background: #007bff !important;
+    border-color: #007bff !important;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3) !important;
+}
+
+.city-filter-list .all-cities i,
+.city-filter-list .all-cities span {
+    color: white !important;
+}
+
+.city-filter-list .all-cities .city-count {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
 }
 
 /* ==================== تنسيق زر إخفاء/إظهار أزرار الهيدر ==================== */
@@ -15377,6 +15443,320 @@ body.user-omar .admin-only-omar {
   display: block !important;
 }
 
+/* ===== تصميم زر تحرير أسماء العقارات ===== */
+.edit-property-name-btn {
+  background: linear-gradient(135deg, #ff6b35, #f7931e) !important;
+  border: none;
+  color: white;
+  padding: 8px;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+}
+
+.edit-property-name-btn:hover {
+  background: linear-gradient(135deg, #e55a2b, #e8851a) !important;
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+.edit-property-name-btn i {
+  margin: 0;
+}
+
+/* زر تحرير أسماء العقارات في الجوال */
+.edit-property-name-btn-mobile {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  padding: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 40px !important;
+}
+
+/* ===== تصميم نافذة تحرير اسم العقار ===== */
+.edit-property-name-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.edit-property-name-modal .form-group {
+  margin-bottom: 20px;
+}
+
+.edit-property-name-modal .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.edit-property-name-modal .required {
+  color: #e74c3c;
+}
+
+.edit-property-name-modal input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.edit-property-name-modal input[type="text"]:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.edit-property-name-modal input.readonly-input {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.edit-property-name-modal input.error {
+  border-color: #e74c3c;
+  background-color: #fdf2f2;
+}
+
+.edit-property-name-modal input.success {
+  border-color: #27ae60;
+  background-color: #f2fdf5;
+}
+
+.edit-property-name-modal .form-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.edit-property-name-modal .error-message {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #e74c3c;
+  background-color: #fdf2f2;
+  padding: 5px 8px;
+  border-radius: 4px;
+  border-left: 3px solid #e74c3c;
+}
+
+.edit-property-name-modal .info-box {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  border: 1px solid #2196f3;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.edit-property-name-modal .info-box h4 {
+  margin: 0 0 10px 0;
+  color: #1976d2;
+}
+
+.edit-property-name-modal .info-box p {
+  margin: 5px 0;
+  color: #333;
+}
+
+.edit-property-name-modal .warning-box {
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  border: 1px solid #ff9800;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.edit-property-name-modal .warning-box h4 {
+  margin: 0 0 10px 0;
+  color: #f57c00;
+}
+
+.edit-property-name-modal .warning-box ul {
+  margin: 10px 0 0 20px;
+  color: #333;
+}
+
+.edit-property-name-modal .warning-box li {
+  margin-bottom: 5px;
+}
+
+/* ===== تصميم نافذة خيارات العقارات ===== */
+.property-name-options-modal {
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+}
+
+.property-name-options-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.property-name-options-modal .search-box {
+  margin-bottom: 20px;
+}
+
+.property-name-options-modal .search-box input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #ddd;
+  border-radius: 25px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.property-name-options-modal .search-box input:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.property-name-options-modal .properties-list {
+  display: grid;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.property-name-options-modal .property-item {
+  background: white;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.property-name-options-modal .property-item:hover {
+  border-color: #3498db;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+  transform: translateY(-2px);
+}
+
+.property-name-options-modal .property-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.property-name-options-modal .property-header h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.property-name-options-modal .edit-btn {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.property-name-options-modal .edit-btn:hover {
+  background: linear-gradient(135deg, #2980b9, #1f5f8b);
+  transform: scale(1.05);
+}
+
+.property-name-options-modal .property-details {
+  display: grid;
+  gap: 8px;
+}
+
+.property-name-options-modal .detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.property-name-options-modal .detail-row .label {
+  font-weight: 600;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.property-name-options-modal .detail-row .value {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.property-name-options-modal .status-rented {
+  background: #27ae60;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+.property-name-options-modal .status-empty {
+  background: #95a5a6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.property-name-options-modal .stats-box {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+}
+
+.property-name-options-modal .stats-box p {
+  margin: 5px 0;
+  color: #495057;
+  font-weight: 500;
+}
+
+/* ===== تحسينات للشاشات الصغيرة ===== */
+@media (max-width: 768px) {
+  .edit-property-name-modal,
+  .property-name-options-modal {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .property-name-options-modal .property-item {
+    padding: 15px;
+  }
+
+  .property-name-options-modal .property-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .edit-property-name-btn {
+    padding: 6px;
+    font-size: 12px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    display: flex !important;
+  }
+}
+
 /* ===== تصميم الأزرار المحظورة للمستخدم محدود الصلاحية ===== */
 
 /* مؤشرات بصرية للأزرار المحظورة */
@@ -16434,6 +16814,42 @@ body.limited-user .restricted-dropdown-item::before {
     font-size: 0.9rem;
     color: #6c757d;
     flex-wrap: wrap;
+}
+
+/* تحسين عرض التواريخ في سجلات التتبع */
+.log-dates {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 5px;
+}
+
+.log-date-gregorian {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.log-date-gregorian i {
+    color: #3498db;
+    font-size: 0.8rem;
+}
+
+.log-date-hijri {
+    color: #7f8c8d;
+    font-size: 0.8rem;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.log-date-hijri i {
+    color: #f39c12;
+    font-size: 0.7rem;
 }
 
 .log-details {

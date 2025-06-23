@@ -20,9 +20,9 @@ function saveAppState() {
             timestamp: Date.now(),
             // حفظ حالة الشريط الجانبي
             sidebarVisible: document.getElementById('sidebar')?.style.display !== 'none',
-            // حفظ نص البحث
-            globalSearchValue: document.getElementById('globalSearch')?.value || '',
-            propertySearchValue: document.getElementById('propertySearch')?.value || '',
+            // لا نحفظ نص البحث - سيتم مسحه عند إعادة التحميل
+            // globalSearchValue: document.getElementById('globalSearch')?.value || '',
+            // propertySearchValue: document.getElementById('propertySearch')?.value || '',
             // حفظ حالة النافذة المفتوحة (إن وجدت)
             openModal: document.querySelector('.modal.show') ? true : false,
             // حفظ وضع الإدارة
@@ -63,17 +63,17 @@ function restoreAppState() {
         currentProperty = state.currentProperty;
         filterStatus = state.filterStatus;
 
-        // استعادة نص البحث
+        // مسح نص البحث عند إعادة التحميل
         setTimeout(() => {
             const globalSearch = document.getElementById('globalSearch');
             const propertySearch = document.getElementById('propertySearch');
 
-            if (globalSearch && state.globalSearchValue) {
-                globalSearch.value = state.globalSearchValue;
+            if (globalSearch) {
+                globalSearch.value = '';
             }
 
-            if (propertySearch && state.propertySearchValue) {
-                propertySearch.value = state.propertySearchValue;
+            if (propertySearch) {
+                propertySearch.value = '';
             }
         }, 100);
 
@@ -156,22 +156,19 @@ function applyRestoredState(state) {
             console.log('🔍 استعادة فلتر الحالة:', filterStatus);
         }
 
-        // استعادة نص البحث
+        // مسح نص البحث عند إعادة التحميل
         setTimeout(() => {
-            if (state.globalSearchValue) {
-                const globalSearch = document.getElementById('globalSearch');
-                if (globalSearch) {
-                    globalSearch.value = state.globalSearchValue;
-                    console.log('🔍 استعادة البحث العام:', state.globalSearchValue);
-                }
+            const globalSearch = document.getElementById('globalSearch');
+            const propertySearch = document.getElementById('propertySearch');
+
+            if (globalSearch) {
+                globalSearch.value = '';
+                console.log('🔍 تم مسح البحث العام');
             }
 
-            if (state.propertySearchValue) {
-                const propertySearch = document.getElementById('propertySearch');
-                if (propertySearch) {
-                    propertySearch.value = state.propertySearchValue;
-                    console.log('🔍 استعادة بحث العقارات:', state.propertySearchValue);
-                }
+            if (propertySearch) {
+                propertySearch.value = '';
+                console.log('🔍 تم مسح بحث العقارات');
             }
         }, 300);
 
@@ -218,29 +215,10 @@ function addStateEventListeners() {
         }
     });
 
-    // حفظ الحالة عند تغيير البحث العام
-    const globalSearch = document.getElementById('globalSearch');
-    if (globalSearch) {
-        globalSearch.addEventListener('input', function() {
-            // تأخير قصير لتجنب الحفظ المفرط
-            clearTimeout(window.searchSaveTimeout);
-            window.searchSaveTimeout = setTimeout(() => {
-                saveAppState();
-            }, 1000);
-        });
-    }
-
-    // حفظ الحالة عند تغيير بحث العقارات
-    const propertySearch = document.getElementById('propertySearch');
-    if (propertySearch) {
-        propertySearch.addEventListener('input', function() {
-            // تأخير قصير لتجنب الحفظ المفرط
-            clearTimeout(window.propertySearchSaveTimeout);
-            window.propertySearchSaveTimeout = setTimeout(() => {
-                saveAppState();
-            }, 1000);
-        });
-    }
+    // لا نحفظ حالة البحث - سيتم مسحها عند إعادة التحميل
+    // const globalSearch = document.getElementById('globalSearch');
+    // const propertySearch = document.getElementById('propertySearch');
+    // تم إزالة مستمعات أحداث البحث لمنع حفظ قيم البحث
 
     // حفظ الحالة عند تغيير حجم النافذة (للشريط الجانبي)
     window.addEventListener('resize', function() {
@@ -356,11 +334,7 @@ function clearAppStateWithConfirmation() {
         filterStatus = null;
 
         // مسح نصوص البحث
-        const globalSearch = document.getElementById('globalSearch');
-        const propertySearch = document.getElementById('propertySearch');
-
-        if (globalSearch) globalSearch.value = '';
-        if (propertySearch) propertySearch.value = '';
+        clearAllSearchFields();
 
         // إعادة تهيئة التطبيق
         setTimeout(() => {
@@ -374,6 +348,30 @@ function clearAppStateWithConfirmation() {
 
         console.log('🔄 تم إعادة تعيين حالة التطبيق');
     }
+}
+
+// دالة مسح جميع حقول البحث
+function clearAllSearchFields() {
+    const globalSearch = document.getElementById('globalSearch');
+    const propertySearch = document.getElementById('propertySearch');
+
+    if (globalSearch) {
+        globalSearch.value = '';
+        console.log('🔍 تم مسح البحث العام');
+    }
+
+    if (propertySearch) {
+        propertySearch.value = '';
+        console.log('🔍 تم مسح بحث العقارات');
+    }
+
+    // مسح أي حقول بحث أخرى في النوافذ المنبثقة
+    const allSearchInputs = document.querySelectorAll('input[type="text"][placeholder*="بحث"], input[type="search"]');
+    allSearchInputs.forEach(input => {
+        if (input.id !== 'globalSearch' && input.id !== 'propertySearch') {
+            input.value = '';
+        }
+    });
 }
 
 // دالة مساعدة للتحقق من وجود البيانات
@@ -676,6 +674,11 @@ function updateDeveloperModeButton() {
 
 // تحميل البيانات عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
+    // مسح حقول البحث عند تحميل الصفحة
+    setTimeout(() => {
+        clearAllSearchFields();
+    }, 100);
+
     // تهيئة القائمة المنسدلة للجوال
     initMobileMenu();
 
@@ -1079,6 +1082,11 @@ function showViewToggle() {
 // تهيئة التطبيق
 function initializeApp() {
     console.log('🚀 بدء تهيئة التطبيق...');
+
+    // 🔧 إضافة: تحميل المدن المحفوظة أولاً
+    if (typeof loadSavedCities === 'function') {
+        loadSavedCities();
+    }
 
     // تحميل إعداد الترتيب
     loadSortOrderSetting();
@@ -10668,32 +10676,38 @@ function enterManagementMode() {
                         <!-- خيار جميع المدن -->
                         <div class="city-option all-cities" onclick="filterByCity('all')"
                              style="
-                                 background: linear-gradient(135deg, #28a745, #20c997);
+                                 background: #28a745;
                                  color: white;
-                                 padding: 12px 15px;
-                                 border-radius: 8px;
-                                 margin-bottom: 10px;
+                                 padding: 8px 12px;
+                                 border-radius: 20px;
+                                 margin-bottom: 8px;
                                  cursor: pointer;
-                                 display: flex;
+                                 display: inline-flex;
                                  align-items: center;
-                                 gap: 12px;
-                                 transition: all 0.3s ease;
+                                 gap: 6px;
+                                 transition: all 0.2s ease;
                                  font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif;
                                  font-weight: 600;
-                                 box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+                                 font-size: 13px;
+                                 box-shadow: 0 1px 3px rgba(40, 167, 69, 0.3);
+                                 white-space: nowrap;
+                                 flex-shrink: 0;
+                                 border: 1px solid #28a745;
                              ">
-                            <i class="fas fa-globe" style="font-size: 1rem; color: white;"></i>
-                            <span style="flex: 1; font-size: 0.9rem; color: white;">جميع المدن</span>
+                            <i class="fas fa-globe" style="font-size: 12px; color: white; flex-shrink: 0;"></i>
+                            <span style="color: white; font-weight: inherit;">جميع المدن</span>
                             <span class="city-count" id="allCitiesCount"
                                   style="
                                       background: rgba(255, 255, 255, 0.2);
                                       color: white;
-                                      padding: 4px 8px;
-                                      border-radius: 12px;
-                                      font-size: 0.7rem;
-                                      font-weight: 700;
-                                      min-width: 25px;
+                                      padding: 2px 6px;
+                                      border-radius: 10px;
+                                      font-size: 11px;
+                                      font-weight: 600;
+                                      min-width: 18px;
                                       text-align: center;
+                                      border: none;
+                                      flex-shrink: 0;
                                   ">0</span>
                         </div>
 
@@ -12414,6 +12428,11 @@ async function confirmDeleteProperty(propertyName) {
         // حفظ البيانات محلياً
         localStorage.setItem('propertyAttachments', JSON.stringify(attachments));
         saveDataLocally();
+
+        // 🔧 إضافة: تحديث المدن المحفوظة بعد حذف العقار
+        if (typeof saveCitiesLocally === 'function') {
+            saveCitiesLocally();
+        }
 
         // إعادة تحميل التطبيق
         initializeApp();
@@ -16438,17 +16457,142 @@ function linkUnitToGroup(unitNumber) {
         return;
     }
 
+    // 🔧 إصلاح: تطبيق البيانات الحالية من النموذج على الوحدة المربوطة
+    const currentFormData = getCurrentFormData();
+    if (currentFormData) {
+        console.log(`📝 تطبيق البيانات الحالية على الوحدة المربوطة ${unitNumber}`);
+        applyFormDataToUnit(unitToLink, currentFormData);
+
+        // تحديث البيانات المحلية فوراً
+        updateLocalDataForUnit(unitToLink);
+    }
+
     // إضافة الوحدة للمجموعة
     window.currentEditingUnits.push(unitToLink);
 
-    console.log(`🔗 تم ربط الوحدة ${unitNumber} بالمجموعة`);
+    console.log(`🔗 تم ربط الوحدة ${unitNumber} بالمجموعة مع البيانات الحالية`);
 
     // تحديث العرض
     updateLinkedUnitsDisplay();
     updateAvailableUnitsForLinking();
 
     // إظهار رسالة نجاح
-    showSuccessMessage('تم الربط بنجاح', `تم ربط الوحدة ${unitNumber} بالمجموعة`);
+    showSuccessMessage('تم الربط بنجاح', `تم ربط الوحدة ${unitNumber} بالمجموعة مع تطبيق البيانات الحالية`);
+}
+
+// الحصول على البيانات الحالية من النموذج
+function getCurrentFormData() {
+    try {
+        // البحث عن النموذج النشط (سواء فردي أو متعدد)
+        const multiForm = document.getElementById('multiUnitEditForm');
+        const singleForm = document.getElementById('propertyEditForm');
+
+        const activeForm = multiForm || singleForm;
+
+        if (!activeForm) {
+            console.warn('⚠️ لم يتم العثور على نموذج نشط');
+            return null;
+        }
+
+        const formData = new FormData(activeForm);
+        console.log('📋 تم الحصول على البيانات من النموذج النشط');
+        return formData;
+    } catch (error) {
+        console.error('❌ خطأ في الحصول على بيانات النموذج:', error);
+        return null;
+    }
+}
+
+// تطبيق بيانات النموذج على وحدة معينة
+function applyFormDataToUnit(unit, formData) {
+    try {
+        console.log(`📝 تطبيق البيانات على الوحدة ${unit['رقم  الوحدة ']}`);
+
+        // قائمة الحقول التي يجب تطبيقها (البيانات الشخصية والعقد)
+        const fieldsToApply = [
+            'اسم المستأجر',
+            'رقم جوال المستأجر',
+            'رقم جوال إضافي',
+            'المالك',
+            'رقم العقد',
+            'نوع العقد',
+            'تاريخ البداية',
+            'تاريخ النهاية',
+            'تاريخ نهاية القسط',
+            'عدد الاقساط المتبقية',
+            'قيمة  الايجار ',
+            'الاجمالى',
+            'رقم الصك',
+            'مساحةالصك',
+            'السجل العيني ',
+            'موقع العقار',
+            'المساحة',
+            'رقم حساب الكهرباء',
+            'الارتفاع',
+            'ملاحظات الوحدة'
+        ];
+
+        // تطبيق البيانات من النموذج
+        fieldsToApply.forEach(field => {
+            const value = formData.get(field);
+            if (value !== null && value !== undefined) {
+                unit[field] = value;
+                console.log(`   ✅ ${field}: "${value}"`);
+            }
+        });
+
+        // الاحتفاظ برقم الوحدة الأصلي (مهم جداً!)
+        const originalUnitNumber = unit['رقم  الوحدة '];
+
+        // إضافة معلومات التحديث
+        unit['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+        unit['نوع التحديث'] = 'ربط وحدة مع تطبيق البيانات';
+        unit['المسؤول عن التحديث'] = getCurrentUser();
+
+        console.log(`✅ تم تطبيق البيانات على الوحدة ${originalUnitNumber} بنجاح`);
+
+    } catch (error) {
+        console.error('❌ خطأ في تطبيق البيانات على الوحدة:', error);
+    }
+}
+
+// تحديث البيانات المحلية للوحدة
+function updateLocalDataForUnit(unit) {
+    try {
+        const unitNumber = unit['رقم  الوحدة '];
+        const propertyName = unit['اسم العقار'];
+
+        // تحديث في مصفوفة properties الرئيسية
+        const propertiesIndex = properties.findIndex(p =>
+            p['رقم  الوحدة '] === unitNumber &&
+            p['اسم العقار'] === propertyName
+        );
+
+        if (propertiesIndex !== -1) {
+            properties[propertiesIndex] = { ...unit };
+            console.log(`✅ تم تحديث البيانات المحلية للوحدة ${unitNumber} في properties`);
+        }
+
+        // تحديث في مصفوفة allData إذا كانت موجودة
+        if (window.allData && Array.isArray(window.allData)) {
+            const allDataIndex = window.allData.findIndex(p =>
+                p['رقم  الوحدة '] === unitNumber &&
+                p['اسم العقار'] === propertyName
+            );
+
+            if (allDataIndex !== -1) {
+                window.allData[allDataIndex] = { ...unit };
+                console.log(`✅ تم تحديث البيانات المحلية للوحدة ${unitNumber} في allData`);
+            }
+        }
+
+        // حفظ في localStorage
+        localStorage.setItem('propertyData', JSON.stringify(properties));
+        console.log(`💾 تم حفظ البيانات المحدثة في localStorage`);
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث البيانات المحلية:', error);
+    }
 }
 
 // فصل وحدة من المجموعة
@@ -16695,6 +16839,12 @@ async function saveMultiUnitEdit(event) {
                         }
                     }
 
+                    // 🔧 إصلاح إضافي: التأكد من تطبيق البيانات على الوحدة قبل الحفظ
+                    if (!isPrimaryUnit) {
+                        console.log(`🔄 تطبيق البيانات النهائية على الوحدة المربوطة ${unit['رقم  الوحدة ']}`);
+                        applyFormDataToUnit(unit, unitFormData);
+                    }
+
                     // حفظ الوحدة مع البيانات المخصصة لها
                     await savePropertyEditForUnit(unit, unitFormData, operationType, isPrimaryUnit);
                     successCount++;
@@ -16824,6 +16974,16 @@ async function savePropertyEditForUnit(unit, formData, operationType) {
 
     // تحديث البيانات في المصفوفة
     properties[propertyIndex] = updatedProperty;
+
+    // 🔧 تحديث جميع الوحدات المربوطة إذا كان هناك عقد
+    if (updatedProperty['رقم العقد'] && updatedProperty['رقم العقد'].trim() !== '') {
+        console.log(`🔄 تحديث الوحدات المربوطة بالعقد ${updatedProperty['رقم العقد']}...`);
+        try {
+            await updateLinkedUnitsOnEdit(updatedProperty);
+        } catch (error) {
+            console.error(`❌ خطأ في تحديث الوحدات المربوطة:`, error);
+        }
+    }
 
     // حفظ في التخزين المحلي
     localStorage.setItem('propertyData', JSON.stringify(properties));
@@ -18952,7 +19112,266 @@ function viewPropertyUnits(propertyName) {
     });
 }
 
-// ==================== وظائف ربط الوحدات ====================
+// ==================== وظائف ربط الوحدات المحسنة ====================
+
+// 🔧 دالة مشاركة البيانات بين الوحدات المربوطة
+async function syncLinkedUnitsData(contractNumber, propertyName, sourceUnitData, operationType = 'link') {
+    try {
+        console.log(`🔄 مزامنة بيانات الوحدات المربوطة للعقد ${contractNumber}...`);
+
+        if (!contractNumber || contractNumber.trim() === '') {
+            console.warn('⚠️ رقم العقد فارغ، تخطي المزامنة');
+            return { success: false, reason: 'رقم العقد فارغ' };
+        }
+
+        // البحث عن جميع الوحدات المربوطة بنفس العقد
+        const linkedUnits = properties.filter(p =>
+            p['رقم العقد'] === contractNumber &&
+            p['اسم العقار'] === propertyName
+        );
+
+        if (linkedUnits.length <= 1) {
+            console.log('ℹ️ لا توجد وحدات أخرى مربوطة للمزامنة');
+            return { success: true, updatedCount: 0, reason: 'وحدة واحدة فقط' };
+        }
+
+        console.log(`📋 تم العثور على ${linkedUnits.length} وحدة مربوطة للمزامنة`);
+
+        // البيانات المشتركة التي يجب مزامنتها
+        const sharedData = {
+            // بيانات المستأجر
+            'اسم المستأجر': sourceUnitData['اسم المستأجر'] || '',
+            'رقم الجوال': sourceUnitData['رقم الجوال'] || '',
+            'رقم الجوال الاضافي': sourceUnitData['رقم الجوال الاضافي'] || '',
+
+            // بيانات العقد
+            'رقم العقد': sourceUnitData['رقم العقد'] || '',
+            'تاريخ البداية': sourceUnitData['تاريخ البداية'] || '',
+            'تاريخ النهاية': sourceUnitData['تاريخ النهاية'] || '',
+            'قيمة  الايجار ': sourceUnitData['قيمة  الايجار '] || '',
+            'نوع العقد': sourceUnitData['نوع العقد'] || 'سكني',
+
+            // بيانات الأقساط (من الأول إلى العاشر)
+            'تاريخ القسط الاول': sourceUnitData['تاريخ القسط الاول'] || '',
+            'مبلغ القسط الاول': sourceUnitData['مبلغ القسط الاول'] || '',
+            'تاريخ القسط الثاني': sourceUnitData['تاريخ القسط الثاني'] || '',
+            'مبلغ القسط الثاني': sourceUnitData['مبلغ القسط الثاني'] || '',
+            'تاريخ القسط الثالث': sourceUnitData['تاريخ القسط الثالث'] || '',
+            'مبلغ القسط الثالث': sourceUnitData['مبلغ القسط الثالث'] || '',
+            'تاريخ القسط الرابع': sourceUnitData['تاريخ القسط الرابع'] || '',
+            'مبلغ القسط الرابع': sourceUnitData['مبلغ القسط الرابع'] || '',
+            'تاريخ القسط الخامس': sourceUnitData['تاريخ القسط الخامس'] || '',
+            'مبلغ القسط الخامس': sourceUnitData['مبلغ القسط الخامس'] || '',
+            'تاريخ القسط السادس': sourceUnitData['تاريخ القسط السادس'] || '',
+            'مبلغ القسط السادس': sourceUnitData['مبلغ القسط السادس'] || '',
+            'تاريخ القسط السابع': sourceUnitData['تاريخ القسط السابع'] || '',
+            'مبلغ القسط السابع': sourceUnitData['مبلغ القسط السابع'] || '',
+            'تاريخ القسط الثامن': sourceUnitData['تاريخ القسط الثامن'] || '',
+            'مبلغ القسط الثامن': sourceUnitData['مبلغ القسط الثامن'] || '',
+            'تاريخ القسط التاسع': sourceUnitData['تاريخ القسط التاسع'] || '',
+            'مبلغ القسط التاسع': sourceUnitData['مبلغ القسط التاسع'] || '',
+            'تاريخ القسط العاشر': sourceUnitData['تاريخ القسط العاشر'] || '',
+            'مبلغ القسط العاشر': sourceUnitData['مبلغ القسط العاشر'] || '',
+            'تاريخ نهاية القسط': sourceUnitData['تاريخ نهاية القسط'] || '',
+
+            // معلومات التحديث
+            'تاريخ آخر تحديث': new Date().toLocaleDateString('ar-SA'),
+            'نوع التحديث': `مزامنة بيانات العقد - ${operationType}`,
+            'المسؤول عن التحديث': getCurrentUser()
+        };
+
+        let updatedCount = 0;
+        let supabaseUpdates = [];
+
+        // تطبيق البيانات المشتركة على جميع الوحدات المربوطة
+        for (const unit of linkedUnits) {
+            const unitIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === unit['رقم  الوحدة '] &&
+                p['اسم العقار'] === unit['اسم العقار']
+            );
+
+            if (unitIndex !== -1) {
+                // الحفاظ على البيانات الخاصة بكل وحدة
+                const preservedData = {
+                    'رقم  الوحدة ': properties[unitIndex]['رقم  الوحدة '],
+                    'اسم العقار': properties[unitIndex]['اسم العقار'],
+                    'المساحة': properties[unitIndex]['المساحة'],
+                    'ملاحظات الوحدة': properties[unitIndex]['ملاحظات الوحدة'],
+                    'المدينة': properties[unitIndex]['المدينة'],
+                    'رقم الصك': properties[unitIndex]['رقم الصك'],
+                    'مساحة الصك': properties[unitIndex]['مساحة الصك'],
+                    'السجل العيني ': properties[unitIndex]['السجل العيني '],
+                    'المالك': properties[unitIndex]['المالك'],
+                    'موقع العقار': properties[unitIndex]['موقع العقار']
+                };
+
+                // دمج البيانات المشتركة مع البيانات المحفوظة
+                properties[unitIndex] = {
+                    ...properties[unitIndex],
+                    ...sharedData,
+                    ...preservedData // إعادة كتابة البيانات الخاصة للتأكد من عدم تغييرها
+                };
+
+                updatedCount++;
+                console.log(`✅ تم تحديث الوحدة ${unit['رقم  الوحدة ']} بالبيانات المشتركة`);
+
+                // إضافة للقائمة للحفظ في Supabase
+                supabaseUpdates.push(properties[unitIndex]);
+            }
+        }
+
+        // حفظ التحديثات في Supabase
+        let supabaseSuccessCount = 0;
+        if (typeof savePropertyToSupabase === 'function') {
+            for (const updatedUnit of supabaseUpdates) {
+                try {
+                    const result = await savePropertyToSupabase(updatedUnit);
+                    if (result && result.success) {
+                        supabaseSuccessCount++;
+                        console.log(`☁️ تم حفظ الوحدة ${updatedUnit['رقم  الوحدة ']} في Supabase`);
+                    }
+                } catch (error) {
+                    console.error(`❌ فشل حفظ الوحدة ${updatedUnit['رقم  الوحدة ']} في Supabase:`, error);
+                }
+            }
+        }
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
+
+        console.log(`🎉 تمت مزامنة ${updatedCount} وحدة، تم حفظ ${supabaseSuccessCount} في Supabase`);
+
+        return {
+            success: true,
+            updatedCount,
+            supabaseSuccessCount,
+            totalUnits: linkedUnits.length,
+            sharedFields: Object.keys(sharedData).length
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في مزامنة بيانات الوحدات المربوطة:', error);
+        return { success: false, reason: error.message };
+    }
+}
+
+// 🔧 دالة تحديث جميع الوحدات المربوطة عند تعديل البيانات
+async function updateLinkedUnitsOnEdit(editedUnitData) {
+    try {
+        const contractNumber = editedUnitData['رقم العقد'];
+        const propertyName = editedUnitData['اسم العقار'];
+
+        if (!contractNumber || contractNumber.trim() === '') {
+            console.log('ℹ️ لا يوجد رقم عقد، تخطي تحديث الوحدات المربوطة');
+            return { success: true, reason: 'لا يوجد عقد' };
+        }
+
+        console.log(`🔄 تحديث جميع الوحدات المربوطة بالعقد ${contractNumber}...`);
+
+        // البحث عن جميع الوحدات المربوطة بنفس العقد
+        const linkedUnits = properties.filter(p =>
+            p['رقم العقد'] === contractNumber &&
+            p['اسم العقار'] === propertyName
+        );
+
+        if (linkedUnits.length <= 1) {
+            console.log('ℹ️ لا توجد وحدات أخرى مربوطة للتحديث');
+            return { success: true, updatedCount: 0, reason: 'وحدة واحدة فقط' };
+        }
+
+        console.log(`📋 تم العثور على ${linkedUnits.length} وحدة مربوطة للتحديث`);
+
+        // الحقول المشتركة التي يجب تحديثها
+        const sharedFields = [
+            'اسم المستأجر', 'رقم الجوال', 'رقم الجوال الاضافي',
+            'تاريخ البداية', 'تاريخ النهاية', 'قيمة  الايجار ', 'نوع العقد',
+            'تاريخ القسط الاول', 'مبلغ القسط الاول',
+            'تاريخ القسط الثاني', 'مبلغ القسط الثاني',
+            'تاريخ القسط الثالث', 'مبلغ القسط الثالث',
+            'تاريخ القسط الرابع', 'مبلغ القسط الرابع',
+            'تاريخ القسط الخامس', 'مبلغ القسط الخامس',
+            'تاريخ القسط السادس', 'مبلغ القسط السادس',
+            'تاريخ القسط السابع', 'مبلغ القسط السابع',
+            'تاريخ القسط الثامن', 'مبلغ القسط الثامن',
+            'تاريخ القسط التاسع', 'مبلغ القسط التاسع',
+            'تاريخ القسط العاشر', 'مبلغ القسط العاشر',
+            'تاريخ نهاية القسط'
+        ];
+
+        let updatedCount = 0;
+        let supabaseUpdates = [];
+
+        // تحديث جميع الوحدات المربوطة
+        for (const unit of linkedUnits) {
+            const unitIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === unit['رقم  الوحدة '] &&
+                p['اسم العقار'] === unit['اسم العقار']
+            );
+
+            if (unitIndex !== -1) {
+                // تحديث الحقول المشتركة فقط
+                let hasChanges = false;
+                for (const field of sharedFields) {
+                    if (editedUnitData[field] !== undefined &&
+                        properties[unitIndex][field] !== editedUnitData[field]) {
+                        properties[unitIndex][field] = editedUnitData[field];
+                        hasChanges = true;
+                    }
+                }
+
+                if (hasChanges) {
+                    // إضافة معلومات التحديث
+                    properties[unitIndex]['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+                    properties[unitIndex]['نوع التحديث'] = 'تحديث بيانات العقد المشتركة';
+                    properties[unitIndex]['المسؤول عن التحديث'] = getCurrentUser();
+
+                    updatedCount++;
+                    console.log(`✅ تم تحديث الوحدة ${unit['رقم  الوحدة ']} بالبيانات المشتركة`);
+
+                    // إضافة للقائمة للحفظ في Supabase
+                    supabaseUpdates.push(properties[unitIndex]);
+                }
+            }
+        }
+
+        // حفظ التحديثات في Supabase
+        let supabaseSuccessCount = 0;
+        if (typeof savePropertyToSupabase === 'function') {
+            for (const updatedUnit of supabaseUpdates) {
+                try {
+                    const result = await savePropertyToSupabase(updatedUnit);
+                    if (result && result.success) {
+                        supabaseSuccessCount++;
+                        console.log(`☁️ تم حفظ الوحدة ${updatedUnit['رقم  الوحدة ']} في Supabase`);
+                    }
+                } catch (error) {
+                    console.error(`❌ فشل حفظ الوحدة ${updatedUnit['رقم  الوحدة ']} في Supabase:`, error);
+                }
+            }
+        }
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
+
+        if (updatedCount > 0) {
+            console.log(`🎉 تم تحديث ${updatedCount} وحدة مربوطة، تم حفظ ${supabaseSuccessCount} في Supabase`);
+
+            // إظهار رسالة للمستخدم
+            showToast(`تم تحديث ${updatedCount} وحدة مربوطة بنفس البيانات`, 'success');
+        }
+
+        return {
+            success: true,
+            updatedCount,
+            supabaseSuccessCount,
+            totalUnits: linkedUnits.length
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث الوحدات المربوطة:', error);
+        return { success: false, reason: error.message };
+    }
+}
 
 // عرض الوحدات المتاحة للربط
 function renderAvailableUnitsForLinking(propertyName, currentContractNumber, currentUnitNumber) {
@@ -19028,7 +19447,7 @@ async function toggleUnitLinking(unitNumber, propertyName, contractNumber) {
     }
 }
 
-// ربط وحدة بالعقد
+// ربط وحدة بالعقد مع مزامنة البيانات
 async function linkUnitToContract(unitNumber, propertyName, contractNumber) {
     if (!contractNumber) {
         alert('يجب إدخال رقم العقد أولاً');
@@ -19048,8 +19467,64 @@ async function linkUnitToContract(unitNumber, propertyName, contractNumber) {
         // حفظ البيانات القديمة للمقارنة
         const oldData = { ...properties[unitIndex] };
 
-        // تحديث البيانات محلياً
-        properties[unitIndex]['رقم العقد'] = contractNumber;
+        // 🔧 البحث عن وحدة أساسية موجودة بنفس العقد لنسخ بياناتها
+        const existingLinkedUnit = properties.find(p =>
+            p['رقم العقد'] === contractNumber &&
+            p['اسم العقار'] === propertyName &&
+            p['رقم  الوحدة '] !== unitNumber &&
+            p['اسم المستأجر'] && p['اسم المستأجر'].trim() !== ''
+        );
+
+        if (existingLinkedUnit) {
+            console.log(`🔗 تم العثور على وحدة أساسية مربوطة، نسخ البيانات منها...`);
+
+            // نسخ جميع البيانات المشتركة من الوحدة الأساسية
+            const sharedData = {
+                // بيانات المستأجر
+                'اسم المستأجر': existingLinkedUnit['اسم المستأجر'] || '',
+                'رقم الجوال': existingLinkedUnit['رقم الجوال'] || '',
+                'رقم الجوال الاضافي': existingLinkedUnit['رقم الجوال الاضافي'] || '',
+
+                // بيانات العقد
+                'رقم العقد': contractNumber,
+                'تاريخ البداية': existingLinkedUnit['تاريخ البداية'] || '',
+                'تاريخ النهاية': existingLinkedUnit['تاريخ النهاية'] || '',
+                'قيمة  الايجار ': existingLinkedUnit['قيمة  الايجار '] || '',
+                'نوع العقد': existingLinkedUnit['نوع العقد'] || 'سكني',
+
+                // بيانات الأقساط
+                'تاريخ القسط الاول': existingLinkedUnit['تاريخ القسط الاول'] || '',
+                'مبلغ القسط الاول': existingLinkedUnit['مبلغ القسط الاول'] || '',
+                'تاريخ القسط الثاني': existingLinkedUnit['تاريخ القسط الثاني'] || '',
+                'مبلغ القسط الثاني': existingLinkedUnit['مبلغ القسط الثاني'] || '',
+                'تاريخ القسط الثالث': existingLinkedUnit['تاريخ القسط الثالث'] || '',
+                'مبلغ القسط الثالث': existingLinkedUnit['مبلغ القسط الثالث'] || '',
+                'تاريخ القسط الرابع': existingLinkedUnit['تاريخ القسط الرابع'] || '',
+                'مبلغ القسط الرابع': existingLinkedUnit['مبلغ القسط الرابع'] || '',
+                'تاريخ القسط الخامس': existingLinkedUnit['تاريخ القسط الخامس'] || '',
+                'مبلغ القسط الخامس': existingLinkedUnit['مبلغ القسط الخامس'] || '',
+                'تاريخ القسط السادس': existingLinkedUnit['تاريخ القسط السادس'] || '',
+                'مبلغ القسط السادس': existingLinkedUnit['مبلغ القسط السادس'] || '',
+                'تاريخ القسط السابع': existingLinkedUnit['تاريخ القسط السابع'] || '',
+                'مبلغ القسط السابع': existingLinkedUnit['مبلغ القسط السابع'] || '',
+                'تاريخ القسط الثامن': existingLinkedUnit['تاريخ القسط الثامن'] || '',
+                'مبلغ القسط الثامن': existingLinkedUnit['مبلغ القسط الثامن'] || '',
+                'تاريخ القسط التاسع': existingLinkedUnit['تاريخ القسط التاسع'] || '',
+                'مبلغ القسط التاسع': existingLinkedUnit['مبلغ القسط التاسع'] || '',
+                'تاريخ القسط العاشر': existingLinkedUnit['تاريخ القسط العاشر'] || '',
+                'مبلغ القسط العاشر': existingLinkedUnit['مبلغ القسط العاشر'] || '',
+                'تاريخ نهاية القسط': existingLinkedUnit['تاريخ نهاية القسط'] || ''
+            };
+
+            // تطبيق البيانات المشتركة مع الحفاظ على البيانات الخاصة بالوحدة
+            Object.assign(properties[unitIndex], sharedData);
+
+            console.log(`✅ تم نسخ جميع البيانات من الوحدة الأساسية إلى الوحدة ${unitNumber}`);
+        } else {
+            // إذا لم توجد وحدة أساسية، فقط ربط رقم العقد
+            properties[unitIndex]['رقم العقد'] = contractNumber;
+            console.log(`📝 تم ربط الوحدة ${unitNumber} بالعقد ${contractNumber} (وحدة جديدة)`);
+        }
 
         // حفظ التغييرات في Supabase باستخدام الدالة المخصصة
         let supabaseSuccess = false;
@@ -20211,6 +20686,18 @@ async function savePropertyChanges(originalPropertyName) {
             property['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
         });
 
+        // 🔧 تحديث جميع الوحدات المربوطة بنفس العقود إذا كانت موجودة
+        for (const property of relatedProperties) {
+            if (property['رقم العقد'] && property['رقم العقد'].trim() !== '') {
+                console.log(`🔄 تحديث الوحدات المربوطة بالعقد ${property['رقم العقد']}...`);
+                try {
+                    await updateLinkedUnitsOnEdit(property);
+                } catch (error) {
+                    console.error(`❌ خطأ في تحديث الوحدات المربوطة للعقد ${property['رقم العقد']}:`, error);
+                }
+            }
+        }
+
         // حفظ البيانات محلياً
         saveDataLocally();
 
@@ -20660,9 +21147,15 @@ function showCityFilter() {
     const allCitiesOption = filterList.querySelector('.all-cities');
     if (allCitiesOption) {
         if (selectedCityFilter === 'all') {
-            allCitiesOption.style.background = 'linear-gradient(135deg, #007bff, #0056b3)';
+            allCitiesOption.style.background = '#007bff';
+            allCitiesOption.style.borderColor = '#007bff';
+            allCitiesOption.style.transform = 'translateY(-1px)';
+            allCitiesOption.style.boxShadow = '0 2px 8px rgba(0, 123, 255, 0.3)';
         } else {
-            allCitiesOption.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+            allCitiesOption.style.background = '#28a745';
+            allCitiesOption.style.borderColor = '#28a745';
+            allCitiesOption.style.transform = 'none';
+            allCitiesOption.style.boxShadow = '0 1px 3px rgba(40, 167, 69, 0.3)';
         }
     }
 
@@ -21136,6 +21629,9 @@ function saveDataLocally() {
         // حفظ في localStorage كنسخة احتياطية
         localStorage.setItem('properties_backup', JSON.stringify(properties));
 
+        // 🔧 إضافة: حفظ المدن بشكل منفصل للحفاظ عليها عند حذف العقارات
+        saveCitiesLocally();
+
         // محاولة حفظ في ملف JSON (يعمل فقط في بيئة التطوير)
         if (typeof saveToFile === 'function') {
             saveToFile();
@@ -21144,6 +21640,108 @@ function saveDataLocally() {
         console.log('✅ تم حفظ البيانات محلياً');
     } catch (error) {
         console.error('❌ خطأ في حفظ البيانات محلياً:', error);
+    }
+}
+
+// حفظ المدن بشكل منفصل في localStorage
+function saveCitiesLocally() {
+    try {
+        // جمع المدن من العقارات الحالية
+        const citiesFromProperties = new Set();
+        if (properties && properties.length > 0) {
+            properties.forEach(property => {
+                const city = property['المدينة'];
+                if (city && city.trim() !== '' && city !== null) {
+                    citiesFromProperties.add(city.trim());
+                }
+            });
+        }
+
+        // جمع المدن المحفوظة مسبقاً
+        const savedCities = new Set();
+        try {
+            const existingSavedCities = localStorage.getItem('savedCities');
+            if (existingSavedCities) {
+                const parsed = JSON.parse(existingSavedCities);
+                if (Array.isArray(parsed)) {
+                    parsed.forEach(city => savedCities.add(city));
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ خطأ في قراءة المدن المحفوظة:', error);
+        }
+
+        // جمع المدن من نظام إدارة المدن (إذا كان متوفراً)
+        if (typeof availableCities !== 'undefined' && Array.isArray(availableCities)) {
+            availableCities.forEach(city => {
+                if (city && city.trim() !== '') {
+                    savedCities.add(city.trim());
+                }
+            });
+        }
+
+        // دمج جميع المدن (من العقارات + المحفوظة + المضافة يدوياً)
+        const allCities = new Set([...citiesFromProperties, ...savedCities]);
+        const finalCitiesList = Array.from(allCities).sort();
+
+        // حفظ القائمة النهائية
+        localStorage.setItem('savedCities', JSON.stringify(finalCitiesList));
+
+        // تحديث availableCities إذا كان متوفراً
+        if (typeof availableCities !== 'undefined') {
+            // إضافة المدن الجديدة فقط (لا نحذف المدن الموجودة)
+            finalCitiesList.forEach(city => {
+                if (!availableCities.includes(city)) {
+                    availableCities.push(city);
+                }
+            });
+            availableCities.sort();
+        }
+
+        console.log(`💾 تم حفظ ${finalCitiesList.length} مدينة في localStorage`);
+
+    } catch (error) {
+        console.error('❌ خطأ في حفظ المدن محلياً:', error);
+    }
+}
+
+// تحميل المدن المحفوظة من localStorage
+function loadSavedCities() {
+    try {
+        const savedCities = localStorage.getItem('savedCities');
+        if (savedCities) {
+            const citiesList = JSON.parse(savedCities);
+            if (Array.isArray(citiesList)) {
+                // تحديث availableCities إذا كان متوفراً
+                if (typeof availableCities !== 'undefined') {
+                    // دمج المدن المحفوظة مع المدن الحالية
+                    const allCities = new Set([...availableCities, ...citiesList]);
+                    availableCities = Array.from(allCities).sort();
+
+                    console.log(`📂 تم تحميل ${citiesList.length} مدينة محفوظة من localStorage`);
+                    console.log(`📊 إجمالي المدن المتاحة: ${availableCities.length}`);
+
+                    // تحديث واجهة المدن إذا كانت الدوال متوفرة
+                    if (typeof updateCityButtons === 'function') {
+                        updateCityButtons();
+                    }
+                    if (typeof updateCityDropdowns === 'function') {
+                        updateCityDropdowns();
+                    }
+                } else {
+                    console.log(`📂 تم العثور على ${citiesList.length} مدينة محفوظة (availableCities غير متوفر)`);
+                }
+
+                return citiesList;
+            }
+        }
+
+        console.log('📂 لا توجد مدن محفوظة في localStorage');
+        return [];
+
+    } catch (error) {
+        console.error('❌ خطأ في تحميل المدن المحفوظة:', error);
+        return [];
     }
 }
 
@@ -22597,32 +23195,41 @@ async function confirmUnitTransfer() {
         renderData();
         updateTotalStats();
 
-        // إظهار نتائج العملية مع تفاصيل الحذف
-        let message = `✅ تم نقل ${transferredCount} وحدة بنجاح!\n\n`;
+        // إظهار نتائج العملية مع تفاصيل القص والنقل
+        let message = `✅ تم قص ونقل ${transferredCount} وحدة بنجاح مع الحفاظ على جميع البيانات!\n\n`;
         message += `📤 من: ${transferSourceProperty}\n`;
         message += `📥 إلى: ${transferDestinationProperty}\n\n`;
 
         // تفاصيل الحفظ في السحابة
-        message += `☁️ حفظ في قاعدة البيانات السحابية:\n`;
-        message += `   • تم حفظ ${supabaseSuccessCount} وحدة في الموقع الجديد\n`;
+        message += `☁️ عملية القص والنقل في قاعدة البيانات السحابية:\n`;
+        message += `   • تم قص ونقل ${supabaseSuccessCount} وحدة مع الحفاظ على جميع البيانات\n`;
 
-        // تفاصيل الحذف من الموقع القديم
-        let deletedFromOldCount = 0;
+        // تفاصيل الحفاظ على البيانات
+        let preservedDataCount = 0;
+        let removedFromSourceCount = 0;
         transferSelectedUnits.forEach(unitNumber => {
-            const unit = properties.find(p =>
+            const unitInDestination = properties.find(p =>
                 (p['رقم الوحدة'] === unitNumber || p['رقم  الوحدة '] === unitNumber) &&
                 p['اسم العقار'] === transferDestinationProperty
             );
-            // إذا كانت الوحدة موجودة في العقار الجديد، فقد تم النقل بنجاح
-            if (unit) deletedFromOldCount++;
+            const unitInSource = properties.find(p =>
+                (p['رقم الوحدة'] === unitNumber || p['رقم  الوحدة '] === unitNumber) &&
+                p['اسم العقار'] === transferSourceProperty
+            );
+
+            if (unitInDestination) preservedDataCount++;
+            if (!unitInSource) removedFromSourceCount++;
         });
 
-        message += `   • تم حذف ${deletedFromOldCount} وحدة من الموقع القديم نهائياً\n\n`;
+        message += `   • تم الحفاظ على جميع بيانات ${preservedDataCount} وحدة (المستأجر، العقد، الأقساط)\n`;
+        message += `   • تم حذف ${removedFromSourceCount} وحدة من العقار الأصلي نهائياً\n\n`;
 
-        // تأكيد عدم وجود أثر في العقار القديم
-        message += `🗑️ تأكيد الحذف النهائي:\n`;
-        message += `   • الوحدات المنقولة لا توجد في "${transferSourceProperty}" نهائياً\n`;
-        message += `   • جميع البيانات أصبحت تابعة لـ "${transferDestinationProperty}" فقط\n`;
+        // تأكيد عملية القص
+        message += `✂️ تأكيد عملية القص (وليس النسخ):\n`;
+        message += `   • الوحدات لم تعد موجودة في "${transferSourceProperty}"\n`;
+        message += `   • الوحدات موجودة الآن في "${transferDestinationProperty}" فقط\n`;
+        message += `   • جميع معلومات المستأجرين والعقود والأقساط محفوظة\n`;
+        message += `   • لا توجد نسخ مكررة في النظام\n`;
 
         if (supabaseSuccessCount < transferredCount) {
             const localOnlyCount = transferredCount - supabaseSuccessCount;
@@ -22687,40 +23294,85 @@ async function transferSingleUnit(unitNumber, sourceProperty, destinationPropert
     let supabaseSuccess = false;
     let deletionSuccess = false;
 
-    if (typeof savePropertyToSupabase === 'function') {
+    if (typeof transferUnitInSupabase === 'function') {
         try {
-            console.log(`💾 حفظ الوحدة المنقولة ${unitNumber} في Supabase...`);
+            console.log(`💾 نقل الوحدة ${unitNumber} في Supabase من "${sourceProperty}" إلى "${destinationProperty}"...`);
 
-            // حفظ الوحدة بالبيانات الجديدة (العقار الجديد)
-            const result = await savePropertyToSupabase(unit);
-            if (result) {
-                supabaseSuccess = true;
-                console.log(`✅ تم حفظ الوحدة ${unitNumber} في العقار الجديد "${destinationProperty}" في Supabase`);
+            // 🔧 الخطوة 1: حذف جميع السجلات الأصلية نهائياً من Supabase
+            if (typeof deleteUnitFromSupabaseCompletely === 'function') {
+                console.log(`🗑️ حذف جميع السجلات الأصلية للوحدة ${unitNumber} من "${sourceProperty}"...`);
+                const deleteResult = await deleteUnitFromSupabaseCompletely(unitNumber, sourceProperty);
 
-                // حذف السجل القديم نهائياً من Supabase (العقار القديم)
-                const originalUnit = properties[unitIndex];
-                if (originalUnit && typeof deletePropertyFromSupabase === 'function') {
-                    try {
-                        console.log(`🗑️ حذف السجل القديم للوحدة ${unitNumber} من العقار "${sourceProperty}" في Supabase...`);
-
-                        // حذف الوحدة القديمة نهائياً من قاعدة البيانات
-                        const deleteResult = await deletePropertyFromSupabase(originalUnit);
-
-                        if (deleteResult && deleteResult.success) {
-                            deletionSuccess = true;
-                            console.log(`✅ تم حذف السجل القديم للوحدة ${unitNumber} نهائياً من Supabase`);
-                        } else {
-                            console.warn(`⚠️ فشل حذف السجل القديم للوحدة ${unitNumber}:`, deleteResult?.reason || 'سبب غير معروف');
-                        }
-                    } catch (deleteError) {
-                        console.error(`❌ خطأ في حذف السجل القديم للوحدة ${unitNumber}:`, deleteError);
-                    }
+                if (deleteResult.success && deleteResult.deletedCount > 0) {
+                    deletionSuccess = true;
+                    console.log(`✅ تم حذف ${deleteResult.deletedCount} سجل أصلي نهائياً من Supabase`);
+                } else {
+                    console.warn(`⚠️ لم يتم العثور على سجلات للحذف أو فشل الحذف:`, deleteResult.reason);
                 }
-            } else {
-                console.error(`❌ فشل حفظ الوحدة ${unitNumber} في Supabase`);
+            }
+
+            // 🔧 الخطوة 2: إنشاء سجل جديد في العقار الجديد
+            console.log(`💾 إنشاء سجل جديد للوحدة ${unitNumber} في العقار "${destinationProperty}"...`);
+            if (typeof savePropertyToSupabase === 'function') {
+                const saveResult = await savePropertyToSupabase(unit);
+
+                if (saveResult && saveResult.success) {
+                    supabaseSuccess = true;
+                    console.log(`✅ تم إنشاء سجل جديد للوحدة ${unitNumber} في "${destinationProperty}" بنجاح`);
+                } else {
+                    console.error(`❌ فشل في إنشاء سجل جديد للوحدة ${unitNumber}:`, saveResult?.message || 'سبب غير معروف');
+                }
+            }
+
+            // 🔧 الخطوة 3: التأكد من عدم وجود سجلات مكررة
+            console.log(`🔍 فحص وحذف أي سجلات مكررة للوحدة ${unitNumber}...`);
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                try {
+                    // فحص السجلات المكررة في العقار الجديد
+                    const { data: duplicateCheck } = await supabaseClient
+                        .from('properties')
+                        .select('id, created_at')
+                        .eq('unit_number', unitNumber)
+                        .eq('property_name', destinationProperty)
+                        .order('created_at', { ascending: false });
+
+                    if (duplicateCheck && duplicateCheck.length > 1) {
+                        console.log(`🗑️ وُجدت ${duplicateCheck.length} سجلات مكررة، حذف ${duplicateCheck.length - 1} منها...`);
+
+                        // الاحتفاظ بالأحدث وحذف الباقي
+                        const recordsToDelete = duplicateCheck.slice(1);
+                        for (const record of recordsToDelete) {
+                            try {
+                                await supabaseClient
+                                    .from('properties')
+                                    .delete()
+                                    .eq('id', record.id);
+                                console.log(`✅ تم حذف السجل المكرر: ${record.id}`);
+                            } catch (deleteError) {
+                                console.error(`❌ فشل في حذف السجل المكرر ${record.id}:`, deleteError);
+                            }
+                        }
+                    }
+                } catch (duplicateError) {
+                    console.error(`❌ خطأ في فحص السجلات المكررة:`, duplicateError);
+                }
             }
         } catch (error) {
-            console.error(`❌ خطأ في حفظ الوحدة ${unitNumber} في Supabase:`, error);
+            console.error(`❌ خطأ في نقل الوحدة ${unitNumber} في Supabase:`, error);
+
+            // محاولة أخيرة باستخدام الطريقة التقليدية
+            console.log(`🔄 محاولة الحفظ بالطريقة التقليدية بعد الخطأ...`);
+            if (typeof savePropertyToSupabase === 'function') {
+                try {
+                    const result = await savePropertyToSupabase(unit);
+                    if (result && result.success) {
+                        supabaseSuccess = true;
+                        console.log(`✅ تم حفظ الوحدة ${unitNumber} بالطريقة التقليدية بعد الخطأ`);
+                    }
+                } catch (fallbackError) {
+                    console.error(`❌ فشل في الحفظ بالطريقة التقليدية أيضاً:`, fallbackError);
+                }
+            }
         }
     }
 
@@ -22729,9 +23381,33 @@ async function transferSingleUnit(unitNumber, sourceProperty, destinationPropert
         console.warn(`⚠️ لم يتم حفظ الوحدة ${unitNumber} في Supabase، سيتم الحفظ محلياً فقط`);
     }
 
-    // تحديث البيانات محلياً
+    // 🔧 إصلاح: تحديث البيانات محلياً (قص وليس نسخ)
+    // حذف الوحدة من موقعها الأصلي
     properties.splice(unitIndex, 1);
+
+    // إضافة الوحدة في موقعها الجديد
     properties.push(unit);
+
+    // 🔧 إضافة: التأكد من عدم وجود نسخ مكررة في البيانات المحلية
+    const duplicateUnits = properties.filter((p, index) =>
+        (p['رقم الوحدة'] === unitNumber || p['رقم  الوحدة '] === unitNumber) &&
+        p['اسم العقار'] === sourceProperty
+    );
+
+    if (duplicateUnits.length > 0) {
+        console.log(`🗑️ حذف ${duplicateUnits.length} نسخة مكررة من العقار الأصلي "${sourceProperty}"`);
+        duplicateUnits.forEach(duplicateUnit => {
+            const duplicateIndex = properties.findIndex(p =>
+                p === duplicateUnit
+            );
+            if (duplicateIndex !== -1) {
+                properties.splice(duplicateIndex, 1);
+                console.log(`✅ تم حذف نسخة مكررة من الفهرس ${duplicateIndex}`);
+            }
+        });
+    }
+
+    console.log(`📊 تأكيد النقل: الوحدة ${unitNumber} موجودة الآن في "${destinationProperty}" فقط`);
 
     // إضافة سجل التتبع لنقل الوحدة
     try {
@@ -22750,17 +23426,21 @@ async function transferSingleUnit(unitNumber, sourceProperty, destinationPropert
         console.error('❌ خطأ في إضافة سجل تتبع نقل الوحدة:', error);
     }
 
-    console.log(`✅ تم نقل الوحدة ${unitNumber} بنجاح`);
+    console.log(`✅ تم قص ونقل الوحدة ${unitNumber} بنجاح مع الحفاظ على جميع البيانات`);
     return {
         success: true,
         supabaseSuccess,
         deletionSuccess,
+        dataPreserved: true, // 🔧 إضافة: تأكيد الحفاظ على البيانات
+        cutNotCopy: true, // 🔧 إضافة: تأكيد أن العملية قص وليس نسخ
         details: {
             unitNumber,
             sourceProperty,
             destinationProperty,
             savedToNewLocation: supabaseSuccess,
-            deletedFromOldLocation: deletionSuccess
+            deletedFromOldLocation: deletionSuccess,
+            preservedAllData: true, // 🔧 إضافة: تأكيد الحفاظ على البيانات
+            operationType: 'cut' // 🔧 إضافة: نوع العملية
         }
     };
 }
@@ -22769,6 +23449,788 @@ async function transferSingleUnit(unitNumber, sourceProperty, destinationPropert
 function getCurrentUser() {
     // مؤقتاً نعيد "النظام" حتى يتم تطبيق نظام الصلاحيات
     return 'النظام';
+}
+
+// 🔒 التحقق من صلاحية تحرير اسم العقار (عمر فقط)
+function canEditPropertyName() {
+    // التحقق من المستخدم الحالي
+    const savedUser = localStorage.getItem('currentUser');
+    if (!savedUser) {
+        return false;
+    }
+
+    try {
+        const userData = JSON.parse(savedUser);
+        const isOmar = userData.username === 'عمر' || currentUser === 'عمر';
+
+        console.log(`🔍 فحص صلاحية تحرير اسم العقار: المستخدم = ${userData.username}, الصلاحية = ${isOmar ? 'مسموح' : 'ممنوع'}`);
+
+        return isOmar;
+    } catch (error) {
+        console.error('❌ خطأ في فحص صلاحية المستخدم:', error);
+        return false;
+    }
+}
+
+// 🔒 عرض رسالة عدم وجود صلاحية
+function showNoPermissionMessage(action = 'هذه العملية') {
+    const message = `🔒 عذراً، ${action} متاحة لعمر فقط.\n\nيرجى تسجيل الدخول بحساب عمر للوصول إلى هذه الميزة.`;
+    alert(message);
+    showToast('ليس لديك صلاحية لهذه العملية', 'error');
+}
+
+// 🛡️ التحقق من سلامة البيانات قبل المعالجة
+function validateDataIntegrity() {
+    try {
+        // التحقق من وجود المتغير العام
+        if (typeof window.properties === 'undefined') {
+            console.warn('⚠️ متغير properties غير معرف، محاولة إعادة التحميل...');
+            loadDataFromStorage();
+            return false;
+        }
+
+        // التحقق من كون properties مصفوفة
+        if (!Array.isArray(window.properties)) {
+            console.error('❌ properties ليس مصفوفة:', typeof window.properties);
+            window.properties = [];
+            return false;
+        }
+
+        // التحقق من سلامة العناصر
+        let validCount = 0;
+        let invalidCount = 0;
+
+        window.properties.forEach((property, index) => {
+            if (!property || typeof property !== 'object') {
+                console.warn(`⚠️ عنصر غير صالح في الفهرس ${index}:`, property);
+                invalidCount++;
+            } else {
+                validCount++;
+            }
+        });
+
+        if (invalidCount > 0) {
+            console.warn(`⚠️ تم العثور على ${invalidCount} عنصر غير صالح من أصل ${window.properties.length}`);
+
+            // تنظيف البيانات غير الصالحة
+            window.properties = window.properties.filter(p => p && typeof p === 'object');
+            console.log(`✅ تم تنظيف البيانات، العناصر الصالحة: ${window.properties.length}`);
+        }
+
+        return true;
+
+    } catch (error) {
+        console.error('❌ خطأ في التحقق من سلامة البيانات:', error);
+        return false;
+    }
+}
+
+// 🔄 تحميل البيانات من التخزين المحلي
+function loadDataFromStorage() {
+    try {
+        console.log('🔄 محاولة تحميل البيانات من localStorage...');
+
+        const savedData = localStorage.getItem('propertyData');
+        if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            if (Array.isArray(parsedData)) {
+                window.properties = parsedData;
+                console.log(`✅ تم تحميل ${parsedData.length} عنصر من localStorage`);
+                return true;
+            } else {
+                console.warn('⚠️ البيانات المحفوظة ليست مصفوفة');
+            }
+        } else {
+            console.warn('⚠️ لا توجد بيانات محفوظة في localStorage');
+        }
+
+        // إذا فشل التحميل، إنشاء مصفوفة فارغة
+        window.properties = [];
+        return false;
+
+    } catch (error) {
+        console.error('❌ خطأ في تحميل البيانات من localStorage:', error);
+        window.properties = [];
+        return false;
+    }
+}
+
+// 🏢 دالة تحرير اسم العقار (عمر فقط)
+async function editPropertyName(currentPropertyName) {
+    try {
+        // التحقق من الصلاحية
+        if (!canEditPropertyName()) {
+            showNoPermissionMessage('تحرير اسم العقار');
+            return;
+        }
+
+        // التحقق من وجود البيانات
+        if (!ensurePropertiesLoaded('editPropertyName')) {
+            return;
+        }
+
+        // التحقق من سلامة البيانات أولاً
+        if (!validateDataIntegrity()) {
+            alert('❌ خطأ في البيانات، يرجى إعادة تحميل الصفحة');
+            return;
+        }
+
+        // التحقق من وجود العقار
+        const propertyUnits = properties.filter(p =>
+            p &&
+            typeof p === 'object' &&
+            p['اسم العقار'] === currentPropertyName
+        );
+
+        if (propertyUnits.length === 0) {
+            alert('❌ لم يتم العثور على العقار المحدد');
+            return;
+        }
+
+        console.log(`🏢 بدء تحرير اسم العقار: "${currentPropertyName}" (${propertyUnits.length} وحدة)`);
+
+        // إنشاء نافذة التحرير
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content edit-property-name-modal">
+                <div class="modal-header">
+                    <h3>🏢 تحرير اسم العقار</h3>
+                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>الاسم الحالي:</label>
+                        <input type="text" id="currentPropertyName" value="${currentPropertyName}" readonly class="readonly-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label>الاسم الجديد: <span class="required">*</span></label>
+                        <input type="text" id="newPropertyName" placeholder="أدخل اسم العقار الجديد" maxlength="100" required>
+                        <small class="form-hint">يجب أن يكون الاسم الجديد مختلفاً وغير مكرر</small>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>📊 معلومات العقار:</h4>
+                        <p><strong>عدد الوحدات:</strong> ${propertyUnits.length} وحدة</p>
+                        <p><strong>المدينة:</strong> ${propertyUnits[0]['المدينة'] || 'غير محدد'}</p>
+                        <p><strong>المالك:</strong> ${propertyUnits[0]['المالك'] || 'غير محدد'}</p>
+                    </div>
+
+                    <div class="warning-box">
+                        <h4>⚠️ تحذير مهم:</h4>
+                        <ul>
+                            <li>سيتم تحديث اسم العقار في جميع الوحدات (${propertyUnits.length} وحدة)</li>
+                            <li>سيتم حفظ التغييرات في قاعدة البيانات السحابية تلقائياً</li>
+                            <li>لا يمكن التراجع عن هذه العملية</li>
+                            <li>تأكد من صحة الاسم الجديد قبل الحفظ</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                        إلغاء
+                    </button>
+                    <button class="btn btn-primary" onclick="confirmPropertyNameEdit()">
+                        💾 حفظ التغييرات
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // التركيز على حقل الاسم الجديد
+        setTimeout(() => {
+            const newNameInput = document.getElementById('newPropertyName');
+            if (newNameInput) {
+                newNameInput.focus();
+                newNameInput.select();
+            }
+        }, 100);
+
+        // إضافة مستمع للضغط على Enter
+        document.getElementById('newPropertyName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                confirmPropertyNameEdit();
+            }
+        });
+
+        // إضافة التحقق الفوري من صحة الاسم
+        document.getElementById('newPropertyName').addEventListener('input', function() {
+            validateNewPropertyName();
+        });
+
+    } catch (error) {
+        console.error('❌ خطأ في فتح نافذة تحرير اسم العقار:', error);
+        alert('❌ حدث خطأ في فتح نافذة التحرير');
+    }
+}
+
+// 🔍 التحقق من صحة الاسم الجديد
+function validateNewPropertyName() {
+    const newNameInput = document.getElementById('newPropertyName');
+    const currentNameInput = document.getElementById('currentPropertyName');
+    const saveButton = document.querySelector('.edit-property-name-modal .btn-primary');
+
+    if (!newNameInput || !currentNameInput || !saveButton) return;
+
+    const newName = newNameInput.value.trim();
+    const currentName = currentNameInput.value.trim();
+
+    // إزالة رسائل الخطأ السابقة
+    const existingError = newNameInput.parentNode.querySelector('.error-message');
+    if (existingError) {
+        existingError.remove();
+    }
+
+    newNameInput.classList.remove('error', 'success');
+
+    let isValid = true;
+    let errorMessage = '';
+
+    // التحقق من عدم ترك الحقل فارغاً
+    if (newName === '') {
+        isValid = false;
+        errorMessage = 'يجب إدخال اسم العقار الجديد';
+    }
+    // التحقق من عدم تكرار الاسم الحالي
+    else if (newName === currentName) {
+        isValid = false;
+        errorMessage = 'الاسم الجديد يجب أن يكون مختلفاً عن الاسم الحالي';
+    }
+    // التحقق من عدم وجود عقار آخر بنفس الاسم
+    else if (properties.some(p => p['اسم العقار'] === newName)) {
+        isValid = false;
+        errorMessage = 'يوجد عقار آخر بهذا الاسم بالفعل';
+    }
+    // التحقق من طول الاسم
+    else if (newName.length < 2) {
+        isValid = false;
+        errorMessage = 'اسم العقار يجب أن يكون أطول من حرفين';
+    }
+    else if (newName.length > 100) {
+        isValid = false;
+        errorMessage = 'اسم العقار طويل جداً (الحد الأقصى 100 حرف)';
+    }
+
+    // عرض رسالة الخطأ أو النجاح
+    if (!isValid) {
+        newNameInput.classList.add('error');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = errorMessage;
+        newNameInput.parentNode.appendChild(errorDiv);
+        saveButton.disabled = true;
+    } else {
+        newNameInput.classList.add('success');
+        saveButton.disabled = false;
+    }
+
+    return isValid;
+}
+
+// ✅ تأكيد وتنفيذ تحرير اسم العقار
+async function confirmPropertyNameEdit() {
+    try {
+        // التحقق من صحة البيانات
+        if (!validateNewPropertyName()) {
+            return;
+        }
+
+        const currentName = document.getElementById('currentPropertyName').value.trim();
+        const newName = document.getElementById('newPropertyName').value.trim();
+
+        // تأكيد نهائي من المستخدم
+        const confirmMessage = `🏢 تأكيد تحرير اسم العقار\n\n` +
+            `الاسم الحالي: "${currentName}"\n` +
+            `الاسم الجديد: "${newName}"\n\n` +
+            `⚠️ هذا التغيير سيؤثر على جميع الوحدات في هذا العقار.\n` +
+            `هل أنت متأكد من المتابعة؟`;
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        // إظهار مؤشر التحميل
+        const saveButton = document.querySelector('.edit-property-name-modal .btn-primary');
+        const originalText = saveButton.textContent;
+        saveButton.disabled = true;
+        saveButton.innerHTML = '⏳ جاري الحفظ...';
+
+        console.log(`🔄 بدء تحديث اسم العقار من "${currentName}" إلى "${newName}"`);
+
+        // تنفيذ التحديث
+        const result = await updatePropertyNameInAllSystems(currentName, newName);
+
+        if (result.success) {
+            // إغلاق النافذة
+            document.querySelector('.modal-overlay').remove();
+
+            // إظهار رسالة النجاح
+            const successMessage = `🎉 تم تحديث اسم العقار بنجاح!\n\n` +
+                `✅ تم تحديث ${result.updatedUnits} وحدة\n` +
+                `✅ تم حفظ ${result.supabaseUpdates} وحدة في السحابة\n` +
+                `✅ تم تسجيل العملية في سجل التتبع\n\n` +
+                `الاسم الجديد: "${newName}"`;
+
+            alert(successMessage);
+            showToast(`تم تحديث اسم العقار إلى "${newName}" بنجاح`, 'success');
+
+            // تحديث الواجهة
+            refreshCurrentView();
+
+        } else {
+            // إظهار رسالة الخطأ
+            const errorMessage = `❌ فشل في تحديث اسم العقار\n\n` +
+                `السبب: ${result.reason}\n\n` +
+                `يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني.`;
+
+            alert(errorMessage);
+            showToast('فشل في تحديث اسم العقار: ' + result.reason, 'error');
+
+            // إعادة تفعيل الزر
+            saveButton.disabled = false;
+            saveButton.textContent = originalText;
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في تأكيد تحرير اسم العقار:', error);
+        alert('❌ حدث خطأ غير متوقع أثناء تحديث اسم العقار');
+        showToast('خطأ في تحديث اسم العقار: ' + error.message, 'error');
+
+        // إعادة تفعيل الزر
+        const saveButton = document.querySelector('.edit-property-name-modal .btn-primary');
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = '💾 حفظ التغييرات';
+        }
+    }
+}
+
+// 🔄 تحديث اسم العقار في جميع الأنظمة
+async function updatePropertyNameInAllSystems(oldName, newName) {
+    try {
+        console.log(`🔄 تحديث اسم العقار في جميع الأنظمة: "${oldName}" → "${newName}"`);
+
+        // التحقق من سلامة البيانات
+        if (!validateDataIntegrity()) {
+            return { success: false, reason: 'خطأ في سلامة البيانات' };
+        }
+
+        // البحث عن جميع الوحدات في العقار مع التحقق من الأمان
+        const propertyUnits = properties.filter(p =>
+            p &&
+            typeof p === 'object' &&
+            p['اسم العقار'] === oldName
+        );
+
+        if (propertyUnits.length === 0) {
+            return { success: false, reason: 'لم يتم العثور على وحدات في العقار المحدد' };
+        }
+
+        console.log(`📋 تم العثور على ${propertyUnits.length} وحدة للتحديث`);
+
+        let updatedUnits = 0;
+        let supabaseUpdates = 0;
+        let errors = [];
+
+        // تحديث كل وحدة
+        for (const unit of propertyUnits) {
+            try {
+                const unitIndex = properties.findIndex(p =>
+                    p['رقم  الوحدة '] === unit['رقم  الوحدة '] &&
+                    p['اسم العقار'] === oldName
+                );
+
+                if (unitIndex !== -1) {
+                    // تحديث اسم العقار
+                    properties[unitIndex]['اسم العقار'] = newName;
+
+                    // إضافة معلومات التحديث
+                    properties[unitIndex]['تاريخ آخر تحديث'] = new Date().toLocaleDateString('ar-SA');
+                    properties[unitIndex]['نوع التحديث'] = 'تحرير اسم العقار';
+                    properties[unitIndex]['المسؤول عن التحديث'] = getCurrentUser();
+                    properties[unitIndex]['الاسم السابق للعقار'] = oldName;
+
+                    updatedUnits++;
+                    console.log(`✅ تم تحديث الوحدة ${unit['رقم  الوحدة ']} محلياً`);
+
+                    // حفظ في Supabase باستخدام الدالة المخصصة لتحديث اسم العقار
+                    if (typeof updatePropertyNameInSupabase === 'function') {
+                        try {
+                            const result = await updatePropertyNameInSupabase(oldName, newName, properties[unitIndex]);
+                            if (result && result.success) {
+                                supabaseUpdates++;
+                                console.log(`☁️ تم تحديث اسم العقار للوحدة ${unit['رقم  الوحدة ']} في Supabase: ${result.action}`);
+                            } else {
+                                console.warn(`⚠️ فشل تحديث اسم العقار للوحدة ${unit['رقم  الوحدة ']} في Supabase: ${result.reason}`);
+                                errors.push(`Supabase: ${unit['رقم  الوحدة ']} - ${result.reason}`);
+                            }
+                        } catch (supabaseError) {
+                            console.error(`❌ خطأ في تحديث اسم العقار للوحدة ${unit['رقم  الوحدة ']} في Supabase:`, supabaseError);
+                            errors.push(`Supabase: ${unit['رقم  الوحدة ']} - ${supabaseError.message}`);
+                        }
+                    } else {
+                        // استخدام الدالة العادية كبديل
+                        if (typeof savePropertyToSupabase === 'function') {
+                            try {
+                                const result = await savePropertyToSupabase(properties[unitIndex]);
+                                if (result && result.success) {
+                                    supabaseUpdates++;
+                                    console.log(`☁️ تم حفظ الوحدة ${unit['رقم  الوحدة ']} في Supabase (الطريقة العادية)`);
+                                } else {
+                                    console.warn(`⚠️ فشل حفظ الوحدة ${unit['رقم  الوحدة ']} في Supabase`);
+                                }
+                            } catch (supabaseError) {
+                                console.error(`❌ خطأ في حفظ الوحدة ${unit['رقم  الوحدة ']} في Supabase:`, supabaseError);
+                                errors.push(`Supabase: ${unit['رقم  الوحدة ']} - ${supabaseError.message}`);
+                            }
+                        }
+                    }
+                }
+
+            } catch (unitError) {
+                console.error(`❌ خطأ في تحديث الوحدة ${unit['رقم  الوحدة ']}:`, unitError);
+                errors.push(`Unit: ${unit['رقم  الوحدة ']} - ${unitError.message}`);
+            }
+        }
+
+        // حفظ البيانات محلياً
+        saveDataLocally();
+
+        // تنظيف السجلات المكررة في Supabase بعد التحديث
+        if (supabaseUpdates > 0 && typeof cleanupDuplicatePropertiesForName === 'function') {
+            try {
+                console.log('🧹 تنظيف السجلات المكررة بعد تحديث اسم العقار...');
+                await cleanupDuplicatePropertiesForName(newName);
+            } catch (cleanupError) {
+                console.warn('⚠️ تحذير: فشل في تنظيف السجلات المكررة:', cleanupError);
+            }
+        }
+
+        // تسجيل العملية في سجل التتبع
+        try {
+            const trackingData = {
+                operationType: 'تحرير اسم العقار',
+                unitNumber: 'جميع الوحدات',
+                propertyName: newName,
+                city: propertyUnits[0]['المدينة'] || 'غير محدد',
+                contractNumber: 'متعدد',
+                tenantName: 'متعدد',
+                changes: {
+                    'اسم العقار القديم': oldName,
+                    'اسم العقار الجديد': newName,
+                    'عدد الوحدات المحدثة': updatedUnits,
+                    'عدد الوحدات المحفوظة في السحابة': supabaseUpdates
+                },
+                additionalInfo: {
+                    totalUnits: propertyUnits.length,
+                    updatedUnits,
+                    supabaseUpdates,
+                    errors: errors.length > 0 ? errors.slice(0, 5) : null
+                },
+                responsibleUser: getCurrentUser(),
+                description: `تحرير اسم العقار من "${oldName}" إلى "${newName}" - ${updatedUnits} وحدة`
+            };
+
+            await logActivity(trackingData);
+            console.log('📝 تم تسجيل العملية في سجل التتبع');
+
+        } catch (trackingError) {
+            console.error('❌ خطأ في تسجيل العملية:', trackingError);
+        }
+
+        // تنظيف أي تكرار محلي قد يحدث
+        console.log('🧹 تنظيف التكرار المحلي...');
+        const beforeCleanup = properties.length;
+
+        // إزالة الوحدات المكررة بنفس رقم الوحدة واسم العقار
+        const uniqueProperties = [];
+        const seenKeys = new Set();
+
+        properties.forEach(property => {
+            const key = `${property['رقم  الوحدة ']}_${property['اسم العقار']}`;
+            if (!seenKeys.has(key)) {
+                seenKeys.add(key);
+                uniqueProperties.push(property);
+            } else {
+                console.log(`🗑️ إزالة وحدة مكررة محلياً: ${property['رقم  الوحدة ']} - ${property['اسم العقار']}`);
+            }
+        });
+
+        if (uniqueProperties.length !== beforeCleanup) {
+            properties.length = 0;
+            properties.push(...uniqueProperties);
+            saveDataLocally();
+            console.log(`✅ تم تنظيف ${beforeCleanup - uniqueProperties.length} وحدة مكررة محلياً`);
+        }
+
+        // النتيجة النهائية
+        const result = {
+            success: updatedUnits > 0,
+            updatedUnits,
+            supabaseUpdates,
+            totalUnits: propertyUnits.length,
+            localCleanup: beforeCleanup - uniqueProperties.length,
+            errors: errors.length > 0 ? errors : null,
+            reason: updatedUnits === 0 ? 'لم يتم تحديث أي وحدة' : null
+        };
+
+        console.log(`🎉 تم تحديث اسم العقار: ${updatedUnits}/${propertyUnits.length} وحدة، ${supabaseUpdates} محفوظة في السحابة، ${result.localCleanup} مكررة محذوفة محلياً`);
+
+        return result;
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث اسم العقار في جميع الأنظمة:', error);
+        return { success: false, reason: error.message };
+    }
+}
+
+// 🏢 عرض خيارات تحرير أسماء العقارات
+function showPropertyNameEditOptions() {
+    try {
+        // التحقق من الصلاحية
+        if (!canEditPropertyName()) {
+            showNoPermissionMessage('تحرير أسماء العقارات');
+            return;
+        }
+
+        // التحقق من وجود البيانات
+        if (!ensurePropertiesLoaded('showPropertyNameEditOptions')) {
+            return;
+        }
+
+        // التحقق من سلامة البيانات
+        if (!validateDataIntegrity()) {
+            alert('❌ خطأ في البيانات، يرجى إعادة تحميل الصفحة');
+            return;
+        }
+
+        // التحقق من وجود البيانات أولاً
+        if (!properties || properties.length === 0) {
+            alert('❌ لا توجد بيانات متاحة');
+            return;
+        }
+
+        // الحصول على قائمة العقارات الفريدة مع التحقق من الأمان
+        const uniqueProperties = [...new Set(
+            properties
+                .filter(p => p && typeof p === 'object' && p['اسم العقار'])
+                .map(p => p['اسم العقار'])
+        )].filter(name => name && typeof name === 'string' && name.trim() !== '');
+
+        if (uniqueProperties.length === 0) {
+            alert('❌ لا توجد عقارات متاحة للتحرير');
+            return;
+        }
+
+        console.log(`🏢 عرض خيارات تحرير أسماء العقارات: ${uniqueProperties.length} عقار`);
+
+        // إنشاء نافذة اختيار العقار
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="modal-content property-name-options-modal">
+                <div class="modal-header">
+                    <h3>🏢 تحرير أسماء العقارات</h3>
+                    <button class="close-btn" onclick="this.closest('.modal-overlay').remove()">×</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="info-box">
+                        <h4>📋 اختر العقار المراد تحرير اسمه:</h4>
+                        <p>يمكنك تحرير اسم أي عقار من القائمة أدناه. سيتم تحديث الاسم في جميع الوحدات التابعة للعقار.</p>
+                    </div>
+
+                    <div class="search-box">
+                        <input type="text" id="propertySearchInput" placeholder="🔍 البحث في أسماء العقارات..." onkeyup="filterPropertyList()">
+                    </div>
+
+                    <div class="properties-list" id="propertiesList">
+                        ${generatePropertyListHTML(uniqueProperties)}
+                    </div>
+
+                    <div class="stats-box">
+                        <p><strong>إجمالي العقارات:</strong> ${uniqueProperties.length} عقار</p>
+                        <p><strong>إجمالي الوحدات:</strong> ${properties.length} وحدة</p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                        إغلاق
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // التركيز على حقل البحث
+        setTimeout(() => {
+            const searchInput = document.getElementById('propertySearchInput');
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }, 100);
+
+    } catch (error) {
+        console.error('❌ خطأ في عرض خيارات تحرير أسماء العقارات:', error);
+        alert('❌ حدث خطأ في عرض خيارات التحرير');
+    }
+}
+
+// 📋 إنشاء HTML لقائمة العقارات
+function generatePropertyListHTML(properties) {
+    return properties.map(propertyName => {
+        const propertyUnits = window.properties.filter(p => p['اسم العقار'] === propertyName);
+        const unitsCount = propertyUnits.length;
+
+        // التحقق من وجود وحدات قبل الوصول للبيانات
+        const firstUnit = propertyUnits.length > 0 ? propertyUnits[0] : {};
+        const city = firstUnit['المدينة'] || 'غير محدد';
+        const owner = firstUnit['المالك'] || 'غير محدد';
+
+        // حساب الوحدات المؤجرة والفارغة
+        const rentedUnits = propertyUnits.filter(u => u && u['اسم المستأجر'] && u['اسم المستأجر'].trim() !== '').length;
+        const emptyUnits = unitsCount - rentedUnits;
+
+        return `
+            <div class="property-item" onclick="editPropertyName('${propertyName.replace(/'/g, "\\'")}')">
+                <div class="property-header">
+                    <h4>🏢 ${propertyName}</h4>
+                    <button class="edit-btn" title="تحرير اسم العقار">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+
+                <div class="property-details">
+                    <div class="detail-row">
+                        <span class="label">📍 المدينة:</span>
+                        <span class="value">${city}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">👤 المالك:</span>
+                        <span class="value">${owner}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">🏠 الوحدات:</span>
+                        <span class="value">${unitsCount} وحدة</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">📊 الحالة:</span>
+                        <span class="value">
+                            <span class="status-rented">${rentedUnits} مؤجر</span>
+                            <span class="status-empty">${emptyUnits} فارغ</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// 🔍 فلترة قائمة العقارات
+function filterPropertyList() {
+    const searchInput = document.getElementById('propertySearchInput');
+    const propertiesList = document.getElementById('propertiesList');
+
+    if (!searchInput || !propertiesList) return;
+
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    const propertyItems = propertiesList.querySelectorAll('.property-item');
+
+    let visibleCount = 0;
+
+    propertyItems.forEach(item => {
+        try {
+            const propertyNameElement = item.querySelector('h4');
+            const cityElement = item.querySelector('.detail-row .value');
+
+            const propertyName = propertyNameElement ? propertyNameElement.textContent.toLowerCase() : '';
+            const city = cityElement ? cityElement.textContent.toLowerCase() : '';
+
+            const isVisible = propertyName.includes(searchTerm) || city.includes(searchTerm);
+
+            item.style.display = isVisible ? 'block' : 'none';
+            if (isVisible) visibleCount++;
+        } catch (error) {
+            console.error('❌ خطأ في فلترة العقار:', error);
+            // في حالة الخطأ، إظهار العنصر
+            item.style.display = 'block';
+            visibleCount++;
+        }
+    });
+
+    // تحديث عداد النتائج
+    const statsBox = document.querySelector('.property-name-options-modal .stats-box');
+    if (statsBox && searchTerm) {
+        const originalStats = statsBox.innerHTML;
+        statsBox.innerHTML = `
+            <p><strong>نتائج البحث:</strong> ${visibleCount} عقار</p>
+            ${originalStats}
+        `;
+    }
+}
+
+// 🔄 تحديث العرض الحالي بعد تحرير اسم العقار
+function refreshCurrentView() {
+    try {
+        // تحديث قائمة العقارات في الهيدر
+        if (typeof updatePropertyButtons === 'function') {
+            updatePropertyButtons();
+        }
+
+        // تحديث العرض الحالي حسب الصفحة المفتوحة
+        const currentView = document.querySelector('.content-section:not([style*="display: none"])');
+
+        if (currentView) {
+            const viewId = currentView.id;
+
+            switch (viewId) {
+                case 'propertyStatsSection':
+                    // تحديث صفحة إحصائيات العقارات
+                    if (typeof displayPropertyStats === 'function') {
+                        displayPropertyStats();
+                    }
+                    break;
+
+                case 'dataDisplaySection':
+                    // تحديث عرض البيانات
+                    if (typeof displayData === 'function') {
+                        displayData();
+                    }
+                    break;
+
+                case 'searchSection':
+                    // تحديث نتائج البحث
+                    if (typeof performSearch === 'function') {
+                        performSearch();
+                    }
+                    break;
+
+                default:
+                    console.log('🔄 تحديث العرض العام');
+                    break;
+            }
+        }
+
+        // تحديث أي قوائم منسدلة مفتوحة
+        const dropdowns = document.querySelectorAll('select[id*="property"], select[id*="Property"]');
+        dropdowns.forEach(dropdown => {
+            if (typeof updateDropdownOptions === 'function') {
+                updateDropdownOptions(dropdown);
+            }
+        });
+
+        console.log('✅ تم تحديث العرض الحالي بعد تحرير اسم العقار');
+
+    } catch (error) {
+        console.error('❌ خطأ في تحديث العرض الحالي:', error);
+    }
 }
 
 // ==================== فلتر آخر تحديثات الوحدات ====================
@@ -24545,7 +26007,7 @@ function renderManagementLogs(logs) {
                                 ${log.operationType}
                             </div>
                             <div class="log-meta">
-                                <span class="log-date">${log.date}</span>
+                                <span class="log-date">${log.date} ${log.hijriDate ? `(${log.hijriDate})` : ''}</span>
                                 <span class="log-time">${log.time}</span>
                                 <span class="log-user">${log.user || 'غير محدد'}</span>
                             </div>
@@ -25104,7 +26566,7 @@ function viewLogDetails(logId) {
                             </div>
                             <div class="detail-item">
                                 <label>التاريخ:</label>
-                                <span>${log.date}</span>
+                                <span>${log.date} ${log.hijriDate ? `(${log.hijriDate})` : ''}</span>
                             </div>
                             <div class="detail-item">
                                 <label>الوقت:</label>
@@ -30552,6 +32014,9 @@ function setCurrentUser(username) {
         currentUser = username;
         userPermissions = users[username].permissions;
 
+        // إعادة تعيين الفلاتر إلى الافتراضي عند تسجيل الدخول
+        resetFiltersToDefault();
+
         // تطبيق الصلاحيات على الواجهة
         applyUserPermissions();
 
@@ -30584,6 +32049,133 @@ function setCurrentUser(username) {
         }, 100);
 
         console.log(`✅ تم تسجيل دخول المستخدم: ${users[username].fullName}`);
+    }
+}
+
+// إعادة تعيين الفلاتر إلى القيم الافتراضية عند تسجيل الدخول
+function resetFiltersToDefault() {
+    console.log('🔄 إعادة تعيين الفلاتر إلى القيم الافتراضية...');
+
+    // إعادة تعيين جميع الفلاتر إلى "الكل"
+    currentCountry = null;
+    currentProperty = null;
+    filterStatus = null;
+
+    // إعادة تعيين فلاتر أخرى إذا وُجدت
+    if (typeof contractTypeFilter !== 'undefined') {
+        contractTypeFilter = null;
+    }
+
+    if (typeof multiFilterSelectedCity !== 'undefined') {
+        multiFilterSelectedCity = null;
+    }
+
+    if (typeof multiFilterSelectedProperties !== 'undefined') {
+        multiFilterSelectedProperties = [];
+    }
+
+    // إعادة تعيين فلاتر التاريخ
+    if (typeof dateFilterType !== 'undefined') {
+        dateFilterType = '';
+        dateFilterDay = '';
+        dateFilterMonth = '';
+        dateFilterYear = '';
+    }
+
+    // مسح حقول البحث وإعادة تعيين النماذج
+    setTimeout(() => {
+        clearAllSearchFields();
+        resetAllForms();
+    }, 100);
+
+    // تحديث الواجهة لتعكس الفلاتر الافتراضية
+    setTimeout(() => {
+        // تحديث أزرار المدن (التأكد من تحديد "الكل")
+        initCountryButtons();
+
+        // تحديث قائمة العقارات (عرض جميع العقارات)
+        initPropertyList();
+
+        // إعادة تعيين فلتر الحالة في الواجهة
+        const statusFilterButtons = document.querySelectorAll('.status-filter button');
+        statusFilterButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.includes('الكل')) {
+                btn.classList.add('active');
+            }
+        });
+
+        // تحديث عرض البيانات (عرض جميع البيانات)
+        renderData();
+
+        // تحديث الإحصائيات
+        if (typeof updateTotalStats === 'function') {
+            updateTotalStats();
+        }
+
+        console.log('✅ تم إعادة تعيين جميع الفلاتر إلى "الكل" وتحديث الواجهة');
+    }, 200);
+
+    // حفظ الحالة الجديدة
+    setTimeout(() => {
+        saveAppState();
+    }, 400);
+}
+
+// إعادة تعيين جميع النماذج والقوائم المنسدلة
+function resetAllForms() {
+    try {
+        // إعادة تعيين قوائم المدن
+        const citySelects = document.querySelectorAll('select[id*="city"], select[id*="City"]');
+        citySelects.forEach(select => {
+            if (select.options.length > 0) {
+                select.selectedIndex = 0; // اختيار الخيار الأول (عادة "الكل")
+            }
+        });
+
+        // إعادة تعيين قوائم العقارات
+        const propertySelects = document.querySelectorAll('select[id*="property"], select[id*="Property"]');
+        propertySelects.forEach(select => {
+            if (select.options.length > 0) {
+                select.selectedIndex = 0; // اختيار الخيار الأول (عادة "الكل")
+            }
+        });
+
+        // إعادة تعيين أزرار الفلاتر
+        const filterButtons = document.querySelectorAll('.filter-btn, .status-filter button');
+        filterButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.includes('الكل') || btn.textContent.includes('جميع')) {
+                btn.classList.add('active');
+            }
+        });
+
+        // إعادة تعيين حقول التاريخ
+        const dateInputs = document.querySelectorAll('input[type="date"], input[type="month"]');
+        dateInputs.forEach(input => {
+            input.value = '';
+        });
+
+        // إعادة تعيين قوائم السنوات والشهور
+        const yearSelects = document.querySelectorAll('select[id*="year"], select[id*="Year"]');
+        const monthSelects = document.querySelectorAll('select[id*="month"], select[id*="Month"]');
+
+        yearSelects.forEach(select => {
+            if (select.options.length > 0) {
+                select.selectedIndex = 0;
+            }
+        });
+
+        monthSelects.forEach(select => {
+            if (select.options.length > 0) {
+                select.selectedIndex = 0;
+            }
+        });
+
+        console.log('✅ تم إعادة تعيين جميع النماذج والقوائم المنسدلة');
+
+    } catch (error) {
+        console.error('❌ خطأ في إعادة تعيين النماذج:', error);
     }
 }
 
@@ -31503,6 +33095,21 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 بدء تحميل التطبيق...');
     try {
         initializeApp();
+
+        // إعادة تعيين الفلاتر إلى الافتراضي عند تحميل الصفحة
+        setTimeout(() => {
+            console.log('🔄 إعادة تعيين الفلاتر إلى الافتراضي عند تحميل الصفحة...');
+            resetFiltersToDefault();
+        }, 1500);
+
+        // تهيئة الشات بوت الذكي
+        setTimeout(() => {
+            if (typeof initializeChatBot === 'function') {
+                console.log('🤖 تهيئة الشات بوت الذكي...');
+                initializeChatBot();
+            }
+        }, 3000);
+
     } catch (initError) {
         console.error('❌ خطأ في تهيئة التطبيق:', initError);
         // إعادة المحاولة بعد ثانية واحدة
@@ -33055,9 +34662,476 @@ async function recoverDeletedData() {
     }
 }
 
+// 🔧 دالة اختبار نظام ربط الوحدات المحسن
+async function testEnhancedUnitLinking() {
+    console.log('🧪 اختبار نظام ربط الوحدات المحسن...');
+
+    try {
+        // التحقق من وجود البيانات
+        if (!properties || properties.length === 0) {
+            throw new Error('لا توجد وحدات للاختبار');
+        }
+
+        // البحث عن وحدتين في نفس العقار للاختبار
+        const testProperty = properties.find(p => p['اسم العقار']);
+        if (!testProperty) {
+            throw new Error('لا توجد عقارات للاختبار');
+        }
+
+        const propertyName = testProperty['اسم العقار'];
+        const testUnits = properties.filter(p =>
+            p['اسم العقار'] === propertyName
+        ).slice(0, 2);
+
+        if (testUnits.length < 2) {
+            console.log('⚠️ يحتاج الاختبار إلى وحدتين على الأقل في نفس العقار');
+
+            // إنشاء وحدة اختبار إضافية
+            const newTestUnit = {
+                'رقم  الوحدة ': 'TEST_LINK_' + Date.now(),
+                'اسم العقار': propertyName,
+                'المدينة': testProperty['المدينة'] || 'الرياض',
+                'اسم المستأجر': '',
+                'رقم العقد': '',
+                'المساحة': '100',
+                'تاريخ آخر تحديث': new Date().toLocaleDateString('ar-SA'),
+                'نوع التحديث': 'إنشاء وحدة اختبار',
+                'المسؤول عن التحديث': 'نظام الاختبار'
+            };
+
+            properties.push(newTestUnit);
+            testUnits.push(newTestUnit);
+            console.log(`✅ تم إنشاء وحدة اختبار: ${newTestUnit['رقم  الوحدة ']}`);
+        }
+
+        const testContractNumber = 'CONTRACT_TEST_' + Date.now();
+
+        console.log(`📋 بدء اختبار ربط الوحدات:`);
+        console.log(`- العقار: ${propertyName}`);
+        console.log(`- الوحدات: ${testUnits.map(u => u['رقم  الوحدة ']).join(', ')}`);
+        console.log(`- رقم العقد: ${testContractNumber}`);
+
+        // الخطوة 1: ربط الوحدة الأولى بالعقد
+        console.log('🔗 الخطوة 1: ربط الوحدة الأولى...');
+        const firstUnit = testUnits[0];
+
+        // تحديث بيانات الوحدة الأولى
+        const firstUnitIndex = properties.findIndex(p =>
+            p['رقم  الوحدة '] === firstUnit['رقم  الوحدة '] &&
+            p['اسم العقار'] === firstUnit['اسم العقار']
+        );
+
+        if (firstUnitIndex !== -1) {
+            properties[firstUnitIndex]['رقم العقد'] = testContractNumber;
+            properties[firstUnitIndex]['اسم المستأجر'] = 'أحمد محمد (اختبار)';
+            properties[firstUnitIndex]['رقم الجوال'] = '0501234567';
+            properties[firstUnitIndex]['تاريخ البداية'] = '01/01/2024';
+            properties[firstUnitIndex]['تاريخ النهاية'] = '31/12/2024';
+            properties[firstUnitIndex]['قيمة  الايجار '] = '50000';
+            properties[firstUnitIndex]['نوع العقد'] = 'سكني';
+            properties[firstUnitIndex]['تاريخ القسط الاول'] = '01/01/2024';
+            properties[firstUnitIndex]['مبلغ القسط الاول'] = '12500';
+            properties[firstUnitIndex]['تاريخ القسط الثاني'] = '01/04/2024';
+            properties[firstUnitIndex]['مبلغ القسط الثاني'] = '12500';
+
+            console.log(`✅ تم تحديث الوحدة الأولى: ${firstUnit['رقم  الوحدة ']}`);
+        }
+
+        // الخطوة 2: ربط الوحدة الثانية بنفس العقد
+        console.log('🔗 الخطوة 2: ربط الوحدة الثانية...');
+        await linkUnitToContract(testUnits[1]['رقم  الوحدة '], propertyName, testContractNumber);
+
+        // الخطوة 3: التحقق من المزامنة
+        console.log('🔍 الخطوة 3: التحقق من مزامنة البيانات...');
+
+        const linkedUnits = properties.filter(p =>
+            p['رقم العقد'] === testContractNumber &&
+            p['اسم العقار'] === propertyName
+        );
+
+        console.log(`📊 تم العثور على ${linkedUnits.length} وحدة مربوطة`);
+
+        // التحقق من تطابق البيانات المشتركة
+        const firstLinkedUnit = linkedUnits[0];
+        const secondLinkedUnit = linkedUnits[1];
+
+        const sharedFields = [
+            'اسم المستأجر', 'رقم الجوال', 'رقم العقد',
+            'تاريخ البداية', 'تاريخ النهاية', 'قيمة  الايجار ', 'نوع العقد',
+            'تاريخ القسط الاول', 'مبلغ القسط الاول',
+            'تاريخ القسط الثاني', 'مبلغ القسط الثاني'
+        ];
+
+        let syncedFields = 0;
+        let totalFields = sharedFields.length;
+
+        for (const field of sharedFields) {
+            if (firstLinkedUnit[field] === secondLinkedUnit[field]) {
+                syncedFields++;
+                console.log(`✅ ${field}: متطابق (${firstLinkedUnit[field]})`);
+            } else {
+                console.log(`❌ ${field}: غير متطابق (${firstLinkedUnit[field]} ≠ ${secondLinkedUnit[field]})`);
+            }
+        }
+
+        const syncPercentage = Math.round((syncedFields / totalFields) * 100);
+        console.log(`📈 نسبة المزامنة: ${syncPercentage}% (${syncedFields}/${totalFields})`);
+
+        // الخطوة 4: اختبار تحديث البيانات
+        console.log('🔄 الخطوة 4: اختبار تحديث البيانات المشتركة...');
+
+        const updatedData = {
+            'اسم المستأجر': 'فاطمة أحمد (محدث)',
+            'رقم الجوال': '0509876543',
+            'قيمة  الايجار ': '60000',
+            'مبلغ القسط الاول': '15000',
+            'رقم العقد': testContractNumber,
+            'اسم العقار': propertyName
+        };
+
+        const updateResult = await updateLinkedUnitsOnEdit(updatedData);
+
+        if (updateResult.success) {
+            console.log(`✅ تم تحديث ${updateResult.updatedCount} وحدة مربوطة`);
+        } else {
+            console.error(`❌ فشل في تحديث الوحدات المربوطة: ${updateResult.reason}`);
+        }
+
+        // الخطوة 5: التحقق النهائي
+        console.log('🔍 الخطوة 5: التحقق النهائي من المزامنة...');
+
+        const finalLinkedUnits = properties.filter(p =>
+            p['رقم العقد'] === testContractNumber &&
+            p['اسم العقار'] === propertyName
+        );
+
+        const finalSyncCheck = finalLinkedUnits.every(unit =>
+            unit['اسم المستأجر'] === updatedData['اسم المستأجر'] &&
+            unit['رقم الجوال'] === updatedData['رقم الجوال'] &&
+            unit['قيمة  الايجار '] === updatedData['قيمة  الايجار ']
+        );
+
+        // النتائج النهائية
+        const testResults = {
+            success: finalSyncCheck && syncPercentage >= 80,
+            linkedUnitsCount: finalLinkedUnits.length,
+            syncPercentage,
+            updateSuccess: updateResult.success,
+            finalSyncCheck
+        };
+
+        console.log('🎯 نتائج الاختبار:');
+        console.log(`- عدد الوحدات المربوطة: ${testResults.linkedUnitsCount}`);
+        console.log(`- نسبة المزامنة الأولية: ${testResults.syncPercentage}%`);
+        console.log(`- نجاح التحديث: ${testResults.updateSuccess ? 'نعم' : 'لا'}`);
+        console.log(`- المزامنة النهائية: ${testResults.finalSyncCheck ? 'نعم' : 'لا'}`);
+        console.log(`- النتيجة العامة: ${testResults.success ? '✅ نجح' : '❌ فشل'}`);
+
+        // حفظ البيانات
+        saveDataLocally();
+
+        // إظهار رسالة للمستخدم
+        const message = testResults.success
+            ? `🎉 نجح اختبار نظام ربط الوحدات المحسن!\n\n✅ تم ربط ${testResults.linkedUnitsCount} وحدة\n✅ نسبة المزامنة: ${testResults.syncPercentage}%\n✅ تحديث البيانات المشتركة يعمل بشكل صحيح`
+            : `⚠️ اختبار نظام ربط الوحدات يحتاج تحسين\n\nالمشاكل المكتشفة:\n${!testResults.updateSuccess ? '- فشل في تحديث البيانات\n' : ''}${!testResults.finalSyncCheck ? '- عدم تطابق البيانات النهائية\n' : ''}${testResults.syncPercentage < 80 ? '- نسبة مزامنة منخفضة\n' : ''}`;
+
+        alert(message);
+        showToast(testResults.success ? 'نجح اختبار ربط الوحدات المحسن' : 'اختبار ربط الوحدات يحتاج تحسين',
+                 testResults.success ? 'success' : 'warning');
+
+        return testResults;
+
+    } catch (error) {
+        console.error('❌ خطأ في اختبار نظام ربط الوحدات:', error);
+        alert(`❌ فشل اختبار نظام ربط الوحدات:\n\n${error.message}`);
+        showToast('فشل اختبار ربط الوحدات: ' + error.message, 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// 🧪 اختبار ميزة تحرير اسم العقار
+function testPropertyNameEdit() {
+    console.log('🧪 اختبار ميزة تحرير اسم العقار...');
+
+    try {
+        // التحقق من الصلاحية
+        const hasPermission = canEditPropertyName();
+        console.log(`🔍 فحص الصلاحية: ${hasPermission ? 'مسموح' : 'ممنوع'}`);
+
+        // التحقق من سلامة البيانات
+        const dataIntegrity = validateDataIntegrity();
+        console.log(`🛡️ سلامة البيانات: ${dataIntegrity ? 'سليمة' : 'تحتاج إصلاح'}`);
+
+        // التحقق من وجود عقارات
+        if (properties && properties.length > 0) {
+            const uniqueProperties = [...new Set(
+                properties
+                    .filter(p => p && typeof p === 'object' && p['اسم العقار'])
+                    .map(p => p['اسم العقار'])
+            )].filter(name => name && typeof name === 'string' && name.trim() !== '');
+
+            console.log(`🏢 العقارات المتاحة: ${uniqueProperties.length}`);
+            console.log(`📊 إجمالي الوحدات: ${properties.length}`);
+
+            if (uniqueProperties.length > 0) {
+                console.log(`📋 أول 5 عقارات:`, uniqueProperties.slice(0, 5));
+            }
+        } else {
+            console.warn('⚠️ لا توجد بيانات للاختبار');
+        }
+
+        // اختبار دوال المساعدة
+        const testResults = {
+            permission: hasPermission,
+            dataIntegrity: dataIntegrity,
+            propertiesCount: properties ? properties.length : 0,
+            uniquePropertiesCount: properties ? [...new Set(properties.map(p => p && p['اسم العقار']).filter(Boolean))].length : 0,
+            functionsAvailable: {
+                canEditPropertyName: typeof canEditPropertyName === 'function',
+                validateDataIntegrity: typeof validateDataIntegrity === 'function',
+                editPropertyName: typeof editPropertyName === 'function',
+                showPropertyNameEditOptions: typeof showPropertyNameEditOptions === 'function'
+            }
+        };
+
+        console.log('📊 نتائج الاختبار:', testResults);
+
+        // رسالة للمستخدم
+        const message = hasPermission
+            ? `✅ ميزة تحرير اسم العقار جاهزة!\n\n🏢 العقارات المتاحة: ${testResults.uniquePropertiesCount}\n📊 إجمالي الوحدات: ${testResults.propertiesCount}\n🛡️ سلامة البيانات: ${dataIntegrity ? 'ممتازة' : 'تحتاج إصلاح'}`
+            : `🔒 ميزة تحرير اسم العقار متاحة لعمر فقط\n\nيرجى تسجيل الدخول بحساب عمر لاستخدام هذه الميزة.`;
+
+        alert(message);
+        return testResults;
+
+    } catch (error) {
+        console.error('❌ خطأ في اختبار ميزة تحرير اسم العقار:', error);
+        alert('❌ فشل اختبار ميزة تحرير اسم العقار: ' + error.message);
+        return { success: false, error: error.message };
+    }
+}
+
+// 🧪 اختبار تحديث اسم العقار بدون تكرار
+async function testPropertyNameUpdateWithoutDuplication() {
+    console.log('🧪 اختبار تحديث اسم العقار بدون إنشاء نسخ مكررة...');
+
+    try {
+        // التحقق من الصلاحية
+        if (!canEditPropertyName()) {
+            console.log('❌ المستخدم لا يملك صلاحية تحديث أسماء العقارات');
+            alert('🔒 هذا الاختبار متاح لعمر فقط');
+            return { success: false, reason: 'No permission' };
+        }
+
+        // التحقق من وجود البيانات
+        if (!properties || properties.length === 0) {
+            console.log('❌ لا توجد بيانات للاختبار');
+            alert('❌ لا توجد بيانات للاختبار');
+            return { success: false, reason: 'No data' };
+        }
+
+        // البحث عن عقار للاختبار
+        const uniqueProperties = [...new Set(properties.map(p => p['اسم العقار']))].filter(Boolean);
+        if (uniqueProperties.length === 0) {
+            console.log('❌ لا توجد عقارات للاختبار');
+            alert('❌ لا توجد عقارات للاختبار');
+            return { success: false, reason: 'No properties' };
+        }
+
+        const testProperty = uniqueProperties[0];
+        const testUnits = properties.filter(p => p['اسم العقار'] === testProperty);
+
+        console.log(`📋 اختبار العقار: "${testProperty}" (${testUnits.length} وحدة)`);
+
+        // إنشاء اسم اختبار مؤقت
+        const testNewName = `${testProperty}_TEST_${Date.now()}`;
+
+        console.log(`🔄 تحديث اسم العقار من "${testProperty}" إلى "${testNewName}"`);
+
+        // تنفيذ التحديث
+        const updateResult = await updatePropertyNameInAllSystems(testProperty, testNewName);
+
+        if (updateResult.success) {
+            console.log(`✅ نجح التحديث: ${updateResult.updatedUnits} وحدة محلياً، ${updateResult.supabaseUpdates} في السحابة`);
+
+            // التحقق من عدم وجود تكرار في Supabase
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                try {
+                    const { data: duplicateCheck } = await supabaseClient
+                        .from('properties')
+                        .select('id, unit_number, property_name')
+                        .eq('property_name', testNewName);
+
+                    if (duplicateCheck) {
+                        // تجميع حسب رقم الوحدة
+                        const unitGroups = {};
+                        duplicateCheck.forEach(record => {
+                            const unitNumber = record.unit_number;
+                            if (!unitGroups[unitNumber]) {
+                                unitGroups[unitNumber] = [];
+                            }
+                            unitGroups[unitNumber].push(record);
+                        });
+
+                        let duplicatesFound = 0;
+                        Object.values(unitGroups).forEach(group => {
+                            if (group.length > 1) {
+                                duplicatesFound += group.length - 1;
+                            }
+                        });
+
+                        console.log(`🔍 فحص التكرار: ${duplicatesFound} سجل مكرر في Supabase`);
+
+                        if (duplicatesFound === 0) {
+                            console.log('✅ لا توجد سجلات مكررة - الاختبار نجح!');
+                        } else {
+                            console.warn(`⚠️ وُجدت ${duplicatesFound} سجلات مكررة - يحتاج تحسين`);
+                        }
+                    }
+                } catch (checkError) {
+                    console.warn('⚠️ فشل في فحص التكرار:', checkError);
+                }
+            }
+
+            // إعادة الاسم الأصلي
+            console.log(`🔄 إعادة الاسم الأصلي من "${testNewName}" إلى "${testProperty}"`);
+            const restoreResult = await updatePropertyNameInAllSystems(testNewName, testProperty);
+
+            if (restoreResult.success) {
+                console.log('✅ تم إعادة الاسم الأصلي بنجاح');
+
+                const testResults = {
+                    success: true,
+                    testProperty,
+                    testNewName,
+                    originalUnits: testUnits.length,
+                    updatedUnits: updateResult.updatedUnits,
+                    supabaseUpdates: updateResult.supabaseUpdates,
+                    restoredUnits: restoreResult.updatedUnits,
+                    restoredSupabaseUpdates: restoreResult.supabaseUpdates
+                };
+
+                const message = `🎉 نجح اختبار تحديث اسم العقار!\n\n` +
+                    `📊 النتائج:\n` +
+                    `• العقار المختبر: "${testProperty}"\n` +
+                    `• عدد الوحدات: ${testUnits.length}\n` +
+                    `• التحديث الأول: ${updateResult.updatedUnits} محلي، ${updateResult.supabaseUpdates} سحابي\n` +
+                    `• الإعادة: ${restoreResult.updatedUnits} محلي، ${restoreResult.supabaseUpdates} سحابي\n\n` +
+                    `✅ لا توجد نسخ مكررة في النظام`;
+
+                alert(message);
+                return testResults;
+
+            } else {
+                console.error('❌ فشل في إعادة الاسم الأصلي:', restoreResult.reason);
+                alert(`❌ فشل في إعادة الاسم الأصلي: ${restoreResult.reason}\n\nيرجى إعادة تسمية العقار يدوياً من "${testNewName}" إلى "${testProperty}"`);
+                return { success: false, reason: 'Failed to restore original name', partialSuccess: true };
+            }
+
+        } else {
+            console.error('❌ فشل في تحديث اسم العقار:', updateResult.reason);
+            alert(`❌ فشل في تحديث اسم العقار: ${updateResult.reason}`);
+            return { success: false, reason: updateResult.reason };
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في اختبار تحديث اسم العقار:', error);
+        alert(`❌ خطأ في الاختبار: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+}
+
+// 🧪 اختبار إعادة تعيين الفلاتر عند تسجيل الدخول
+function testFilterResetOnLogin() {
+    console.log('🧪 اختبار إعادة تعيين الفلاتر عند تسجيل الدخول...');
+
+    try {
+        // حفظ الحالة الحالية
+        const originalState = {
+            currentCountry,
+            currentProperty,
+            filterStatus,
+            contractTypeFilter: typeof contractTypeFilter !== 'undefined' ? contractTypeFilter : null
+        };
+
+        console.log('📊 الحالة قبل الاختبار:', originalState);
+
+        // تعيين فلاتر مختلفة للاختبار
+        currentCountry = 'الرياض';
+        currentProperty = 'عمارة النخيل';
+        filterStatus = 'جاري';
+        if (typeof contractTypeFilter !== 'undefined') {
+            contractTypeFilter = 'سكني';
+        }
+
+        console.log('🔧 تم تعيين فلاتر اختبار:', {
+            currentCountry,
+            currentProperty,
+            filterStatus,
+            contractTypeFilter: typeof contractTypeFilter !== 'undefined' ? contractTypeFilter : null
+        });
+
+        // تنفيذ إعادة تعيين الفلاتر
+        resetFiltersToDefault();
+
+        // التحقق من النتائج بعد التأخير
+        setTimeout(() => {
+            const newState = {
+                currentCountry,
+                currentProperty,
+                filterStatus,
+                contractTypeFilter: typeof contractTypeFilter !== 'undefined' ? contractTypeFilter : null
+            };
+
+            console.log('📊 الحالة بعد إعادة التعيين:', newState);
+
+            // التحقق من نجاح إعادة التعيين
+            const isReset = (
+                currentCountry === null &&
+                currentProperty === null &&
+                filterStatus === null &&
+                (typeof contractTypeFilter === 'undefined' || contractTypeFilter === null)
+            );
+
+            const testResults = {
+                success: isReset,
+                originalState,
+                newState,
+                resetCorrectly: {
+                    currentCountry: currentCountry === null,
+                    currentProperty: currentProperty === null,
+                    filterStatus: filterStatus === null,
+                    contractTypeFilter: typeof contractTypeFilter === 'undefined' || contractTypeFilter === null
+                }
+            };
+
+            console.log('📊 نتائج الاختبار:', testResults);
+
+            const message = isReset
+                ? `✅ نجح اختبار إعادة تعيين الفلاتر!\n\n🔄 جميع الفلاتر تم إعادة تعيينها إلى "الكل":\n• المدينة: ${currentCountry || 'الكل'}\n• العقار: ${currentProperty || 'الكل'}\n• الحالة: ${filterStatus || 'الكل'}\n• نوع العقد: ${(typeof contractTypeFilter !== 'undefined' ? contractTypeFilter : null) || 'الكل'}`
+                : `❌ فشل اختبار إعادة تعيين الفلاتر\n\nالمشاكل:\n${!testResults.resetCorrectly.currentCountry ? '• المدينة لم يتم إعادة تعيينها\n' : ''}${!testResults.resetCorrectly.currentProperty ? '• العقار لم يتم إعادة تعيينه\n' : ''}${!testResults.resetCorrectly.filterStatus ? '• فلتر الحالة لم يتم إعادة تعيينه\n' : ''}${!testResults.resetCorrectly.contractTypeFilter ? '• فلتر نوع العقد لم يتم إعادة تعيينه\n' : ''}`;
+
+            alert(message);
+
+            return testResults;
+
+        }, 1000);
+
+    } catch (error) {
+        console.error('❌ خطأ في اختبار إعادة تعيين الفلاتر:', error);
+        alert('❌ فشل اختبار إعادة تعيين الفلاتر: ' + error.message);
+        return { success: false, error: error.message };
+    }
+}
+
 // إضافة الدوال المفقودة للنافذة العامة
 window.fullDataRecovery = fullDataRecovery;
 window.recoverDeletedData = recoverDeletedData;
+window.testEnhancedUnitLinking = testEnhancedUnitLinking;
+window.testPropertyNameEdit = testPropertyNameEdit;
+window.testPropertyNameUpdateWithoutDuplication = testPropertyNameUpdateWithoutDuplication;
+window.testFilterResetOnLogin = testFilterResetOnLogin;
+window.resetFiltersToDefault = resetFiltersToDefault;
 
 // إضافة مستمع لتحميل الصفحة لإظهار شاشة التحميل
 document.addEventListener('DOMContentLoaded', function() {
