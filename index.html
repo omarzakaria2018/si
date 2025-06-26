@@ -41,54 +41,53 @@
               <i class="fas fa-chevron-down dropdown-arrow"></i>
             </button>
             <div class="dropdown-menu" id="filtersDropdown">
+              <!-- فلتر الشهر -->
               <div class="dropdown-item" onclick="showMonthFilterModal(); closeAllDropdowns();">
                 <i class="fas fa-calendar-alt"></i>
                 فلتر الشهر
               </div>
+
+              <!-- فلتر عقارات متعدد -->
               <div class="dropdown-item" onclick="showMultiPropertyCityFilter(); closeAllDropdowns();">
                 <i class="fas fa-building"></i>
                 فلتر عقارات متعدد
               </div>
+
+              <!-- نوع العقد -->
               <div class="dropdown-item" onclick="showContractTypeFilterFromDropdown(); closeAllDropdowns();">
                 <i class="fas fa-file-contract"></i>
                 نوع العقد
               </div>
+
               <div class="dropdown-divider"></div>
-              <div class="dropdown-item admin-only-omar" onclick="forceCreateTrackingLog(); closeAllDropdowns();">
-                <i class="fas fa-vial"></i>
-                اختبار سجلات التتبع
+
+              <!-- سجل التتبع -->
+              <div class="dropdown-item" onclick="createSampleTrackingDataAndShow(); closeAllDropdowns();">
+                <i class="fas fa-clipboard-list"></i>
+                سجل التتبع
               </div>
 
-              <div class="dropdown-item admin-only-omar" onclick="resetUnlinkProtection(); closeAllDropdowns();" style="background: #fff3e0;">
-                <i class="fas fa-refresh"></i>
-                إعادة تعيين الحماية
-              </div>
-              <div class="dropdown-item admin-only-omar" onclick="stopUnlinkMonitoring(); closeAllDropdowns();" style="background: #ffebee;">
-                <i class="fas fa-stop"></i>
-                إيقاف مراقبة الحماية
-              </div>
+              <!-- فلتر الحالة -->
               <div class="dropdown-item" onclick="showStatusFilterFromDropdown(); closeAllDropdowns();">
                 <i class="fas fa-info-circle"></i>
                 فلتر الحالة
               </div>
+
+              <!-- فلتر المالك -->
               <div class="dropdown-item" onclick="showOwnerFilterFromDropdown(); closeAllDropdowns();">
                 <i class="fas fa-user"></i>
                 فلتر المالك
               </div>
 
-              <div class="dropdown-item" onclick="createSampleTrackingDataAndShow(); closeAllDropdowns();">
-                <i class="fas fa-clipboard-list"></i>
-                سجل التتبع
-              </div>
-              <div class="dropdown-item admin-only-omar" onclick="testTrackingFunction(); closeAllDropdowns();" style="background: #ffeb3b; color: #333;">
-                <i class="fas fa-bug"></i>
-                اختبار الدالة
-              </div>
               <div class="dropdown-divider"></div>
-              <div class="dropdown-item" onclick="showPropertyStatisticsPrintModal(); closeAllDropdowns();">
-                <i class="fas fa-print"></i>
-                طباعة إحصائيات العقارات
+
+              <!-- حذف بيانات وحدة - عمر ومحمد فقط -->
+              <div class="dropdown-item admin-only-omar-mohammed" onclick="showUnitDataClearModal(); closeAllDropdowns();">
+                <i class="fas fa-trash-alt"></i>
+                حذف بيانات وحدة
               </div>
+
+              <!-- إدارة المرفقات -->
               <div class="dropdown-item" onclick="showAttachmentsManagerFromDropdown(); closeAllDropdowns();">
                 <i class="fas fa-paperclip"></i>
                 إدارة المرفقات
@@ -167,6 +166,62 @@
                 <i class="fas fa-calculator"></i>
                 إصلاح الإحصائيات
               </div>
+              <div class="dropdown-item" onclick="runAllLinkingTests(); closeAllDropdowns();">
+                <i class="fas fa-flask"></i>
+                اختبار شامل للربط
+              </div>
+              <div class="dropdown-item" onclick="comprehensiveUnitLinkingTest(); closeAllDropdowns();">
+                <i class="fas fa-link"></i>
+                اختبار ربط متقدم
+              </div>
+              <div class="dropdown-item" onclick="quickUILinkingTest(); closeAllDropdowns();">
+                <i class="fas fa-mouse-pointer"></i>
+                اختبار ربط الواجهة
+              </div>
+              <div class="dropdown-item" onclick="diagnoseLinkingIssues(); closeAllDropdowns();">
+                <i class="fas fa-stethoscope"></i>
+                تشخيص مشاكل الربط
+              </div>
+              <div class="dropdown-item" onclick="showRealUnitLinkingModal(); closeAllDropdowns();">
+                <i class="fas fa-link"></i>
+                ربط وحدات حقيقية
+              </div>
+              <div class="dropdown-item" onclick="checkLinkingStatus(); closeAllDropdowns();">
+                <i class="fas fa-search"></i>
+                فحص حالة الربط
+              </div>
+              <div class="dropdown-item" onclick="testUnitDataClearing(); closeAllDropdowns();">
+                <i class="fas fa-trash-alt"></i>
+                اختبار إفراغ البيانات
+              </div>
+              <div class="dropdown-item" onclick="testUnitDataClearing(); closeAllDropdowns();">
+                <i class="fas fa-trash-alt"></i>
+                اختبار إفراغ البيانات
+              </div>
+              <div class="dropdown-item" onclick="testUnitUnlinkingAndClearing(); closeAllDropdowns();">
+                <i class="fas fa-unlink"></i>
+                اختبار فصل وإفراغ الوحدات
+              </div>
+              <div class="dropdown-item" onclick="testSimpleLinkingInterface(); closeAllDropdowns();">
+                <i class="fas fa-check-circle"></i>
+                اختبار الواجهة المبسطة
+              </div>
+              <div class="dropdown-item" onclick="testImprovedLinkUnitToGroup(); closeAllDropdowns();">
+                <i class="fas fa-wrench"></i>
+                اختبار الربط المحسن
+              </div>
+              <div class="dropdown-item" onclick="directLinkingTest(); closeAllDropdowns();">
+                <i class="fas fa-rocket"></i>
+                اختبار مباشر سريع
+              </div>
+              <div class="dropdown-item" onclick="testLinking(); closeAllDropdowns();">
+                <i class="fas fa-cog"></i>
+                اختبار ربط بسيط
+              </div>
+              <div class="dropdown-item" onclick="showUnitLinkingGuide(); closeAllDropdowns();">
+                <i class="fas fa-question-circle"></i>
+                دليل ربط الوحدات
+              </div>
               <div class="dropdown-divider"></div>
               <div class="dropdown-item" onclick="updateSupabaseData(); closeAllDropdowns();">
                 <i class="fas fa-cloud-upload-alt"></i>
@@ -198,33 +253,36 @@
           <button id="attachmentsManagerBtn" class="export-btn hideable-header-btn" style="background:linear-gradient(to left,#1e88e5,#0d47a1);margin-right:8px;">
             <i class="fas fa-folder-open"></i> إدارة المرفقات
           </button>
-          <button id="propertyManagerBtn" class="export-btn hideable-header-btn admin-only-feature" style="background:linear-gradient(to left,#28a745,#20c997);margin-right:8px;">
+          <!-- الأزرار المخفية - غير مطلوبة -->
+          <button id="propertyManagerBtn" class="export-btn hideable-header-btn admin-only-feature" style="display: none;">
             <i class="fas fa-building"></i> إدارة العقارات
           </button>
 
-          <!-- زر تحرير أسماء العقارات للجوال (عمر فقط) -->
-          <button class="export-btn hideable-header-btn admin-only-omar edit-property-name-btn-mobile" onclick="showPropertyNameEditOptions()" title="تحرير أسماء العقارات (عمر فقط)" style="background:linear-gradient(135deg,#ff6b35,#f7931e);margin-right:8px;">
+          <button class="export-btn hideable-header-btn admin-only-omar edit-property-name-btn-mobile" onclick="showPropertyNameEditOptions()" title="تحرير أسماء العقارات (عمر فقط)" style="display: none;">
             <i class="fas fa-edit"></i>
           </button>
 
-          <button id="changeTrackingBtn" class="export-btn hideable-header-btn" onclick="createSampleTrackingDataAndShow()" style="background:linear-gradient(to left,#6f42c1,#5a2d91);margin-right:8px;">
+          <button id="changeTrackingBtn" class="export-btn hideable-header-btn" onclick="createSampleTrackingDataAndShow()" style="display: none;">
             <i class="fas fa-history"></i> سجل التتبع
           </button>
 
-          <button id="dataImportBtn" class="export-btn hideable-header-btn" onclick="showDataImportModal()" style="background:linear-gradient(to left,#fd7e14,#e55a4e);margin-right:8px;">
+          <button id="dataImportBtn" class="export-btn hideable-header-btn" onclick="showDataImportModal()" style="display: none;">
             <i class="fas fa-file-import"></i> استيراد البيانات
           </button>
-          <button id="cleanStorageBtn" class="export-btn hideable-header-btn" onclick="showStorageCleanupModal()" style="background:linear-gradient(to left,#6c757d,#495057);margin-right:8px;">
+
+          <button id="cleanStorageBtn" class="export-btn hideable-header-btn" onclick="showStorageCleanupModal()" style="display: none;">
             <i class="fas fa-broom"></i> تنظيف التخزين
           </button>
-          <button id="updateDatesBtn" class="export-btn hideable-header-btn admin-only-feature" onclick="showDateUpdateModal()" style="background:linear-gradient(to left,#28a745,#20c997);margin-right:8px;">
+
+          <button id="updateDatesBtn" class="export-btn hideable-header-btn admin-only-feature" onclick="showDateUpdateModal()" style="display: none;">
             <i class="fas fa-calendar-alt"></i> تحديث التواريخ
           </button>
-          <button id="fixStatisticsBtn" class="export-btn hideable-header-btn admin-only-feature" onclick="fixStatisticsNow()" style="background:linear-gradient(to left,#17a2b8,#138496);margin-right:8px;">
+
+          <button id="fixStatisticsBtn" class="export-btn hideable-header-btn admin-only-feature" onclick="fixStatisticsNow()" style="display: none;">
             <i class="fas fa-calculator"></i> إصلاح الإحصائيات
           </button>
 
-          <button id="developerModeBtn" class="export-btn hideable-header-btn" onclick="toggleDeveloperMode()" style="background:linear-gradient(to left,#6f42c1,#5a2d91);margin-right:8px;">
+          <button id="developerModeBtn" class="export-btn hideable-header-btn" onclick="toggleDeveloperMode()" style="display: none;">
             <i class="fas fa-code"></i> <span id="developerModeText">وضع المطور</span>
           </button>
         </div>
@@ -235,8 +293,8 @@
 
 
 
-        <!-- إضافة في header-actions في index.html -->
-        <div class="date-filter-container hideable-header-btn">
+        <!-- فلتر التاريخ المفصل - مخفي -->
+        <div class="date-filter-container hideable-header-btn" style="display: none;">
           <select id="filterType" class="date-filter-select">
             <option value="">نوع التاريخ</option>
             <option value="start">تاريخ البداية</option>
@@ -316,58 +374,82 @@
         <li>
           <button id="mobile-contract-type-btn"><i class="fas fa-filter"></i> نوع العقد</button>
         </li>
-        <!-- إضافة في mobile-menu-content في index.html -->
-        <li>
-          <button id="mobile-date-filter-btn">
-            <i class="fas fa-calendar-alt"></i> فلتر التاريخ
-          </button>
-        </li>
+        <!-- العناصر المطلوبة فقط في القائمة المحمولة -->
+
+        <!-- فلتر عقارات متعدد - مطلوب -->
         <li>
           <button id="mobile-multi-property-filter-btn">
             <i class="fas fa-layer-group"></i> فلتر عقارات متعدد
           </button>
         </li>
-        <li>
-          <button id="mobile-property-statistics-print-btn">
-            <i class="fas fa-print"></i> طباعة إحصائيات العقارات
-          </button>
-        </li>
+
+        <!-- إدارة المرفقات - مطلوب -->
         <li>
           <button id="mobile-attachments-btn">
             <i class="fas fa-folder-open"></i> إدارة المرفقات
           </button>
         </li>
-        <li>
-          <button id="mobile-property-manager-btn" class="admin-only-feature">
-            <i class="fas fa-building"></i> إدارة العقارات
-          </button>
-        </li>
-        <li>
-          <button id="mobile-edit-property-name-btn" class="admin-only-omar" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; showPropertyNameEditOptions();">
-            <i class="fas fa-edit"></i> تحرير أسماء العقارات
-          </button>
-        </li>
+
+        <!-- سجل التتبع - مطلوب -->
         <li>
           <button id="mobile-change-tracking-btn" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; createSampleTrackingDataAndShow();">
             <i class="fas fa-history"></i> سجل التتبع
           </button>
         </li>
+
+        <!-- العناصر المخفية -->
+        <li style="display: none;">
+          <button id="mobile-date-filter-btn">
+            <i class="fas fa-calendar-alt"></i> فلتر التاريخ
+          </button>
+        </li>
+
+        <li style="display: none;">
+          <button id="mobile-property-statistics-print-btn">
+            <i class="fas fa-print"></i> طباعة إحصائيات العقارات
+          </button>
+        </li>
+
+        <!-- إدارة العقارات - مرئي لعمر في الهاتف -->
         <li>
+          <button id="mobile-property-manager-btn" class="admin-only-feature">
+            <i class="fas fa-building"></i> إدارة العقارات
+          </button>
+        </li>
+
+        <!-- تحرير أسماء العقارات - مرئي لعمر في الهاتف -->
+        <li>
+          <button id="mobile-edit-property-name-btn" class="admin-only-omar" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; showPropertyNameEditOptions();">
+            <i class="fas fa-edit"></i> تحرير أسماء العقارات
+          </button>
+        </li>
+
+        <!-- حذف بيانات وحدة - عمر ومحمد في الهاتف -->
+        <li>
+          <button id="mobile-unit-data-clear-btn" class="admin-only-omar-mohammed" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; showUnitDataClearModal();">
+            <i class="fas fa-trash-alt"></i> حذف بيانات وحدة
+          </button>
+        </li>
+        <!-- العناصر المخفية الإضافية -->
+        <li style="display: none;">
           <button id="mobile-date-update-btn" class="admin-only-feature" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; openDateUpdateModal();">
             <i class="fas fa-calendar-edit"></i> تحديث التواريخ
           </button>
         </li>
-        <li>
+
+        <li style="display: none;">
           <button id="mobile-data-import-btn" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; showDataImportModal();">
             <i class="fas fa-file-import"></i> استيراد البيانات
           </button>
         </li>
-        <li>
+
+        <li style="display: none;">
           <button id="mobile-fix-statistics-btn" class="admin-only-feature" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; fixStatisticsNow();">
             <i class="fas fa-calculator"></i> إصلاح الإحصائيات
           </button>
         </li>
-        <li>
+
+        <li style="display: none;">
           <button id="mobile-clear-state-btn" class="admin-only-feature" onclick="document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('menuOverlay').classList.remove('active'); document.body.style.overflow = ''; clearAppStateWithConfirmation();">
             <i class="fas fa-refresh"></i> إعادة تعيين الحالة
           </button>

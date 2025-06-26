@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار حذف بيانات الوحدة</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .delete-button {
+            background: #dc3545;
+        }
+        .delete-button:hover {
+            background: #c82333;
+        }
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 اختبار حذف بيانات الوحدة</h1>
+        
+        <div class="test-section">
+            <h3>📋 معلومات الاختبار</h3>
+            <p>هذا الاختبار يتحقق من:</p>
+            <ul>
+                <li>✅ تحميل نظام الصلاحيات</li>
+                <li>✅ التعرف على المستخدم الحالي</li>
+                <li>✅ صلاحية حذف البيانات</li>
+                <li>✅ اتصال Supabase</li>
+                <li>✅ وظيفة حذف البيانات</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 اختبار نظام الصلاحيات</h3>
+            <button class="test-button" onclick="testPermissions()">فحص الصلاحيات</button>
+            <div id="permissionsResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>☁️ اختبار Supabase</h3>
+            <button class="test-button" onclick="testSupabase()">فحص Supabase</button>
+            <div id="supabaseResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🗑️ اختبار حذف البيانات</h3>
+            <div class="form-group">
+                <label>رقم الوحدة للاختبار:</label>
+                <input type="text" id="testUnitNumber" value="TEST_UNIT_001" placeholder="أدخل رقم وحدة للاختبار">
+            </div>
+            <button class="test-button delete-button" onclick="testUnitClear()">اختبار حذف البيانات</button>
+            <div id="clearResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 روابط مفيدة</h3>
+            <button class="test-button" onclick="openMainApp()">فتح التطبيق الرئيسي</button>
+            <button class="test-button" onclick="loginAsOmar()">تسجيل دخول كعمر</button>
+            <button class="test-button" onclick="loginAsMohammed()">تسجيل دخول كمحمد</button>
+        </div>
+    </div>
+
+    <!-- تحميل المكتبات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function testPermissions() {
+            const resultsDiv = document.getElementById('permissionsResults');
+            let results = '';
+
+            try {
+                results += `🔍 فحص نظام الصلاحيات:\n\n`;
+                
+                // فحص المتغيرات العامة
+                results += `1. المتغيرات العامة:\n`;
+                results += `   - currentUser: ${typeof currentUser !== 'undefined' ? currentUser : 'غير محدد'}\n`;
+                results += `   - users: ${typeof users !== 'undefined' ? 'موجود' : 'غير موجود'}\n`;
+                
+                // فحص localStorage
+                const savedUser = localStorage.getItem('currentUser');
+                results += `   - localStorage currentUser: ${savedUser ? 'موجود' : 'غير موجود'}\n`;
+                
+                if (savedUser) {
+                    try {
+                        const userData = JSON.parse(savedUser);
+                        results += `   - اسم المستخدم المحفوظ: ${userData.username}\n`;
+                    } catch (e) {
+                        results += `   - خطأ في قراءة بيانات المستخدم المحفوظة\n`;
+                    }
+                }
+
+                // فحص دالة canDeleteUnitData
+                results += `\n2. فحص صلاحية الحذف:\n`;
+                if (typeof canDeleteUnitData === 'function') {
+                    const canDelete = canDeleteUnitData();
+                    results += `   - canDeleteUnitData(): ${canDelete ? 'مسموح ✅' : 'ممنوع ❌'}\n`;
+                } else {
+                    results += `   - canDeleteUnitData: غير موجودة ❌\n`;
+                }
+
+                // فحص دالة getCurrentUser
+                results += `\n3. فحص المستخدم الحالي:\n`;
+                if (typeof getCurrentUser === 'function') {
+                    const currentUserName = getCurrentUser();
+                    results += `   - getCurrentUser(): ${currentUserName}\n`;
+                } else {
+                    results += `   - getCurrentUser: غير موجودة ❌\n`;
+                }
+
+            } catch (error) {
+                results += `❌ خطأ في فحص الصلاحيات: ${error.message}\n`;
+            }
+
+            resultsDiv.textContent = results;
+        }
+
+        function testSupabase() {
+            const resultsDiv = document.getElementById('supabaseResults');
+            let results = '';
+
+            try {
+                results += `☁️ فحص Supabase:\n\n`;
+                
+                // فحص المكتبة
+                results += `1. مكتبة Supabase:\n`;
+                results += `   - supabase library: ${typeof supabase !== 'undefined' ? 'محملة ✅' : 'غير محملة ❌'}\n`;
+                results += `   - supabaseClient: ${typeof supabaseClient !== 'undefined' && supabaseClient ? 'متصل ✅' : 'غير متصل ❌'}\n`;
+                
+                if (supabaseClient) {
+                    results += `   - Supabase URL: ${supabaseClient.supabaseUrl}\n`;
+                }
+
+                // فحص الدوال
+                results += `\n2. دوال Supabase:\n`;
+                results += `   - executeUnitDataClear: ${typeof executeUnitDataClear === 'function' ? 'موجودة ✅' : 'غير موجودة ❌'}\n`;
+                results += `   - showUnitDataClearModal: ${typeof showUnitDataClearModal === 'function' ? 'موجودة ✅' : 'غير موجودة ❌'}\n`;
+
+            } catch (error) {
+                results += `❌ خطأ في فحص Supabase: ${error.message}\n`;
+            }
+
+            resultsDiv.textContent = results;
+        }
+
+        async function testUnitClear() {
+            const resultsDiv = document.getElementById('clearResults');
+            const unitNumber = document.getElementById('testUnitNumber').value.trim();
+            
+            if (!unitNumber) {
+                resultsDiv.textContent = '❌ يرجى إدخال رقم الوحدة';
+                return;
+            }
+
+            let results = '';
+
+            try {
+                results += `🗑️ اختبار حذف بيانات الوحدة ${unitNumber}:\n\n`;
+                
+                // فحص الصلاحية
+                if (typeof canDeleteUnitData === 'function') {
+                    const canDelete = canDeleteUnitData();
+                    results += `1. فحص الصلاحية: ${canDelete ? 'مسموح ✅' : 'ممنوع ❌'}\n`;
+                    
+                    if (!canDelete) {
+                        results += `   ⚠️ لا يمكن المتابعة بدون صلاحية\n`;
+                        resultsDiv.textContent = results;
+                        return;
+                    }
+                } else {
+                    results += `1. فحص الصلاحية: دالة غير موجودة ❌\n`;
+                    resultsDiv.textContent = results;
+                    return;
+                }
+
+                // فحص Supabase
+                if (!supabaseClient) {
+                    results += `2. Supabase: غير متصل ❌\n`;
+                    resultsDiv.textContent = results;
+                    return;
+                }
+
+                results += `2. Supabase: متصل ✅\n`;
+
+                // البحث عن الوحدة
+                results += `3. البحث عن الوحدة...\n`;
+                const { data: unit, error: searchError } = await supabaseClient
+                    .from('properties')
+                    .select('*')
+                    .eq('unit_number', unitNumber)
+                    .single();
+
+                if (searchError) {
+                    results += `   ❌ خطأ في البحث: ${searchError.message}\n`;
+                } else if (!unit) {
+                    results += `   ⚠️ لم يتم العثور على الوحدة\n`;
+                } else {
+                    results += `   ✅ تم العثور على الوحدة\n`;
+                    results += `   - ID: ${unit.id}\n`;
+                    results += `   - اسم العقار: ${unit.property_name || 'غير محدد'}\n`;
+                    results += `   - المستأجر: ${unit.tenant_name || 'فارغ'}\n`;
+                }
+
+            } catch (error) {
+                results += `❌ خطأ في الاختبار: ${error.message}\n`;
+            }
+
+            resultsDiv.textContent = results;
+        }
+
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+
+        function loginAsOmar() {
+            // محاكاة تسجيل دخول عمر
+            const userData = {
+                username: 'عمر',
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            
+            // إعادة تحميل الصفحة لتطبيق التغييرات
+            window.location.reload();
+        }
+
+        function loginAsMohammed() {
+            // محاكاة تسجيل دخول محمد
+            const userData = {
+                username: 'محمد',
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            
+            // إعادة تحميل الصفحة لتطبيق التغييرات
+            window.location.reload();
+        }
+
+        // تشغيل الاختبارات عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('🚀 تم تحميل صفحة الاختبار');
+                testPermissions();
+                testSupabase();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار دالة الإفراغ الكامل</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .test-button {
+            background: linear-gradient(135deg, #8B0000, #DC143C);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 2px 8px rgba(139, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 0, 0, 0.4);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 اختبار دالة الإفراغ الكامل</h1>
+        
+        <h3>📋 معلومات الوحدة للاختبار:</h3>
+        <ul>
+            <li><strong>رقم الوحدة:</strong> STDM080120</li>
+            <li><strong>اسم العقار:</strong> السكة الحديد</li>
+            <li><strong>الإجمالي الحالي:</strong> 115,000 ريال</li>
+            <li><strong>عدد الأقساط:</strong> 2 قسط</li>
+            <li><strong>القسط الأول:</strong> 115,000 ريال</li>
+            <li><strong>القسط الثاني:</strong> 115,000 ريال</li>
+        </ul>
+
+        <h3>🎯 الاختبارات:</h3>
+        
+        <button class="test-button" onclick="testCompleteClearUnit()">
+            🗑️ اختبار الإفراغ الكامل للوحدة STDM080120
+        </button>
+        
+        <button class="test-button" onclick="checkUnitData()">
+            🔍 فحص بيانات الوحدة الحالية
+        </button>
+        
+        <button class="test-button" onclick="testSupabaseConnection()">
+            ☁️ اختبار اتصال Supabase
+        </button>
+
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- تضمين ملف JavaScript الأساسي -->
+    <script src="script.js"></script>
+    
+    <script>
+        // دالة اختبار الإفراغ الكامل
+        async function testCompleteClearUnit() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '⏳ جاري اختبار الإفراغ الكامل...';
+
+            try {
+                // التحقق من وجود الدالة
+                if (typeof window.completeClearUnit !== 'function') {
+                    throw new Error('دالة completeClearUnit غير موجودة');
+                }
+
+                console.log('🧪 بدء اختبار الإفراغ الكامل...');
+                
+                // استدعاء الدالة
+                await window.completeClearUnit('STDM080120');
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    ✅ <strong>نجح الاختبار!</strong><br>
+                    تم استدعاء دالة الإفراغ الكامل بنجاح.<br>
+                    تحقق من Console للتفاصيل الكاملة.
+                `;
+
+            } catch (error) {
+                console.error('❌ خطأ في الاختبار:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    ❌ <strong>فشل الاختبار!</strong><br>
+                    الخطأ: ${error.message}<br>
+                    تحقق من Console للتفاصيل.
+                `;
+            }
+        }
+
+        // دالة فحص بيانات الوحدة
+        async function checkUnitData() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '⏳ جاري فحص بيانات الوحدة...';
+
+            try {
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase غير متصل');
+                }
+
+                const { data, error } = await window.supabaseClient
+                    .from('properties')
+                    .select('unit_number, property_name, total_amount, installment_count, first_installment_amount, second_installment_amount')
+                    .eq('unit_number', 'STDM080120')
+                    .single();
+
+                if (error) {
+                    throw new Error(`خطأ في جلب البيانات: ${error.message}`);
+                }
+
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    ✅ <strong>بيانات الوحدة STDM080120:</strong><br>
+                    • اسم العقار: ${data.property_name || 'غير محدد'}<br>
+                    • الإجمالي: ${data.total_amount || 'فارغ'}<br>
+                    • عدد الأقساط: ${data.installment_count || 'فارغ'}<br>
+                    • القسط الأول: ${data.first_installment_amount || 'فارغ'}<br>
+                    • القسط الثاني: ${data.second_installment_amount || 'فارغ'}
+                `;
+
+            } catch (error) {
+                console.error('❌ خطأ في فحص البيانات:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    ❌ <strong>فشل في فحص البيانات!</strong><br>
+                    الخطأ: ${error.message}
+                `;
+            }
+        }
+
+        // دالة اختبار اتصال Supabase
+        async function testSupabaseConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '⏳ جاري اختبار اتصال Supabase...';
+
+            try {
+                if (!window.supabaseClient) {
+                    throw new Error('Supabase غير متصل - تحقق من إعدادات الاتصال');
+                }
+
+                // اختبار بسيط للاتصال
+                const { data, error } = await window.supabaseClient
+                    .from('properties')
+                    .select('count')
+                    .limit(1);
+
+                if (error) {
+                    throw new Error(`خطأ في الاتصال: ${error.message}`);
+                }
+
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    ✅ <strong>اتصال Supabase يعمل بنجاح!</strong><br>
+                    تم الاتصال بقاعدة البيانات بنجاح.
+                `;
+
+            } catch (error) {
+                console.error('❌ خطأ في اتصال Supabase:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    ❌ <strong>فشل في اتصال Supabase!</strong><br>
+                    الخطأ: ${error.message}<br>
+                    تحقق من إعدادات Supabase في script.js
+                `;
+            }
+        }
+
+        // تسجيل معلومات عند تحميل الصفحة
+        window.addEventListener('load', function() {
+            console.log('🧪 صفحة اختبار الإفراغ الكامل جاهزة');
+            console.log('🔧 الدوال المتاحة:', {
+                completeClearUnit: typeof window.completeClearUnit,
+                supabaseClient: typeof window.supabaseClient,
+                clearUnitData: typeof window.clearUnitData
+            });
+        });
+    </script>
+</body>
+</html>

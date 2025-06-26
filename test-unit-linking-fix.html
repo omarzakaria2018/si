@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح ربط الوحدات</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        
+        .test-section h3 {
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .success {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+        
+        .warning {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+        
+        .danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        .log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            white-space: pre-wrap;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .connection-status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .connected {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #27ae60;
+        }
+        
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 اختبار إصلاح ربط الوحدات</h1>
+        
+        <div id="connectionStatus" class="connection-status disconnected">
+            🔄 جاري فحص الاتصال...
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 اختبارات الربط</h3>
+            <button onclick="testBasicLinking()" class="success">اختبار ربط أساسي</button>
+            <button onclick="testLinkingWithVerification()" class="success">اختبار ربط مع التحقق</button>
+            <button onclick="testMultipleUnitsLinking()" class="warning">اختبار ربط متعدد</button>
+            <button onclick="testUnlinking()" class="danger">اختبار الفصل</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 فحص البيانات</h3>
+            <button onclick="checkSupabaseConnection()">فحص اتصال Supabase</button>
+            <button onclick="listRecentUnits()">عرض الوحدات الحديثة</button>
+            <button onclick="verifyLinkingFunction()">التحقق من دالة الربط</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🛠️ أدوات الإصلاح</h3>
+            <button onclick="fixLinkingIssues()" class="warning">إصلاح مشاكل الربط</button>
+            <button onclick="cleanupTestData()" class="danger">تنظيف بيانات الاختبار</button>
+        </div>
+        
+        <div id="results"></div>
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- تحميل المكتبات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        // متغيرات عامة
+        let testResults = [];
+        
+        // دالة تسجيل الأحداث
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logElement = document.getElementById('log');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(`${prefix} ${message}`);
+        }
+        
+        // دالة إضافة النتائج
+        function addResult(type, title, description) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `status ${type}`;
+            resultDiv.innerHTML = `<strong>${title}</strong><br>${description}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        // تحديث حالة الاتصال
+        function updateConnectionStatus(connected, message) {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.className = `connection-status ${connected ? 'connected' : 'disconnected'}`;
+            statusDiv.textContent = `${connected ? '🟢' : '🔴'} ${message}`;
+        }
+        
+        // فحص اتصال Supabase
+        async function checkSupabaseConnection() {
+            log('🔄 فحص اتصال Supabase...');
+            
+            try {
+                if (!supabaseClient) {
+                    throw new Error('Supabase client غير متوفر');
+                }
+                
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    throw new Error(`خطأ في الاتصال: ${error.message}`);
+                }
+                
+                updateConnectionStatus(true, 'متصل بـ Supabase');
+                addResult('success', '✅ اتصال Supabase', 'الاتصال يعمل بشكل طبيعي');
+                log('✅ اتصال Supabase يعمل بشكل طبيعي', 'success');
+                
+                return true;
+            } catch (error) {
+                updateConnectionStatus(false, 'خطأ في الاتصال');
+                addResult('error', '❌ خطأ في اتصال Supabase', error.message);
+                log(`❌ خطأ في اتصال Supabase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // اختبار ربط أساسي
+        async function testBasicLinking() {
+            log('🧪 بدء اختبار الربط الأساسي...');
+            
+            try {
+                // التحقق من وجود الدالة
+                if (typeof saveUnitLinkingToSupabase !== 'function') {
+                    throw new Error('دالة saveUnitLinkingToSupabase غير متوفرة');
+                }
+                
+                // إنشاء بيانات اختبار
+                const testData = {
+                    'رقم  الوحدة ': 'TEST-BASIC-' + Date.now(),
+                    'اسم العقار': 'عقار اختبار أساسي',
+                    'المدينة': 'الرياض',
+                    'اسم المستأجر': 'مستأجر اختبار',
+                    'رقم العقد': 'CONTRACT-BASIC-' + Date.now(),
+                    'قيمة  الايجار ': 1500,
+                    'المساحة': 100,
+                    'نوع العقد': 'سكني'
+                };
+                
+                log(`📝 بيانات الاختبار: ${testData['رقم  الوحدة ']}`);
+                
+                // تنفيذ الربط
+                const result = await saveUnitLinkingToSupabase(testData, 'link');
+                
+                if (result && result.id) {
+                    addResult('success', '✅ نجح الاختبار الأساسي', `تم حفظ الوحدة بمعرف: ${result.id}`);
+                    log(`✅ نجح الاختبار الأساسي - معرف السجل: ${result.id}`, 'success');
+                    return { success: true, id: result.id };
+                } else {
+                    throw new Error('لم يتم إرجاع معرف صحيح');
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ فشل الاختبار الأساسي', error.message);
+                log(`❌ فشل الاختبار الأساسي: ${error.message}`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // اختبار ربط مع التحقق
+        async function testLinkingWithVerification() {
+            log('🔍 بدء اختبار الربط مع التحقق...');
+            
+            try {
+                const linkResult = await testBasicLinking();
+                
+                if (!linkResult.success) {
+                    throw new Error('فشل في الربط الأساسي');
+                }
+                
+                // التحقق من الحفظ
+                log('🔍 التحقق من الحفظ في Supabase...');
+                const { data: verifyData, error: verifyError } = await supabaseClient
+                    .from('properties')
+                    .select('*')
+                    .eq('id', linkResult.id)
+                    .single();
+                
+                if (verifyError) {
+                    throw new Error(`خطأ في التحقق: ${verifyError.message}`);
+                }
+                
+                if (verifyData.tenant_name && verifyData.contract_number) {
+                    addResult('success', '✅ نجح التحقق', 'البيانات محفوظة بشكل صحيح في Supabase');
+                    log('✅ تم التحقق من الحفظ بنجاح', 'success');
+                    return { success: true, verified: true };
+                } else {
+                    throw new Error('البيانات غير مكتملة في Supabase');
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ فشل التحقق', error.message);
+                log(`❌ فشل التحقق: ${error.message}`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // اختبار ربط متعدد
+        async function testMultipleUnitsLinking() {
+            log('🔗 بدء اختبار ربط متعدد...');
+
+            try {
+                const contractNumber = 'MULTI-CONTRACT-' + Date.now();
+                const propertyName = 'عقار اختبار متعدد';
+                const results = [];
+
+                // إنشاء 3 وحدات للاختبار
+                for (let i = 1; i <= 3; i++) {
+                    const testData = {
+                        'رقم  الوحدة ': `MULTI-${i}-${Date.now()}`,
+                        'اسم العقار': propertyName,
+                        'المدينة': 'الرياض',
+                        'اسم المستأجر': `مستأجر متعدد ${i}`,
+                        'رقم العقد': contractNumber,
+                        'قيمة  الايجار ': 1000 + (i * 100),
+                        'المساحة': 80 + (i * 10),
+                        'نوع العقد': 'سكني'
+                    };
+
+                    log(`📝 ربط الوحدة ${i}: ${testData['رقم  الوحدة ']}`);
+                    const result = await saveUnitLinkingToSupabase(testData, 'link');
+
+                    if (result && result.id) {
+                        results.push(result);
+                        log(`✅ نجح ربط الوحدة ${i}`, 'success');
+                    } else {
+                        throw new Error(`فشل في ربط الوحدة ${i}`);
+                    }
+                }
+
+                addResult('success', '✅ نجح الاختبار المتعدد', `تم ربط ${results.length} وحدات بنجاح`);
+                log(`✅ تم ربط ${results.length} وحدات بنجاح`, 'success');
+                return { success: true, count: results.length };
+
+            } catch (error) {
+                addResult('error', '❌ فشل الاختبار المتعدد', error.message);
+                log(`❌ فشل الاختبار المتعدد: ${error.message}`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        // اختبار الفصل
+        async function testUnlinking() {
+            log('🔓 بدء اختبار الفصل...');
+
+            try {
+                // إنشاء وحدة مربوطة أولاً
+                const testData = {
+                    'رقم  الوحدة ': 'UNLINK-TEST-' + Date.now(),
+                    'اسم العقار': 'عقار اختبار الفصل',
+                    'المدينة': 'الرياض',
+                    'اسم المستأجر': 'مستأجر للفصل',
+                    'رقم العقد': 'CONTRACT-UNLINK-' + Date.now(),
+                    'قيمة  الايجار ': 1200,
+                    'المساحة': 90,
+                    'نوع العقد': 'سكني'
+                };
+
+                log('📝 إنشاء وحدة للفصل...');
+                const linkResult = await saveUnitLinkingToSupabase(testData, 'link');
+
+                if (!linkResult || !linkResult.id) {
+                    throw new Error('فشل في إنشاء الوحدة للفصل');
+                }
+
+                log('🔓 فصل الوحدة...');
+                const unlinkResult = await saveUnitLinkingToSupabase(testData, 'unlink');
+
+                if (unlinkResult && unlinkResult.id) {
+                    // التحقق من الفصل
+                    const { data: verifyData, error: verifyError } = await supabaseClient
+                        .from('properties')
+                        .select('tenant_name, contract_number')
+                        .eq('id', unlinkResult.id)
+                        .single();
+
+                    if (verifyError) {
+                        throw new Error(`خطأ في التحقق من الفصل: ${verifyError.message}`);
+                    }
+
+                    if (verifyData.tenant_name === '' && verifyData.contract_number === '') {
+                        addResult('success', '✅ نجح اختبار الفصل', 'تم فصل الوحدة بنجاح');
+                        log('✅ تم فصل الوحدة بنجاح', 'success');
+                        return { success: true };
+                    } else {
+                        throw new Error('لم يتم فصل الوحدة بشكل صحيح');
+                    }
+                } else {
+                    throw new Error('فشل في عملية الفصل');
+                }
+
+            } catch (error) {
+                addResult('error', '❌ فشل اختبار الفصل', error.message);
+                log(`❌ فشل اختبار الفصل: ${error.message}`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        // عرض الوحدات الحديثة
+        async function listRecentUnits() {
+            log('📋 عرض الوحدات الحديثة...');
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('id, unit_number, property_name, tenant_name, contract_number, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    throw new Error(`خطأ في جلب البيانات: ${error.message}`);
+                }
+
+                if (data && data.length > 0) {
+                    let listHtml = '<h4>آخر 10 وحدات:</h4><ul>';
+                    data.forEach(unit => {
+                        const isLinked = unit.tenant_name && unit.contract_number;
+                        listHtml += `<li>${unit.unit_number} - ${unit.property_name} ${isLinked ? '🔗' : '🔓'}</li>`;
+                    });
+                    listHtml += '</ul>';
+
+                    addResult('info', '📋 الوحدات الحديثة', listHtml);
+                    log(`📋 تم عرض ${data.length} وحدة`, 'success');
+                } else {
+                    addResult('info', 'ℹ️ لا توجد وحدات', 'لا توجد وحدات في قاعدة البيانات');
+                    log('ℹ️ لا توجد وحدات في قاعدة البيانات');
+                }
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في عرض الوحدات', error.message);
+                log(`❌ خطأ في عرض الوحدات: ${error.message}`, 'error');
+            }
+        }
+
+        // التحقق من دالة الربط
+        function verifyLinkingFunction() {
+            log('🔍 التحقق من دالة الربط...');
+
+            const checks = [
+                { name: 'saveUnitLinkingToSupabase', exists: typeof saveUnitLinkingToSupabase === 'function' },
+                { name: 'linkUnitToContract', exists: typeof linkUnitToContract === 'function' },
+                { name: 'unlinkUnit', exists: typeof unlinkUnit === 'function' },
+                { name: 'supabaseClient', exists: !!supabaseClient }
+            ];
+
+            let allGood = true;
+            checks.forEach(check => {
+                if (check.exists) {
+                    log(`✅ ${check.name} متوفرة`, 'success');
+                } else {
+                    log(`❌ ${check.name} غير متوفرة`, 'error');
+                    allGood = false;
+                }
+            });
+
+            if (allGood) {
+                addResult('success', '✅ جميع الدوال متوفرة', 'النظام جاهز للعمل');
+            } else {
+                addResult('error', '❌ بعض الدوال مفقودة', 'تحقق من تحميل الملفات المطلوبة');
+            }
+        }
+
+        // إصلاح مشاكل الربط
+        async function fixLinkingIssues() {
+            log('🛠️ بدء إصلاح مشاكل الربط...');
+
+            try {
+                // فحص شامل
+                await checkSupabaseConnection();
+                verifyLinkingFunction();
+
+                // اختبار سريع
+                const testResult = await testBasicLinking();
+
+                if (testResult.success) {
+                    addResult('success', '✅ لا توجد مشاكل', 'النظام يعمل بشكل طبيعي');
+                    log('✅ النظام يعمل بشكل طبيعي', 'success');
+                } else {
+                    addResult('warning', '⚠️ توجد مشاكل', 'تحقق من الأخطاء أعلاه');
+                    log('⚠️ توجد مشاكل في النظام', 'warning');
+                }
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في الإصلاح', error.message);
+                log(`❌ خطأ في الإصلاح: ${error.message}`, 'error');
+            }
+        }
+
+        // تنظيف بيانات الاختبار
+        async function cleanupTestData() {
+            log('🧹 بدء تنظيف بيانات الاختبار...');
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .delete()
+                    .like('unit_number', 'TEST-%')
+                    .or('unit_number.like.MULTI-%,unit_number.like.UNLINK-%,unit_number.like.QUICK-%');
+
+                if (error) {
+                    throw new Error(`خطأ في التنظيف: ${error.message}`);
+                }
+
+                addResult('success', '✅ تم التنظيف', 'تم حذف بيانات الاختبار');
+                log('✅ تم تنظيف بيانات الاختبار', 'success');
+
+            } catch (error) {
+                addResult('error', '❌ خطأ في التنظيف', error.message);
+                log(`❌ خطأ في التنظيف: ${error.message}`, 'error');
+            }
+        }
+
+        // بدء الفحص عند تحميل الصفحة
+        window.addEventListener('load', async () => {
+            log('🚀 بدء فحص النظام...');
+
+            // انتظار تحميل المكتبات
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // فحص الاتصال
+            await checkSupabaseConnection();
+
+            // التحقق من الدوال
+            verifyLinkingFunction();
+
+            log('✅ جاهز للاختبار');
+        });
+    </script>
+</body>
+</html>

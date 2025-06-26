@@ -4169,3 +4169,7 @@ async function refreshCardAttachmentsList(cardKey) {
         console.error('❌ خطأ في تحديث قائمة مرفقات البطاقة:', error);
     }
 }
+
+// Initialize Supabase when the script loads
+console.log('🚀 تحميل إعدادات Supabase...');
+initSupabase();

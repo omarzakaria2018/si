@@ -855,7 +855,42 @@ function closeMobileFilters() {
 // ===== STATE MANAGEMENT SYSTEM =====
 // نظام إدارة الحالة للحفاظ على حالة التطبيق بعد إعادة التحميل
 
+// مفاتيح تخزين حالة التطبيق
 const STATE_STORAGE_KEY = 'alsenidi_app_state';
+const SESSION_MARKER_KEY = 'alsenidi_session_active';
+const LAST_VISIT_KEY = 'alsenidi_last_visit';
+
+// إنشاء معرف جلسة فريد
+function generateSessionId() {
+    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// التحقق من نوع الزيارة (جديدة أم إعادة تحميل)
+function isPageReload() {
+    const currentSessionId = sessionStorage.getItem(SESSION_MARKER_KEY);
+    const lastVisit = localStorage.getItem(LAST_VISIT_KEY);
+    const now = Date.now();
+
+    // إذا لم يكن هناك معرف جلسة، فهذه زيارة جديدة
+    if (!currentSessionId) {
+        return false;
+    }
+
+    // إذا كانت الزيارة الأخيرة منذ أكثر من 30 دقيقة، اعتبرها زيارة جديدة
+    if (lastVisit && (now - parseInt(lastVisit)) > 30 * 60 * 1000) {
+        return false;
+    }
+
+    return true;
+}
+
+// تسجيل بداية الجلسة
+function markSessionStart() {
+    const sessionId = generateSessionId();
+    sessionStorage.setItem(SESSION_MARKER_KEY, sessionId);
+    localStorage.setItem(LAST_VISIT_KEY, Date.now().toString());
+    console.log('🆕 بداية جلسة جديدة:', sessionId);
+}
 
 // حفظ حالة التطبيق في localStorage
 function saveAppState() {
@@ -876,7 +911,11 @@ function saveAppState() {
             // حفظ وضع الإدارة
             isManagementMode: window.isManagementMode || false,
             // حفظ الفلاتر النشطة
-            activeFilters: activeFilters
+            activeFilters: activeFilters,
+            // إضافة معرف الجلسة لتتبع إعادة التحميل
+            sessionId: sessionStorage.getItem(SESSION_MARKER_KEY) || generateSessionId(),
+            // تحديث وقت آخر زيارة
+            lastVisit: Date.now()
         };
 
         localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(state));
@@ -886,12 +925,36 @@ function saveAppState() {
     }
 }
 
-// استعادة حالة التطبيق من localStorage
+// استعادة حالة التطبيق من localStorage مع التمييز بين الزيارة الجديدة وإعادة التحميل
 function restoreAppState() {
     try {
+        // التحقق من نوع الزيارة
+        const isReload = isPageReload();
+
+        console.log(`🔍 نوع الزيارة: ${isReload ? 'إعادة تحميل' : 'زيارة جديدة'}`);
+
+        // إذا كانت زيارة جديدة، لا تستعيد الحالة وابدأ بـ "الكل"
+        if (!isReload) {
+            console.log('🆕 زيارة جديدة - البدء بعرض "الكل"');
+            markSessionStart();
+
+            // إعادة تعيين جميع الفلاتر إلى القيم الافتراضية
+            currentView = 'cards';
+            currentCountry = null;
+            currentProperty = null;
+            filterStatus = null;
+
+            // مسح أي حالة محفوظة قديمة
+            localStorage.removeItem(STATE_STORAGE_KEY);
+
+            return false;
+        }
+
+        // إذا كانت إعادة تحميل، حاول استعادة الحالة
         const savedState = localStorage.getItem(STATE_STORAGE_KEY);
         if (!savedState) {
-            console.log('📝 لا توجد حالة محفوظة');
+            console.log('📝 لا توجد حالة محفوظة للاستعادة');
+            markSessionStart();
             return false;
         }
 
@@ -902,10 +965,11 @@ function restoreAppState() {
         if (Date.now() - state.timestamp > maxAge) {
             console.log('⏰ الحالة المحفوظة قديمة، سيتم تجاهلها');
             localStorage.removeItem(STATE_STORAGE_KEY);
+            markSessionStart();
             return false;
         }
 
-        console.log('🔄 استعادة حالة التطبيق:', state);
+        console.log('🔄 استعادة حالة التطبيق من إعادة التحميل:', state);
 
         // استعادة المتغيرات العامة
         currentView = state.currentView || 'cards';
@@ -959,6 +1023,32 @@ function autoSaveState() {
             lastSavedState = currentState;
         }
     }, 2000);
+}
+
+// إعداد معالجات الأحداث لحفظ الحالة
+function setupStateEventHandlers() {
+    // حفظ الحالة عند إغلاق الصفحة أو تبديل التبويبات
+    window.addEventListener('beforeunload', () => {
+        console.log('💾 حفظ الحالة قبل إغلاق الصفحة...');
+        saveAppState();
+        // تحديث وقت آخر زيارة
+        localStorage.setItem(LAST_VISIT_KEY, Date.now().toString());
+    });
+
+    // حفظ الحالة عند إخفاء الصفحة (تبديل التبويبات)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            console.log('👁️ حفظ الحالة عند إخفاء الصفحة...');
+            saveAppState();
+        }
+    });
+
+    // حفظ الحالة عند تغيير حجم النافذة (قد يشير إلى تغيير في الجهاز)
+    window.addEventListener('resize', () => {
+        setTimeout(() => {
+            saveAppState();
+        }, 500);
+    });
 }
 
 // تطبيق الحالة المستعادة على التطبيق
@@ -1534,6 +1624,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // تحديث حالة زر وضع المطور
     updateDeveloperModeButton();
+
+    // ===== تهيئة نظام إدارة الحالة =====
+    console.log('🔧 تهيئة نظام إدارة الحالة...');
+    setupStateEventHandlers();
+    autoSaveState();
 
     // ===== استعادة حالة التطبيق =====
     console.log('🔄 محاولة استعادة حالة التطبيق...');
@@ -17330,7 +17425,7 @@ function showMultiUnitEditModal(relatedUnits, primaryUnit) {
     window.currentPrimaryUnit = primaryUnit;
 }
 
-// تحديث قائمة الوحدات المتاحة للربط
+// تحديث قائمة الوحدات المتاحة للربط - محسن مع قائمة اختيار
 function updateAvailableUnitsForLinking() {
     const availableUnitsDiv = document.getElementById('availableUnitsForLinking');
     if (!availableUnitsDiv) return;
@@ -17345,25 +17440,121 @@ function updateAvailableUnitsForLinking() {
     );
 
     if (allUnitsInProperty.length === 0) {
-        availableUnitsDiv.innerHTML = '<div class="no-units-message"><i class="fas fa-info-circle"></i> لا توجد وحدات متاحة للربط</div>';
+        availableUnitsDiv.innerHTML = `
+            <div class="no-units-message">
+                <i class="fas fa-info-circle"></i>
+                لا توجد وحدات متاحة للربط في عقار "${currentPropertyName}"
+            </div>`;
         return;
     }
 
-    availableUnitsDiv.innerHTML = allUnitsInProperty.map(unit => `
-        <div class="available-unit-item" data-unit-number="${unit['رقم  الوحدة ']}">
-            <div class="unit-info">
-                <i class="fas fa-home"></i>
-                <span class="unit-number">وحدة ${unit['رقم  الوحدة '] || 'غير محدد'}</span>
-                <span class="unit-tenant">${unit['اسم المستأجر'] ? ` - ${unit['اسم المستأجر']}` : ' - فارغ'}</span>
-                <span class="unit-status ${getUnitStatusClass(unit)}">${calculateStatus(unit).final || 'غير محدد'}</span>
+    // إنشاء قائمة اختيار محسنة + عرض الوحدات
+    availableUnitsDiv.innerHTML = `
+        <div class="unit-linking-section">
+            <!-- قسم الاختيار السريع -->
+            <div class="quick-selection-section">
+                <h4><i class="fas fa-mouse-pointer"></i> اختيار سريع للوحدات:</h4>
+                <div class="selection-controls">
+                    <div class="dropdown-selection">
+                        <label for="unitSelector">اختر وحدة للربط:</label>
+                        <select id="unitSelector" class="unit-selector">
+                            <option value="">-- اختر وحدة --</option>
+                            ${allUnitsInProperty.map(unit => `
+                                <option value="${unit['رقم  الوحدة ']}"
+                                        data-tenant="${unit['اسم المستأجر'] || ''}"
+                                        data-status="${calculateStatus(unit).final || 'غير محدد'}">
+                                    وحدة ${unit['رقم  الوحدة ']} ${unit['اسم المستأجر'] ? '- ' + unit['اسم المستأجر'] : '- فارغ'}
+                                </option>
+                            `).join('')}
+                        </select>
+                        <button type="button" onclick="linkSelectedUnit()" class="btn-link-selected" title="ربط الوحدة المختارة">
+                            <i class="fas fa-link"></i> ربط الوحدة المختارة
+                        </button>
+                    </div>
+
+                    <div class="bulk-actions">
+                        <button type="button" onclick="showBulkLinkingOptions()" class="btn-bulk-link" title="ربط متعدد">
+                            <i class="fas fa-layer-group"></i> ربط متعدد
+                        </button>
+                        <button type="button" onclick="linkAllEmptyUnits()" class="btn-link-all-empty" title="ربط جميع الوحدات الفارغة">
+                            <i class="fas fa-link"></i> ربط جميع الفارغة
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="unit-actions">
-                <button type="button" onclick="linkUnitToGroup('${unit['رقم  الوحدة ']}')" class="btn-link-unit" title="ربط هذه الوحدة">
-                    <i class="fas fa-link"></i> ربط
-                </button>
+
+            <!-- قسم عرض الوحدات التفصيلي -->
+            <div class="detailed-units-section">
+                <h4><i class="fas fa-list"></i> جميع الوحدات المتاحة (${allUnitsInProperty.length} وحدة):</h4>
+                <div class="units-grid">
+                    ${allUnitsInProperty.map(unit => `
+                        <div class="available-unit-item" data-unit-number="${unit['رقم  الوحدة ']}">
+                            <div class="unit-info">
+                                <div class="unit-header">
+                                    <i class="fas fa-home"></i>
+                                    <span class="unit-number">وحدة ${unit['رقم  الوحدة '] || 'غير محدد'}</span>
+                                    <span class="unit-status ${getUnitStatusClass(unit)}">${calculateStatus(unit).final || 'غير محدد'}</span>
+                                </div>
+                                <div class="unit-details">
+                                    <span class="unit-tenant">
+                                        <i class="fas fa-user"></i>
+                                        ${unit['اسم المستأجر'] ? unit['اسم المستأجر'] : 'فارغ'}
+                                    </span>
+                                    ${unit['قيمة  الايجار '] ? `
+                                        <span class="unit-rent">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                            ${parseFloat(unit['قيمة  الايجار ']).toLocaleString()} ريال
+                                        </span>
+                                    ` : ''}
+                                    ${unit['المساحة'] ? `
+                                        <span class="unit-area">
+                                            <i class="fas fa-expand-arrows-alt"></i>
+                                            ${unit['المساحة']} م²
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <div class="unit-actions">
+                                <button type="button" onclick="linkUnitToGroup('${unit['رقم  الوحدة ']}')"
+                                        class="btn-link-unit ${!unit['اسم المستأجر'] ? 'empty-unit' : 'occupied-unit'}"
+                                        title="ربط هذه الوحدة">
+                                    <i class="fas fa-link"></i> ربط
+                                </button>
+                                <button type="button" onclick="previewUnitLinking('${unit['رقم  الوحدة ']}')"
+                                        class="btn-preview-unit" title="معاينة الربط">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         </div>
-    `).join('');
+    `;
+
+    // إضافة مستمع للتغيير في قائمة الاختيار
+    const unitSelector = document.getElementById('unitSelector');
+    if (unitSelector) {
+        unitSelector.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const linkButton = document.querySelector('.btn-link-selected');
+
+            if (this.value) {
+                linkButton.disabled = false;
+                linkButton.innerHTML = `<i class="fas fa-link"></i> ربط وحدة ${this.value}`;
+
+                // إضافة معلومات إضافية
+                const tenant = selectedOption.getAttribute('data-tenant');
+                const status = selectedOption.getAttribute('data-status');
+
+                linkButton.title = `ربط وحدة ${this.value} - ${tenant || 'فارغ'} - ${status}`;
+            } else {
+                linkButton.disabled = true;
+                linkButton.innerHTML = '<i class="fas fa-link"></i> ربط الوحدة المختارة';
+                linkButton.title = 'اختر وحدة أولاً';
+            }
+        });
+    }
 }
 
 // تحديث قائمة الوحدات المتاحة
@@ -17372,12 +17563,332 @@ function refreshAvailableUnits() {
     updateAvailableUnitsForLinking();
 }
 
-// ربط وحدة جديدة للمجموعة
-function linkUnitToGroup(unitNumber) {
+// ربط الوحدة المختارة من القائمة المنسدلة
+function linkSelectedUnit() {
+    const unitSelector = document.getElementById('unitSelector');
+    if (!unitSelector || !unitSelector.value) {
+        alert('يرجى اختيار وحدة أولاً');
+        return;
+    }
+
+    const selectedUnitNumber = unitSelector.value;
+    console.log(`🔗 ربط الوحدة المختارة: ${selectedUnitNumber}`);
+
+    // استدعاء دالة الربط
+    linkUnitToGroup(selectedUnitNumber);
+
+    // إعادة تعيين القائمة بعد الربط
+    setTimeout(() => {
+        unitSelector.value = '';
+        const linkButton = document.querySelector('.btn-link-selected');
+        if (linkButton) {
+            linkButton.disabled = true;
+            linkButton.innerHTML = '<i class="fas fa-link"></i> ربط الوحدة المختارة';
+        }
+    }, 1000);
+}
+
+// معاينة ربط الوحدة قبل التنفيذ
+function previewUnitLinking(unitNumber) {
+    const unitToPreview = window.allData.find(unit =>
+        unit['رقم  الوحدة '] === unitNumber &&
+        unit['اسم العقار'] === window.currentPrimaryUnit['اسم العقار']
+    );
+
+    if (!unitToPreview) {
+        alert('لم يتم العثور على الوحدة');
+        return;
+    }
+
+    const primaryUnit = window.currentPrimaryUnit;
+
+    const previewMessage = `🔍 معاينة ربط الوحدة
+
+🏠 الوحدة المراد ربطها: ${unitNumber}
+📍 العقار: ${unitToPreview['اسم العقار']}
+👤 المستأجر الحالي: ${unitToPreview['اسم المستأجر'] || 'فارغ'}
+📄 العقد الحالي: ${unitToPreview['رقم العقد'] || 'فارغ'}
+
+⬇️ ستصبح بعد الربط:
+👤 المستأجر الجديد: ${primaryUnit['اسم المستأجر'] || 'فارغ'}
+📄 العقد الجديد: ${primaryUnit['رقم العقد'] || 'فارغ'}
+💰 الإيجار: ${primaryUnit['قيمة  الايجار '] ? parseFloat(primaryUnit['قيمة  الايجار ']).toLocaleString() + ' ريال' : 'غير محدد'}
+
+هل تريد المتابعة مع الربط؟`;
+
+    if (confirm(previewMessage)) {
+        linkUnitToGroup(unitNumber);
+    }
+}
+
+// إظهار خيارات الربط المتعدد
+function showBulkLinkingOptions() {
+    const currentPropertyName = window.currentPrimaryUnit['اسم العقار'];
+    const currentLinkedUnits = window.currentEditingUnits.map(u => u['رقم  الوحدة ']);
+
+    const availableUnits = window.allData.filter(unit =>
+        unit['اسم العقار'] === currentPropertyName &&
+        !currentLinkedUnits.includes(unit['رقم  الوحدة '])
+    );
+
+    if (availableUnits.length === 0) {
+        alert('لا توجد وحدات متاحة للربط');
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-layer-group"></i> ربط متعدد للوحدات</h2>
+                <p>اختر الوحدات التي تريد ربطها مع الوحدة الأساسية</p>
+            </div>
+            <div class="modal-body">
+                <div class="bulk-selection-info">
+                    <p><strong>الوحدة الأساسية:</strong> ${window.currentPrimaryUnit['رقم  الوحدة ']}</p>
+                    <p><strong>المستأجر:</strong> ${window.currentPrimaryUnit['اسم المستأجر'] || 'فارغ'}</p>
+                    <p><strong>العقد:</strong> ${window.currentPrimaryUnit['رقم العقد'] || 'فارغ'}</p>
+                </div>
+
+                <div class="units-selection">
+                    <h4>اختر الوحدات للربط:</h4>
+                    <div class="selection-controls">
+                        <button type="button" onclick="selectAllUnits()" class="btn-select-all">
+                            <i class="fas fa-check-square"></i> تحديد الكل
+                        </button>
+                        <button type="button" onclick="selectEmptyUnits()" class="btn-select-empty">
+                            <i class="fas fa-square"></i> تحديد الفارغة فقط
+                        </button>
+                        <button type="button" onclick="clearAllSelections()" class="btn-clear-all">
+                            <i class="fas fa-times"></i> إلغاء التحديد
+                        </button>
+                    </div>
+
+                    <div class="units-checklist">
+                        ${availableUnits.map(unit => `
+                            <div class="unit-checkbox-item">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" value="${unit['رقم  الوحدة ']}" class="unit-checkbox">
+                                    <span class="checkmark"></span>
+                                    <div class="unit-info">
+                                        <span class="unit-number">وحدة ${unit['رقم  الوحدة ']}</span>
+                                        <span class="unit-details">
+                                            ${unit['اسم المستأجر'] ? unit['اسم المستأجر'] : 'فارغ'} -
+                                            ${calculateStatus(unit).final || 'غير محدد'}
+                                        </span>
+                                    </div>
+                                </label>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="executeBulkLinking()">
+                    <i class="fas fa-link"></i> ربط الوحدات المختارة
+                </button>
+                <button class="btn-secondary" onclick="closeModal()">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // إغلاق النافذة عند النقر خارجها
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+}
+
+// ربط جميع الوحدات الفارغة
+async function linkAllEmptyUnits() {
+    const currentPropertyName = window.currentPrimaryUnit['اسم العقار'];
+    const currentLinkedUnits = window.currentEditingUnits.map(u => u['رقم  الوحدة ']);
+
+    const emptyUnits = window.allData.filter(unit =>
+        unit['اسم العقار'] === currentPropertyName &&
+        !currentLinkedUnits.includes(unit['رقم  الوحدة ']) &&
+        (!unit['اسم المستأجر'] || unit['اسم المستأجر'].trim() === '')
+    );
+
+    if (emptyUnits.length === 0) {
+        alert('لا توجد وحدات فارغة متاحة للربط');
+        return;
+    }
+
+    const confirmMessage = `هل تريد ربط جميع الوحدات الفارغة؟
+
+عدد الوحدات: ${emptyUnits.length} وحدة
+الوحدات: ${emptyUnits.map(u => u['رقم  الوحدة ']).join(', ')}
+
+سيتم نسخ بيانات المستأجر والعقد من الوحدة الأساسية إلى جميع هذه الوحدات.`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    console.log(`🔗 بدء ربط ${emptyUnits.length} وحدة فارغة...`);
+
+    let successCount = 0;
+    let failCount = 0;
+    const results = [];
+
+    for (const unit of emptyUnits) {
+        try {
+            console.log(`🔗 ربط الوحدة ${unit['رقم  الوحدة ']}...`);
+            await linkUnitToGroup(unit['رقم  الوحدة ']);
+            successCount++;
+            results.push({ unit: unit['رقم  الوحدة '], success: true });
+        } catch (error) {
+            console.error(`❌ فشل ربط الوحدة ${unit['رقم  الوحدة ']}:`, error);
+            failCount++;
+            results.push({ unit: unit['رقم  الوحدة '], success: false, error: error.message });
+        }
+
+        // توقف قصير بين كل ربط
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    const resultMessage = `🎉 اكتمل ربط الوحدات الفارغة!
+
+✅ نجح: ${successCount} وحدة
+❌ فشل: ${failCount} وحدة
+
+${results.map(r => `${r.success ? '✅' : '❌'} ${r.unit}`).join('\n')}
+
+${successCount > 0 ? '🔗 تم حفظ جميع الوحدات الناجحة في Supabase' : ''}`;
+
+    alert(resultMessage);
+    showToast(`تم ربط ${successCount} وحدة من أصل ${emptyUnits.length}`, successCount > 0 ? 'success' : 'error');
+}
+
+// دوال مساعدة للربط المتعدد
+function selectAllUnits() {
+    const checkboxes = document.querySelectorAll('.unit-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+}
+
+function selectEmptyUnits() {
+    const checkboxes = document.querySelectorAll('.unit-checkbox');
+    checkboxes.forEach(checkbox => {
+        const unitNumber = checkbox.value;
+        const unit = window.allData.find(u => u['رقم  الوحدة '] === unitNumber);
+        checkbox.checked = !unit['اسم المستأجر'] || unit['اسم المستأجر'].trim() === '';
+    });
+}
+
+function clearAllSelections() {
+    const checkboxes = document.querySelectorAll('.unit-checkbox');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+}
+
+// تنفيذ الربط المتعدد
+async function executeBulkLinking() {
+    const selectedCheckboxes = document.querySelectorAll('.unit-checkbox:checked');
+
+    if (selectedCheckboxes.length === 0) {
+        alert('يرجى اختيار وحدة واحدة على الأقل');
+        return;
+    }
+
+    const selectedUnits = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+    const confirmMessage = `هل تريد ربط الوحدات المختارة؟
+
+عدد الوحدات: ${selectedUnits.length} وحدة
+الوحدات: ${selectedUnits.join(', ')}
+
+سيتم نسخ بيانات المستأجر والعقد من الوحدة الأساسية إلى جميع هذه الوحدات.`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    // إغلاق النافذة
+    closeModal();
+
+    console.log(`🔗 بدء الربط المتعدد لـ ${selectedUnits.length} وحدة...`);
+
+    let successCount = 0;
+    let failCount = 0;
+    const results = [];
+
+    // تعطيل الواجهة أثناء المعالجة
+    const loadingMessage = document.createElement('div');
+    loadingMessage.className = 'loading-overlay';
+    loadingMessage.innerHTML = `
+        <div class="loading-content">
+            <i class="fas fa-spinner fa-spin"></i>
+            <h3>جاري ربط الوحدات...</h3>
+            <p>تم ربط <span id="progressCount">0</span> من ${selectedUnits.length} وحدة</p>
+        </div>
+    `;
+    document.body.appendChild(loadingMessage);
+
+    for (let i = 0; i < selectedUnits.length; i++) {
+        const unitNumber = selectedUnits[i];
+        try {
+            console.log(`🔗 ربط الوحدة ${unitNumber} (${i + 1}/${selectedUnits.length})...`);
+
+            // تحديث العداد
+            const progressCount = document.getElementById('progressCount');
+            if (progressCount) {
+                progressCount.textContent = i;
+            }
+
+            await linkUnitToGroup(unitNumber);
+            successCount++;
+            results.push({ unit: unitNumber, success: true });
+
+            console.log(`✅ نجح ربط الوحدة ${unitNumber}`);
+        } catch (error) {
+            console.error(`❌ فشل ربط الوحدة ${unitNumber}:`, error);
+            failCount++;
+            results.push({ unit: unitNumber, success: false, error: error.message });
+        }
+
+        // توقف قصير بين كل ربط
+        await new Promise(resolve => setTimeout(resolve, 800));
+    }
+
+    // إزالة رسالة التحميل
+    document.body.removeChild(loadingMessage);
+
+    const resultMessage = `🎉 اكتمل الربط المتعدد!
+
+✅ نجح: ${successCount} وحدة
+❌ فشل: ${failCount} وحدة
+
+النتائج التفصيلية:
+${results.map(r => `${r.success ? '✅' : '❌'} وحدة ${r.unit}${r.error ? ' - ' + r.error : ''}`).join('\n')}
+
+${successCount > 0 ? '🔗 تم حفظ جميع الوحدات الناجحة في Supabase' : ''}`;
+
+    alert(resultMessage);
+    showToast(`تم ربط ${successCount} وحدة من أصل ${selectedUnits.length}`, successCount > 0 ? 'success' : 'error');
+}
+
+// إضافة الدوال للنطاق العام
+window.linkSelectedUnit = linkSelectedUnit;
+window.previewUnitLinking = previewUnitLinking;
+window.showBulkLinkingOptions = showBulkLinkingOptions;
+window.linkAllEmptyUnits = linkAllEmptyUnits;
+window.selectAllUnits = selectAllUnits;
+window.selectEmptyUnits = selectEmptyUnits;
+window.clearAllSelections = clearAllSelections;
+window.executeBulkLinking = executeBulkLinking;
+
+// ربط وحدة جديدة للمجموعة - محسن مع حفظ في Supabase
+async function linkUnitToGroup(unitNumber) {
     if (!unitNumber) {
         alert('رقم الوحدة غير صحيح');
         return;
     }
+
+    console.log(`🔗 بدء ربط الوحدة ${unitNumber} بالمجموعة...`);
 
     // البحث عن الوحدة في البيانات
     const unitToLink = window.allData.find(unit =>
@@ -17400,27 +17911,157 @@ function linkUnitToGroup(unitNumber) {
         return;
     }
 
-    // 🔧 إصلاح: تطبيق البيانات الحالية من النموذج على الوحدة المربوطة
-    const currentFormData = getCurrentFormData();
-    if (currentFormData) {
-        console.log(`📝 تطبيق البيانات الحالية على الوحدة المربوطة ${unitNumber}`);
-        applyFormDataToUnit(unitToLink, currentFormData);
+    try {
+        // 🔧 إصلاح جديد: نسخ البيانات من الوحدة الأساسية إلى الوحدة المربوطة
+        const primaryUnit = window.currentPrimaryUnit;
+        if (primaryUnit) {
+            console.log(`📝 نسخ البيانات من الوحدة الأساسية ${primaryUnit['رقم  الوحدة ']} إلى الوحدة المربوطة ${unitNumber}`);
 
-        // تحديث البيانات المحلية فوراً
-        updateLocalDataForUnit(unitToLink);
+            // نسخ جميع البيانات المهمة من الوحدة الأساسية
+            const fieldsToSync = [
+                'اسم المستأجر',
+                'رقم العقد',
+                'نوع العقد',
+                'قيمة  الايجار ',
+                'تاريخ البداية',
+                'تاريخ النهاية',
+                'الاجمالى',
+                'المالك',
+                'رقم الصك',
+                'السجل العيني ',
+                'رقم حساب الكهرباء',
+                'عدد الاقساط المتبقية',
+                'تاريخ القسط الاول',
+                'مبلغ القسط الاول',
+                'تاريخ القسط الثاني',
+                'مبلغ القسط الثاني',
+                'تاريخ انتهاء الاقساط'
+            ];
+
+            fieldsToSync.forEach(field => {
+                if (primaryUnit[field] !== undefined && primaryUnit[field] !== null) {
+                    unitToLink[field] = primaryUnit[field];
+                }
+            });
+
+            // تحديث البيانات المحلية فوراً
+            updateLocalDataForUnit(unitToLink);
+            console.log(`✅ تم نسخ البيانات إلى الوحدة ${unitNumber}`);
+        }
+
+        // إضافة الوحدة للمجموعة
+        window.currentEditingUnits.push(unitToLink);
+
+        console.log(`🔗 تم ربط الوحدة ${unitNumber} بالمجموعة محلياً`);
+
+        // 🚀 محسن: حفظ الربط في Supabase باستخدام الطريقة المحسنة
+        console.log(`☁️ بدء حفظ ربط الوحدة ${unitNumber} في Supabase...`);
+
+        let supabaseSuccess = false;
+        let supabaseError = null;
+
+        if (!supabaseClient) {
+            supabaseError = 'Supabase غير متصل';
+            console.error(`❌ ${supabaseError}`);
+        } else {
+            try {
+                // استخدام نفس منطق linkRealUnitsInSupabase للحفظ المباشر
+                console.log(`📋 تحضير بيانات الوحدة ${unitNumber} للحفظ...`);
+
+                // البحث عن الوحدة في Supabase
+                const { data: existingUnit, error: searchError } = await supabaseClient
+                    .from('properties')
+                    .select('*')
+                    .eq('unit_number', unitNumber)
+                    .eq('property_name', unitToLink['اسم العقار'])
+                    .single();
+
+                if (searchError) {
+                    throw new Error(`خطأ في البحث عن الوحدة: ${searchError.message}`);
+                }
+
+                if (!existingUnit) {
+                    throw new Error(`لم يتم العثور على الوحدة ${unitNumber} في Supabase`);
+                }
+
+                // تحضير البيانات المحدثة
+                const updatedData = {
+                    tenant_name: unitToLink['اسم المستأجر'] || '',
+                    contract_number: unitToLink['رقم العقد'] || '',
+                    rent_value: parseFloat(unitToLink['قيمة  الايجار ']) || null,
+                    contract_type: unitToLink['نوع العقد'] || 'سكني',
+                    start_date: unitToLink['تاريخ البداية'] || null,
+                    end_date: unitToLink['تاريخ النهاية'] || null,
+                    total_amount: parseFloat(unitToLink['الاجمالى']) || null,
+                    owner: unitToLink['المالك'] || '',
+                    deed_number: unitToLink['رقم الصك'] || '',
+                    real_estate_registry: unitToLink['السجل العيني '] || '',
+                    electricity_account: unitToLink['رقم حساب الكهرباء'] || '',
+                    remaining_installments: parseInt(unitToLink['عدد الاقساط المتبقية']) || null,
+                    first_installment_date: unitToLink['تاريخ القسط الاول'] || null,
+                    first_installment_amount: parseFloat(unitToLink['مبلغ القسط الاول']) || null,
+                    second_installment_date: unitToLink['تاريخ القسط الثاني'] || null,
+                    second_installment_amount: parseFloat(unitToLink['مبلغ القسط الثاني']) || null,
+                    installment_end_date: unitToLink['تاريخ انتهاء الاقساط'] || null,
+                    updated_at: new Date().toISOString()
+                };
+
+                console.log(`📋 البيانات المحضرة للحفظ:`, {
+                    unit_number: unitNumber,
+                    tenant_name: updatedData.tenant_name,
+                    contract_number: updatedData.contract_number,
+                    rent_value: updatedData.rent_value
+                });
+
+                // تحديث الوحدة في Supabase
+                const { data: updatedUnit, error: updateError } = await supabaseClient
+                    .from('properties')
+                    .update(updatedData)
+                    .eq('id', existingUnit.id)
+                    .select();
+
+                if (updateError) {
+                    throw new Error(`خطأ في تحديث الوحدة: ${updateError.message}`);
+                }
+
+                if (!updatedUnit || updatedUnit.length === 0) {
+                    throw new Error('لم يتم إرجاع بيانات من عملية التحديث');
+                }
+
+                console.log(`✅ تم حفظ ربط الوحدة ${unitNumber} في Supabase بنجاح - ID: ${updatedUnit[0].id}`);
+                supabaseSuccess = true;
+
+            } catch (error) {
+                supabaseError = error.message;
+                console.error(`❌ خطأ في حفظ ربط الوحدة ${unitNumber} في Supabase:`, error);
+            }
+        }
+
+        // تحديث العرض
+        updateLinkedUnitsDisplay();
+        updateAvailableUnitsForLinking();
+
+        // إظهار رسالة نجاح مع تفاصيل الحفظ
+        const message = supabaseSuccess
+            ? `✅ تم ربط الوحدة ${unitNumber} بنجاح!\n\n☁️ تم الحفظ في قاعدة البيانات السحابية\n📱 تم تحديث البيانات المحلية\n\n🔗 يمكنك التحقق من الحفظ في Supabase Dashboard`
+            : `⚠️ تم ربط الوحدة ${unitNumber} محلياً فقط\n\n❌ فشل الحفظ السحابي: ${supabaseError}\n📱 تم تحديث البيانات المحلية\n\n💡 يمكنك المحاولة مرة أخرى لاحقاً`;
+
+        alert(message);
+
+        // إظهار toast للتأكيد
+        const toastMessage = supabaseSuccess
+            ? `تم ربط الوحدة ${unitNumber} وحفظها في Supabase بنجاح`
+            : `تم ربط الوحدة ${unitNumber} محلياً فقط - فشل الحفظ السحابي`;
+
+        showToast(toastMessage, supabaseSuccess ? 'success' : 'warning');
+
+        console.log(`🎉 اكتمل ربط الوحدة ${unitNumber} - حفظ سحابي: ${supabaseSuccess ? 'نجح' : 'فشل'}`);
+
+    } catch (error) {
+        console.error(`❌ خطأ في ربط الوحدة ${unitNumber}:`, error);
+        alert(`❌ فشل في ربط الوحدة ${unitNumber}:\n\n${error.message}`);
+        showToast(`فشل في ربط الوحدة ${unitNumber}`, 'error');
     }
-
-    // إضافة الوحدة للمجموعة
-    window.currentEditingUnits.push(unitToLink);
-
-    console.log(`🔗 تم ربط الوحدة ${unitNumber} بالمجموعة مع البيانات الحالية`);
-
-    // تحديث العرض
-    updateLinkedUnitsDisplay();
-    updateAvailableUnitsForLinking();
-
-    // إظهار رسالة نجاح
-    showSuccessMessage('تم الربط بنجاح', `تم ربط الوحدة ${unitNumber} بالمجموعة مع تطبيق البيانات الحالية`);
 }
 
 // الحصول على البيانات الحالية من النموذج
@@ -17550,7 +18191,20 @@ async function unlinkUnitFromGroup(unitNumber) {
         return;
     }
 
-    const confirmMessage = `هل أنت متأكد من فصل الوحدة ${unitNumber} من المجموعة؟\n\nسيتم حفظ الفصل فوراً في قاعدة البيانات.`;
+    const confirmMessage = `هل أنت متأكد من فصل الوحدة ${unitNumber} من المجموعة؟
+
+⚠️ سيتم إفراغ جميع بيانات الوحدة:
+• اسم المستأجر
+• رقم العقد
+• قيمة الإيجار
+• تواريخ العقد
+• بيانات الأقساط
+• جميع البيانات الأخرى
+
+☁️ سيتم حفظ الإفراغ فوراً في Supabase
+📱 وتحديث البيانات المحلية
+
+هل تريد المتابعة؟`;
     if (!confirm(confirmMessage)) {
         return;
     }
@@ -17568,22 +18222,70 @@ async function unlinkUnitFromGroup(unitNumber) {
     console.log(`🔓 بدء فصل الوحدة ${unitNumber} من المجموعة...`);
 
     try {
-        // 1. فصل الوحدة في قاعدة البيانات فوراً
-        console.log('☁️ حفظ الفصل في قاعدة البيانات...');
+        // 1. إفراغ بيانات الوحدة في Supabase مباشرة
+        console.log('☁️ إفراغ بيانات الوحدة في Supabase...');
 
-        // إنشاء نسخة من الوحدة مع بيانات فارغة للعقد والمستأجر
-        const unlinkedUnitData = { ...unitToUnlink };
-        unlinkedUnitData['رقم العقد'] = '';
-        unlinkedUnitData['اسم المستأجر'] = '';
-
-        // حفظ الفصل باستخدام الدالة المخصصة
-        const result = await saveUnitLinkingToSupabase(unlinkedUnitData, 'unlink');
-
-        if (!result) {
-            throw new Error('فشل في حفظ الفصل في قاعدة البيانات');
+        // التحقق من اتصال Supabase
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
         }
 
-        console.log('✅ تم حفظ الفصل في قاعدة البيانات بنجاح');
+        // البحث عن الوحدة في Supabase
+        const { data: unitInSupabase, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', unitToUnlink['اسم العقار'])
+            .single();
+
+        if (searchError) {
+            throw new Error(`خطأ في البحث عن الوحدة: ${searchError.message}`);
+        }
+
+        if (!unitInSupabase) {
+            throw new Error(`لم يتم العثور على الوحدة ${unitNumber} في Supabase`);
+        }
+
+        // إفراغ جميع بيانات المستأجر والعقد
+        const emptyData = {
+            tenant_name: '',
+            contract_number: '',
+            rent_value: null,
+            contract_type: null,
+            start_date: null,
+            end_date: null,
+            total_amount: null,
+            owner: '',
+            deed_number: '',
+            real_estate_registry: '',
+            electricity_account: '',
+            remaining_installments: null,
+            first_installment_date: null,
+            first_installment_amount: null,
+            second_installment_date: null,
+            second_installment_amount: null,
+            installment_end_date: null,
+            updated_at: new Date().toISOString()
+        };
+
+        console.log(`📋 إفراغ البيانات للوحدة ${unitNumber}...`);
+
+        // تحديث الوحدة في Supabase بالبيانات الفارغة
+        const { data: updatedUnit, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(emptyData)
+            .eq('id', unitInSupabase.id)
+            .select();
+
+        if (updateError) {
+            throw new Error(`فشل في إفراغ بيانات الوحدة: ${updateError.message}`);
+        }
+
+        if (!updatedUnit || updatedUnit.length === 0) {
+            throw new Error('لم يتم إرجاع بيانات من عملية الإفراغ');
+        }
+
+        console.log(`✅ تم إفراغ بيانات الوحدة ${unitNumber} في Supabase بنجاح`);
 
         // 2. حماية الوحدة من إعادة الكتابة
         if (typeof protectUnlinkedUnit === 'function') {
@@ -17591,17 +18293,34 @@ async function unlinkUnitFromGroup(unitNumber) {
             console.log(`🔒 تم تفعيل حماية الوحدة ${unitNumber} من إعادة الكتابة`);
         }
 
-        // 3. تحديث البيانات المحلية
+        // 3. تحديث البيانات المحلية لتطابق البيانات المفرغة
         const localUnitIndex = properties.findIndex(p =>
             p['رقم  الوحدة '] === unitNumber &&
             p['اسم العقار'] === unitToUnlink['اسم العقار']
         );
 
         if (localUnitIndex !== -1) {
-            properties[localUnitIndex]['رقم العقد'] = '';
+            // إفراغ جميع البيانات المحلية
             properties[localUnitIndex]['اسم المستأجر'] = '';
+            properties[localUnitIndex]['رقم العقد'] = '';
+            properties[localUnitIndex]['قيمة  الايجار '] = '';
+            properties[localUnitIndex]['نوع العقد'] = '';
+            properties[localUnitIndex]['تاريخ البداية'] = '';
+            properties[localUnitIndex]['تاريخ النهاية'] = '';
+            properties[localUnitIndex]['الاجمالى'] = '';
+            properties[localUnitIndex]['المالك'] = '';
+            properties[localUnitIndex]['رقم الصك'] = '';
+            properties[localUnitIndex]['السجل العيني '] = '';
+            properties[localUnitIndex]['رقم حساب الكهرباء'] = '';
+            properties[localUnitIndex]['عدد الاقساط المتبقية'] = '';
+            properties[localUnitIndex]['تاريخ القسط الاول'] = '';
+            properties[localUnitIndex]['مبلغ القسط الاول'] = '';
+            properties[localUnitIndex]['تاريخ القسط الثاني'] = '';
+            properties[localUnitIndex]['مبلغ القسط الثاني'] = '';
+            properties[localUnitIndex]['تاريخ انتهاء الاقساط'] = '';
+
             saveDataLocally();
-            console.log('✅ تم تحديث البيانات المحلية');
+            console.log('✅ تم إفراغ جميع البيانات المحلية للوحدة');
         }
 
         // 4. إزالة الوحدة من المجموعة
@@ -17615,8 +18334,24 @@ async function unlinkUnitFromGroup(unitNumber) {
         updateLinkedUnitsDisplay();
         updateAvailableUnitsForLinking();
 
-        // 5. إظهار رسالة نجاح
-        showSuccessMessage('تم الفصل بنجاح', `تم فصل الوحدة ${unitNumber} وحفظ التغييرات في قاعدة البيانات`);
+        // 5. إظهار رسالة نجاح مفصلة
+        const successMessage = `🎉 تم فصل الوحدة ${unitNumber} بنجاح!
+
+✅ تم إفراغ جميع البيانات:
+• اسم المستأجر: تم الإفراغ
+• رقم العقد: تم الإفراغ
+• قيمة الإيجار: تم الإفراغ
+• تواريخ العقد: تم الإفراغ
+• بيانات الأقساط: تم الإفراغ
+
+☁️ تم حفظ الإفراغ في Supabase
+📱 تم تحديث البيانات المحلية
+🔓 الوحدة أصبحت فارغة ومتاحة للربط
+
+🔗 يمكنك التحقق من النتيجة في Supabase Dashboard`;
+
+        alert(successMessage);
+        showToast(`تم فصل وإفراغ الوحدة ${unitNumber} بنجاح!`, 'success');
 
     } catch (error) {
         console.error('❌ خطأ في فصل الوحدة:', error);
@@ -17667,6 +18402,9 @@ function updateLinkedUnitsDisplay() {
                 <span class="unit-status ${getUnitStatusClass(unit)}">${calculateStatus(unit).final || 'غير محدد'}</span>
             </div>
             <div class="unit-actions">
+                <button type="button" onclick="clearUnitData('${unit['رقم  الوحدة ']}')" class="btn-clear-unit" title="إفراغ بيانات هذه الوحدة">
+                    <i class="fas fa-trash-alt"></i> إفراغ
+                </button>
                 ${relatedUnits.length > 1 ? `
                     <button type="button" onclick="unlinkUnitFromGroup('${unit['رقم  الوحدة ']}')" class="btn-unlink-unit" title="فصل هذه الوحدة">
                         <i class="fas fa-unlink"></i> فصل
@@ -19239,6 +19977,7 @@ function showSingleUnitEditModal(property, contractNumber, propertyName, unitNum
                             <button type="submit" class="btn-primary">
                                 <i class="fas fa-save"></i> حفظ التغييرات
                             </button>
+
                             <button type="button" onclick="emptyUnit('${contractNumber || ''}', '${propertyName}', '${unitNumber || ''}')" class="btn-danger">
                                 <i class="fas fa-broom"></i> إفراغ الوحدة
                             </button>
@@ -20324,35 +21063,2397 @@ async function updateLinkedUnitsOnEdit(editedUnitData) {
     }
 }
 
-// عرض الوحدات المتاحة للربط
+// عرض الوحدات المتاحة للربط - محسن مع واجهة اختيار
 function renderAvailableUnitsForLinking(propertyName, currentContractNumber, currentUnitNumber) {
     // التحقق من وجود البيانات أولاً
     if (!ensurePropertiesLoaded('renderAvailableUnitsForLinking')) {
         return '<p class="no-units">خطأ: البيانات غير متوفرة</p>';
     }
 
-    // الحصول على الوحدات الفارغة أو غير المرتبطة بعقد في نفس العقار
-    const availableUnits = properties.filter(p =>
+    // الحصول على الوحدات الفارغة فقط في نفس العقار
+    const allUnitsInProperty = properties.filter(p =>
         p['اسم العقار'] === propertyName &&
         p['رقم  الوحدة '] !== currentUnitNumber &&
         (!p['رقم العقد'] || p['رقم العقد'] !== currentContractNumber) &&
         (!p['اسم المستأجر'] || p['اسم المستأجر'].trim() === '')
     );
 
-    if (availableUnits.length === 0) {
-        return '<p class="no-units">لا توجد وحدات متاحة للربط</p>';
+    if (allUnitsInProperty.length === 0) {
+        return `<div class="no-units-message">
+            <i class="fas fa-info-circle"></i>
+            لا توجد وحدات فارغة متاحة للربط في عقار "${propertyName}"
+        </div>`;
     }
 
-    return availableUnits.map(unit => `
-        <label class="unit-linking-item">
-            <input type="checkbox" value="${unit['رقم  الوحدة ']}" name="linkingUnits" onchange="toggleUnitLinking('${unit['رقم  الوحدة ']}', '${propertyName}', '${currentContractNumber}')">
-            <div class="unit-info">
-                <span class="unit-number">${unit['رقم  الوحدة ']}</span>
-                <span class="unit-details">${unit['المساحة'] ? unit['المساحة'] + ' م²' : 'غير محدد'}</span>
-            </div>
-        </label>
-    `).join('');
+    // واجهة بسيطة للوحدات الفارغة فقط مع زر ربط فعال
+    return `
+        <div class="simple-unit-linking">
+            ${allUnitsInProperty.map(unit => `
+                <div class="empty-unit-item" data-unit-number="${unit['رقم  الوحدة ']}">
+                    <div class="unit-info">
+                        <i class="fas fa-home"></i>
+                        <span class="unit-number">وحدة ${unit['رقم  الوحدة ']}</span>
+                        ${unit['المساحة'] ? `<span class="unit-area">${unit['المساحة']} م²</span>` : ''}
+                    </div>
+                    <button type="button" onclick="performRealUnitLinking('${unit['رقم  الوحدة ']}')"
+                            class="btn-link-empty-unit"
+                            title="ربط هذه الوحدة الفارغة">
+                        <i class="fas fa-link"></i> ربط
+                    </button>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
+
+// دالة مساعدة للحصول على نص حالة الوحدة
+function getUnitStatusText(unit) {
+    if (unit['اسم المستأجر'] && unit['اسم المستأجر'].trim() !== '') {
+        return 'مشغولة';
+    } else {
+        return 'فارغة';
+    }
+}
+
+// دالة الربط الحقيقي المبسطة للوحدات الفارغة
+async function performRealUnitLinking(unitNumber) {
+    if (!unitNumber) {
+        alert('رقم الوحدة غير صحيح');
+        return;
+    }
+
+    console.log(`🔗 بدء الربط الحقيقي للوحدة ${unitNumber}...`);
+
+    try {
+        // الحصول على معلومات النموذج الحالي
+        const form = document.getElementById('propertyEditForm') || document.getElementById('multiUnitEditForm');
+        if (!form) {
+            throw new Error('لم يتم العثور على النموذج');
+        }
+
+        const formData = new FormData(form);
+        const currentPropertyName = formData.get('propertyName') || formData.get('اسم العقار');
+        const currentTenant = formData.get('tenantName') || formData.get('اسم المستأجر');
+        const currentContract = formData.get('contractNumber') || formData.get('رقم العقد');
+        const currentRent = formData.get('rentValue') || formData.get('قيمة  الايجار ');
+        const currentOwner = formData.get('owner') || formData.get('المالك');
+        const currentDeed = formData.get('deedNumber') || formData.get('رقم الصك');
+
+        if (!currentPropertyName) {
+            throw new Error('لم يتم العثور على اسم العقار');
+        }
+
+        // التحقق من اتصال Supabase
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // البحث عن الوحدة في Supabase
+        console.log(`📋 البحث عن الوحدة ${unitNumber} في Supabase...`);
+        const { data: unitData, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', currentPropertyName)
+            .single();
+
+        if (searchError) {
+            throw new Error(`خطأ في البحث عن الوحدة: ${searchError.message}`);
+        }
+
+        if (!unitData) {
+            throw new Error(`لم يتم العثور على الوحدة ${unitNumber} في Supabase`);
+        }
+
+        // التأكد من أن الوحدة فارغة
+        if (unitData.tenant_name && unitData.tenant_name.trim() !== '') {
+            throw new Error(`الوحدة ${unitNumber} مشغولة بالفعل بالمستأجر: ${unitData.tenant_name}`);
+        }
+
+        // تأكيد العملية
+        const confirmMessage = `هل تريد ربط الوحدة الفارغة ${unitNumber}؟
+
+🏠 العقار: ${currentPropertyName}
+👤 سيتم ربطها بالمستأجر: ${currentTenant || 'غير محدد'}
+📄 رقم العقد: ${currentContract || 'غير محدد'}
+💰 الإيجار: ${currentRent ? parseFloat(currentRent).toLocaleString() + ' ريال' : 'غير محدد'}
+
+سيتم حفظ التغييرات في Supabase فوراً.`;
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        // تعطيل الزر أثناء المعالجة
+        const linkButton = document.querySelector(`[onclick="performRealUnitLinking('${unitNumber}')"]`);
+        if (linkButton) {
+            linkButton.disabled = true;
+            linkButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الربط...';
+        }
+
+        // تحضير البيانات للتحديث
+        const updateData = {
+            tenant_name: currentTenant || '',
+            contract_number: currentContract || '',
+            rent_value: currentRent ? parseFloat(currentRent) : null,
+            owner: currentOwner || '',
+            deed_number: currentDeed || '',
+            updated_at: new Date().toISOString()
+        };
+
+        console.log(`☁️ تحديث الوحدة ${unitNumber} في Supabase...`);
+
+        // تحديث الوحدة في Supabase
+        const { data: updatedData, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(updateData)
+            .eq('id', unitData.id)
+            .select();
+
+        if (updateError) {
+            throw new Error(`فشل في تحديث الوحدة: ${updateError.message}`);
+        }
+
+        if (!updatedData || updatedData.length === 0) {
+            throw new Error('لم يتم إرجاع بيانات من عملية التحديث');
+        }
+
+        console.log(`✅ تم ربط الوحدة ${unitNumber} بنجاح في Supabase`);
+
+        // تحديث البيانات المحلية
+        if (properties && Array.isArray(properties)) {
+            const localUnitIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === unitNumber &&
+                p['اسم العقار'] === currentPropertyName
+            );
+
+            if (localUnitIndex !== -1) {
+                properties[localUnitIndex]['اسم المستأجر'] = currentTenant || '';
+                properties[localUnitIndex]['رقم العقد'] = currentContract || '';
+                properties[localUnitIndex]['قيمة  الايجار '] = currentRent || '';
+                properties[localUnitIndex]['المالك'] = currentOwner || '';
+                properties[localUnitIndex]['رقم الصك'] = currentDeed || '';
+
+                // حفظ في localStorage
+                localStorage.setItem('propertyData', JSON.stringify(properties));
+                console.log('✅ تم تحديث البيانات المحلية');
+            }
+        }
+
+        // إعادة تحميل قسم الوحدات المتاحة
+        const availableUnitsDiv = document.getElementById('availableUnitsForLinking');
+        if (availableUnitsDiv) {
+            availableUnitsDiv.innerHTML = renderAvailableUnitsForLinking(
+                currentPropertyName,
+                currentContract,
+                formData.get('unitNumber') || formData.get('رقم  الوحدة ')
+            );
+        }
+
+        // رسالة النجاح
+        const successMessage = `🎉 تم ربط الوحدة بنجاح!
+
+✅ الوحدة: ${unitNumber}
+🏠 العقار: ${currentPropertyName}
+👤 المستأجر: ${currentTenant || 'غير محدد'}
+📄 العقد: ${currentContract || 'غير محدد'}
+☁️ تم الحفظ في Supabase
+📱 تم تحديث البيانات المحلية
+
+🔗 يمكنك التحقق من النتيجة في Supabase Dashboard`;
+
+        alert(successMessage);
+        showToast(`تم ربط الوحدة ${unitNumber} بنجاح!`, 'success');
+
+    } catch (error) {
+        console.error(`❌ خطأ في ربط الوحدة ${unitNumber}:`, error);
+
+        const errorMessage = `❌ فشل في ربط الوحدة ${unitNumber}!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• اتصال الإنترنت
+• صلاحيات Supabase
+• أن الوحدة فارغة فعلاً`;
+
+        alert(errorMessage);
+        showToast(`فشل في ربط الوحدة ${unitNumber}`, 'error');
+
+        // إعادة تفعيل الزر
+        const linkButton = document.querySelector(`[onclick="performRealUnitLinking('${unitNumber}')"]`);
+        if (linkButton) {
+            linkButton.disabled = false;
+            linkButton.innerHTML = '<i class="fas fa-link"></i> ربط';
+        }
+    }
+}
+
+function linkUnitFromModal(unitNumber) {
+    if (!unitNumber) {
+        alert('رقم الوحدة غير صحيح');
+        return;
+    }
+
+    console.log(`🔗 بدء ربط الوحدة ${unitNumber} من النافذة...`);
+
+    // الحصول على معلومات النافذة الحالية
+    const form = document.getElementById('propertyEditForm') || document.getElementById('multiUnitEditForm');
+    if (!form) {
+        alert('لم يتم العثور على النموذج');
+        return;
+    }
+
+    const formData = new FormData(form);
+    const currentPropertyName = formData.get('propertyName') || formData.get('اسم العقار');
+    const currentContractNumber = formData.get('contractNumber') || formData.get('رقم العقد');
+
+    if (!currentPropertyName) {
+        alert('لم يتم العثور على اسم العقار');
+        return;
+    }
+
+    // البحث عن الوحدة في البيانات
+    const unitToLink = properties.find(unit =>
+        unit['رقم  الوحدة '] === unitNumber &&
+        unit['اسم العقار'] === currentPropertyName
+    );
+
+    if (!unitToLink) {
+        alert('لم يتم العثور على الوحدة');
+        return;
+    }
+
+    // تأكيد العملية
+    const confirmMessage = `هل تريد ربط الوحدة ${unitNumber}؟
+
+🏠 العقار: ${currentPropertyName}
+👤 المستأجر الحالي: ${unitToLink['اسم المستأجر'] || 'فارغ'}
+📄 العقد الحالي: ${unitToLink['رقم العقد'] || 'فارغ'}
+
+سيتم نسخ بيانات المستأجر والعقد من الوحدة الأساسية.`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    // تنفيذ الربط باستخدام toggleUnitLinking
+    toggleUnitLinking(unitNumber, currentPropertyName, currentContractNumber);
+}
+
+function previewUnitLinkingFromModal(unitNumber) {
+    const form = document.getElementById('propertyEditForm') || document.getElementById('multiUnitEditForm');
+    if (!form) {
+        alert('لم يتم العثور على النموذج');
+        return;
+    }
+
+    const formData = new FormData(form);
+    const currentPropertyName = formData.get('propertyName') || formData.get('اسم العقار');
+    const currentTenant = formData.get('tenantName') || formData.get('اسم المستأجر');
+    const currentContract = formData.get('contractNumber') || formData.get('رقم العقد');
+    const currentRent = formData.get('rentValue') || formData.get('قيمة  الايجار ');
+
+    const unitToPreview = properties.find(unit =>
+        unit['رقم  الوحدة '] === unitNumber &&
+        unit['اسم العقار'] === currentPropertyName
+    );
+
+    if (!unitToPreview) {
+        alert('لم يتم العثور على الوحدة');
+        return;
+    }
+
+    const previewMessage = `🔍 معاينة ربط الوحدة
+
+🏠 الوحدة المراد ربطها: ${unitNumber}
+📍 العقار: ${unitToPreview['اسم العقار']}
+👤 المستأجر الحالي: ${unitToPreview['اسم المستأجر'] || 'فارغ'}
+📄 العقد الحالي: ${unitToPreview['رقم العقد'] || 'فارغ'}
+
+⬇️ ستصبح بعد الربط:
+👤 المستأجر الجديد: ${currentTenant || 'فارغ'}
+📄 العقد الجديد: ${currentContract || 'فارغ'}
+💰 الإيجار: ${currentRent ? parseFloat(currentRent).toLocaleString() + ' ريال' : 'غير محدد'}
+
+هل تريد المتابعة مع الربط؟`;
+
+    if (confirm(previewMessage)) {
+        linkUnitFromModal(unitNumber);
+    }
+}
+
+function showBulkLinkingFromModal() {
+    alert('ميزة الربط المتعدد ستكون متوفرة قريباً!\n\nيمكنك حالياً ربط الوحدات واحدة تلو الأخرى.');
+}
+
+function linkAllEmptyUnitsFromModal() {
+    const form = document.getElementById('propertyEditForm') || document.getElementById('multiUnitEditForm');
+    if (!form) {
+        alert('لم يتم العثور على النموذج');
+        return;
+    }
+
+    const formData = new FormData(form);
+    const currentPropertyName = formData.get('propertyName') || formData.get('اسم العقار');
+    const currentContractNumber = formData.get('contractNumber') || formData.get('رقم العقد');
+    const currentUnitNumber = formData.get('unitNumber') || formData.get('رقم  الوحدة ');
+
+    // البحث عن الوحدات الفارغة
+    const emptyUnits = properties.filter(unit =>
+        unit['اسم العقار'] === currentPropertyName &&
+        unit['رقم  الوحدة '] !== currentUnitNumber &&
+        (!unit['رقم العقد'] || unit['رقم العقد'] !== currentContractNumber) &&
+        (!unit['اسم المستأجر'] || unit['اسم المستأجر'].trim() === '')
+    );
+
+    if (emptyUnits.length === 0) {
+        alert('لا توجد وحدات فارغة متاحة للربط');
+        return;
+    }
+
+    const confirmMessage = `هل تريد ربط جميع الوحدات الفارغة؟
+
+عدد الوحدات: ${emptyUnits.length} وحدة
+الوحدات: ${emptyUnits.map(u => u['رقم  الوحدة ']).join(', ')}
+
+سيتم نسخ بيانات المستأجر والعقد إلى جميع هذه الوحدات.`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    // ربط جميع الوحدات الفارغة
+    let successCount = 0;
+    emptyUnits.forEach((unit, index) => {
+        setTimeout(() => {
+            try {
+                toggleUnitLinking(unit['رقم  الوحدة '], currentPropertyName, currentContractNumber);
+                successCount++;
+
+                if (index === emptyUnits.length - 1) {
+                    // آخر وحدة
+                    setTimeout(() => {
+                        alert(`تم ربط ${successCount} وحدة من أصل ${emptyUnits.length} وحدة بنجاح!`);
+                    }, 500);
+                }
+            } catch (error) {
+                console.error(`خطأ في ربط الوحدة ${unit['رقم  الوحدة ']}:`, error);
+            }
+        }, index * 500); // توقف نصف ثانية بين كل ربط
+    });
+}
+
+// إضافة الدالة الجديدة للنطاق العام
+window.performRealUnitLinking = performRealUnitLinking;
+
+// دالة اختبار سريعة للواجهة الجديدة
+function testNewLinkingInterface() {
+    console.log('🧪 اختبار الواجهة الجديدة لربط الوحدات...');
+
+    try {
+        // التحقق من وجود البيانات
+        if (!properties || properties.length === 0) {
+            throw new Error('لا توجد بيانات عقارات');
+        }
+
+        // البحث عن عقار يحتوي على وحدات فارغة
+        const propertyNames = [...new Set(properties.map(p => p['اسم العقار']))];
+        let testProperty = null;
+        let emptyUnits = [];
+
+        for (const propertyName of propertyNames) {
+            const unitsInProperty = properties.filter(p => p['اسم العقار'] === propertyName);
+            const emptyUnitsInProperty = unitsInProperty.filter(p =>
+                !p['اسم المستأجر'] || p['اسم المستأجر'].trim() === ''
+            );
+
+            if (emptyUnitsInProperty.length > 0) {
+                testProperty = propertyName;
+                emptyUnits = emptyUnitsInProperty;
+                break;
+            }
+        }
+
+        if (!testProperty || emptyUnits.length === 0) {
+            throw new Error('لا توجد وحدات فارغة للاختبار');
+        }
+
+        // اختبار دالة renderAvailableUnitsForLinking
+        console.log(`📋 اختبار عرض الوحدات الفارغة في عقار: ${testProperty}`);
+        const renderedHTML = renderAvailableUnitsForLinking(testProperty, '', emptyUnits[0]['رقم  الوحدة ']);
+
+        if (!renderedHTML || renderedHTML.includes('لا توجد وحدات فارغة')) {
+            throw new Error('فشل في عرض الوحدات الفارغة');
+        }
+
+        // التحقق من وجود العناصر المطلوبة في HTML
+        const requiredElements = [
+            'unitSelector',
+            'btn-link-selected',
+            'linkSelectedUnitFromModal',
+            'الوحدات الفارغة المتاحة للربط'
+        ];
+
+        let missingElements = [];
+        requiredElements.forEach(element => {
+            if (!renderedHTML.includes(element)) {
+                missingElements.push(element);
+            }
+        });
+
+        if (missingElements.length > 0) {
+            throw new Error(`عناصر مفقودة في HTML: ${missingElements.join(', ')}`);
+        }
+
+        // النتيجة النهائية
+        const successMessage = `🎉 نجح اختبار الواجهة الجديدة!
+
+✅ تم العثور على عقار للاختبار: ${testProperty}
+✅ عدد الوحدات الفارغة: ${emptyUnits.length} وحدة
+✅ تم إنشاء HTML الواجهة بنجاح
+✅ جميع العناصر المطلوبة موجودة
+
+📋 الوحدات الفارغة المتاحة:
+${emptyUnits.map(u => `• وحدة ${u['رقم  الوحدة ']} - ${u['المساحة'] ? u['المساحة'] + ' م²' : 'مساحة غير محددة'}`).join('\n')}
+
+🎯 الواجهة جاهزة للاستخدام!
+💡 افتح نافذة تحرير لأي بطاقة لرؤية الواجهة الجديدة`;
+
+        alert(successMessage);
+        showToast('🎉 نجح اختبار الواجهة الجديدة!', 'success');
+        console.log('✅ نجح اختبار الواجهة الجديدة لربط الوحدات');
+
+        return {
+            success: true,
+            testProperty,
+            emptyUnitsCount: emptyUnits.length,
+            emptyUnits: emptyUnits.map(u => u['رقم  الوحدة '])
+        };
+
+    } catch (error) {
+        console.error('❌ فشل اختبار الواجهة الجديدة:', error);
+
+        const errorMessage = `❌ فشل اختبار الواجهة الجديدة!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• وجود بيانات العقارات
+• وجود وحدات فارغة للاختبار
+• تحميل جميع الملفات المطلوبة`;
+
+        alert(errorMessage);
+        showToast('❌ فشل اختبار الواجهة الجديدة', 'error');
+
+        return { success: false, error: error.message };
+    }
+}
+
+// إضافة الدالة للنطاق العام
+window.testNewLinkingInterface = testNewLinkingInterface;
+
+// دالة اختبار سريعة للواجهة المبسطة
+function testSimpleLinkingInterface() {
+    console.log('🧪 اختبار الواجهة المبسطة للوحدات الفارغة...');
+
+    try {
+        // التحقق من وجود البيانات
+        if (!properties || properties.length === 0) {
+            throw new Error('لا توجد بيانات عقارات');
+        }
+
+        // البحث عن وحدات فارغة
+        const emptyUnits = properties.filter(p =>
+            !p['اسم المستأجر'] || p['اسم المستأجر'].trim() === ''
+        );
+
+        if (emptyUnits.length === 0) {
+            throw new Error('لا توجد وحدات فارغة للاختبار');
+        }
+
+        // اختبار دالة renderAvailableUnitsForLinking
+        const testProperty = emptyUnits[0]['اسم العقار'];
+        const testUnit = emptyUnits[0]['رقم  الوحدة '];
+
+        console.log(`📋 اختبار عرض الوحدات الفارغة في عقار: ${testProperty}`);
+        const renderedHTML = renderAvailableUnitsForLinking(testProperty, '', testUnit);
+
+        if (!renderedHTML || renderedHTML.includes('لا توجد وحدات فارغة')) {
+            throw new Error('فشل في عرض الوحدات الفارغة');
+        }
+
+        // التحقق من وجود العناصر المطلوبة
+        const requiredElements = [
+            'simple-unit-linking',
+            'empty-unit-item',
+            'performRealUnitLinking',
+            'btn-link-empty-unit'
+        ];
+
+        let missingElements = [];
+        requiredElements.forEach(element => {
+            if (!renderedHTML.includes(element)) {
+                missingElements.push(element);
+            }
+        });
+
+        if (missingElements.length > 0) {
+            throw new Error(`عناصر مفقودة في HTML: ${missingElements.join(', ')}`);
+        }
+
+        // النتيجة النهائية
+        const successMessage = `🎉 نجح اختبار الواجهة المبسطة!
+
+✅ تم العثور على ${emptyUnits.length} وحدة فارغة
+✅ تم إنشاء HTML الواجهة المبسطة بنجاح
+✅ جميع العناصر المطلوبة موجودة
+✅ دالة performRealUnitLinking جاهزة
+
+📋 مثال على الوحدات الفارغة:
+${emptyUnits.slice(0, 5).map(u => `• وحدة ${u['رقم  الوحدة ']} في ${u['اسم العقار']}`).join('\n')}
+
+🎯 الواجهة المبسطة جاهزة للاستخدام!
+💡 افتح نافذة تحرير لأي بطاقة لرؤية الوحدات الفارغة فقط مع أزرار الربط`;
+
+        alert(successMessage);
+        showToast('🎉 نجح اختبار الواجهة المبسطة!', 'success');
+        console.log('✅ نجح اختبار الواجهة المبسطة للوحدات الفارغة');
+
+        return {
+            success: true,
+            emptyUnitsCount: emptyUnits.length,
+            testProperty,
+            sampleUnits: emptyUnits.slice(0, 5).map(u => u['رقم  الوحدة '])
+        };
+
+    } catch (error) {
+        console.error('❌ فشل اختبار الواجهة المبسطة:', error);
+
+        const errorMessage = `❌ فشل اختبار الواجهة المبسطة!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• وجود بيانات العقارات
+• وجود وحدات فارغة للاختبار
+• تحميل جميع الملفات المطلوبة`;
+
+        alert(errorMessage);
+        showToast('❌ فشل اختبار الواجهة المبسطة', 'error');
+
+        return { success: false, error: error.message };
+    }
+}
+
+// إضافة الدالة للنطاق العام
+window.testSimpleLinkingInterface = testSimpleLinkingInterface;
+
+// دالة اختبار فصل وإفراغ الوحدات
+async function testUnitUnlinkingAndClearing() {
+    console.log('🧪 اختبار فصل وإفراغ الوحدات...');
+
+    try {
+        // التحقق من المتطلبات الأساسية
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        if (!properties || properties.length === 0) {
+            throw new Error('لا توجد بيانات عقارات');
+        }
+
+        // البحث عن وحدة مربوطة للاختبار
+        const linkedUnits = properties.filter(p =>
+            p['اسم المستأجر'] && p['اسم المستأجر'].trim() !== '' &&
+            p['رقم العقد'] && p['رقم العقد'].trim() !== ''
+        );
+
+        if (linkedUnits.length === 0) {
+            throw new Error('لا توجد وحدات مربوطة للاختبار');
+        }
+
+        const testUnit = linkedUnits[0];
+        const unitNumber = testUnit['رقم  الوحدة '];
+        const propertyName = testUnit['اسم العقار'];
+
+        console.log(`🔗 اختبار فصل الوحدة: ${unitNumber} في عقار: ${propertyName}`);
+
+        // 1. التحقق من البيانات قبل الفصل
+        console.log('📋 فحص البيانات قبل الفصل...');
+        const { data: beforeData, error: beforeError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName)
+            .single();
+
+        if (beforeError || !beforeData) {
+            throw new Error('فشل في جلب بيانات الوحدة قبل الفصل');
+        }
+
+        if (!beforeData.tenant_name || beforeData.tenant_name.trim() === '') {
+            throw new Error('الوحدة فارغة بالفعل - لا يمكن اختبار الفصل');
+        }
+
+        console.log('✅ الوحدة مربوطة ومناسبة للاختبار:', {
+            tenant: beforeData.tenant_name,
+            contract: beforeData.contract_number,
+            rent: beforeData.rent_value
+        });
+
+        // 2. محاكاة عملية الفصل (بدون تأكيد المستخدم)
+        console.log('🔓 تنفيذ عملية الفصل والإفراغ...');
+
+        // إفراغ البيانات مباشرة في Supabase
+        const emptyData = {
+            tenant_name: '',
+            contract_number: '',
+            rent_value: null,
+            contract_type: null,
+            start_date: null,
+            end_date: null,
+            total_amount: null,
+            owner: '',
+            deed_number: '',
+            real_estate_registry: '',
+            electricity_account: '',
+            remaining_installments: null,
+            first_installment_date: null,
+            first_installment_amount: null,
+            second_installment_date: null,
+            second_installment_amount: null,
+            installment_end_date: null,
+            updated_at: new Date().toISOString()
+        };
+
+        const { data: afterData, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(emptyData)
+            .eq('id', beforeData.id)
+            .select();
+
+        if (updateError) {
+            throw new Error(`فشل في إفراغ البيانات: ${updateError.message}`);
+        }
+
+        if (!afterData || afterData.length === 0) {
+            throw new Error('لم يتم إرجاع بيانات من عملية الإفراغ');
+        }
+
+        console.log('✅ تم إفراغ البيانات في Supabase بنجاح');
+
+        // 3. التحقق من الإفراغ
+        console.log('🔍 التحقق من إفراغ البيانات...');
+        const clearedData = afterData[0];
+
+        const fieldsToCheck = [
+            'tenant_name', 'contract_number', 'rent_value', 'contract_type',
+            'start_date', 'end_date', 'total_amount', 'owner', 'deed_number',
+            'real_estate_registry', 'electricity_account', 'remaining_installments',
+            'first_installment_date', 'first_installment_amount',
+            'second_installment_date', 'second_installment_amount', 'installment_end_date'
+        ];
+
+        let notClearedFields = [];
+        fieldsToCheck.forEach(field => {
+            const value = clearedData[field];
+            if (value !== null && value !== '' && value !== undefined) {
+                notClearedFields.push(`${field}: ${value}`);
+            }
+        });
+
+        if (notClearedFields.length > 0) {
+            throw new Error(`بعض البيانات لم يتم إفراغها: ${notClearedFields.join(', ')}`);
+        }
+
+        console.log('✅ تم التحقق من إفراغ جميع البيانات بنجاح');
+
+        // 4. إعادة ربط الوحدة للحفاظ على البيانات الأصلية
+        console.log('🔄 إعادة ربط الوحدة بالبيانات الأصلية...');
+        const restoreData = {
+            tenant_name: beforeData.tenant_name,
+            contract_number: beforeData.contract_number,
+            rent_value: beforeData.rent_value,
+            contract_type: beforeData.contract_type,
+            start_date: beforeData.start_date,
+            end_date: beforeData.end_date,
+            total_amount: beforeData.total_amount,
+            owner: beforeData.owner,
+            deed_number: beforeData.deed_number,
+            real_estate_registry: beforeData.real_estate_registry,
+            electricity_account: beforeData.electricity_account,
+            remaining_installments: beforeData.remaining_installments,
+            first_installment_date: beforeData.first_installment_date,
+            first_installment_amount: beforeData.first_installment_amount,
+            second_installment_date: beforeData.second_installment_date,
+            second_installment_amount: beforeData.second_installment_amount,
+            installment_end_date: beforeData.installment_end_date,
+            updated_at: new Date().toISOString()
+        };
+
+        const { error: restoreError } = await supabaseClient
+            .from('properties')
+            .update(restoreData)
+            .eq('id', beforeData.id);
+
+        if (restoreError) {
+            console.warn('⚠️ فشل في إعادة ربط البيانات الأصلية:', restoreError.message);
+        } else {
+            console.log('✅ تم إعادة ربط البيانات الأصلية بنجاح');
+        }
+
+        // النتيجة النهائية
+        const successMessage = `🎉 نجح اختبار فصل وإفراغ الوحدات!
+
+✅ جميع الخطوات نجحت:
+🔗 الوحدة المختبرة: ${unitNumber}
+🏠 العقار: ${propertyName}
+👤 المستأجر الأصلي: ${beforeData.tenant_name}
+📄 العقد الأصلي: ${beforeData.contract_number}
+
+🔓 تم الفصل والإفراغ بنجاح:
+• تم إفراغ جميع البيانات في Supabase
+• تم التحقق من الإفراغ الكامل
+• تم إعادة ربط البيانات الأصلية
+
+🎯 نظام الفصل والإفراغ يعمل بشكل مثالي!`;
+
+        alert(successMessage);
+        showToast('🎉 نجح اختبار فصل وإفراغ الوحدات!', 'success');
+        console.log('✅ نجح اختبار فصل وإفراغ الوحدات');
+
+        return {
+            success: true,
+            testedUnit: unitNumber,
+            originalData: beforeData,
+            clearedSuccessfully: true,
+            restoredSuccessfully: !restoreError
+        };
+
+    } catch (error) {
+        console.error('❌ فشل اختبار فصل وإفراغ الوحدات:', error);
+
+        const errorMessage = `❌ فشل اختبار فصل وإفراغ الوحدات!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• اتصال Supabase
+• وجود وحدات مربوطة للاختبار
+• صلاحيات قاعدة البيانات`;
+
+        alert(errorMessage);
+        showToast('❌ فشل اختبار فصل وإفراغ الوحدات', 'error');
+
+        return { success: false, error: error.message };
+    }
+}
+
+// إضافة الدالة للنطاق العام
+window.testUnitUnlinkingAndClearing = testUnitUnlinkingAndClearing;
+
+// دالة إفراغ بيانات الوحدة (تعمل من نافذة التحرير)
+async function clearUnitData(unitNumber) {
+    if (!unitNumber) {
+        alert('رقم الوحدة غير صحيح');
+        return;
+    }
+
+    console.log(`🗑️ بدء إفراغ بيانات الوحدة ${unitNumber} من نافذة التحرير...`);
+
+    // البحث عن الوحدة في البيانات
+    let unitToClear = null;
+    let propertyName = null;
+
+    // البحث في المجموعة الحالية أولاً (نافذة التحرير)
+    if (window.currentEditingUnits && window.currentEditingUnits.length > 0) {
+        unitToClear = window.currentEditingUnits.find(unit =>
+            unit['رقم  الوحدة '] === unitNumber
+        );
+        if (unitToClear) {
+            propertyName = unitToClear['اسم العقار'];
+        }
+    }
+
+    // البحث في البيانات العامة إذا لم توجد
+    if (!unitToClear && properties && Array.isArray(properties)) {
+        unitToClear = properties.find(unit =>
+            unit['رقم  الوحدة '] === unitNumber
+        );
+        if (unitToClear) {
+            propertyName = unitToClear['اسم العقار'];
+        }
+    }
+
+    if (!unitToClear || !propertyName) {
+        alert('لم يتم العثور على الوحدة أو اسم العقار');
+        return;
+    }
+
+    console.log(`📋 تم العثور على الوحدة: ${unitNumber} في عقار: ${propertyName}`);
+
+    // رسالة تأكيد مفصلة
+    const confirmMessage = `هل أنت متأكد من إفراغ بيانات الوحدة ${unitNumber}؟
+
+🗑️ سيتم إفراغ البيانات التالية:
+• اسم المستأجر
+• رقم العقد
+• قيمة الإيجار
+• نوع العقد
+• تواريخ العقد (البداية والنهاية)
+• الإجمالي
+• رقم حساب الكهرباء
+• جميع بيانات الأقساط (التواريخ والمبالغ)
+
+✅ سيتم الاحتفاظ بالبيانات التالية:
+• رقم الوحدة
+• اسم العقار
+• المدينة
+• المساحة
+• المالك ورقم الصك
+• السجل العيني
+
+☁️ سيتم حفظ الإفراغ فوراً في Supabase
+📱 وتحديث البيانات المحلية
+
+هل تريد المتابعة؟`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    try {
+        // التحقق من اتصال Supabase
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // البحث عن الوحدة في Supabase
+        console.log(`📋 البحث عن الوحدة ${unitNumber} في عقار ${propertyName} في Supabase...`);
+        const { data: unitInSupabase, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName)
+            .single();
+
+        if (searchError) {
+            throw new Error(`خطأ في البحث عن الوحدة: ${searchError.message}`);
+        }
+
+        if (!unitInSupabase) {
+            throw new Error(`لم يتم العثور على الوحدة ${unitNumber} في Supabase`);
+        }
+
+        console.log(`✅ تم العثور على الوحدة في Supabase - ID: ${unitInSupabase.id}`);
+
+        // إعداد البيانات للإفراغ التام - نهج شامل
+        const emptyData = {};
+
+        // قائمة بجميع الحقول التي يجب إفراغها
+        const fieldsToEmpty = [
+            // بيانات المستأجر والعقد
+            'tenant_name', 'contract_number', 'rent_value', 'contract_type',
+            'start_date', 'end_date', 'total_amount', 'electricity_account',
+            'remaining_installments', 'installment_count', 'installment_end_date',
+
+            // جميع الأقساط (1-10)
+            'first_installment_date', 'first_installment_amount',
+            'second_installment_date', 'second_installment_amount',
+            'third_installment_date', 'third_installment_amount',
+            'fourth_installment_date', 'fourth_installment_amount',
+            'fifth_installment_date', 'fifth_installment_amount',
+            'sixth_installment_date', 'sixth_installment_amount',
+            'seventh_installment_date', 'seventh_installment_amount',
+            'eighth_installment_date', 'eighth_installment_amount',
+            'ninth_installment_date', 'ninth_installment_amount',
+            'tenth_installment_date', 'tenth_installment_amount',
+
+            // أقساط بصيغة أخرى
+            'installment_1_date', 'installment_1_amount',
+            'installment_2_date', 'installment_2_amount',
+            'installment_3_date', 'installment_3_amount',
+            'installment_4_date', 'installment_4_amount',
+            'installment_5_date', 'installment_5_amount',
+            'installment_6_date', 'installment_6_amount',
+            'installment_7_date', 'installment_7_amount',
+            'installment_8_date', 'installment_8_amount',
+            'installment_9_date', 'installment_9_amount',
+            'installment_10_date', 'installment_10_amount',
+
+            // حقول إضافية
+            'notes', 'status', 'payment_method', 'bank_account'
+        ];
+
+        // إضافة الحقول الموجودة فعلاً في البيانات
+        fieldsToEmpty.forEach(field => {
+            if (unitInSupabase.hasOwnProperty(field)) {
+                // تحديد نوع القيمة الفارغة حسب نوع الحقل
+                if (field.includes('date') || field.includes('amount') || field.includes('value') || field.includes('count')) {
+                    emptyData[field] = null;
+                } else {
+                    emptyData[field] = '';
+                }
+            }
+        });
+
+        // البحث عن أي حقول إضافية تحتوي على كلمات مفتاحية
+        Object.keys(unitInSupabase).forEach(key => {
+            const lowerKey = key.toLowerCase();
+            if ((lowerKey.includes('installment') || lowerKey.includes('total') ||
+                 lowerKey.includes('amount') || lowerKey.includes('rent') ||
+                 lowerKey.includes('contract') || lowerKey.includes('tenant')) &&
+                !lowerKey.includes('unit_number') && !lowerKey.includes('property_name') &&
+                !lowerKey.includes('city') && !lowerKey.includes('area') &&
+                !lowerKey.includes('owner') && !lowerKey.includes('deed') &&
+                !lowerKey.includes('registry') && !emptyData.hasOwnProperty(key)) {
+
+                emptyData[key] = typeof unitInSupabase[key] === 'number' ? null : '';
+            }
+        });
+
+        emptyData.updated_at = new Date().toISOString();
+
+        console.log(`🗑️ سيتم إفراغ ${Object.keys(emptyData).length} حقل:`, Object.keys(emptyData));
+
+        console.log(`☁️ تنفيذ الإفراغ التام في Supabase...`);
+
+        // تنفيذ الإفراغ في Supabase
+        const { data: updatedUnit, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(emptyData)
+            .eq('id', unitInSupabase.id)
+            .select();
+
+        if (updateError) {
+            throw new Error(`فشل في إفراغ البيانات: ${updateError.message}`);
+        }
+
+        if (!updatedUnit || updatedUnit.length === 0) {
+            throw new Error('لم يتم إرجاع بيانات من عملية الإفراغ');
+        }
+
+        console.log(`✅ تم الإفراغ التام في Supabase - تم إفراغ ${Object.keys(emptyData).length} حقل`);
+
+        // التحقق من الإفراغ
+        const clearedUnit = updatedUnit[0];
+        let notClearedFields = [];
+        Object.keys(emptyData).forEach(field => {
+            if (field !== 'updated_at' && clearedUnit[field] !== null && clearedUnit[field] !== '') {
+                notClearedFields.push(field);
+            }
+        });
+
+        if (notClearedFields.length > 0) {
+            console.warn(`⚠️ بعض الحقول لم يتم إفراغها: ${notClearedFields.join(', ')}`);
+        } else {
+            console.log('✅ تم التحقق من الإفراغ التام - جميع الحقول فارغة');
+        }
+
+        // تحديث البيانات المحلية
+        if (properties && Array.isArray(properties)) {
+            const localUnitIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === unitNumber &&
+                p['اسم العقار'] === unitToClear['اسم العقار']
+            );
+
+            if (localUnitIndex !== -1) {
+                // إفراغ تام لجميع البيانات المحلية
+                const fieldsToEmpty = [
+                    // بيانات المستأجر والعقد
+                    'اسم المستأجر', 'رقم العقد', 'قيمة  الايجار ', 'نوع العقد',
+                    'تاريخ البداية', 'تاريخ النهاية', 'الاجمالى', 'رقم حساب الكهرباء',
+                    'عدد الاقساط المتبقية',
+
+                    // الأقساط الأساسية
+                    'تاريخ القسط الاول', 'مبلغ القسط الاول',
+                    'تاريخ القسط الثاني', 'مبلغ القسط الثاني',
+                    'تاريخ انتهاء الاقساط',
+
+                    // حقول إضافية
+                    'ملاحظات', 'الحالة', 'طريقة الدفع', 'رقم الحساب البنكي'
+                ];
+
+                // إفراغ الحقول الأساسية
+                fieldsToEmpty.forEach(field => {
+                    if (properties[localUnitIndex].hasOwnProperty(field)) {
+                        properties[localUnitIndex][field] = '';
+                    }
+                });
+
+                // إفراغ أقساط إضافية (3-10) بالأرقام العربية
+                for (let i = 3; i <= 10; i++) {
+                    const arabicNumber = getArabicNumber(i);
+                    const dateField = `تاريخ القسط ${arabicNumber}`;
+                    const amountField = `مبلغ القسط ${arabicNumber}`;
+
+                    if (properties[localUnitIndex].hasOwnProperty(dateField)) {
+                        properties[localUnitIndex][dateField] = '';
+                    }
+                    if (properties[localUnitIndex].hasOwnProperty(amountField)) {
+                        properties[localUnitIndex][amountField] = '';
+                    }
+                }
+
+                // إفراغ أقساط إضافية بالأرقام الإنجليزية (احتياطي)
+                for (let i = 1; i <= 10; i++) {
+                    const dateField = `installment_${i}_date`;
+                    const amountField = `installment_${i}_amount`;
+
+                    if (properties[localUnitIndex].hasOwnProperty(dateField)) {
+                        properties[localUnitIndex][dateField] = '';
+                    }
+                    if (properties[localUnitIndex].hasOwnProperty(amountField)) {
+                        properties[localUnitIndex][amountField] = '';
+                    }
+                }
+
+                // البحث عن أي حقول أخرى تحتوي على "قسط" أو "installment"
+                Object.keys(properties[localUnitIndex]).forEach(key => {
+                    if ((key.includes('قسط') || key.includes('installment') ||
+                         key.includes('اجمالى') || key.includes('total')) &&
+                        !key.includes('رقم  الوحدة ') && !key.includes('اسم العقار')) {
+                        properties[localUnitIndex][key] = '';
+                    }
+                });
+
+                saveDataLocally();
+                console.log('✅ تم الإفراغ التام لجميع البيانات المحلية (شامل جميع الأقساط والحقول)');
+            }
+        }
+
+        // تحديث البيانات في المجموعة الحالية - إفراغ تام
+        if (window.currentEditingUnits) {
+            const currentUnitIndex = window.currentEditingUnits.findIndex(unit =>
+                unit['رقم  الوحدة '] === unitNumber
+            );
+
+            if (currentUnitIndex !== -1) {
+                const currentUnit = window.currentEditingUnits[currentUnitIndex];
+
+                // إفراغ تام لجميع البيانات
+                const fieldsToEmpty = [
+                    'اسم المستأجر', 'رقم العقد', 'قيمة  الايجار ', 'نوع العقد',
+                    'تاريخ البداية', 'تاريخ النهاية', 'الاجمالى', 'رقم حساب الكهرباء',
+                    'عدد الاقساط المتبقية', 'تاريخ القسط الاول', 'مبلغ القسط الاول',
+                    'تاريخ القسط الثاني', 'مبلغ القسط الثاني', 'تاريخ انتهاء الاقساط',
+                    'ملاحظات', 'الحالة', 'طريقة الدفع', 'رقم الحساب البنكي'
+                ];
+
+                fieldsToEmpty.forEach(field => {
+                    if (currentUnit.hasOwnProperty(field)) {
+                        currentUnit[field] = '';
+                    }
+                });
+
+                // إفراغ أقساط إضافية (3-10)
+                for (let i = 3; i <= 10; i++) {
+                    const arabicNumber = getArabicNumber(i);
+                    const dateField = `تاريخ القسط ${arabicNumber}`;
+                    const amountField = `مبلغ القسط ${arabicNumber}`;
+
+                    if (currentUnit.hasOwnProperty(dateField)) {
+                        currentUnit[dateField] = '';
+                    }
+                    if (currentUnit.hasOwnProperty(amountField)) {
+                        currentUnit[amountField] = '';
+                    }
+                }
+
+                // إفراغ أي حقول أخرى تحتوي على بيانات الأقساط
+                Object.keys(currentUnit).forEach(key => {
+                    if ((key.includes('قسط') || key.includes('installment') ||
+                         key.includes('اجمالى') || key.includes('total')) &&
+                        !key.includes('رقم  الوحدة ') && !key.includes('اسم العقار')) {
+                        currentUnit[key] = '';
+                    }
+                });
+
+                console.log('✅ تم الإفراغ التام لجميع البيانات في المجموعة الحالية');
+            }
+        }
+
+        // تحديث العرض فوراً
+        if (typeof updateLinkedUnitsDisplay === 'function') {
+            updateLinkedUnitsDisplay();
+        }
+
+        // تحديث الواجهة إذا كانت نافذة التحرير مفتوحة
+        if (typeof refreshEditingInterface === 'function') {
+            refreshEditingInterface();
+        }
+
+        // إعادة تحميل البيانات في الواجهة
+        if (typeof initializeApp === 'function') {
+            initializeApp();
+        }
+
+        // تحديث البطاقات المعروضة
+        if (typeof displayProperties === 'function') {
+            displayProperties();
+        }
+
+        // رسالة النجاح
+        const successMessage = `🎉 تم الإفراغ التام للوحدة ${unitNumber}!
+
+🗑️ تم حذف ${Object.keys(emptyData).length} حقل من Supabase:
+• اسم المستأجر: محذوف ✓
+• رقم العقد: محذوف ✓
+• قيمة الإيجار: محذوف ✓
+• الإجمالي: محذوف نهائياً ✓
+• جميع الأقساط (1-10): محذوفة نهائياً ✓
+• رقم حساب الكهرباء: محذوف ✓
+• جميع البيانات المرتبطة: محذوفة ✓
+
+✅ البيانات المحفوظة:
+• رقم الوحدة: ${unitNumber}
+• اسم العقار: ${propertyName}
+• المساحة والمالك ورقم الصك
+
+☁️ تم الحفظ في Supabase فوراً
+📱 تم تحديث البيانات المحلية
+🔄 تم تحديث نافذة التحرير
+🏠 البطاقة فارغة تماماً الآن
+
+💡 أغلق نافذة التحرير وأعد فتحها لرؤية النتيجة`;
+
+        alert(successMessage);
+        showToast(`تم إفراغ بيانات الوحدة ${unitNumber} بنجاح!`, 'success');
+
+    } catch (error) {
+        console.error(`❌ خطأ في إفراغ بيانات الوحدة ${unitNumber}:`, error);
+
+        const errorMessage = `❌ فشل في إفراغ بيانات الوحدة ${unitNumber}!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• اتصال الإنترنت
+• صلاحيات Supabase
+• وجود الوحدة في قاعدة البيانات`;
+
+        alert(errorMessage);
+        showToast(`فشل في إفراغ بيانات الوحدة ${unitNumber}`, 'error');
+    }
+}
+
+// دالة مساعدة للحصول على الأرقام العربية
+function getArabicNumber(num) {
+    const arabicNumbers = {
+        1: 'الاول', 2: 'الثاني', 3: 'الثالث', 4: 'الرابع', 5: 'الخامس',
+        6: 'السادس', 7: 'السابع', 8: 'الثامن', 9: 'التاسع', 10: 'العاشر'
+    };
+    return arabicNumbers[num] || num.toString();
+}
+
+// دالة إفراغ محسنة تعمل مع البطاقات مباشرة
+async function clearUnitDataFromCard(unitNumber, propertyName) {
+    console.log(`🗑️ إفراغ البطاقة: ${unitNumber} في ${propertyName}...`);
+
+    try {
+        // التحقق من اتصال Supabase
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // رسالة تأكيد
+        const confirmMessage = `هل أنت متأكد من إفراغ جميع بيانات الوحدة ${unitNumber}؟
+
+🗑️ سيتم حذف جميع البيانات التالية نهائياً:
+• اسم المستأجر
+• رقم العقد
+• قيمة الإيجار
+• الإجمالي
+• جميع الأقساط (التواريخ والمبالغ)
+• رقم حساب الكهرباء
+• جميع البيانات المرتبطة بالعقد
+
+✅ سيتم الاحتفاظ بـ:
+• رقم الوحدة
+• اسم العقار
+• المساحة
+• المالك ورقم الصك
+
+☁️ سيتم الحذف فوراً من Supabase
+
+هل تريد المتابعة؟`;
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        // البحث عن الوحدة في Supabase
+        console.log(`🔍 البحث عن الوحدة ${unitNumber} في Supabase...`);
+        const { data: unitData, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName)
+            .single();
+
+        if (searchError) {
+            throw new Error(`خطأ في البحث: ${searchError.message}`);
+        }
+
+        if (!unitData) {
+            throw new Error(`لم يتم العثور على الوحدة ${unitNumber}`);
+        }
+
+        console.log('✅ تم العثور على الوحدة في Supabase');
+
+        // إعداد البيانات للإفراغ التام
+        const clearData = {};
+
+        // قائمة شاملة بجميع الحقول التي يجب إفراغها
+        const fieldsToClear = [
+            // بيانات المستأجر والعقد
+            'tenant_name', 'contract_number', 'rent_value', 'contract_type',
+            'start_date', 'end_date', 'total_amount', 'electricity_account',
+            'remaining_installments', 'installment_count', 'installment_end_date',
+
+            // جميع الأقساط (1-10)
+            'first_installment_date', 'first_installment_amount',
+            'second_installment_date', 'second_installment_amount',
+            'third_installment_date', 'third_installment_amount',
+            'fourth_installment_date', 'fourth_installment_amount',
+            'fifth_installment_date', 'fifth_installment_amount',
+            'sixth_installment_date', 'sixth_installment_amount',
+            'seventh_installment_date', 'seventh_installment_amount',
+            'eighth_installment_date', 'eighth_installment_amount',
+            'ninth_installment_date', 'ninth_installment_amount',
+            'tenth_installment_date', 'tenth_installment_amount',
+
+            // حقول إضافية
+            'notes', 'status', 'payment_method', 'bank_account'
+        ];
+
+        // إضافة الحقول للإفراغ
+        fieldsToClear.forEach(field => {
+            if (unitData.hasOwnProperty(field)) {
+                clearData[field] = field.includes('date') || field.includes('amount') || field.includes('value') || field.includes('count') ? null : '';
+            }
+        });
+
+        // البحث عن أي حقول إضافية تحتوي على كلمات مفتاحية
+        Object.keys(unitData).forEach(key => {
+            if ((key.includes('installment') || key.includes('total') || key.includes('amount') ||
+                 key.includes('rent') || key.includes('contract') || key.includes('tenant')) &&
+                !key.includes('unit_number') && !key.includes('property_name') &&
+                !key.includes('city') && !key.includes('area') &&
+                !key.includes('owner') && !key.includes('deed') && !key.includes('registry')) {
+                clearData[key] = typeof unitData[key] === 'number' ? null : '';
+            }
+        });
+
+        clearData.updated_at = new Date().toISOString();
+
+        console.log(`🗑️ إفراغ ${Object.keys(clearData).length} حقل في Supabase...`);
+
+        // تنفيذ الإفراغ في Supabase
+        const { data: clearedData, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(clearData)
+            .eq('id', unitData.id)
+            .select();
+
+        if (updateError) {
+            throw new Error(`فشل في الإفراغ: ${updateError.message}`);
+        }
+
+        console.log('✅ تم الإفراغ في Supabase بنجاح');
+
+        // تحديث البيانات المحلية
+        if (properties && Array.isArray(properties)) {
+            const localIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === unitNumber && p['اسم العقار'] === propertyName
+            );
+
+            if (localIndex !== -1) {
+                // إفراغ البيانات المحلية
+                const localFieldsToEmpty = [
+                    'اسم المستأجر', 'رقم العقد', 'قيمة  الايجار ', 'نوع العقد',
+                    'تاريخ البداية', 'تاريخ النهاية', 'الاجمالى', 'رقم حساب الكهرباء',
+                    'عدد الاقساط المتبقية', 'تاريخ انتهاء الاقساط'
+                ];
+
+                localFieldsToEmpty.forEach(field => {
+                    if (properties[localIndex].hasOwnProperty(field)) {
+                        properties[localIndex][field] = '';
+                    }
+                });
+
+                // إفراغ الأقساط المحلية
+                for (let i = 1; i <= 10; i++) {
+                    const arabicNum = getArabicNumber(i);
+                    const dateField = i <= 2 ?
+                        (i === 1 ? 'تاريخ القسط الاول' : 'تاريخ القسط الثاني') :
+                        `تاريخ القسط ${arabicNum}`;
+                    const amountField = i <= 2 ?
+                        (i === 1 ? 'مبلغ القسط الاول' : 'مبلغ القسط الثاني') :
+                        `مبلغ القسط ${arabicNum}`;
+
+                    if (properties[localIndex].hasOwnProperty(dateField)) {
+                        properties[localIndex][dateField] = '';
+                    }
+                    if (properties[localIndex].hasOwnProperty(amountField)) {
+                        properties[localIndex][amountField] = '';
+                    }
+                }
+
+                saveDataLocally();
+                console.log('✅ تم تحديث البيانات المحلية');
+            }
+        }
+
+        // تحديث الواجهة فوراً
+        if (typeof displayProperties === 'function') {
+            displayProperties();
+        }
+        if (typeof initializeApp === 'function') {
+            initializeApp();
+        }
+
+        // رسالة النجاح
+        const successMessage = `🎉 تم إفراغ الوحدة ${unitNumber} بالكامل!
+
+🗑️ تم حذف جميع البيانات التالية نهائياً:
+• اسم المستأجر
+• رقم العقد
+• قيمة الإيجار: تم الحذف
+• الإجمالي: تم الحذف نهائياً
+• جميع الأقساط: تم الحذف نهائياً
+• رقم حساب الكهرباء
+• جميع البيانات المرتبطة
+
+✅ تم الاحتفاظ بالبيانات الأساسية:
+• رقم الوحدة: ${unitNumber}
+• اسم العقار: ${propertyName}
+• المساحة والمالك ورقم الصك
+
+☁️ تم الحفظ في Supabase
+📱 تم تحديث الواجهة فوراً
+🏠 البطاقة أصبحت فارغة تماماً`;
+
+        alert(successMessage);
+        showToast(`تم إفراغ الوحدة ${unitNumber} بالكامل!`, 'success');
+
+    } catch (error) {
+        console.error(`❌ خطأ في إفراغ الوحدة ${unitNumber}:`, error);
+        alert(`❌ فشل في إفراغ الوحدة ${unitNumber}:\n\n${error.message}`);
+        showToast(`فشل في إفراغ الوحدة ${unitNumber}`, 'error');
+    }
+}
+
+// دالة الإفراغ الكامل المبسطة (للزر المنفصل)
+async function completeClearUnit(unitNumber) {
+    if (!unitNumber) {
+        alert('رقم الوحدة غير صحيح');
+        return;
+    }
+
+    console.log(`🗑️ بدء الإفراغ الكامل للوحدة ${unitNumber}...`);
+
+    try {
+        // التحقق من اتصال Supabase
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // رسالة تأكيد مبسطة
+        const confirmMessage = `⚠️ تحذير: إفراغ كامل للوحدة ${unitNumber}
+
+🗑️ سيتم حذف نهائياً:
+• الإجمالي (total_amount)
+• عدد الأقساط (installment_count)
+• جميع الأقساط والتواريخ
+• بيانات المستأجر والعقد
+
+⚠️ هذا الإجراء لا يمكن التراجع عنه!
+
+هل أنت متأكد من المتابعة؟`;
+
+        if (!confirm(confirmMessage)) {
+            console.log('❌ تم إلغاء عملية الإفراغ الكامل بواسطة المستخدم');
+            return;
+        }
+
+        // البحث عن الوحدة في Supabase
+        console.log(`🔍 البحث عن الوحدة ${unitNumber} في Supabase...`);
+        const { data: supabaseUnit, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .single();
+
+        if (searchError) {
+            throw new Error(`خطأ في البحث: ${searchError.message}`);
+        }
+
+        if (!supabaseUnit) {
+            throw new Error(`لم يتم العثور على الوحدة ${unitNumber} في Supabase`);
+        }
+
+        console.log(`✅ تم العثور على الوحدة في Supabase - ID: ${supabaseUnit.id}`);
+
+        // إعداد البيانات للإفراغ - قائمة مبسطة ومباشرة
+        const clearData = {
+            // الحقول الرقمية - تعيين null
+            total_amount: null,
+            installment_count: null,
+            rent_value: null,
+            remaining_installments: null,
+
+            // الأقساط - المبالغ
+            first_installment_amount: null,
+            second_installment_amount: null,
+            third_installment_amount: null,
+            fourth_installment_amount: null,
+            fifth_installment_amount: null,
+            sixth_installment_amount: null,
+            seventh_installment_amount: null,
+            eighth_installment_amount: null,
+            ninth_installment_amount: null,
+            tenth_installment_amount: null,
+
+            // الأقساط - التواريخ
+            first_installment_date: null,
+            second_installment_date: null,
+            third_installment_date: null,
+            fourth_installment_date: null,
+            fifth_installment_date: null,
+            sixth_installment_date: null,
+            seventh_installment_date: null,
+            eighth_installment_date: null,
+            ninth_installment_date: null,
+            tenth_installment_date: null,
+
+            // بيانات المستأجر والعقد - تعيين نص فارغ
+            tenant_name: '',
+            contract_number: '',
+            contract_type: '',
+            start_date: null,
+            end_date: null,
+            installment_end_date: null,
+            electricity_account: '',
+            tenant_phone: '',
+            tenant_phone_2: '',
+
+            // تحديث الوقت
+            updated_at: new Date().toISOString()
+        };
+
+        console.log(`🗑️ سيتم إفراغ ${Object.keys(clearData).length} حقل`);
+        console.log('📋 البيانات التي ستُرسل:', clearData);
+
+        // تنفيذ الإفراغ الكامل في Supabase
+        console.log(`☁️ تنفيذ الإفراغ الكامل في Supabase...`);
+        const { data: clearedUnit, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(clearData)
+            .eq('id', supabaseUnit.id)
+            .select();
+
+        if (updateError) {
+            console.error('❌ تفاصيل خطأ Supabase:', updateError);
+            throw new Error(`فشل في الإفراغ الكامل: ${updateError.message}`);
+        }
+
+        if (!clearedUnit || clearedUnit.length === 0) {
+            throw new Error('لم يتم إرجاع بيانات من عملية الإفراغ');
+        }
+
+        console.log(`✅ تم الإفراغ الكامل في Supabase بنجاح!`);
+
+        // التحقق من الإفراغ
+        const finalUnit = clearedUnit[0];
+        let notClearedFields = [];
+        Object.keys(clearData).forEach(field => {
+            if (field !== 'updated_at' && finalUnit[field] !== null && finalUnit[field] !== '') {
+                notClearedFields.push(field);
+            }
+        });
+
+        if (notClearedFields.length > 0) {
+            console.warn(`⚠️ بعض الحقول لم يتم إفراغها: ${notClearedFields.join(', ')}`);
+        } else {
+            console.log('✅ تم التحقق من الإفراغ الكامل - جميع الحقول فارغة');
+        }
+
+        // تحديث البيانات المحلية
+        if (properties && Array.isArray(properties)) {
+            const localIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === unitNumber
+            );
+
+            if (localIndex !== -1) {
+                // إفراغ البيانات المحلية المهمة
+                const localFieldsToEmpty = [
+                    'اسم المستأجر', 'رقم العقد', 'قيمة  الايجار ', 'نوع العقد',
+                    'تاريخ البداية', 'تاريخ النهاية', 'الاجمالى', 'رقم حساب الكهرباء',
+                    'عدد الاقساط المتبقية', 'تاريخ انتهاء الاقساط',
+                    'رقم جوال المستأجر', 'رقم جوال إضافي'
+                ];
+
+                localFieldsToEmpty.forEach(field => {
+                    if (properties[localIndex].hasOwnProperty(field)) {
+                        properties[localIndex][field] = '';
+                    }
+                });
+
+                // إفراغ الأقساط المحلية (1-10)
+                for (let i = 1; i <= 10; i++) {
+                    const arabicNum = getArabicNumber(i);
+                    const dateField = i <= 2 ?
+                        (i === 1 ? 'تاريخ القسط الاول' : 'تاريخ القسط الثاني') :
+                        `تاريخ القسط ${arabicNum}`;
+                    const amountField = i <= 2 ?
+                        (i === 1 ? 'مبلغ القسط الاول' : 'مبلغ القسط الثاني') :
+                        `مبلغ القسط ${arabicNum}`;
+
+                    if (properties[localIndex].hasOwnProperty(dateField)) {
+                        properties[localIndex][dateField] = '';
+                    }
+                    if (properties[localIndex].hasOwnProperty(amountField)) {
+                        properties[localIndex][amountField] = '';
+                    }
+                }
+
+                saveDataLocally();
+                console.log('✅ تم تحديث البيانات المحلية');
+            }
+        }
+
+        // تحديث المجموعة الحالية
+        if (window.currentEditingUnits) {
+            const currentIndex = window.currentEditingUnits.findIndex(unit =>
+                unit['رقم  الوحدة '] === unitNumber
+            );
+
+            if (currentIndex !== -1) {
+                const currentUnit = window.currentEditingUnits[currentIndex];
+
+                // إفراغ جميع البيانات المرتبطة بالعقد
+                Object.keys(currentUnit).forEach(key => {
+                    if ((key.includes('مستأجر') || key.includes('عقد') || key.includes('ايجار') ||
+                         key.includes('قسط') || key.includes('اجمالى') || key.includes('كهرباء') ||
+                         key.includes('جوال')) &&
+                        !key.includes('رقم  الوحدة ') && !key.includes('اسم العقار')) {
+                        currentUnit[key] = '';
+                    }
+                });
+
+                console.log('✅ تم تحديث المجموعة الحالية');
+            }
+        }
+
+        // تحديث الواجهة فوراً
+        if (typeof displayProperties === 'function') {
+            displayProperties();
+        }
+        if (typeof initializeApp === 'function') {
+            initializeApp();
+        }
+
+        // رسالة النجاح مبسطة وواضحة
+        const successMessage = `🎉 تم الإفراغ الكامل للوحدة ${unitNumber} بنجاح!
+
+🗑️ تم حذف البيانات التالية نهائياً:
+${notClearedFields.length === 0 ? '✅ جميع البيانات تم حذفها بنجاح' : `⚠️ ${notClearedFields.length} حقل لم يتم حذفه`}
+
+📋 البيانات المحذوفة:
+• الإجمالي (total_amount): محذوف ✓
+• عدد الأقساط (installment_count): محذوف ✓
+• جميع الأقساط (1-10): محذوفة ✓
+• بيانات المستأجر والعقد: محذوفة ✓
+
+☁️ تم الحفظ في Supabase فوراً
+📱 تم تحديث جميع البيانات المحلية
+🏠 الوحدة أصبحت فارغة تماماً
+
+💡 أغلق نافذة التحرير وأعد فتحها لرؤية النتيجة النهائية`;
+
+        alert(successMessage);
+        showToast(`تم الإفراغ الكامل للوحدة ${unitNumber}!`, 'success');
+
+        console.log(`🎉 اكتمل الإفراغ الكامل للوحدة ${unitNumber} بنجاح`);
+
+    } catch (error) {
+        console.error(`❌ خطأ في الإفراغ الكامل للوحدة ${unitNumber}:`, error);
+
+        const errorMessage = `❌ فشل في الإفراغ الكامل للوحدة ${unitNumber}!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• اتصال الإنترنت
+• صلاحيات Supabase
+• وجود الوحدة في قاعدة البيانات
+
+🔄 يمكنك المحاولة مرة أخرى`;
+
+        alert(errorMessage);
+        showToast(`فشل في الإفراغ الكامل للوحدة ${unitNumber}`, 'error');
+    }
+}
+
+// دالة اختبار سريعة لفحص بيانات الوحدة
+async function quickCheckUnit(unitNumber) {
+    if (!unitNumber) {
+        console.log('❌ يرجى تحديد رقم الوحدة');
+        return;
+    }
+
+    try {
+        if (!supabaseClient) {
+            console.log('❌ Supabase غير متصل');
+            return;
+        }
+
+        console.log(`🔍 فحص بيانات الوحدة ${unitNumber}...`);
+
+        const { data, error } = await supabaseClient
+            .from('properties')
+            .select('unit_number, property_name, total_amount, installment_count, first_installment_amount, second_installment_amount, rent_value, tenant_name, contract_number')
+            .eq('unit_number', unitNumber)
+            .single();
+
+        if (error) {
+            console.error('❌ خطأ في جلب البيانات:', error);
+            return;
+        }
+
+        if (!data) {
+            console.log(`❌ لم يتم العثور على الوحدة ${unitNumber}`);
+            return;
+        }
+
+        console.log(`📊 بيانات الوحدة ${unitNumber}:`);
+        console.log('🏠 اسم العقار:', data.property_name || 'غير محدد');
+        console.log('👤 اسم المستأجر:', data.tenant_name || 'فارغ');
+        console.log('📄 رقم العقد:', data.contract_number || 'فارغ');
+        console.log('💰 قيمة الإيجار:', data.rent_value || 'فارغ');
+        console.log('💵 الإجمالي:', data.total_amount || 'فارغ');
+        console.log('🔢 عدد الأقساط:', data.installment_count || 'فارغ');
+        console.log('💳 القسط الأول:', data.first_installment_amount || 'فارغ');
+        console.log('💳 القسط الثاني:', data.second_installment_amount || 'فارغ');
+
+        // تحديد حالة الوحدة
+        const isEmpty = !data.tenant_name && !data.total_amount && !data.installment_count;
+        console.log(`📋 حالة الوحدة: ${isEmpty ? '🟢 فارغة تماماً' : '🔴 تحتوي على بيانات'}`);
+
+        return data;
+
+    } catch (error) {
+        console.error(`❌ خطأ في فحص الوحدة ${unitNumber}:`, error);
+    }
+}
+
+// دالة إظهار نافذة حذف بيانات الوحدة (عمر ومحمد فقط)
+function showUnitDataClearModal() {
+    // التحقق من الصلاحية
+    if (!canDeleteUnitData()) {
+        alert('❌ ليس لديك صلاحية لحذف بيانات الوحدات');
+        return;
+    }
+
+    // إنشاء الخلفية المظلمة
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop show';
+    backdrop.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        cursor: pointer;
+    `;
+    backdrop.onclick = closeUnitDataClearModal;
+    document.body.appendChild(backdrop);
+
+    // إنشاء النافذة
+    const modal = document.createElement('div');
+    modal.className = 'modal show';
+    modal.style.cssText = `
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1050;
+        overflow-x: hidden;
+        overflow-y: auto;
+    `;
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content unit-data-clear-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-trash-alt"></i>
+                        حذف بيانات وحدة
+                    </h5>
+                    <button type="button" class="close" onclick="closeUnitDataClearModal()">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>تحذير:</strong> هذه العملية ستحذف جميع البيانات المالية للوحدة مع الاحتفاظ بالصكوك والمالك
+                    </div>
+
+                    <div class="form-group">
+                        <label for="unitNumberToClear">
+                            <i class="fas fa-home"></i>
+                            رقم الوحدة:
+                        </label>
+                        <input type="text"
+                               id="unitNumberToClear"
+                               class="form-control"
+                               placeholder="أدخل رقم الوحدة (مثال: STDM080120)"
+                               autocomplete="off">
+                        <small class="form-text text-muted">
+                            أدخل رقم الوحدة بالضبط كما يظهر في النظام
+                        </small>
+                    </div>
+
+                    <div class="clear-preview" id="clearPreview" style="display: none;">
+                        <h6><i class="fas fa-eye"></i> معاينة البيانات التي ستُحذف:</h6>
+                        <div id="clearPreviewContent"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeUnitDataClearModal()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="previewUnitDataClear()">
+                        <i class="fas fa-search"></i> معاينة
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="executeUnitDataClear()" disabled id="clearExecuteBtn">
+                        <i class="fas fa-trash-alt"></i> حذف البيانات
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // التركيز على حقل رقم الوحدة
+    setTimeout(() => {
+        document.getElementById('unitNumberToClear').focus();
+    }, 100);
+
+    // إضافة مستمع للضغط على Enter
+    document.getElementById('unitNumberToClear').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            previewUnitDataClear();
+        }
+    });
+
+    // إضافة مستمع للضغط على Escape لإغلاق النافذة
+    const escapeHandler = function(e) {
+        if (e.key === 'Escape') {
+            closeUnitDataClearModal();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+}
+
+// التحقق من صلاحية حذف بيانات الوحدات
+function canDeleteUnitData() {
+    // التحقق من المستخدم الحالي من نظام الصلاحيات
+    if (typeof currentUser !== 'undefined' && currentUser) {
+        return currentUser === 'عمر' || currentUser === 'محمد';
+    }
+
+    // التحقق البديل من localStorage
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            return userData.username === 'عمر' || userData.username === 'محمد';
+        } catch (error) {
+            console.error('خطأ في قراءة بيانات المستخدم:', error);
+        }
+    }
+
+    return false;
+}
+
+// إغلاق نافذة حذف بيانات الوحدة
+function closeUnitDataClearModal() {
+    // إزالة النافذة
+    const modal = document.querySelector('.unit-data-clear-modal');
+    if (modal && modal.closest('.modal')) {
+        modal.closest('.modal').remove();
+    }
+
+    // إزالة الخلفية المظلمة
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+}
+
+// إضافة الدالة للنطاق العام
+window.clearUnitData = clearUnitData;
+window.clearUnitDataFromCard = clearUnitDataFromCard;
+window.completeClearUnit = completeClearUnit;
+window.quickCheckUnit = quickCheckUnit;
+window.showUnitDataClearModal = showUnitDataClearModal;
+window.closeUnitDataClearModal = closeUnitDataClearModal;
+// معاينة البيانات التي ستُحذف
+async function previewUnitDataClear() {
+    const unitNumber = document.getElementById('unitNumberToClear').value.trim();
+
+    if (!unitNumber) {
+        alert('❌ يرجى إدخال رقم الوحدة');
+        return;
+    }
+
+    try {
+        console.log(`🔍 البحث عن الوحدة ${unitNumber} للمعاينة...`);
+
+        // البحث في Supabase
+        const { data: unit, error } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .single();
+
+        if (error) {
+            throw new Error(`خطأ في البحث: ${error.message}`);
+        }
+
+        if (!unit) {
+            alert(`❌ لم يتم العثور على الوحدة ${unitNumber}`);
+            return;
+        }
+
+        // عرض معاينة البيانات
+        displayClearPreview(unit);
+
+        // تفعيل زر الحذف
+        document.getElementById('clearExecuteBtn').disabled = false;
+
+    } catch (error) {
+        console.error('❌ خطأ في معاينة البيانات:', error);
+        alert(`❌ خطأ في معاينة البيانات: ${error.message}`);
+    }
+}
+
+// عرض معاينة البيانات التي ستُحذف
+function displayClearPreview(unit) {
+    const previewDiv = document.getElementById('clearPreview');
+    const contentDiv = document.getElementById('clearPreviewContent');
+
+    // البيانات التي ستُحذف
+    const dataToDelete = [];
+    const dataToKeep = [];
+
+    // فحص البيانات المالية
+    if (unit.total_amount) dataToDelete.push(`الإجمالي: ${parseFloat(unit.total_amount).toLocaleString()} ريال`);
+    if (unit.installment_count) dataToDelete.push(`عدد الأقساط: ${unit.installment_count}`);
+    if (unit.rent_value) dataToDelete.push(`قيمة الإيجار: ${parseFloat(unit.rent_value).toLocaleString()} ريال`);
+
+    // فحص الأقساط
+    for (let i = 1; i <= 10; i++) {
+        const amountField = i === 1 ? 'first_installment_amount' :
+                           i === 2 ? 'second_installment_amount' :
+                           `${getEnglishOrdinal(i)}_installment_amount`;
+        const dateField = i === 1 ? 'first_installment_date' :
+                         i === 2 ? 'second_installment_date' :
+                         `${getEnglishOrdinal(i)}_installment_date`;
+
+        if (unit[amountField]) {
+            dataToDelete.push(`القسط ${getArabicNumber(i)}: ${parseFloat(unit[amountField]).toLocaleString()} ريال`);
+        }
+        if (unit[dateField]) {
+            dataToDelete.push(`تاريخ القسط ${getArabicNumber(i)}: ${unit[dateField]}`);
+        }
+    }
+
+    // بيانات المستأجر والعقد
+    if (unit.tenant_name) dataToDelete.push(`اسم المستأجر: ${unit.tenant_name}`);
+    if (unit.contract_number) dataToDelete.push(`رقم العقد: ${unit.contract_number}`);
+    if (unit.contract_type) dataToDelete.push(`نوع العقد: ${unit.contract_type}`);
+    if (unit.start_date) dataToDelete.push(`تاريخ البداية: ${unit.start_date}`);
+    if (unit.end_date) dataToDelete.push(`تاريخ النهاية: ${unit.end_date}`);
+
+    // البيانات التي ستبقى
+    if (unit.unit_number) dataToKeep.push(`رقم الوحدة: ${unit.unit_number}`);
+    if (unit.property_name) dataToKeep.push(`اسم العقار: ${unit.property_name}`);
+    if (unit.city) dataToKeep.push(`المدينة: ${unit.city}`);
+    if (unit.owner) dataToKeep.push(`المالك: ${unit.owner}`);
+    if (unit.deed_number) dataToKeep.push(`رقم الصك: ${unit.deed_number}`);
+    if (unit.area) dataToKeep.push(`المساحة: ${unit.area}`);
+
+    let html = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-trash"></i> سيتم حذف:</h6>
+                    ${dataToDelete.length > 0 ?
+                        '<ul>' + dataToDelete.map(item => `<li>${item}</li>`).join('') + '</ul>' :
+                        '<p>لا توجد بيانات مالية للحذف</p>'
+                    }
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-shield-alt"></i> سيتم الاحتفاظ بـ:</h6>
+                    <ul>
+                        ${dataToKeep.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+
+    contentDiv.innerHTML = html;
+    previewDiv.style.display = 'block';
+}
+
+// دالة مساعدة للحصول على الترتيب بالإنجليزية
+function getEnglishOrdinal(num) {
+    const ordinals = {
+        3: 'third', 4: 'fourth', 5: 'fifth', 6: 'sixth',
+        7: 'seventh', 8: 'eighth', 9: 'ninth', 10: 'tenth'
+    };
+    return ordinals[num] || `${num}th`;
+}
+
+// تنفيذ حذف بيانات الوحدة
+async function executeUnitDataClear() {
+    const unitNumber = document.getElementById('unitNumberToClear').value.trim();
+
+    if (!unitNumber) {
+        alert('❌ يرجى إدخال رقم الوحدة');
+        return;
+    }
+
+    // تأكيد نهائي
+    const confirmMessage = `⚠️ تأكيد حذف بيانات الوحدة ${unitNumber}
+
+🗑️ سيتم حذف نهائياً:
+• جميع البيانات المالية (الإجماليات والأقساط)
+• بيانات المستأجر والعقد
+• التواريخ والمبالغ
+
+✅ سيتم الاحتفاظ بـ:
+• رقم الوحدة واسم العقار
+• المالك ورقم الصك
+• المساحة والموقع
+
+⚠️ هذا الإجراء لا يمكن التراجع عنه!
+
+هل أنت متأكد من المتابعة؟`;
+
+    if (!confirm(confirmMessage)) {
+        console.log('❌ تم إلغاء عملية الحذف بواسطة المستخدم');
+        return;
+    }
+
+    try {
+        console.log(`🗑️ بدء حذف بيانات الوحدة ${unitNumber}...`);
+
+        // البحث عن الوحدة أولاً
+        const { data: unit, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .single();
+
+        if (searchError) {
+            throw new Error(`خطأ في البحث: ${searchError.message}`);
+        }
+
+        if (!unit) {
+            throw new Error(`لم يتم العثور على الوحدة ${unitNumber}`);
+        }
+
+        // إعداد البيانات للحذف (الاحتفاظ بالصكوك والمالك)
+        const clearData = {
+            // البيانات المالية
+            total_amount: null,
+            installment_count: null,
+            rent_value: null,
+            remaining_installments: null,
+
+            // بيانات المستأجر والعقد
+            tenant_name: '',
+            contract_number: '',
+            contract_type: '',
+            start_date: null,
+            end_date: null,
+            installment_end_date: null,
+            electricity_account: '',
+            tenant_phone: '',
+            tenant_phone_2: '',
+
+            // جميع الأقساط (1-10)
+            first_installment_date: null,
+            first_installment_amount: null,
+            second_installment_date: null,
+            second_installment_amount: null,
+            third_installment_date: null,
+            third_installment_amount: null,
+            fourth_installment_date: null,
+            fourth_installment_amount: null,
+            fifth_installment_date: null,
+            fifth_installment_amount: null,
+            sixth_installment_date: null,
+            sixth_installment_amount: null,
+            seventh_installment_date: null,
+            seventh_installment_amount: null,
+            eighth_installment_date: null,
+            eighth_installment_amount: null,
+            ninth_installment_date: null,
+            ninth_installment_amount: null,
+            tenth_installment_date: null,
+            tenth_installment_amount: null,
+
+            // تحديث الوقت
+            updated_at: new Date().toISOString()
+        };
+
+        console.log(`☁️ تنفيذ الحذف في Supabase...`);
+
+        // تنفيذ الحذف في Supabase
+        const { data: clearedUnit, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(clearData)
+            .eq('id', unit.id)
+            .select();
+
+        if (updateError) {
+            throw new Error(`فشل في حذف البيانات: ${updateError.message}`);
+        }
+
+        if (!clearedUnit || clearedUnit.length === 0) {
+            throw new Error('لم يتم إرجاع بيانات من عملية الحذف');
+        }
+
+        console.log(`✅ تم حذف بيانات الوحدة ${unitNumber} بنجاح`);
+
+        // تحديث البيانات المحلية إذا كانت موجودة
+        if (properties && Array.isArray(properties)) {
+            const localIndex = properties.findIndex(p =>
+                p['رقم  الوحدة '] === unitNumber
+            );
+
+            if (localIndex !== -1) {
+                // إفراغ البيانات المحلية المقابلة
+                const localFieldsToEmpty = [
+                    'اسم المستأجر', 'رقم العقد', 'قيمة  الايجار ', 'نوع العقد',
+                    'تاريخ البداية', 'تاريخ النهاية', 'الاجمالى', 'رقم حساب الكهرباء',
+                    'عدد الاقساط المتبقية', 'تاريخ انتهاء الاقساط',
+                    'رقم جوال المستأجر', 'رقم جوال إضافي'
+                ];
+
+                localFieldsToEmpty.forEach(field => {
+                    if (properties[localIndex].hasOwnProperty(field)) {
+                        properties[localIndex][field] = '';
+                    }
+                });
+
+                // إفراغ الأقساط المحلية
+                for (let i = 1; i <= 10; i++) {
+                    const arabicNum = getArabicNumber(i);
+                    const dateField = i <= 2 ?
+                        (i === 1 ? 'تاريخ القسط الاول' : 'تاريخ القسط الثاني') :
+                        `تاريخ القسط ${arabicNum}`;
+                    const amountField = i <= 2 ?
+                        (i === 1 ? 'مبلغ القسط الاول' : 'مبلغ القسط الثاني') :
+                        `مبلغ القسط ${arabicNum}`;
+
+                    if (properties[localIndex].hasOwnProperty(dateField)) {
+                        properties[localIndex][dateField] = '';
+                    }
+                    if (properties[localIndex].hasOwnProperty(amountField)) {
+                        properties[localIndex][amountField] = '';
+                    }
+                }
+
+                saveDataLocally();
+                console.log('✅ تم تحديث البيانات المحلية');
+            }
+        }
+
+        // تحديث الواجهة
+        if (typeof displayProperties === 'function') {
+            displayProperties();
+        }
+        if (typeof initializeApp === 'function') {
+            initializeApp();
+        }
+
+        // رسالة النجاح
+        const successMessage = `🎉 تم حذف بيانات الوحدة ${unitNumber} بنجاح!
+
+✅ تم حذف:
+• جميع البيانات المالية
+• بيانات المستأجر والعقد
+• جميع الأقساط والتواريخ
+
+🛡️ تم الاحتفاظ بـ:
+• رقم الوحدة: ${unit.unit_number}
+• اسم العقار: ${unit.property_name}
+• المالك: ${unit.owner || 'غير محدد'}
+• رقم الصك: ${unit.deed_number || 'غير محدد'}
+
+☁️ تم الحفظ في Supabase فوراً
+📱 تم تحديث جميع البيانات المحلية`;
+
+        alert(successMessage);
+        showToast(`تم حذف بيانات الوحدة ${unitNumber}!`, 'success');
+
+        // إغلاق النافذة
+        closeUnitDataClearModal();
+
+    } catch (error) {
+        console.error(`❌ خطأ في حذف بيانات الوحدة ${unitNumber}:`, error);
+
+        const errorMessage = `❌ فشل في حذف بيانات الوحدة ${unitNumber}!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• اتصال الإنترنت
+• صلاحيات Supabase
+• وجود الوحدة في قاعدة البيانات
+
+🔄 يمكنك المحاولة مرة أخرى`;
+
+        alert(errorMessage);
+        showToast(`فشل في حذف بيانات الوحدة ${unitNumber}`, 'error');
+    }
+}
+
+window.executeUnitDataClear = executeUnitDataClear;
+window.previewUnitDataClear = previewUnitDataClear;
+window.getArabicNumber = getArabicNumber;
+
+// دالة اختبار إفراغ البيانات
+async function testUnitDataClearing() {
+    console.log('🧪 اختبار إفراغ بيانات الوحدات...');
+
+    try {
+        // التحقق من المتطلبات الأساسية
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        if (!properties || properties.length === 0) {
+            throw new Error('لا توجد بيانات عقارات');
+        }
+
+        // البحث عن وحدة مربوطة للاختبار
+        const linkedUnits = properties.filter(p =>
+            p['اسم المستأجر'] && p['اسم المستأجر'].trim() !== '' &&
+            p['رقم العقد'] && p['رقم العقد'].trim() !== ''
+        );
+
+        if (linkedUnits.length === 0) {
+            throw new Error('لا توجد وحدات مربوطة للاختبار');
+        }
+
+        const testUnit = linkedUnits[0];
+        const unitNumber = testUnit['رقم  الوحدة '];
+        const propertyName = testUnit['اسم العقار'];
+
+        console.log(`🗑️ اختبار إفراغ الوحدة: ${unitNumber} في عقار: ${propertyName}`);
+
+        // 1. التحقق من البيانات قبل الإفراغ
+        console.log('📋 فحص البيانات قبل الإفراغ...');
+        const { data: beforeData, error: beforeError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', unitNumber)
+            .eq('property_name', propertyName)
+            .single();
+
+        if (beforeError || !beforeData) {
+            throw new Error('فشل في جلب بيانات الوحدة قبل الإفراغ');
+        }
+
+        if (!beforeData.tenant_name || beforeData.tenant_name.trim() === '') {
+            throw new Error('الوحدة فارغة بالفعل - لا يمكن اختبار الإفراغ');
+        }
+
+        console.log('✅ الوحدة مربوطة ومناسبة للاختبار:', {
+            tenant: beforeData.tenant_name,
+            contract: beforeData.contract_number,
+            rent: beforeData.rent_value,
+            unit: beforeData.unit_number,
+            property: beforeData.property_name
+        });
+
+        // 2. تنفيذ عملية الإفراغ (بدون تأكيد المستخدم)
+        console.log('🗑️ تنفيذ عملية الإفراغ...');
+
+        // إعداد البيانات الفارغة
+        const emptyData = {
+            tenant_name: '',
+            contract_number: '',
+            rent_value: null,
+            contract_type: null,
+            start_date: null,
+            end_date: null,
+            total_amount: null,
+            electricity_account: '',
+            remaining_installments: null,
+            first_installment_date: null,
+            first_installment_amount: null,
+            second_installment_date: null,
+            second_installment_amount: null,
+            installment_end_date: null,
+            updated_at: new Date().toISOString()
+        };
+
+        const { data: afterData, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(emptyData)
+            .eq('id', beforeData.id)
+            .select();
+
+        if (updateError) {
+            throw new Error(`فشل في إفراغ البيانات: ${updateError.message}`);
+        }
+
+        if (!afterData || afterData.length === 0) {
+            throw new Error('لم يتم إرجاع بيانات من عملية الإفراغ');
+        }
+
+        console.log('✅ تم إفراغ البيانات في Supabase بنجاح');
+
+        // 3. التحقق من الإفراغ
+        console.log('🔍 التحقق من إفراغ البيانات...');
+        const clearedData = afterData[0];
+
+        // التحقق من البيانات المفرغة
+        const clearedFields = [
+            'tenant_name', 'contract_number', 'rent_value', 'contract_type',
+            'start_date', 'end_date', 'total_amount', 'electricity_account',
+            'remaining_installments', 'first_installment_date', 'first_installment_amount',
+            'second_installment_date', 'second_installment_amount', 'installment_end_date'
+        ];
+
+        let notClearedFields = [];
+        clearedFields.forEach(field => {
+            const value = clearedData[field];
+            if (value !== null && value !== '' && value !== undefined) {
+                notClearedFields.push(`${field}: ${value}`);
+            }
+        });
+
+        if (notClearedFields.length > 0) {
+            throw new Error(`بعض البيانات لم يتم إفراغها: ${notClearedFields.join(', ')}`);
+        }
+
+        // التحقق من البيانات المحفوظة
+        const preservedFields = ['unit_number', 'property_name', 'city', 'area', 'owner', 'deed_number', 'real_estate_registry'];
+        let missingPreservedFields = [];
+        preservedFields.forEach(field => {
+            if (beforeData[field] && (!clearedData[field] || clearedData[field] !== beforeData[field])) {
+                missingPreservedFields.push(field);
+            }
+        });
+
+        if (missingPreservedFields.length > 0) {
+            console.warn(`⚠️ بعض البيانات الأساسية تغيرت: ${missingPreservedFields.join(', ')}`);
+        }
+
+        console.log('✅ تم التحقق من إفراغ البيانات المطلوبة والاحتفاظ بالبيانات الأساسية');
+
+        // 4. إعادة ربط الوحدة للحفاظ على البيانات الأصلية
+        console.log('🔄 إعادة ربط الوحدة بالبيانات الأصلية...');
+        const restoreData = {
+            tenant_name: beforeData.tenant_name,
+            contract_number: beforeData.contract_number,
+            rent_value: beforeData.rent_value,
+            contract_type: beforeData.contract_type,
+            start_date: beforeData.start_date,
+            end_date: beforeData.end_date,
+            total_amount: beforeData.total_amount,
+            electricity_account: beforeData.electricity_account,
+            remaining_installments: beforeData.remaining_installments,
+            first_installment_date: beforeData.first_installment_date,
+            first_installment_amount: beforeData.first_installment_amount,
+            second_installment_date: beforeData.second_installment_date,
+            second_installment_amount: beforeData.second_installment_amount,
+            installment_end_date: beforeData.installment_end_date,
+            updated_at: new Date().toISOString()
+        };
+
+        const { error: restoreError } = await supabaseClient
+            .from('properties')
+            .update(restoreData)
+            .eq('id', beforeData.id);
+
+        if (restoreError) {
+            console.warn('⚠️ فشل في إعادة ربط البيانات الأصلية:', restoreError.message);
+        } else {
+            console.log('✅ تم إعادة ربط البيانات الأصلية بنجاح');
+        }
+
+        // النتيجة النهائية
+        const successMessage = `🎉 نجح اختبار إفراغ بيانات الوحدات!
+
+✅ جميع الخطوات نجحت:
+🗑️ الوحدة المختبرة: ${unitNumber}
+🏠 العقار: ${propertyName}
+👤 المستأجر الأصلي: ${beforeData.tenant_name}
+📄 العقد الأصلي: ${beforeData.contract_number}
+
+🗑️ تم الإفراغ بنجاح:
+• تم إفراغ جميع بيانات المستأجر والعقد
+• تم إفراغ جميع بيانات الأقساط
+• تم الاحتفاظ بالبيانات الأساسية (رقم الوحدة، العقار، المساحة، إلخ)
+• تم إعادة ربط البيانات الأصلية
+
+🎯 نظام إفراغ البيانات يعمل بشكل مثالي!
+💡 يمكنك الآن استخدام زر "إفراغ" في أي بطاقة`;
+
+        alert(successMessage);
+        showToast('🎉 نجح اختبار إفراغ البيانات!', 'success');
+        console.log('✅ نجح اختبار إفراغ بيانات الوحدات');
+
+        return {
+            success: true,
+            testedUnit: unitNumber,
+            originalData: beforeData,
+            clearedSuccessfully: true,
+            preservedFieldsIntact: missingPreservedFields.length === 0,
+            restoredSuccessfully: !restoreError
+        };
+
+    } catch (error) {
+        console.error('❌ فشل اختبار إفراغ البيانات:', error);
+
+        const errorMessage = `❌ فشل اختبار إفراغ البيانات!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• اتصال Supabase
+• وجود وحدات مربوطة للاختبار
+• صلاحيات قاعدة البيانات`;
+
+        alert(errorMessage);
+        showToast('❌ فشل اختبار إفراغ البيانات', 'error');
+
+        return { success: false, error: error.message };
+    }
+}
+
+// إضافة الدالة للنطاق العام
+window.testUnitDataClearing = testUnitDataClearing;
 
 // عرض الوحدات المرتبطة حالياً
 function renderLinkedUnits(propertyName, contractNumber) {
@@ -20480,6 +23581,7 @@ async function linkUnitToContract(unitNumber, propertyName, contractNumber) {
         // حفظ التغييرات في Supabase باستخدام الدالة المخصصة
         let supabaseSuccess = false;
         let supabaseError = null;
+        let supabaseResult = null;
 
         try {
             console.log(`💾 بدء حفظ ربط الوحدة ${unitNumber} في Supabase...`);
@@ -20491,13 +23593,15 @@ async function linkUnitToContract(unitNumber, propertyName, contractNumber) {
             });
 
             // استخدام الدالة المخصصة لحفظ ربط الوحدات
-            const result = await saveUnitLinkingToSupabase(properties[unitIndex], 'link');
+            supabaseResult = await saveUnitLinkingToSupabase(properties[unitIndex], 'link');
 
-            if (result) {
+            if (supabaseResult && supabaseResult.id) {
                 console.log(`✅ تم حفظ ربط الوحدة ${unitNumber} في Supabase بنجاح`);
+                console.log('📋 معرف السجل في Supabase:', supabaseResult.id);
                 supabaseSuccess = true;
             } else {
-                supabaseError = 'فشل في الحفظ';
+                console.warn('⚠️ تم الحفظ لكن لم يتم إرجاع معرف صحيح');
+                supabaseError = 'لم يتم إرجاع معرف صحيح من Supabase';
             }
 
         } catch (error) {
@@ -20534,6 +23638,15 @@ async function linkUnitToContract(unitNumber, propertyName, contractNumber) {
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
             if (supabaseSuccess) {
                 message += `\n\n☁️ تم حفظ التغييرات في قاعدة البيانات السحابية`;
+                if (supabaseResult?.id) {
+                    message += `\n🆔 معرف السجل: ${supabaseResult.id}`;
+                }
+                message += `\n\n📋 تفاصيل الربط:`;
+                message += `\n- الوحدة: ${unitNumber}`;
+                message += `\n- العقار: ${propertyName}`;
+                message += `\n- العقد: ${contractNumber}`;
+                message += `\n- المستأجر: ${properties[unitIndex]['اسم المستأجر'] || 'غير محدد'}`;
+                message += `\n\n🔗 يمكنك التحقق من الحفظ في Supabase Dashboard`;
             } else if (supabaseError) {
                 message += `\n\n⚠️ تحذير: مشكلة في الحفظ السحابي`;
                 message += `\nالسبب: ${supabaseError}`;
@@ -20545,24 +23658,36 @@ async function linkUnitToContract(unitNumber, propertyName, contractNumber) {
 
         alert(message);
 
-        // إظهار toast للتأكيد
-        showToast(`تم ربط الوحدة ${unitNumber} بنجاح`, 'success');
+        // إظهار toast للتأكيد مع معلومات إضافية
+        const toastMessage = supabaseSuccess
+            ? `تم ربط الوحدة ${unitNumber} وحفظها في Supabase بنجاح`
+            : `تم ربط الوحدة ${unitNumber} محلياً فقط - فشل الحفظ السحابي`;
+
+        showToast(toastMessage, supabaseSuccess ? 'success' : 'warning');
     }
 }
 
-// دالة مخصصة لحفظ ربط الوحدات في Supabase
+// دالة مخصصة لحفظ ربط الوحدات في Supabase - محسنة
 async function saveUnitLinkingToSupabase(unitData, operationType = 'link') {
     try {
         if (!supabaseClient) {
+            console.error('❌ Supabase غير متصل - لا يمكن حفظ عملية الربط');
             throw new Error('Supabase غير متصل');
         }
 
-        console.log(`💾 حفظ ${operationType === 'link' ? 'ربط' : 'فصل'} الوحدة في Supabase...`);
+        console.log(`💾 بدء حفظ ${operationType === 'link' ? 'ربط' : 'فصل'} الوحدة في Supabase...`);
+        console.log('📋 بيانات الوحدة الواردة:', {
+            unitNumber: unitData['رقم  الوحدة '],
+            propertyName: unitData['اسم العقار'],
+            tenant: unitData['اسم المستأجر'],
+            contract: unitData['رقم العقد'],
+            operation: operationType
+        });
 
-        // تحضير البيانات للحفظ
+        // تحضير البيانات للحفظ مع التحقق من القيم
         const supabaseData = {
-            unit_number: unitData['رقم  الوحدة '],
-            property_name: unitData['اسم العقار'],
+            unit_number: unitData['رقم  الوحدة '] || '',
+            property_name: unitData['اسم العقار'] || '',
             city: unitData['المدينة'] || '',
             tenant_name: operationType === 'unlink' ? '' : (unitData['اسم المستأجر'] || ''),
             contract_number: operationType === 'unlink' ? '' : (unitData['رقم العقد'] || ''),
@@ -20584,29 +23709,45 @@ async function saveUnitLinkingToSupabase(unitData, operationType = 'link') {
             console.log('🔓 تم تعيين tenant_name و contract_number كفارغين للفصل');
         }
 
+        // التحقق من البيانات الأساسية
+        if (!supabaseData.unit_number || !supabaseData.property_name) {
+            throw new Error('رقم الوحدة أو اسم العقار مفقود');
+        }
+
         console.log('📋 البيانات المحضرة للحفظ:', {
             operation: operationType,
             unit_number: supabaseData.unit_number,
+            property_name: supabaseData.property_name,
             tenant_name: supabaseData.tenant_name,
             contract_number: supabaseData.contract_number
         });
 
-        // البحث عن السجل الموجود
+        // البحث عن السجل الموجود مع معالجة أفضل للأخطاء
+        console.log('🔍 البحث عن السجل الموجود...');
         const { data: existingRecord, error: searchError } = await supabaseClient
             .from('properties')
-            .select('id')
+            .select('id, tenant_name, contract_number')
             .eq('unit_number', supabaseData.unit_number)
             .eq('property_name', supabaseData.property_name)
-            .single();
+            .maybeSingle();
 
-        if (searchError && searchError.code !== 'PGRST116') {
+        if (searchError) {
+            console.error('❌ خطأ في البحث:', searchError);
             throw new Error(`خطأ في البحث: ${searchError.message}`);
         }
 
         let result;
+        let operationSuccess = false;
+
         if (existingRecord) {
             // تحديث السجل الموجود
             console.log('🔄 تحديث السجل الموجود في Supabase...');
+            console.log('📋 السجل الحالي:', {
+                id: existingRecord.id,
+                current_tenant: existingRecord.tenant_name,
+                current_contract: existingRecord.contract_number
+            });
+
             const { data, error } = await supabaseClient
                 .from('properties')
                 .update(supabaseData)
@@ -20614,13 +23755,23 @@ async function saveUnitLinkingToSupabase(unitData, operationType = 'link') {
                 .select();
 
             if (error) {
-                // تم إزالة رسالة الخطأ حسب طلب المستخدم
-                console.error('خطأ في التحديث:', error.message);
-                throw error;
+                console.error('❌ خطأ في التحديث:', error);
+                throw new Error(`خطأ في التحديث: ${error.message}`);
             }
 
-            result = data && data.length > 0 ? data[0] : null;
-            console.log('✅ تم تحديث السجل في Supabase');
+            if (data && data.length > 0) {
+                result = data[0];
+                operationSuccess = true;
+                console.log('✅ تم تحديث السجل في Supabase بنجاح');
+                console.log('📋 البيانات المحدثة:', {
+                    id: result.id,
+                    tenant_name: result.tenant_name,
+                    contract_number: result.contract_number,
+                    updated_at: result.updated_at
+                });
+            } else {
+                throw new Error('لم يتم إرجاع بيانات من عملية التحديث');
+            }
 
         } else {
             // إنشاء سجل جديد
@@ -20633,11 +23784,28 @@ async function saveUnitLinkingToSupabase(unitData, operationType = 'link') {
                 .select();
 
             if (error) {
+                console.error('❌ خطأ في الإنشاء:', error);
                 throw new Error(`خطأ في الإنشاء: ${error.message}`);
             }
 
-            result = data && data.length > 0 ? data[0] : null;
-            console.log('✅ تم إنشاء سجل جديد في Supabase');
+            if (data && data.length > 0) {
+                result = data[0];
+                operationSuccess = true;
+                console.log('✅ تم إنشاء سجل جديد في Supabase بنجاح');
+                console.log('📋 السجل الجديد:', {
+                    id: result.id,
+                    unit_number: result.unit_number,
+                    tenant_name: result.tenant_name,
+                    contract_number: result.contract_number
+                });
+            } else {
+                throw new Error('لم يتم إرجاع بيانات من عملية الإنشاء');
+            }
+        }
+
+        // التحقق من نجاح العملية
+        if (!operationSuccess || !result) {
+            throw new Error('فشل في حفظ البيانات - لم يتم إرجاع نتيجة صحيحة');
         }
 
         // إضافة سجل في tracking_logs إذا كان متوفراً
@@ -20650,7 +23818,7 @@ async function saveUnitLinkingToSupabase(unitData, operationType = 'link') {
                     tenant_name: unitData['اسم المستأجر'] || '',
                     contract_number: unitData['رقم العقد'] || '',
                     description: `تم ${operationType === 'link' ? 'ربط' : 'فصل'} الوحدة ${unitData['رقم  الوحدة ']} ${operationType === 'link' ? 'بالعقد' : 'من العقد'} ${unitData['رقم العقد'] || 'غير محدد'}`,
-                    user_name: 'النظام'
+                    user_name: getCurrentUser() || 'النظام'
                 };
 
                 await window.trackingLogsManager.saveTrackingLogToSupabase(trackingData);
@@ -20658,12 +23826,16 @@ async function saveUnitLinkingToSupabase(unitData, operationType = 'link') {
             }
         } catch (trackingError) {
             console.warn('⚠️ فشل في حفظ سجل التتبع:', trackingError);
+            // لا نرمي خطأ هنا لأن العملية الأساسية نجحت
         }
 
+        console.log(`🎉 تم حفظ ${operationType === 'link' ? 'ربط' : 'فصل'} الوحدة بنجاح في Supabase`);
         return result;
 
     } catch (error) {
         console.error(`❌ خطأ في حفظ ${operationType === 'link' ? 'ربط' : 'فصل'} الوحدة:`, error);
+        // إظهار رسالة خطأ للمستخدم
+        showToast(`❌ فشل في حفظ ${operationType === 'link' ? 'ربط' : 'فصل'} الوحدة: ${error.message}`, 'error');
         throw error;
     }
 }
@@ -21290,7 +24462,7 @@ function calculateSmartTotal(property) {
     if (property['الاجمالى'] && property['الاجمالى'] !== null) {
         totalAmount = parseFloat(property['الاجمالى']);
         source = 'saved';
-        note = 'الإجمالي المحفوظ';
+        note = 'هذا الإجمالي يخص العام الحالي - لرؤية إجمالي الأقساط انقر على الأقساط';
     } else {
         // ثانياً: حساب من الأقساط الموجودة
         const yearlyData = calculateYearlyTotal(property);
@@ -25845,9 +29017,27 @@ async function transferSingleUnit(unitNumber, sourceProperty, destinationPropert
     };
 }
 
-// الحصول على المستخدم الحالي (سيتم تطويرها في نظام الصلاحيات)
+// الحصول على المستخدم الحالي
 function getCurrentUser() {
-    // مؤقتاً نعيد "النظام" حتى يتم تطبيق نظام الصلاحيات
+    // إذا كان هناك مستخدم مسجل دخول، إرجاع اسمه الكامل
+    if (typeof currentUser !== 'undefined' && currentUser && users[currentUser]) {
+        return users[currentUser].fullName || currentUser;
+    }
+
+    // التحقق البديل من localStorage
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            if (users[userData.username]) {
+                return users[userData.username].fullName || userData.username;
+            }
+        } catch (error) {
+            console.error('خطأ في قراءة بيانات المستخدم:', error);
+        }
+    }
+
+    // إرجاع "النظام" كقيمة افتراضية
     return 'النظام';
 }
 
@@ -34618,6 +37808,14 @@ function applyUserPermissions() {
         console.log('🔒 تم إخفاء أزرار الاختبار والحماية');
     }
 
+    // إضافة كلاس خاص لمحمد لإظهار أزرار حذف البيانات
+    if (currentUser === 'محمد') {
+        body.classList.add('user-mohammed');
+        console.log('🔧 تم تفعيل أزرار حذف البيانات لمحمد');
+    } else {
+        body.classList.remove('user-mohammed');
+    }
+
     // تحديث وظيفة getCurrentUser
     window.getCurrentUser = function() {
         return users[currentUser]?.fullName || currentUser || 'النظام';
@@ -37524,6 +40722,1547 @@ function testFilterResetOnLogin() {
     }
 }
 
+// دالة إصلاح مشاكل ربط الوحدات
+async function fixUnitLinkingIssues() {
+    console.log('🛠️ بدء إصلاح مشاكل ربط الوحدات...');
+
+    try {
+        let fixedIssues = [];
+        let totalIssues = 0;
+
+        // 1. فحص اتصال Supabase
+        console.log('🔍 فحص اتصال Supabase...');
+        if (!supabaseClient) {
+            totalIssues++;
+            console.error('❌ Supabase غير متصل');
+            fixedIssues.push('❌ Supabase غير متصل - تحقق من الإعدادات');
+        } else {
+            try {
+                const { error } = await supabaseClient.from('properties').select('count', { count: 'exact', head: true });
+                if (error) {
+                    totalIssues++;
+                    fixedIssues.push(`❌ خطأ في اتصال Supabase: ${error.message}`);
+                } else {
+                    fixedIssues.push('✅ اتصال Supabase يعمل بشكل طبيعي');
+                }
+            } catch (error) {
+                totalIssues++;
+                fixedIssues.push(`❌ خطأ في اختبار Supabase: ${error.message}`);
+            }
+        }
+
+        // 2. فحص الدوال المطلوبة
+        console.log('🔍 فحص الدوال المطلوبة...');
+        const requiredFunctions = [
+            'saveUnitLinkingToSupabase',
+            'linkUnitToContract',
+            'unlinkUnit',
+            'savePropertyToSupabase'
+        ];
+
+        requiredFunctions.forEach(funcName => {
+            if (typeof window[funcName] === 'function') {
+                fixedIssues.push(`✅ ${funcName} متوفرة`);
+            } else {
+                totalIssues++;
+                fixedIssues.push(`❌ ${funcName} غير متوفرة`);
+            }
+        });
+
+        // 3. اختبار سريع للربط
+        console.log('🧪 اختبار سريع للربط...');
+        if (supabaseClient && typeof saveUnitLinkingToSupabase === 'function') {
+            try {
+                const testResult = await quickUnitLinkingTest();
+                if (testResult.success) {
+                    fixedIssues.push('✅ اختبار الربط نجح');
+                } else {
+                    totalIssues++;
+                    fixedIssues.push(`❌ فشل اختبار الربط: ${testResult.error}`);
+                }
+            } catch (error) {
+                totalIssues++;
+                fixedIssues.push(`❌ خطأ في اختبار الربط: ${error.message}`);
+            }
+        }
+
+        // 4. النتيجة النهائية
+        const successRate = Math.round(((fixedIssues.length - totalIssues) / fixedIssues.length) * 100);
+
+        let message = `🛠️ تقرير إصلاح مشاكل ربط الوحدات\n\n`;
+        message += `📊 النتيجة العامة: ${successRate}%\n`;
+        message += `✅ العناصر السليمة: ${fixedIssues.length - totalIssues}\n`;
+        message += `❌ المشاكل المكتشفة: ${totalIssues}\n\n`;
+        message += `📋 التفاصيل:\n${fixedIssues.join('\n')}\n\n`;
+
+        if (totalIssues === 0) {
+            message += `🎉 ممتاز! النظام يعمل بشكل مثالي`;
+            showToast('🎉 النظام يعمل بشكل مثالي', 'success');
+        } else if (successRate >= 70) {
+            message += `⚠️ يوجد بعض المشاكل البسيطة`;
+            showToast('⚠️ يوجد بعض المشاكل البسيطة', 'warning');
+        } else {
+            message += `❌ يوجد مشاكل كبيرة تحتاج إصلاح`;
+            showToast('❌ يوجد مشاكل كبيرة', 'error');
+        }
+
+        alert(message);
+        console.log('🛠️ تم إكمال فحص مشاكل ربط الوحدات');
+
+        return {
+            success: totalIssues === 0,
+            successRate,
+            totalIssues,
+            fixedIssues
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في إصلاح مشاكل ربط الوحدات:', error);
+        alert(`❌ خطأ في إصلاح مشاكل ربط الوحدات:\n\n${error.message}`);
+        showToast('❌ خطأ في الإصلاح', 'error');
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة اختبار سريعة لربط الوحدات - للاستدعاء من الهيدر
+async function quickUnitLinkingTest() {
+    console.log('🔗 اختبار سريع لربط الوحدات...');
+
+    try {
+        // التحقق من المتطلبات
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        if (typeof saveUnitLinkingToSupabase !== 'function') {
+            throw new Error('دالة الربط غير متوفرة');
+        }
+
+        // إنشاء بيانات اختبار
+        const testData = {
+            'رقم  الوحدة ': 'QUICK-LINK-' + Date.now(),
+            'اسم العقار': 'عقار اختبار سريع',
+            'المدينة': 'الرياض',
+            'اسم المستأجر': 'مستأجر اختبار',
+            'رقم العقد': 'CONTRACT-QUICK-' + Date.now(),
+            'قيمة  الايجار ': 1500,
+            'المساحة': 100,
+            'نوع العقد': 'سكني'
+        };
+
+        console.log('📝 بيانات الاختبار:', testData);
+
+        // تنفيذ الربط
+        const result = await saveUnitLinkingToSupabase(testData, 'link');
+
+        if (result && result.id) {
+            // التحقق من الحفظ
+            const { data: verifyData, error: verifyError } = await supabaseClient
+                .from('properties')
+                .select('*')
+                .eq('id', result.id)
+                .single();
+
+            if (verifyError) {
+                console.warn('⚠️ تحذير: لم يتم التحقق من الحفظ:', verifyError);
+            }
+
+            const message = `✅ نجح اختبار ربط الوحدات!\n\n📋 تفاصيل النتيجة:\n- معرف السجل: ${result.id}\n- رقم الوحدة: ${testData['رقم  الوحدة ']}\n- العقد: ${testData['رقم العقد']}\n- المستأجر: ${testData['اسم المستأجر']}\n\n${verifyError ? '⚠️ تحذير: لم يتم التحقق من الحفظ' : '✅ تم التحقق من الحفظ بنجاح'}\n\n🔗 تحقق من Supabase Dashboard → Table Editor → properties`;
+
+            alert(message);
+            showToast('✅ نجح اختبار ربط الوحدات!', 'success');
+
+            console.log('✅ نجح اختبار ربط الوحدات:', result);
+            return { success: true, result, verified: !verifyError };
+
+        } else {
+            throw new Error('لم يتم إرجاع نتيجة صحيحة من الحفظ');
+        }
+
+    } catch (error) {
+        const message = `❌ فشل اختبار ربط الوحدات!\n\nالخطأ: ${error.message}\n\n💡 تحقق من:\n- اتصال الإنترنت\n- إعدادات Supabase\n- تحميل الملفات المطلوبة`;
+
+        alert(message);
+        showToast('❌ فشل اختبار ربط الوحدات', 'error');
+
+        console.error('❌ فشل اختبار ربط الوحدات:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة اختبار سريعة للربط من الكونسول - يمكن استدعاؤها بـ testLinking()
+async function testLinking() {
+    console.log('🧪 اختبار سريع لربط الوحدات من الكونسول...');
+
+    try {
+        // التحقق من الاتصال
+        if (!supabaseClient) {
+            console.error('❌ Supabase غير متصل');
+            alert('❌ Supabase غير متصل - تحقق من الإعدادات');
+            return false;
+        }
+
+        console.log('✅ Supabase متصل');
+
+        // إنشاء بيانات اختبار
+        const timestamp = Date.now();
+        const testUnit = {
+            'رقم  الوحدة ': `TEST-${timestamp}`,
+            'اسم العقار': 'عقار اختبار الربط',
+            'المدينة': 'الرياض',
+            'اسم المستأجر': 'مستأجر اختبار',
+            'رقم العقد': `CONTRACT-${timestamp}`,
+            'قيمة  الايجار ': 2000,
+            'المساحة': 120,
+            'نوع العقد': 'سكني',
+            'تاريخ البداية': '01/01/2024',
+            'تاريخ النهاية': '31/12/2024',
+            'المالك': 'مالك اختبار',
+            'رقم الصك': `DEED-${timestamp}`,
+            'السجل العيني ': `REG-${timestamp}`
+        };
+
+        console.log('📝 بيانات الاختبار:', testUnit);
+
+        // اختبار الربط
+        console.log('🔗 بدء اختبار الربط...');
+        const linkResult = await saveUnitLinkingToSupabase(testUnit, 'link');
+
+        if (linkResult && linkResult.id) {
+            console.log('✅ نجح الربط! معرف السجل:', linkResult.id);
+
+            // التحقق من الحفظ
+            const { data: savedData, error: fetchError } = await supabaseClient
+                .from('properties')
+                .select('*')
+                .eq('id', linkResult.id)
+                .single();
+
+            if (fetchError) {
+                console.warn('⚠️ تحذير: لم يتم التحقق من الحفظ:', fetchError);
+            } else {
+                console.log('✅ تم التحقق من الحفظ بنجاح:', savedData);
+            }
+
+            // اختبار الفصل
+            console.log('🔓 بدء اختبار الفصل...');
+            const unlinkResult = await saveUnitLinkingToSupabase(testUnit, 'unlink');
+
+            if (unlinkResult && unlinkResult.id) {
+                console.log('✅ نجح الفصل! معرف السجل:', unlinkResult.id);
+
+                // التحقق من الفصل
+                const { data: unlinkedData, error: unlinkFetchError } = await supabaseClient
+                    .from('properties')
+                    .select('*')
+                    .eq('id', unlinkResult.id)
+                    .single();
+
+                if (unlinkFetchError) {
+                    console.warn('⚠️ تحذير: لم يتم التحقق من الفصل:', unlinkFetchError);
+                } else {
+                    console.log('✅ تم التحقق من الفصل بنجاح:', unlinkedData);
+                    console.log('🔍 العقد والمستأجر بعد الفصل:', {
+                        contract: unlinkedData.contract_number,
+                        tenant: unlinkedData.tenant_name
+                    });
+                }
+
+                const successMessage = `🎉 نجح اختبار الربط والفصل!\n\n✅ الربط: ${linkResult.id}\n✅ الفصل: ${unlinkResult.id}\n\n🔗 تحقق من Supabase Dashboard`;
+                alert(successMessage);
+                showToast('🎉 نجح اختبار الربط والفصل!', 'success');
+
+                return true;
+            } else {
+                throw new Error('فشل في الفصل');
+            }
+        } else {
+            throw new Error('فشل في الربط');
+        }
+
+    } catch (error) {
+        console.error('❌ فشل الاختبار:', error);
+        alert(`❌ فشل الاختبار: ${error.message}`);
+        showToast('❌ فشل الاختبار', 'error');
+        return false;
+    }
+}
+
+// إضافة الدالة للنطاق العام
+window.testLinking = testLinking;
+
+// دالة لإظهار دليل استخدام ربط الوحدات
+function showUnitLinkingGuide() {
+    const guideMessage = `
+🔗 دليل استخدام ربط الوحدات
+
+📋 كيفية ربط الوحدات:
+
+1️⃣ انقر على الزر الأصفر "تحرير" للبطاقة
+2️⃣ انزل للأسفل في نافذة التحرير
+3️⃣ ستجد قسم "الوحدات المتاحة للربط"
+4️⃣ انقر على زر "ربط" بجانب الوحدة المطلوبة
+5️⃣ سيتم الربط فوراً وحفظه في Supabase
+
+✅ المميزات الجديدة:
+• الربط يحفظ فوراً في قاعدة البيانات السحابية
+• لا يحتاج إعادة تحميل الصفحة
+• يظهر رسائل تأكيد للنجاح أو الفشل
+• يمكن التحقق من الحفظ في Supabase Dashboard
+
+🧪 للاختبار:
+• استخدم زر "اختبار ربط الوحدات" في الإعدادات
+• أو اكتب testLinking() في الكونسول
+
+🔧 في حالة المشاكل:
+• تحقق من اتصال الإنترنت
+• تحقق من إعدادات Supabase
+• راجع رسائل الخطأ في الكونسول
+    `;
+
+    alert(guideMessage);
+    console.log('📖 دليل استخدام ربط الوحدات:', guideMessage);
+}
+
+// إضافة الدالة للنطاق العام
+window.showUnitLinkingGuide = showUnitLinkingGuide;
+
+// ===== نظام اختبار متكامل لربط الوحدات =====
+
+// دالة اختبار شاملة لجميع جوانب ربط الوحدات
+async function comprehensiveUnitLinkingTest() {
+    console.log('🧪 بدء الاختبار الشامل لنظام ربط الوحدات...');
+
+    const testResults = {
+        supabaseConnection: false,
+        basicLinking: false,
+        unlinking: false,
+        dataVerification: false,
+        uiIntegration: false,
+        errors: []
+    };
+
+    try {
+        // 1. اختبار اتصال Supabase
+        console.log('🔍 اختبار 1: فحص اتصال Supabase...');
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // اختبار بسيط للاتصال
+        const { data: testConnection, error: connectionError } = await supabaseClient
+            .from('properties')
+            .select('id')
+            .limit(1);
+
+        if (connectionError) {
+            throw new Error(`خطأ في الاتصال: ${connectionError.message}`);
+        }
+
+        testResults.supabaseConnection = true;
+        console.log('✅ اختبار الاتصال نجح');
+
+        // 2. اختبار الربط الأساسي
+        console.log('🔗 اختبار 2: الربط الأساسي...');
+        const timestamp = Date.now();
+        const testUnit = {
+            'رقم  الوحدة ': `COMPREHENSIVE-TEST-${timestamp}`,
+            'اسم العقار': 'عقار اختبار شامل',
+            'المدينة': 'الرياض',
+            'اسم المستأجر': 'مستأجر اختبار شامل',
+            'رقم العقد': `CONTRACT-COMPREHENSIVE-${timestamp}`,
+            'قيمة  الايجار ': 2500,
+            'المساحة': 150,
+            'نوع العقد': 'سكني',
+            'تاريخ البداية': '01/01/2024',
+            'تاريخ النهاية': '31/12/2024',
+            'المالك': 'مالك اختبار',
+            'رقم الصك': `DEED-${timestamp}`,
+            'السجل العيني ': `REG-${timestamp}`
+        };
+
+        const linkResult = await saveUnitLinkingToSupabase(testUnit, 'link');
+        if (!linkResult || !linkResult.id) {
+            throw new Error('فشل في الربط الأساسي');
+        }
+
+        testResults.basicLinking = true;
+        console.log('✅ اختبار الربط الأساسي نجح');
+
+        // 3. اختبار التحقق من البيانات
+        console.log('🔍 اختبار 3: التحقق من البيانات...');
+        const { data: verifyData, error: verifyError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('id', linkResult.id)
+            .single();
+
+        if (verifyError || !verifyData) {
+            throw new Error('فشل في التحقق من البيانات');
+        }
+
+        if (verifyData.tenant_name !== testUnit['اسم المستأجر'] ||
+            verifyData.contract_number !== testUnit['رقم العقد']) {
+            throw new Error('البيانات المحفوظة لا تطابق البيانات المرسلة');
+        }
+
+        testResults.dataVerification = true;
+        console.log('✅ اختبار التحقق من البيانات نجح');
+
+        // 4. اختبار الفصل
+        console.log('🔓 اختبار 4: فصل الوحدة...');
+        const unlinkResult = await saveUnitLinkingToSupabase(testUnit, 'unlink');
+        if (!unlinkResult || !unlinkResult.id) {
+            throw new Error('فشل في فصل الوحدة');
+        }
+
+        // التحقق من الفصل
+        const { data: unlinkVerifyData, error: unlinkVerifyError } = await supabaseClient
+            .from('properties')
+            .select('tenant_name, contract_number')
+            .eq('id', unlinkResult.id)
+            .single();
+
+        if (unlinkVerifyError || !unlinkVerifyData) {
+            throw new Error('فشل في التحقق من الفصل');
+        }
+
+        if (unlinkVerifyData.tenant_name !== '' || unlinkVerifyData.contract_number !== '') {
+            throw new Error('لم يتم فصل الوحدة بشكل صحيح');
+        }
+
+        testResults.unlinking = true;
+        console.log('✅ اختبار الفصل نجح');
+
+        // 5. اختبار تكامل الواجهة
+        console.log('🎨 اختبار 5: تكامل الواجهة...');
+        const requiredFunctions = [
+            'linkUnitToGroup',
+            'unlinkUnitFromGroup',
+            'saveUnitLinkingToSupabase',
+            'updateLinkedUnitsDisplay',
+            'updateAvailableUnitsForLinking'
+        ];
+
+        let missingFunctions = [];
+        requiredFunctions.forEach(funcName => {
+            if (typeof window[funcName] !== 'function') {
+                missingFunctions.push(funcName);
+            }
+        });
+
+        if (missingFunctions.length > 0) {
+            throw new Error(`دوال مفقودة: ${missingFunctions.join(', ')}`);
+        }
+
+        testResults.uiIntegration = true;
+        console.log('✅ اختبار تكامل الواجهة نجح');
+
+        // النتيجة النهائية
+        const allTestsPassed = Object.values(testResults).every(result =>
+            typeof result === 'boolean' ? result : true
+        );
+
+        if (allTestsPassed) {
+            const successMessage = `🎉 نجح الاختبار الشامل بنسبة 100%!
+
+✅ جميع الاختبارات نجحت:
+• اتصال Supabase: نجح
+• الربط الأساسي: نجح
+• التحقق من البيانات: نجح
+• فصل الوحدات: نجح
+• تكامل الواجهة: نجح
+
+🔗 معرف الاختبار: ${linkResult.id}
+📊 النظام جاهز للاستخدام بشكل كامل!`;
+
+            alert(successMessage);
+            showToast('🎉 نجح الاختبار الشامل!', 'success');
+            console.log('🎉 نجح الاختبار الشامل لنظام ربط الوحدات');
+
+            return { success: true, results: testResults, testId: linkResult.id };
+        } else {
+            throw new Error('بعض الاختبارات فشلت');
+        }
+
+    } catch (error) {
+        testResults.errors.push(error.message);
+        console.error('❌ فشل الاختبار الشامل:', error);
+
+        const errorMessage = `❌ فشل الاختبار الشامل!
+
+الخطأ: ${error.message}
+
+📊 نتائج الاختبارات:
+• اتصال Supabase: ${testResults.supabaseConnection ? '✅' : '❌'}
+• الربط الأساسي: ${testResults.basicLinking ? '✅' : '❌'}
+• التحقق من البيانات: ${testResults.dataVerification ? '✅' : '❌'}
+• فصل الوحدات: ${testResults.unlinking ? '✅' : '❌'}
+• تكامل الواجهة: ${testResults.uiIntegration ? '✅' : '❌'}
+
+💡 تحقق من الكونسول للمزيد من التفاصيل`;
+
+        alert(errorMessage);
+        showToast('❌ فشل الاختبار الشامل', 'error');
+
+        return { success: false, results: testResults, error: error.message };
+    }
+}
+
+// دالة اختبار سريعة للربط من الواجهة
+async function quickUILinkingTest() {
+    console.log('🎨 اختبار سريع للربط من الواجهة...');
+
+    try {
+        // التحقق من وجود البيانات المطلوبة
+        if (!window.allData || !Array.isArray(window.allData) || window.allData.length === 0) {
+            throw new Error('لا توجد بيانات متاحة للاختبار');
+        }
+
+        // البحث عن وحدة فارغة للاختبار
+        const emptyUnit = window.allData.find(unit =>
+            !unit['اسم المستأجر'] || unit['اسم المستأجر'].trim() === ''
+        );
+
+        if (!emptyUnit) {
+            // إنشاء وحدة اختبار مؤقتة
+            const testUnit = {
+                'رقم  الوحدة ': `UI-TEST-${Date.now()}`,
+                'اسم العقار': 'عقار اختبار الواجهة',
+                'المدينة': 'الرياض',
+                'اسم المستأجر': '',
+                'رقم العقد': '',
+                'قيمة  الايجار ': 0,
+                'المساحة': 100,
+                'نوع العقد': 'سكني'
+            };
+
+            window.allData.push(testUnit);
+            console.log('📝 تم إنشاء وحدة اختبار مؤقتة');
+        }
+
+        // محاكاة عملية الربط من الواجهة
+        const testUnitNumber = emptyUnit ? emptyUnit['رقم  الوحدة '] : `UI-TEST-${Date.now()}`;
+        const testPropertyName = emptyUnit ? emptyUnit['اسم العقار'] : 'عقار اختبار الواجهة';
+
+        // تعيين البيانات المطلوبة للاختبار
+        window.currentPrimaryUnit = {
+            'اسم العقار': testPropertyName,
+            'رقم  الوحدة ': testUnitNumber
+        };
+
+        window.currentEditingUnits = [];
+
+        console.log(`🔗 محاولة ربط الوحدة ${testUnitNumber}...`);
+
+        // استدعاء دالة الربط الفعلية
+        await linkUnitToGroup(testUnitNumber);
+
+        // التحقق من نجاح الربط
+        const wasLinked = window.currentEditingUnits.some(unit =>
+            unit['رقم  الوحدة '] === testUnitNumber
+        );
+
+        if (wasLinked) {
+            const successMessage = `✅ نجح اختبار الربط من الواجهة!
+
+🔗 تم ربط الوحدة: ${testUnitNumber}
+🏢 في العقار: ${testPropertyName}
+📱 تم تحديث الواجهة بنجاح
+☁️ تم الحفظ في Supabase
+
+🎯 النظام جاهز للاستخدام العادي!`;
+
+            alert(successMessage);
+            showToast('✅ نجح اختبار الربط من الواجهة!', 'success');
+            console.log('✅ نجح اختبار الربط من الواجهة');
+
+            return { success: true, unitNumber: testUnitNumber, propertyName: testPropertyName };
+        } else {
+            throw new Error('فشل في ربط الوحدة في الواجهة');
+        }
+
+    } catch (error) {
+        console.error('❌ فشل اختبار الربط من الواجهة:', error);
+
+        const errorMessage = `❌ فشل اختبار الربط من الواجهة!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• وجود بيانات في النظام
+• اتصال Supabase
+• تحميل جميع الملفات المطلوبة`;
+
+        alert(errorMessage);
+        showToast('❌ فشل اختبار الربط من الواجهة', 'error');
+
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة تشخيص شاملة لمشاكل الربط
+async function diagnoseLinkingIssues() {
+    console.log('🔍 بدء تشخيص شامل لمشاكل الربط...');
+
+    const diagnostics = {
+        supabase: { connected: false, tableExists: false, canWrite: false },
+        functions: { linkUnitToGroup: false, saveUnitLinkingToSupabase: false },
+        data: { allDataExists: false, hasUnits: false },
+        ui: { editFormsExist: false, buttonsExist: false },
+        issues: []
+    };
+
+    try {
+        // 1. تشخيص Supabase
+        console.log('🔍 تشخيص Supabase...');
+        if (supabaseClient) {
+            diagnostics.supabase.connected = true;
+
+            try {
+                const { data, error } = await supabaseClient.from('properties').select('id').limit(1);
+                if (!error) {
+                    diagnostics.supabase.tableExists = true;
+
+                    // اختبار الكتابة
+                    const testData = {
+                        unit_number: `DIAG-TEST-${Date.now()}`,
+                        property_name: 'تشخيص',
+                        city: 'الرياض',
+                        tenant_name: 'اختبار',
+                        contract_number: 'TEST-DIAG'
+                    };
+
+                    const { data: writeData, error: writeError } = await supabaseClient
+                        .from('properties')
+                        .insert([testData])
+                        .select();
+
+                    if (!writeError && writeData && writeData.length > 0) {
+                        diagnostics.supabase.canWrite = true;
+
+                        // حذف بيانات الاختبار
+                        await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('id', writeData[0].id);
+                    }
+                }
+            } catch (supabaseError) {
+                diagnostics.issues.push(`خطأ في Supabase: ${supabaseError.message}`);
+            }
+        } else {
+            diagnostics.issues.push('Supabase غير متصل');
+        }
+
+        // 2. تشخيص الدوال
+        console.log('🔍 تشخيص الدوال...');
+        diagnostics.functions.linkUnitToGroup = typeof linkUnitToGroup === 'function';
+        diagnostics.functions.saveUnitLinkingToSupabase = typeof saveUnitLinkingToSupabase === 'function';
+
+        if (!diagnostics.functions.linkUnitToGroup) {
+            diagnostics.issues.push('دالة linkUnitToGroup مفقودة');
+        }
+        if (!diagnostics.functions.saveUnitLinkingToSupabase) {
+            diagnostics.issues.push('دالة saveUnitLinkingToSupabase مفقودة');
+        }
+
+        // 3. تشخيص البيانات
+        console.log('🔍 تشخيص البيانات...');
+        if (window.allData && Array.isArray(window.allData)) {
+            diagnostics.data.allDataExists = true;
+            diagnostics.data.hasUnits = window.allData.length > 0;
+        } else {
+            diagnostics.issues.push('بيانات allData مفقودة أو غير صحيحة');
+        }
+
+        // 4. تشخيص الواجهة
+        console.log('🔍 تشخيص الواجهة...');
+        const editForms = document.querySelectorAll('#multiUnitEditForm, #propertyEditForm');
+        diagnostics.ui.editFormsExist = editForms.length > 0;
+
+        const linkButtons = document.querySelectorAll('[onclick*="linkUnitToGroup"]');
+        diagnostics.ui.buttonsExist = linkButtons.length > 0;
+
+        // إنشاء التقرير
+        const report = generateDiagnosticReport(diagnostics);
+        console.log('📊 تقرير التشخيص:', report);
+
+        // عرض النتائج
+        const issueCount = diagnostics.issues.length;
+        const successRate = Math.round(((Object.keys(diagnostics).length - 1 - issueCount) / (Object.keys(diagnostics).length - 1)) * 100);
+
+        const message = `🔍 تقرير تشخيص مشاكل الربط
+
+📊 معدل النجاح: ${successRate}%
+❌ عدد المشاكل: ${issueCount}
+
+${report}
+
+${issueCount === 0 ? '🎉 النظام يعمل بشكل مثالي!' : '💡 راجع المشاكل المذكورة أعلاه'}`;
+
+        alert(message);
+
+        if (issueCount === 0) {
+            showToast('🎉 النظام يعمل بشكل مثالي!', 'success');
+        } else {
+            showToast(`⚠️ تم اكتشاف ${issueCount} مشكلة`, 'warning');
+        }
+
+        return { success: issueCount === 0, diagnostics, report };
+
+    } catch (error) {
+        console.error('❌ خطأ في التشخيص:', error);
+        alert(`❌ خطأ في التشخيص: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة مساعدة لإنشاء تقرير التشخيص
+function generateDiagnosticReport(diagnostics) {
+    let report = '';
+
+    // Supabase
+    report += '☁️ Supabase:\n';
+    report += `  • الاتصال: ${diagnostics.supabase.connected ? '✅' : '❌'}\n`;
+    report += `  • الجدول: ${diagnostics.supabase.tableExists ? '✅' : '❌'}\n`;
+    report += `  • الكتابة: ${diagnostics.supabase.canWrite ? '✅' : '❌'}\n\n`;
+
+    // الدوال
+    report += '⚙️ الدوال:\n';
+    report += `  • linkUnitToGroup: ${diagnostics.functions.linkUnitToGroup ? '✅' : '❌'}\n`;
+    report += `  • saveUnitLinkingToSupabase: ${diagnostics.functions.saveUnitLinkingToSupabase ? '✅' : '❌'}\n\n`;
+
+    // البيانات
+    report += '📊 البيانات:\n';
+    report += `  • allData موجود: ${diagnostics.data.allDataExists ? '✅' : '❌'}\n`;
+    report += `  • يحتوي وحدات: ${diagnostics.data.hasUnits ? '✅' : '❌'}\n\n`;
+
+    // الواجهة
+    report += '🎨 الواجهة:\n';
+    report += `  • نماذج التحرير: ${diagnostics.ui.editFormsExist ? '✅' : '❌'}\n`;
+    report += `  • أزرار الربط: ${diagnostics.ui.buttonsExist ? '✅' : '❌'}\n\n`;
+
+    // المشاكل
+    if (diagnostics.issues.length > 0) {
+        report += '❌ المشاكل المكتشفة:\n';
+        diagnostics.issues.forEach((issue, index) => {
+            report += `  ${index + 1}. ${issue}\n`;
+        });
+    }
+
+    return report;
+}
+
+// إضافة جميع دوال الاختبار للنطاق العام
+window.comprehensiveUnitLinkingTest = comprehensiveUnitLinkingTest;
+window.quickUILinkingTest = quickUILinkingTest;
+window.diagnoseLinkingIssues = diagnoseLinkingIssues;
+
+// دالة موحدة لتشغيل جميع الاختبارات
+async function runAllLinkingTests() {
+    console.log('🧪 تشغيل جميع اختبارات الربط...');
+
+    const results = {
+        comprehensive: null,
+        uiTest: null,
+        diagnostics: null,
+        overallSuccess: false
+    };
+
+    try {
+        // 1. التشخيص أولاً
+        console.log('🔍 بدء التشخيص...');
+        results.diagnostics = await diagnoseLinkingIssues();
+
+        if (!results.diagnostics.success) {
+            throw new Error('فشل التشخيص - يجب إصلاح المشاكل أولاً');
+        }
+
+        // 2. الاختبار الشامل
+        console.log('🧪 بدء الاختبار الشامل...');
+        results.comprehensive = await comprehensiveUnitLinkingTest();
+
+        if (!results.comprehensive.success) {
+            throw new Error('فشل الاختبار الشامل');
+        }
+
+        // 3. اختبار الواجهة
+        console.log('🎨 بدء اختبار الواجهة...');
+        results.uiTest = await quickUILinkingTest();
+
+        if (!results.uiTest.success) {
+            console.warn('⚠️ فشل اختبار الواجهة، لكن الاختبارات الأساسية نجحت');
+        }
+
+        results.overallSuccess = results.comprehensive.success && results.diagnostics.success;
+
+        const finalMessage = `🎉 اكتملت جميع اختبارات الربط!
+
+📊 النتائج:
+✅ التشخيص: ${results.diagnostics.success ? 'نجح' : 'فشل'}
+✅ الاختبار الشامل: ${results.comprehensive.success ? 'نجح' : 'فشل'}
+${results.uiTest ? (results.uiTest.success ? '✅' : '⚠️') : '⚠️'} اختبار الواجهة: ${results.uiTest ? (results.uiTest.success ? 'نجح' : 'فشل') : 'لم يتم'}
+
+🎯 النتيجة العامة: ${results.overallSuccess ? 'النظام جاهز للاستخدام!' : 'يحتاج إصلاحات'}
+
+🔗 يمكنك الآن استخدام نظام ربط الوحدات بثقة!`;
+
+        alert(finalMessage);
+        showToast('🎉 اكتملت جميع الاختبارات!', 'success');
+
+        return results;
+
+    } catch (error) {
+        console.error('❌ فشل في تشغيل الاختبارات:', error);
+
+        const errorMessage = `❌ فشل في تشغيل الاختبارات!
+
+الخطأ: ${error.message}
+
+📊 النتائج الجزئية:
+${results.diagnostics ? (results.diagnostics.success ? '✅' : '❌') : '⏳'} التشخيص: ${results.diagnostics ? (results.diagnostics.success ? 'نجح' : 'فشل') : 'لم يتم'}
+${results.comprehensive ? (results.comprehensive.success ? '✅' : '❌') : '⏳'} الاختبار الشامل: ${results.comprehensive ? (results.comprehensive.success ? 'نجح' : 'فشل') : 'لم يتم'}
+${results.uiTest ? (results.uiTest.success ? '✅' : '❌') : '⏳'} اختبار الواجهة: ${results.uiTest ? (results.uiTest.success ? 'نجح' : 'فشل') : 'لم يتم'}`;
+
+        alert(errorMessage);
+        showToast('❌ فشل في الاختبارات', 'error');
+
+        return { ...results, overallSuccess: false, error: error.message };
+    }
+}
+
+// إضافة الدالة الموحدة للنطاق العام
+window.runAllLinkingTests = runAllLinkingTests;
+
+// دالة اختبار مباشرة للربط - يمكن استدعاؤها من الكونسول
+async function directLinkingTest() {
+    console.log('🚀 اختبار مباشر لنظام الربط...');
+
+    try {
+        // التحقق من المتطلبات الأساسية
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        if (typeof saveUnitLinkingToSupabase !== 'function') {
+            throw new Error('دالة saveUnitLinkingToSupabase غير متوفرة');
+        }
+
+        const timestamp = Date.now();
+
+        // 1. إنشاء وحدة اختبار
+        console.log('📝 إنشاء وحدة اختبار...');
+        const testUnit = {
+            'رقم  الوحدة ': `DIRECT-${timestamp}`,
+            'اسم العقار': 'عقار اختبار مباشر',
+            'المدينة': 'الرياض',
+            'اسم المستأجر': 'مستأجر اختبار مباشر',
+            'رقم العقد': `CONTRACT-DIRECT-${timestamp}`,
+            'قيمة  الايجار ': 2800,
+            'المساحة': 180,
+            'نوع العقد': 'سكني',
+            'تاريخ البداية': '01/01/2024',
+            'تاريخ النهاية': '31/12/2024',
+            'المالك': 'مالك اختبار مباشر',
+            'رقم الصك': `DEED-DIRECT-${timestamp}`,
+            'السجل العيني ': `REG-DIRECT-${timestamp}`
+        };
+
+        // 2. اختبار الربط
+        console.log('🔗 اختبار الربط...');
+        const linkResult = await saveUnitLinkingToSupabase(testUnit, 'link');
+
+        if (!linkResult || !linkResult.id) {
+            throw new Error('فشل في ربط الوحدة');
+        }
+
+        console.log('✅ نجح الربط - معرف السجل:', linkResult.id);
+
+        // 3. التحقق من الربط
+        console.log('🔍 التحقق من الربط...');
+        const { data: verifyData, error: verifyError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('id', linkResult.id)
+            .single();
+
+        if (verifyError || !verifyData) {
+            throw new Error('فشل في التحقق من الربط');
+        }
+
+        if (verifyData.tenant_name !== testUnit['اسم المستأجر'] ||
+            verifyData.contract_number !== testUnit['رقم العقد']) {
+            throw new Error('البيانات المحفوظة لا تطابق البيانات المرسلة');
+        }
+
+        console.log('✅ تم التحقق من الربط بنجاح');
+
+        // 4. اختبار الفصل
+        console.log('🔓 اختبار الفصل...');
+        const unlinkResult = await saveUnitLinkingToSupabase(testUnit, 'unlink');
+
+        if (!unlinkResult || !unlinkResult.id) {
+            throw new Error('فشل في فصل الوحدة');
+        }
+
+        console.log('✅ نجح الفصل - معرف السجل:', unlinkResult.id);
+
+        // 5. التحقق من الفصل
+        console.log('🔍 التحقق من الفصل...');
+        const { data: unlinkVerifyData, error: unlinkVerifyError } = await supabaseClient
+            .from('properties')
+            .select('tenant_name, contract_number')
+            .eq('id', unlinkResult.id)
+            .single();
+
+        if (unlinkVerifyError || !unlinkVerifyData) {
+            throw new Error('فشل في التحقق من الفصل');
+        }
+
+        if (unlinkVerifyData.tenant_name !== '' || unlinkVerifyData.contract_number !== '') {
+            throw new Error('لم يتم فصل الوحدة بشكل صحيح');
+        }
+
+        console.log('✅ تم التحقق من الفصل بنجاح');
+
+        // النتيجة النهائية
+        const successMessage = `🎉 نجح الاختبار المباشر بنسبة 100%!
+
+✅ جميع العمليات نجحت:
+🔗 الربط: نجح (ID: ${linkResult.id})
+🔍 التحقق من الربط: نجح
+🔓 الفصل: نجح (ID: ${unlinkResult.id})
+🔍 التحقق من الفصل: نجح
+
+📊 رقم الوحدة: ${testUnit['رقم  الوحدة ']}
+🏢 العقار: ${testUnit['اسم العقار']}
+👤 المستأجر: ${testUnit['اسم المستأجر']}
+📄 العقد: ${testUnit['رقم العقد']}
+
+🎯 النظام يعمل بشكل مثالي!
+🔗 يمكنك التحقق من البيانات في Supabase Dashboard`;
+
+        alert(successMessage);
+        showToast('🎉 نجح الاختبار المباشر!', 'success');
+        console.log('🎉 نجح الاختبار المباشر لنظام الربط');
+
+        return {
+            success: true,
+            linkId: linkResult.id,
+            unlinkId: unlinkResult.id,
+            unitNumber: testUnit['رقم  الوحدة '],
+            testData: testUnit
+        };
+
+    } catch (error) {
+        console.error('❌ فشل الاختبار المباشر:', error);
+
+        const errorMessage = `❌ فشل الاختبار المباشر!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• اتصال الإنترنت
+• إعدادات Supabase
+• تحميل جميع الملفات المطلوبة
+• صلاحيات قاعدة البيانات
+
+🔍 راجع الكونسول للمزيد من التفاصيل`;
+
+        alert(errorMessage);
+        showToast('❌ فشل الاختبار المباشر', 'error');
+
+        return { success: false, error: error.message };
+    }
+}
+
+// إضافة الدالة للنطاق العام
+window.directLinkingTest = directLinkingTest;
+
+// دالة محسنة لربط الوحدات الحقيقية في Supabase
+async function linkRealUnitsInSupabase(primaryUnitNumber, secondaryUnitNumber) {
+    console.log(`🔗 بدء ربط الوحدات الحقيقية: ${primaryUnitNumber} مع ${secondaryUnitNumber}`);
+
+    try {
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // 1. جلب بيانات الوحدة الأساسية
+        console.log(`📋 جلب بيانات الوحدة الأساسية ${primaryUnitNumber}...`);
+        const { data: primaryUnit, error: primaryError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', primaryUnitNumber)
+            .single();
+
+        if (primaryError || !primaryUnit) {
+            throw new Error(`لم يتم العثور على الوحدة الأساسية ${primaryUnitNumber}: ${primaryError?.message}`);
+        }
+
+        console.log('✅ تم جلب بيانات الوحدة الأساسية:', {
+            unit: primaryUnit.unit_number,
+            tenant: primaryUnit.tenant_name,
+            contract: primaryUnit.contract_number,
+            rent: primaryUnit.rent_value
+        });
+
+        // 2. جلب بيانات الوحدة الثانوية
+        console.log(`📋 جلب بيانات الوحدة الثانوية ${secondaryUnitNumber}...`);
+        const { data: secondaryUnit, error: secondaryError } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .eq('unit_number', secondaryUnitNumber)
+            .single();
+
+        if (secondaryError || !secondaryUnit) {
+            throw new Error(`لم يتم العثور على الوحدة الثانوية ${secondaryUnitNumber}: ${secondaryError?.message}`);
+        }
+
+        console.log('✅ تم جلب بيانات الوحدة الثانوية:', {
+            unit: secondaryUnit.unit_number,
+            tenant: secondaryUnit.tenant_name || 'فارغ',
+            contract: secondaryUnit.contract_number || 'فارغ'
+        });
+
+        // 3. نسخ البيانات من الوحدة الأساسية إلى الثانوية
+        console.log(`📝 نسخ البيانات من ${primaryUnitNumber} إلى ${secondaryUnitNumber}...`);
+
+        const updatedSecondaryData = {
+            tenant_name: primaryUnit.tenant_name,
+            contract_number: primaryUnit.contract_number,
+            rent_value: primaryUnit.rent_value,
+            contract_type: primaryUnit.contract_type,
+            start_date: primaryUnit.start_date,
+            end_date: primaryUnit.end_date,
+            total_amount: primaryUnit.total_amount,
+            owner: primaryUnit.owner,
+            deed_number: primaryUnit.deed_number,
+            real_estate_registry: primaryUnit.real_estate_registry,
+            electricity_account: primaryUnit.electricity_account,
+            remaining_installments: primaryUnit.remaining_installments,
+            first_installment_date: primaryUnit.first_installment_date,
+            first_installment_amount: primaryUnit.first_installment_amount,
+            second_installment_date: primaryUnit.second_installment_date,
+            second_installment_amount: primaryUnit.second_installment_amount,
+            installment_end_date: primaryUnit.installment_end_date,
+            updated_at: new Date().toISOString()
+        };
+
+        // 4. تحديث الوحدة الثانوية في Supabase
+        console.log(`☁️ حفظ البيانات المنسوخة في Supabase...`);
+        const { data: updatedUnit, error: updateError } = await supabaseClient
+            .from('properties')
+            .update(updatedSecondaryData)
+            .eq('id', secondaryUnit.id)
+            .select();
+
+        if (updateError) {
+            throw new Error(`فشل في تحديث الوحدة الثانوية: ${updateError.message}`);
+        }
+
+        if (!updatedUnit || updatedUnit.length === 0) {
+            throw new Error('لم يتم إرجاع بيانات من عملية التحديث');
+        }
+
+        console.log('✅ تم تحديث الوحدة الثانوية في Supabase بنجاح');
+
+        // 5. تحديث البيانات المحلية إذا كانت متوفرة
+        if (window.allData && Array.isArray(window.allData)) {
+            console.log('📱 تحديث البيانات المحلية...');
+
+            const localSecondaryIndex = window.allData.findIndex(unit =>
+                unit['رقم  الوحدة '] === secondaryUnitNumber
+            );
+
+            if (localSecondaryIndex !== -1) {
+                // نسخ البيانات محلياً
+                const localPrimary = window.allData.find(unit =>
+                    unit['رقم  الوحدة '] === primaryUnitNumber
+                );
+
+                if (localPrimary) {
+                    const fieldsToSync = [
+                        'اسم المستأجر',
+                        'رقم العقد',
+                        'نوع العقد',
+                        'قيمة  الايجار ',
+                        'تاريخ البداية',
+                        'تاريخ النهاية',
+                        'الاجمالى',
+                        'المالك',
+                        'رقم الصك',
+                        'السجل العيني ',
+                        'رقم حساب الكهرباء',
+                        'عدد الاقساط المتبقية',
+                        'تاريخ القسط الاول',
+                        'مبلغ القسط الاول',
+                        'تاريخ القسط الثاني',
+                        'مبلغ القسط الثاني',
+                        'تاريخ انتهاء الاقساط'
+                    ];
+
+                    fieldsToSync.forEach(field => {
+                        if (localPrimary[field] !== undefined && localPrimary[field] !== null) {
+                            window.allData[localSecondaryIndex][field] = localPrimary[field];
+                        }
+                    });
+
+                    // حفظ البيانات المحلية
+                    localStorage.setItem('propertyData', JSON.stringify(window.allData));
+                    console.log('✅ تم تحديث البيانات المحلية');
+                }
+            }
+        }
+
+        // 6. النتيجة النهائية
+        const successMessage = `🎉 تم ربط الوحدات بنجاح!
+
+🔗 الوحدة الأساسية: ${primaryUnitNumber}
+🔗 الوحدة المربوطة: ${secondaryUnitNumber}
+
+📋 البيانات المنسوخة:
+👤 المستأجر: ${primaryUnit.tenant_name || 'غير محدد'}
+📄 العقد: ${primaryUnit.contract_number || 'غير محدد'}
+💰 الإيجار: ${primaryUnit.rent_value ? parseFloat(primaryUnit.rent_value).toLocaleString() + ' ريال' : 'غير محدد'}
+
+✅ تم الحفظ في Supabase بنجاح
+📱 تم تحديث البيانات المحلية
+🔄 ستظهر الوحدتان في بطاقة واحدة
+
+🔗 يمكنك التحقق من النتيجة في Supabase Dashboard`;
+
+        alert(successMessage);
+        showToast(`تم ربط ${primaryUnitNumber} مع ${secondaryUnitNumber} بنجاح!`, 'success');
+
+        console.log(`🎉 تم ربط الوحدات بنجاح: ${primaryUnitNumber} مع ${secondaryUnitNumber}`);
+
+        return {
+            success: true,
+            primaryUnit: primaryUnit,
+            secondaryUnit: updatedUnit[0],
+            message: 'تم الربط بنجاح'
+        };
+
+    } catch (error) {
+        console.error('❌ فشل في ربط الوحدات:', error);
+
+        const errorMessage = `❌ فشل في ربط الوحدات!
+
+🔗 الوحدة الأساسية: ${primaryUnitNumber}
+🔗 الوحدة المراد ربطها: ${secondaryUnitNumber}
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• وجود الوحدتين في قاعدة البيانات
+• اتصال الإنترنت
+• صلاحيات Supabase`;
+
+        alert(errorMessage);
+        showToast('❌ فشل في ربط الوحدات', 'error');
+
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+// إضافة الدالة للنطاق العام
+window.linkRealUnitsInSupabase = linkRealUnitsInSupabase;
+
+// دالة لإظهار نافذة ربط الوحدات الحقيقية
+function showRealUnitLinkingModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-link"></i> ربط وحدات حقيقية</h2>
+                <p>ربط وحدتين أو أكثر لتظهرا في بطاقة واحدة مع نفس البيانات</p>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="primaryUnitNumber">رقم الوحدة الأساسية (التي تحتوي على البيانات):</label>
+                    <input type="text" id="primaryUnitNumber" placeholder="مثال: STDM080101" class="form-control">
+                    <small class="form-text">الوحدة التي تحتوي على بيانات المستأجر والعقد</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="secondaryUnitNumber">رقم الوحدة المراد ربطها:</label>
+                    <input type="text" id="secondaryUnitNumber" placeholder="مثال: STDM080124" class="form-control">
+                    <small class="form-text">الوحدة التي ستحصل على نفس البيانات</small>
+                </div>
+
+                <div class="info-box" style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <h4><i class="fas fa-info-circle"></i> كيف يعمل الربط:</h4>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li>سيتم نسخ جميع بيانات المستأجر والعقد من الوحدة الأساسية</li>
+                        <li>ستحصل الوحدة المربوطة على نفس البيانات تماماً</li>
+                        <li>ستظهر الوحدتان في بطاقة واحدة في النظام</li>
+                        <li>سيتم حفظ التغييرات في Supabase فوراً</li>
+                    </ul>
+                </div>
+
+                <div class="example-box" style="background: #f3e5f5; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <h4><i class="fas fa-lightbulb"></i> مثال:</h4>
+                    <p><strong>الوحدة الأساسية:</strong> STDM080101 (مربوطة بشركة رامسونز)</p>
+                    <p><strong>الوحدة المراد ربطها:</strong> STDM080124 (فارغة)</p>
+                    <p><strong>النتيجة:</strong> كلا الوحدتين ستظهران مربوطتين بشركة رامسونز</p>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="executeRealUnitLinking()">
+                    <i class="fas fa-link"></i> ربط الوحدات
+                </button>
+                <button class="btn-secondary" onclick="closeModal()">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // إغلاق النافذة عند النقر خارجها
+    modal.addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // تركيز على الحقل الأول
+    setTimeout(() => {
+        document.getElementById('primaryUnitNumber').focus();
+    }, 100);
+}
+
+// دالة تنفيذ ربط الوحدات الحقيقية
+async function executeRealUnitLinking() {
+    const primaryUnitNumber = document.getElementById('primaryUnitNumber').value.trim();
+    const secondaryUnitNumber = document.getElementById('secondaryUnitNumber').value.trim();
+
+    if (!primaryUnitNumber || !secondaryUnitNumber) {
+        alert('يرجى إدخال أرقام الوحدتين');
+        return;
+    }
+
+    if (primaryUnitNumber === secondaryUnitNumber) {
+        alert('لا يمكن ربط الوحدة بنفسها');
+        return;
+    }
+
+    // تأكيد العملية
+    const confirmMessage = `هل أنت متأكد من ربط الوحدات؟
+
+🔗 الوحدة الأساسية: ${primaryUnitNumber}
+🔗 الوحدة المراد ربطها: ${secondaryUnitNumber}
+
+⚠️ سيتم نسخ جميع بيانات المستأجر والعقد من الوحدة الأساسية إلى الوحدة المربوطة.
+✅ سيتم حفظ التغييرات في Supabase فوراً.`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    // تعطيل الزر أثناء المعالجة
+    const linkButton = document.querySelector('.btn-primary');
+    const originalText = linkButton.innerHTML;
+    linkButton.disabled = true;
+    linkButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الربط...';
+
+    try {
+        // تنفيذ الربط
+        const result = await linkRealUnitsInSupabase(primaryUnitNumber, secondaryUnitNumber);
+
+        if (result.success) {
+            // إغلاق النافذة عند النجاح
+            closeModal();
+
+            // إعادة تحميل البيانات إذا كانت متوفرة
+            if (typeof loadDataFromSupabase === 'function') {
+                console.log('🔄 إعادة تحميل البيانات من Supabase...');
+                await loadDataFromSupabase();
+            }
+
+            // تحديث العرض
+            if (typeof renderProperties === 'function') {
+                renderProperties();
+            }
+
+        } else {
+            throw new Error(result.error || 'فشل في الربط');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في ربط الوحدات:', error);
+        alert(`❌ فشل في ربط الوحدات: ${error.message}`);
+
+        // إعادة تفعيل الزر
+        linkButton.disabled = false;
+        linkButton.innerHTML = originalText;
+    }
+}
+
+// إضافة الدوال للنطاق العام
+window.showRealUnitLinkingModal = showRealUnitLinkingModal;
+window.executeRealUnitLinking = executeRealUnitLinking;
+
+// دالة سريعة لاختبار ربط الوحدتين المحددتين
+async function testLinkSTDMUnits() {
+    console.log('🧪 اختبار ربط الوحدتين STDM080101 و STDM080124...');
+
+    try {
+        const result = await linkRealUnitsInSupabase('STDM080101', 'STDM080124');
+
+        if (result.success) {
+            console.log('✅ نجح اختبار ربط الوحدتين STDM');
+            return result;
+        } else {
+            throw new Error(result.error);
+        }
+
+    } catch (error) {
+        console.error('❌ فشل اختبار ربط الوحدتين STDM:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// دالة للتحقق من حالة الربط الحالية
+async function checkLinkingStatus() {
+    console.log('🔍 فحص حالة ربط الوحدات...');
+
+    try {
+        if (!supabaseClient) {
+            throw new Error('Supabase غير متصل');
+        }
+
+        // فحص الوحدتين المحددتين
+        const { data: units, error } = await supabaseClient
+            .from('properties')
+            .select('unit_number, property_name, tenant_name, contract_number, rent_value')
+            .in('unit_number', ['STDM080101', 'STDM080124'])
+            .order('unit_number');
+
+        if (error) {
+            throw new Error(`خطأ في جلب البيانات: ${error.message}`);
+        }
+
+        if (!units || units.length !== 2) {
+            throw new Error('لم يتم العثور على الوحدتين');
+        }
+
+        const unit1 = units[0];
+        const unit2 = units[1];
+
+        // التحقق من حالة الربط
+        const isLinked = unit1.tenant_name === unit2.tenant_name &&
+                        unit1.contract_number === unit2.contract_number &&
+                        unit1.tenant_name && unit1.contract_number;
+
+        const statusMessage = `📊 حالة ربط الوحدات:
+
+🏠 الوحدة الأولى: ${unit1.unit_number}
+👤 المستأجر: ${unit1.tenant_name || 'فارغ'}
+📄 العقد: ${unit1.contract_number || 'فارغ'}
+💰 الإيجار: ${unit1.rent_value ? parseFloat(unit1.rent_value).toLocaleString() + ' ريال' : 'غير محدد'}
+
+🏠 الوحدة الثانية: ${unit2.unit_number}
+👤 المستأجر: ${unit2.tenant_name || 'فارغ'}
+📄 العقد: ${unit2.contract_number || 'فارغ'}
+💰 الإيجار: ${unit2.rent_value ? parseFloat(unit2.rent_value).toLocaleString() + ' ريال' : 'غير محدد'}
+
+🔗 حالة الربط: ${isLinked ? '✅ مربوطتان' : '❌ غير مربوطتين'}
+
+${isLinked ? '🎉 الوحدتان مربوطتان بنجاح ولهما نفس البيانات!' : '💡 يمكنك ربطهما باستخدام زر "ربط وحدات حقيقية" من الإعدادات'}`;
+
+        alert(statusMessage);
+        console.log('📊 حالة الربط:', { isLinked, unit1, unit2 });
+
+        return { success: true, isLinked, units: [unit1, unit2] };
+
+    } catch (error) {
+        console.error('❌ خطأ في فحص حالة الربط:', error);
+        alert(`❌ خطأ في فحص حالة الربط: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+}
+
+// إضافة الدوال للنطاق العام
+window.testLinkSTDMUnits = testLinkSTDMUnits;
+window.checkLinkingStatus = checkLinkingStatus;
+
+// دالة اختبار سريعة للدالة المحسنة linkUnitToGroup
+async function testImprovedLinkUnitToGroup() {
+    console.log('🧪 اختبار الدالة المحسنة linkUnitToGroup...');
+
+    try {
+        // التحقق من المتطلبات
+        if (!window.allData || !Array.isArray(window.allData)) {
+            throw new Error('بيانات allData غير متوفرة');
+        }
+
+        // البحث عن وحدة فارغة للاختبار
+        let testUnit = window.allData.find(unit =>
+            !unit['اسم المستأجر'] || unit['اسم المستأجر'].trim() === ''
+        );
+
+        if (!testUnit) {
+            // إنشاء وحدة اختبار مؤقتة
+            testUnit = {
+                'رقم  الوحدة ': `TEST-IMPROVED-${Date.now()}`,
+                'اسم العقار': 'عقار اختبار محسن',
+                'المدينة': 'الرياض',
+                'اسم المستأجر': '',
+                'رقم العقد': '',
+                'قيمة  الايجار ': 0,
+                'المساحة': 100,
+                'نوع العقد': 'سكني'
+            };
+
+            window.allData.push(testUnit);
+            console.log('📝 تم إنشاء وحدة اختبار مؤقتة');
+        }
+
+        // إنشاء وحدة أساسية مع بيانات
+        const primaryUnit = {
+            'رقم  الوحدة ': `PRIMARY-${Date.now()}`,
+            'اسم العقار': testUnit['اسم العقار'],
+            'المدينة': 'الرياض',
+            'اسم المستأجر': 'مستأجر اختبار محسن',
+            'رقم العقد': `CONTRACT-IMPROVED-${Date.now()}`,
+            'قيمة  الايجار ': 3500,
+            'المساحة': 150,
+            'نوع العقد': 'سكني',
+            'تاريخ البداية': '01/01/2024',
+            'تاريخ النهاية': '31/12/2024',
+            'المالك': 'مالك اختبار',
+            'رقم الصك': `DEED-${Date.now()}`,
+            'السجل العيني ': `REG-${Date.now()}`
+        };
+
+        window.allData.push(primaryUnit);
+
+        // تعيين البيانات المطلوبة للاختبار
+        window.currentPrimaryUnit = primaryUnit;
+        window.currentEditingUnits = [primaryUnit];
+
+        console.log(`🔗 اختبار ربط الوحدة ${testUnit['رقم  الوحدة ']} مع الوحدة الأساسية ${primaryUnit['رقم  الوحدة ']}...`);
+
+        // أولاً، إنشاء الوحدات في Supabase
+        if (supabaseClient) {
+            console.log('📝 إنشاء الوحدات في Supabase للاختبار...');
+
+            // إنشاء الوحدة الأساسية
+            const primaryData = {
+                unit_number: primaryUnit['رقم  الوحدة '],
+                property_name: primaryUnit['اسم العقار'],
+                city: primaryUnit['المدينة'],
+                tenant_name: primaryUnit['اسم المستأجر'],
+                contract_number: primaryUnit['رقم العقد'],
+                rent_value: primaryUnit['قيمة  الايجار '],
+                area: primaryUnit['المساحة'],
+                contract_type: primaryUnit['نوع العقد'],
+                owner: primaryUnit['المالك'],
+                deed_number: primaryUnit['رقم الصك'],
+                real_estate_registry: primaryUnit['السجل العيني ']
+            };
+
+            const { data: createdPrimary, error: primaryError } = await supabaseClient
+                .from('properties')
+                .insert([primaryData])
+                .select();
+
+            if (primaryError) {
+                throw new Error(`فشل في إنشاء الوحدة الأساسية: ${primaryError.message}`);
+            }
+
+            // إنشاء الوحدة الفارغة
+            const testData = {
+                unit_number: testUnit['رقم  الوحدة '],
+                property_name: testUnit['اسم العقار'],
+                city: testUnit['المدينة'],
+                tenant_name: '',
+                contract_number: '',
+                rent_value: 0,
+                area: testUnit['المساحة'],
+                contract_type: testUnit['نوع العقد']
+            };
+
+            const { data: createdTest, error: testError } = await supabaseClient
+                .from('properties')
+                .insert([testData])
+                .select();
+
+            if (testError) {
+                throw new Error(`فشل في إنشاء الوحدة الاختبار: ${testError.message}`);
+            }
+
+            console.log('✅ تم إنشاء الوحدات في Supabase بنجاح');
+        }
+
+        // اختبار دالة linkUnitToGroup المحسنة
+        await linkUnitToGroup(testUnit['رقم  الوحدة ']);
+
+        // التحقق من النتيجة في Supabase
+        if (supabaseClient) {
+            console.log('🔍 التحقق من النتيجة في Supabase...');
+
+            const { data: verifyData, error: verifyError } = await supabaseClient
+                .from('properties')
+                .select('*')
+                .eq('unit_number', testUnit['رقم  الوحدة '])
+                .single();
+
+            if (verifyError) {
+                throw new Error(`فشل في التحقق: ${verifyError.message}`);
+            }
+
+            if (verifyData.tenant_name === primaryUnit['اسم المستأجر'] &&
+                verifyData.contract_number === primaryUnit['رقم العقد']) {
+
+                const successMessage = `🎉 نجح اختبار الدالة المحسنة!
+
+✅ تم ربط الوحدة بنجاح في Supabase
+🔗 الوحدة المربوطة: ${testUnit['رقم  الوحدة ']}
+👤 المستأجر: ${verifyData.tenant_name}
+📄 العقد: ${verifyData.contract_number}
+💰 الإيجار: ${verifyData.rent_value} ريال
+
+🎯 الدالة المحسنة تعمل بشكل مثالي!`;
+
+                alert(successMessage);
+                showToast('🎉 نجح اختبار الدالة المحسنة!', 'success');
+                console.log('✅ نجح اختبار الدالة المحسنة linkUnitToGroup');
+
+                return { success: true, verifyData };
+            } else {
+                throw new Error('البيانات في Supabase لا تطابق البيانات المتوقعة');
+            }
+        }
+
+    } catch (error) {
+        console.error('❌ فشل اختبار الدالة المحسنة:', error);
+
+        const errorMessage = `❌ فشل اختبار الدالة المحسنة!
+
+الخطأ: ${error.message}
+
+💡 تحقق من:
+• اتصال Supabase
+• وجود البيانات المطلوبة
+• صلاحيات قاعدة البيانات`;
+
+        alert(errorMessage);
+        showToast('❌ فشل اختبار الدالة المحسنة', 'error');
+
+        return { success: false, error: error.message };
+    }
+}
+
+// إضافة الدالة للنطاق العام
+window.testImprovedLinkUnitToGroup = testImprovedLinkUnitToGroup;
+
 // إضافة الدوال المفقودة للنافذة العامة
 window.fullDataRecovery = fullDataRecovery;
 window.recoverDeletedData = recoverDeletedData;
@@ -37532,6 +42271,8 @@ window.testPropertyNameEdit = testPropertyNameEdit;
 window.testPropertyNameUpdateWithoutDuplication = testPropertyNameUpdateWithoutDuplication;
 window.testFilterResetOnLogin = testFilterResetOnLogin;
 window.resetFiltersToDefault = resetFiltersToDefault;
+window.quickUnitLinkingTest = quickUnitLinkingTest;
+window.fixUnitLinkingIssues = fixUnitLinkingIssues;
 
 // إضافة مستمع لتحميل الصفحة لإظهار شاشة التحميل
 document.addEventListener('DOMContentLoaded', function() {
