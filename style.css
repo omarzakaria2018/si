@@ -141,7 +141,7 @@ header {
   position: fixed;
   top: 0;
   left: 0;
-  width: 85%;
+  width: 94%;
   height: 100%;
   background-color: white;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
@@ -742,7 +742,10 @@ main {
     display: none !important;
   }
   .mobile-totals {
-    display: flex !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    padding: 15px 20px;
+    margin: 0 15px 15px 15px;
   }
   .date-filter-container {
     display: none;
@@ -982,6 +985,10 @@ main {
 }
 @media (min-width: 901px) {
   .mobile-totals {
+    display: none !important;
+  }
+
+  .mobile-property-name {
     display: none !important;
   }
 
@@ -4109,35 +4116,92 @@ footer {
   
   /* تحسين عرض الإحصائيات على الشاشات الصغيرة */
   .mobile-totals {
-    display: flex !important;
-    flex-direction: row;
-    flex-wrap: wrap;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
     justify-content: center;
-    padding: 10px;
-    margin-bottom: 15px;
+    padding: 15px 20px;
+    margin: 0 15px 15px 15px;
+    max-width: calc(100% - 30px);
   }
   
   .mobile-totals .total-item {
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(42,75,155,0.07);
-    margin-bottom: 10px;
-    padding: 12px 18px !important;
-    font-size: 1.1em;
+    box-shadow: 0 2px 8px rgba(42,75,155,0.08);
+    padding: 12px 8px !important;
+    font-size: 0.9em;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    border: 2px solid #f3f4f6;
+    justify-content: center;
+    text-align: center;
+    gap: 5px;
+    border: 1px solid #f3f4f6;
+    min-height: 75px;
   }
   .mobile-totals .total-item .total-label {
     font-weight: bold;
     color: #2a4b9b;
-    margin-left: 8px;
+    font-size: 0.75em;
+    margin: 0;
+    line-height: 1.2;
   }
   .mobile-totals .total-item .total-value {
     font-weight: bold;
     color: #222;
+    font-size: 1.15em;
+    margin: 0;
+    line-height: 1.1;
+  }
+
+  /* التأكد من أن الروابط والأزرار تعمل بشكل صحيح */
+  .mobile-totals .total-item a,
+  .mobile-totals .total-item button {
+    pointer-events: auto;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .mobile-totals .total-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(42,75,155,0.15);
+    transition: all 0.3s ease;
+  }
+
+  /* تحسين المسافات العامة */
+  .mobile-totals .total-item:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(42,75,155,0.08);
+  }
+
+  /* تحسين المظهر العام مع الفراغات */
+  .mobile-totals {
+    background: transparent;
+    border-radius: 0;
+  }
+
+  /* تنسيق عرض اسم العقار في الجوالات */
+  .mobile-property-name {
+    background: linear-gradient(135deg, #2a4b9b, #1e3a8a);
+    color: white;
+    text-align: center;
+    padding: 12px 20px;
+    margin: 0 15px 10px 15px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.1em;
+    box-shadow: 0 2px 8px rgba(42, 75, 155, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .mobile-property-name i {
+    font-size: 1.2em;
+    color: #ffd700;
   }
 
   /* ألوان مخصصة لكل نوع */
@@ -4168,6 +4232,38 @@ footer {
 
 /* تحسينات للشاشات الصغيرة جداً */
 @media (max-width: 500px) {
+  /* تحسين الإحصائيات للشاشات الصغيرة جداً */
+  .mobile-totals {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 15px;
+    margin: 0 10px 12px 10px;
+  }
+
+  .mobile-totals .total-item {
+    padding: 8px 6px !important;
+    font-size: 0.85em;
+    min-height: 65px;
+  }
+
+  .mobile-totals .total-item .total-label {
+    font-size: 0.7em;
+  }
+
+  .mobile-totals .total-item .total-value {
+    font-size: 1.05em;
+  }
+
+  /* تنسيق اسم العقار للشاشات الصغيرة جداً */
+  .mobile-property-name {
+    padding: 10px 15px;
+    margin: 0 10px 10px 10px;
+    font-size: 1em;
+  }
+
+  .mobile-property-name i {
+    font-size: 1.1em;
+  }
   .header-title h1 {
     font-size: 1.5rem;
   }

@@ -762,6 +762,9 @@ function clearAllFilters() {
 
     console.log('تم مسح جميع الفلاتر');
 
+    // تحديث عرض اسم العقار في الجوالات
+    updateMobilePropertyName();
+
     // إظهار إشعار مؤقت
     showNotification('تم مسح جميع الفلاتر بنجاح', 'success');
 }
@@ -1131,6 +1134,8 @@ function applyRestoredState(state) {
         // إعادة عرض البيانات بالحالة المستعادة
         setTimeout(() => {
             renderData();
+            // تحديث عرض اسم العقار في الجوالات
+            updateMobilePropertyName();
             console.log('✅ تم تطبيق الحالة المستعادة بنجاح');
         }, 500);
 
@@ -1665,6 +1670,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 applyRestoredState(restoredState);
             }, 1000);
         }
+
+        // تحديث عرض اسم العقار في الجوالات بعد تحميل البيانات
+        setTimeout(() => {
+            updateMobilePropertyName();
+        }, 1200);
 
         // بدء نظام الحفظ التلقائي للحالة
         autoSaveState();
@@ -2799,21 +2809,32 @@ function selectCountry(country) {
     initPropertyList(currentCountry);
     renderData();
 
+    // تحديث عرض اسم العقار في الجوالات
+    updateMobilePropertyName();
+
     // حفظ الحالة بعد تغيير المدينة
     saveAppState();
 }
 
 // اختيار عقار
 function selectProperty(propertyName) {
+    console.log('🏢 اختيار عقار:', propertyName, 'العقار الحالي:', currentProperty);
+
     // إذا تم اختيار نفس العقار أزل الفلتر
     if (currentProperty === propertyName) {
         currentProperty = null;
+        console.log('🔄 إلغاء اختيار العقار');
     } else {
         currentProperty = propertyName;
+        console.log('✅ تم اختيار العقار:', currentProperty);
     }
     // تحديث تمييز العقار في القائمة الجانبية
     initPropertyList(currentCountry);
     renderData();
+
+    // تحديث عرض اسم العقار في الجوالات
+    updateMobilePropertyName();
+
     // إخفاء السايدبار تلقائياً بعد اختيار عقار (فقط على الشاشات الصغيرة)
     const sidebar = document.getElementById('sidebar');
     if (window.innerWidth <= 900) {
@@ -3412,8 +3433,35 @@ function renderTotals(data) {
     }
 }
 
+// تحديث عرض اسم العقار في الجوالات
+function updateMobilePropertyName() {
+    console.log('🏢 تحديث عرض اسم العقار - currentProperty:', currentProperty);
+
+    const propertyNameContainer = document.getElementById('mobilePropertyName');
+
+    if (!propertyNameContainer) {
+        console.warn('❌ لم يتم العثور على عنصر mobilePropertyName');
+        return;
+    }
+
+    if (currentProperty && currentProperty !== 'الكل') {
+        console.log('✅ إظهار اسم العقار:', currentProperty);
+        propertyNameContainer.innerHTML = `
+            <i class="fas fa-building"></i>
+            ${currentProperty}
+        `;
+        propertyNameContainer.style.display = 'flex';
+    } else {
+        console.log('❌ إخفاء اسم العقار - لا يوجد عقار محدد');
+        propertyNameContainer.style.display = 'none';
+    }
+}
+
 // عرض الإحصائيات للجوال - مع حساب ذكي للإجمالي
 function renderMobileTotals(data) {
+    // تحديث اسم العقار أولاً
+    updateMobilePropertyName();
+
     const container = document.getElementById('mobileTotals');
     container.innerHTML = '';
 
