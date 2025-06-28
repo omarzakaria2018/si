@@ -1676,6 +1676,19 @@ document.addEventListener('DOMContentLoaded', function() {
             updateMobilePropertyName();
         }, 1200);
 
+        // استدعاء إضافي للاختبار
+        setTimeout(() => {
+            console.log('🧪 اختبار مباشر لدالة عرض اسم العقار');
+            updateMobilePropertyName();
+        }, 2000);
+
+        // استدعاء إضافي كل 3 ثوان للاختبار
+        setInterval(() => {
+            if (currentProperty && currentProperty !== 'الكل') {
+                updateMobilePropertyName();
+            }
+        }, 3000);
+
         // بدء نظام الحفظ التلقائي للحالة
         autoSaveState();
 
@@ -1725,7 +1738,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Initialize Supabase attachments system
             initializeAttachmentsSystem();
 
+            // تحديث عرض اسم العقار في الجوالات
+            setTimeout(() => {
+                updateMobilePropertyName();
+            }, 500);
+
             console.log('🎉 تم تهيئة التطبيق بنجاح');
+            console.log('💰 ميزة الإجمالي الدائم مفعلة: المبلغ المكتوب يدوياً لن يتم تغييره أبداً');
+            console.log('⚡ التحديث الفوري مفعل: الإجمالي يظهر فوراً بدون reload');
+            console.log('🎨 تم تمييز اسم المستأجر بتصميم متجاوب (أصغر في الحاسوب + أكبر في الهاتف)');
+            console.log('🗑️ تم حذف وصف الإجمالي المزعج');
+            console.log('🧪 لاختبار الميزة: testPermanentTotal() أو testInstantUpdate()');
         })
         .catch(error => {
             console.error('❌ خطأ في تحميل البيانات:', error);
@@ -2812,6 +2835,11 @@ function selectCountry(country) {
     // تحديث عرض اسم العقار في الجوالات
     updateMobilePropertyName();
 
+    // تحديث فوري إضافي
+    setTimeout(() => {
+        updateMobilePropertyName();
+    }, 100);
+
     // حفظ الحالة بعد تغيير المدينة
     saveAppState();
 }
@@ -2834,6 +2862,11 @@ function selectProperty(propertyName) {
 
     // تحديث عرض اسم العقار في الجوالات
     updateMobilePropertyName();
+
+    // تحديث فوري إضافي
+    setTimeout(() => {
+        updateMobilePropertyName();
+    }, 100);
 
     // إخفاء السايدبار تلقائياً بعد اختيار عقار (فقط على الشاشات الصغيرة)
     const sidebar = document.getElementById('sidebar');
@@ -2987,6 +3020,10 @@ function initializeSidebar() {
 // مستمع لتغيير حجم الشاشة
 window.addEventListener('resize', function() {
     initializeSidebar();
+    // تحديث عرض اسم العقار عند تغيير حجم النافذة
+    setTimeout(() => {
+        updateMobilePropertyName();
+    }, 100);
 });
 
 // حماية السايدبار من الإغلاق أثناء البحث
@@ -3433,27 +3470,55 @@ function renderTotals(data) {
     }
 }
 
-// تحديث عرض اسم العقار في الجوالات
+// تحديث عرض اسم العقار في القائمة الجانبية للجوالات
 function updateMobilePropertyName() {
-    console.log('🏢 تحديث عرض اسم العقار - currentProperty:', currentProperty);
+    console.log('🏢 تحديث عرض اسم العقار في القائمة الجانبية - currentProperty:', currentProperty, 'currentCountry:', currentCountry);
+    console.log('📱 عرض النافذة:', window.innerWidth);
 
-    const propertyNameContainer = document.getElementById('mobilePropertyName');
-
-    if (!propertyNameContainer) {
-        console.warn('❌ لم يتم العثور على عنصر mobilePropertyName');
+    // التأكد من أننا في شاشة جوال
+    if (window.innerWidth > 900) {
+        console.log('📱 ليس في وضع الجوال - إخفاء العنصر');
+        const propertyHeaderContainer = document.getElementById('mobilePropertyHeader');
+        if (propertyHeaderContainer) {
+            propertyHeaderContainer.style.display = 'none';
+        }
         return;
     }
 
-    if (currentProperty && currentProperty !== 'الكل') {
-        console.log('✅ إظهار اسم العقار:', currentProperty);
-        propertyNameContainer.innerHTML = `
-            <i class="fas fa-building"></i>
-            ${currentProperty}
-        `;
-        propertyNameContainer.style.display = 'flex';
+    const propertyHeaderContainer = document.getElementById('mobilePropertyHeader');
+    const propertyTextElement = document.getElementById('mobilePropertyText');
+
+    if (!propertyHeaderContainer || !propertyTextElement) {
+        console.warn('❌ لم يتم العثور على عناصر عرض اسم العقار');
+        return;
+    }
+
+    // إظهار اسم العقار فقط عند اختيار عقار محدد
+    if (currentProperty && currentProperty !== 'الكل' && currentProperty.trim() !== '') {
+        // تحديد اسم المدينة
+        const cityName = currentCountry && currentCountry !== 'الكل' ? currentCountry : 'جميع المدن';
+
+        // تنسيق النص: "المدينة - العقار"
+        const displayText = `${cityName} - ${currentProperty}`;
+
+        console.log('✅ إظهار اسم العقار في القائمة الجانبية:', displayText);
+        propertyTextElement.textContent = displayText;
+        propertyHeaderContainer.style.display = 'flex';
+        propertyHeaderContainer.style.visibility = 'visible';
+        propertyHeaderContainer.style.opacity = '1';
+
+        // إضافة تأثير الظهور
+        propertyHeaderContainer.style.animation = 'slideInFromTop 0.4s ease-out';
+
+        // تأكيد إضافي للظهور
+        setTimeout(() => {
+            propertyHeaderContainer.style.display = 'flex';
+        }, 50);
     } else {
         console.log('❌ إخفاء اسم العقار - لا يوجد عقار محدد');
-        propertyNameContainer.style.display = 'none';
+        propertyHeaderContainer.style.display = 'none';
+        propertyHeaderContainer.style.visibility = 'hidden';
+        propertyHeaderContainer.style.opacity = '0';
     }
 }
 
@@ -4038,9 +4103,9 @@ function renderCards(data) {
                     <span class="card-label"><i class="fas fa-bolt"></i> رقم حساب الكهرباء:</span>
                     <span class="card-value">${property['رقم حساب الكهرباء']}</span>
                 </div>` : ''}
-                <div class="card-row">
-                    <span class="card-label">اسم المستأجر:</span>
-                    <span class="card-value">${property['اسم المستأجر'] || ''}</span>
+                <div class="card-row tenant-name-row">
+                    <span class="card-label"><i class="fas fa-user"></i> اسم المستأجر:</span>
+                    <span class="card-value tenant-name-value">${property['اسم المستأجر'] || ''}</span>
                 </div>
                 ${property['رقم جوال المستأجر'] ? `
                 <div class="card-row">
@@ -19942,6 +20007,9 @@ function showSingleUnitEditModal(property, contractNumber, propertyName, unitNum
                                 <div class="form-group">
                                     <label>الإجمالي:</label>
                                     <input type="number" name="الاجمالى" value="${property['الاجمالى'] || ''}" step="0.01" placeholder="المبلغ الإجمالي">
+                                    <small style="color: #28a745; font-size: 0.8em; margin-top: 4px; display: block;">
+                                        💰 المبلغ المكتوب هنا سيتم الاحتفاظ به دائماً ولن يتم تغييره
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -20587,15 +20655,19 @@ async function savePropertyEdit(event) {
     const manualTotal = formData.get('الاجمالى');
 
     if (manualTotal && manualTotal !== '' && parseFloat(manualTotal) > 0) {
-        // إذا تم إدخال إجمالي يدوياً، استخدمه
+        // إذا تم إدخال إجمالي يدوياً، استخدمه واحفظه دائماً
         updatedProperty['الاجمالى'] = parseFloat(manualTotal);
-        console.log(`💰 تم استخدام الإجمالي المدخل يدوياً: ${manualTotal}`);
+        console.log(`💰 تم حفظ الإجمالي المدخل يدوياً: ${manualTotal} (سيتم الاحتفاظ به دائماً)`);
     } else if (manualTotal === '' || manualTotal === '0') {
         // إذا تم حذف الإجمالي يدوياً (قيمة فارغة أو صفر)
         updatedProperty['الاجمالى'] = null;
         console.log(`🗑️ تم حذف الإجمالي يدوياً من النموذج`);
+    } else if (property['الاجمالى'] && property['الاجمالى'] !== null && property['الاجمالى'] !== 0) {
+        // إذا كان هناك إجمالي موجود مسبقاً، احتفظ به ولا تغيره
+        updatedProperty['الاجمالى'] = property['الاجمالى'];
+        console.log(`💰 تم الاحتفاظ بالإجمالي الموجود: ${property['الاجمالى']} (لن يتم تغييره)`);
     } else {
-        // إذا لم يتم تعديل الإجمالي يدوياً، احسبه من الأقساط المحدثة
+        // فقط إذا لم يكن هناك إجمالي موجود، احسبه من الأقساط
         const yearlyData = calculateYearlyTotal(updatedProperty);
         if (yearlyData.count > 0) {
             updatedProperty['الاجمالى'] = yearlyData.total;
@@ -20609,6 +20681,11 @@ async function savePropertyEdit(event) {
 
     // تحديث البيانات في المصفوفة
     properties[propertyIndex] = updatedProperty;
+
+    // تحديث فوري للعرض لإظهار الإجمالي المحدث
+    console.log('🔄 تحديث فوري للعرض...');
+    renderData();
+    updateTotalStats();
 
     // إغلاق النافذة أولاً
     closeModal();
@@ -24331,14 +24408,25 @@ function autoSaveInstallmentChanges() {
 
     updatedProperty['عدد الاقساط'] = installmentCount;
 
-    // حساب الإجمالي الجديد
-    const yearlyData = calculateYearlyTotal(updatedProperty);
-    if (yearlyData.count > 0) {
-        updatedProperty['الاجمالى'] = yearlyData.total;
+    // لا تعيد حساب الإجمالي إذا كان موجوداً (احترام الإجمالي المكتوب يدوياً)
+    if (!updatedProperty['الاجمالى'] || updatedProperty['الاجمالى'] === null || updatedProperty['الاجمالى'] === 0) {
+        // فقط إذا لم يكن هناك إجمالي، احسبه من الأقساط
+        const yearlyData = calculateYearlyTotal(updatedProperty);
+        if (yearlyData.count > 0) {
+            updatedProperty['الاجمالى'] = yearlyData.total;
+            console.log(`💰 تم حساب الإجمالي تلقائياً من الأقساط: ${yearlyData.total}`);
+        }
+    } else {
+        console.log(`💰 تم الاحتفاظ بالإجمالي الموجود: ${updatedProperty['الاجمالى']} (لن يتم تغييره)`);
     }
 
     // حفظ التحديث
     properties[propertyIndex] = updatedProperty;
+
+    // تحديث فوري للعرض لإظهار الإجمالي المحدث
+    console.log('🔄 تحديث فوري للعرض بعد تعديل الأقساط...');
+    renderData();
+    updateTotalStats();
 
     // حفظ في Supabase
     if (typeof savePropertyToSupabase === 'function') {
@@ -24510,7 +24598,7 @@ function calculateSmartTotal(property) {
     if (property['الاجمالى'] && property['الاجمالى'] !== null) {
         totalAmount = parseFloat(property['الاجمالى']);
         source = 'saved';
-        note = 'هذا الإجمالي يخص العام الحالي - لرؤية إجمالي الأقساط انقر على الأقساط';
+        note = ''; // تم حذف الوصف حسب طلب المستخدم
     } else {
         // ثانياً: حساب من الأقساط الموجودة
         const yearlyData = calculateYearlyTotal(property);
@@ -42336,3 +42424,107 @@ document.addEventListener('DOMContentLoaded', function() {
     // تم نقل checkAuthentication() إلى مستمع DOMContentLoaded الأول
     // لتجنب التكرار
 });
+
+
+
+// إضافة دالة اختبار عرض اسم العقار للنطاق العام
+window.testMobilePropertyName = function() {
+    console.log('🧪 اختبار دالة عرض اسم العقار');
+    console.log('currentProperty:', currentProperty);
+    console.log('currentCountry:', currentCountry);
+    console.log('عرض النافذة:', window.innerWidth);
+    updateMobilePropertyName();
+};
+
+// إضافة دالة لإجبار إظهار اسم العقار للاختبار
+window.forceShowPropertyName = function() {
+    console.log('🔧 إجبار إظهار اسم العقار للاختبار');
+
+    const propertyHeaderContainer = document.getElementById('mobilePropertyHeader');
+    const propertyTextElement = document.getElementById('mobilePropertyText');
+
+    if (propertyHeaderContainer && propertyTextElement) {
+        propertyTextElement.textContent = 'الرياض - عمارة النخيل (اختبار)';
+        propertyHeaderContainer.style.display = 'flex';
+        propertyHeaderContainer.style.visibility = 'visible';
+        propertyHeaderContainer.style.opacity = '1';
+        console.log('✅ تم إجبار إظهار اسم العقار');
+    } else {
+        console.error('❌ لم يتم العثور على عناصر عرض اسم العقار');
+    }
+};
+
+// دالة اختبار ميزة الإجمالي الدائم
+window.testPermanentTotal = function() {
+    console.log('🧪 اختبار ميزة الإجمالي الدائم');
+
+    // البحث عن عقار للاختبار
+    const testProperty = properties.find(p => p['اسم المستأجر'] && p['اسم المستأجر'].trim() !== '');
+
+    if (testProperty) {
+        console.log('🏠 عقار الاختبار:', testProperty['رقم  الوحدة '], testProperty['اسم المستأجر']);
+        console.log('💰 الإجمالي الحالي:', testProperty['الاجمالى']);
+
+        // تجربة تعيين إجمالي جديد
+        const originalTotal = testProperty['الاجمالى'];
+        testProperty['الاجمالى'] = 99999;
+
+        console.log('✅ تم تعيين إجمالي تجريبي: 99999');
+        console.log('🔄 إعادة عرض البيانات...');
+
+        renderData();
+        updateTotalStats();
+
+        // رسالة توضيحية
+        console.log('📝 الآن جرب تعديل الأقساط في هذا العقار - الإجمالي يجب أن يبقى 99999');
+        console.log(`📝 الإجمالي الأصلي كان: ${originalTotal}`);
+        console.log('✅ يجب أن ترى الإجمالي 99999 فوراً بدون reload!');
+    } else {
+        console.warn('⚠️ لم يتم العثور على عقار للاختبار');
+    }
+};
+
+// دالة لاختبار التحديث الفوري
+window.testInstantUpdate = function() {
+    console.log('⚡ اختبار التحديث الفوري للإجمالي');
+
+    const testProperty = properties.find(p => p['اسم المستأجر'] && p['اسم المستأجر'].trim() !== '');
+
+    if (testProperty) {
+        console.log('🏠 عقار الاختبار:', testProperty['رقم  الوحدة ']);
+        console.log('💰 الإجمالي قبل التغيير:', testProperty['الاجمالى']);
+
+        // تغيير الإجمالي
+        const newTotal = Math.floor(Math.random() * 100000) + 50000;
+        testProperty['الاجمالى'] = newTotal;
+
+        console.log(`💰 الإجمالي الجديد: ${newTotal}`);
+
+        // تحديث فوري
+        renderData();
+        updateTotalStats();
+
+        console.log('✅ تم التحديث فوراً! تحقق من البطاقة في الواجهة');
+    } else {
+        console.warn('⚠️ لم يتم العثور على عقار للاختبار');
+    }
+};
+
+// دالة لاختبار التحسينات الجديدة
+window.testNewDesign = function() {
+    console.log('🎨 اختبار التحسينات الجديدة');
+    console.log('👤 تمييز اسم المستأجر: تحقق من البطاقات - يجب أن ترى اسم المستأجر بخلفية ملونة جذابة');
+    console.log('🗑️ حذف وصف الإجمالي: لن ترى "هذا الإجمالي يخص العام الحالي..." بعد الآن');
+    console.log('✨ التحسينات تشمل:');
+    console.log('   • خلفية متدرجة ملونة لاسم المستأجر');
+    console.log('   • أيقونة مستخدم ذهبية متحركة');
+    console.log('   • تأثيرات بصرية جذابة');
+    console.log('   • تحسين للشاشات الصغيرة');
+
+    // إعادة عرض البيانات لرؤية التحسينات
+    renderData();
+    updateTotalStats();
+
+    console.log('🎉 تم تطبيق التحسينات! تحقق من البطاقات الآن');
+};
+

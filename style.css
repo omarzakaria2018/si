@@ -988,9 +988,11 @@ main {
     display: none !important;
   }
 
-  .mobile-property-name {
+  .mobile-property-header {
     display: none !important;
   }
+
+
 
   /* التصميم الكامل للشاشات الكبيرة */
   body {
@@ -4183,25 +4185,60 @@ footer {
   }
 
   /* تنسيق عرض اسم العقار في الجوالات */
-  .mobile-property-name {
+  .mobile-property-header {
     background: linear-gradient(135deg, #2a4b9b, #1e3a8a);
     color: white;
     text-align: center;
-    padding: 12px 20px;
-    margin: 0 15px 10px 15px;
+    padding: 15px 20px;
+    margin: 0 15px 12px 15px;
     border-radius: 12px;
-    font-weight: bold;
+    font-weight: 600;
     font-size: 1.1em;
-    box-shadow: 0 2px 8px rgba(42, 75, 155, 0.2);
+    box-shadow: 0 3px 12px rgba(42, 75, 155, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
   }
 
-  .mobile-property-name i {
-    font-size: 1.2em;
+
+
+  .mobile-property-header i {
+    font-size: 1.3em;
     color: #ffd700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-property-header span {
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+    letter-spacing: 0.5px;
+  }
+
+
+
+  /* تأثيرات تفاعلية */
+  .mobile-property-header:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(42, 75, 155, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  /* تأثير الظهور */
+  .mobile-property-header {
+    animation: slideInFromTop 0.4s ease-out;
+  }
+
+  @keyframes slideInFromTop {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   /* ألوان مخصصة لكل نوع */
@@ -4255,15 +4292,21 @@ footer {
   }
 
   /* تنسيق اسم العقار للشاشات الصغيرة جداً */
-  .mobile-property-name {
-    padding: 10px 15px;
+  .mobile-property-header {
+    padding: 12px 15px;
     margin: 0 10px 10px 10px;
-    font-size: 1em;
+    font-size: 0.95em;
   }
 
-  .mobile-property-name i {
+  .mobile-property-header i {
     font-size: 1.1em;
   }
+
+  .mobile-property-header span {
+    font-size: 0.9em;
+  }
+
+
   .header-title h1 {
     font-size: 1.5rem;
   }
@@ -21837,6 +21880,80 @@ body.limited-user .restricted-dropdown-item::before {
     .edit-modal-actions .action-group button {
         width: 100%;
         max-width: 250px;
+    }
+}
+
+/* ===== تمييز اسم المستأجر في البطاقات - تصميم محسن وأنيق ===== */
+
+/* تحسين صف اسم المستأجر */
+.tenant-name-row {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%) !important;
+    border: 1px solid #d1ecf1 !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important; /* أصغر للشاشات الكبيرة */
+    margin: 6px 0 !important; /* أصغر للشاشات الكبيرة */
+    box-shadow: 0 1px 4px rgba(42, 75, 155, 0.08) !important; /* ظل أخف */
+    transition: all 0.3s ease !important;
+}
+
+.tenant-name-row:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(42, 75, 155, 0.15) !important;
+}
+
+/* تحسين تسمية اسم المستأجر */
+.tenant-name-row .card-label {
+    font-size: 1em !important; /* أصغر للشاشات الكبيرة */
+    font-weight: 600 !important;
+    color: #2a4b9b !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+.tenant-name-row .card-label i {
+    color: #f8a51b !important;
+    font-size: 1em !important; /* أصغر للشاشات الكبيرة */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* تمييز اسم المستأجر - أنيق ومميز */
+.tenant-name-value {
+    font-size: 1.25em !important; /* أصغر للشاشات الكبيرة */
+    font-weight: 700 !important; /* أخف قليلاً */
+    color: #2c3e50 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    padding: 2px 0 !important; /* أصغر للشاشات الكبيرة */
+    letter-spacing: 0.3px !important; /* أقل للشاشات الكبيرة */
+}
+
+/* تحسين للشاشات الصغيرة - أكبر وأوضح */
+@media (max-width: 768px) {
+    .tenant-name-row {
+        padding: 12px 16px !important; /* أكبر في الهاتف */
+        margin: 8px 0 !important; /* أكبر في الهاتف */
+        border-radius: 8px !important; /* زوايا أكثر استدارة */
+        box-shadow: 0 2px 8px rgba(42, 75, 155, 0.12) !important; /* ظل أوضح */
+    }
+
+    .tenant-name-row .card-label {
+        font-size: 1.1em !important; /* أكبر في الهاتف */
+        gap: 6px !important;
+    }
+
+    .tenant-name-row .card-label i {
+        font-size: 1.1em !important; /* أكبر في الهاتف */
+    }
+
+    .tenant-name-value {
+        font-size: 1.5em !important; /* أكبر في الهاتف */
+        font-weight: 800 !important; /* أعرض في الهاتف */
+        letter-spacing: 0.5px !important; /* أوضح في الهاتف */
+        padding: 4px 0 !important; /* أكبر في الهاتف */
     }
 }
 
