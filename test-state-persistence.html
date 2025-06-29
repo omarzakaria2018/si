@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام حفظ حالة التصفح</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #495057;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #6c757d;
+        }
+
+        .test-section h3 {
+            color: #6c757d;
+            margin-top: 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .state-display {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+        .log-warning { color: #f6e05e; }
+        .log-info { color: #63b3ed; }
+
+        .scenario-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .scenario-card h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+            padding-right: 30px;
+        }
+
+        .step-list li:before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            right: 0;
+            top: 8px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .step-list {
+            counter-reset: step-counter;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .status-good { background: #28a745; }
+        .status-bad { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+        .status-info { background: #17a2b8; }
+        .status-unknown { background: #6c757d; }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💾 اختبار نظام حفظ حالة التصفح</h1>
+
+        <div class="test-section">
+            <h3>📋 وصف النظام</h3>
+            <p>نظام حفظ حالة التصفح (State Persistence) يحفظ حالة التطبيق تلقائياً ويستعيدها عند إعادة تحميل الصفحة:</p>
+            <ul class="feature-list">
+                <li>حفظ المدينة المحددة</li>
+                <li>حفظ العقار المحدد</li>
+                <li>حفظ الفلاتر النشطة</li>
+                <li>حفظ موضع التمرير</li>
+                <li>حفظ نصوص البحث</li>
+                <li>استعادة الحالة تلقائياً عند إعادة التحميل</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبارات النظام</h3>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="openMainApp()">فتح التطبيق الرئيسي</button>
+                <button class="btn btn-success" onclick="testStateSaving()">اختبار حفظ الحالة</button>
+                <button class="btn btn-info" onclick="testStateRestoration()">اختبار استعادة الحالة</button>
+                <button class="btn btn-warning" onclick="simulateReload()">محاكاة إعادة التحميل</button>
+                <button class="btn btn-secondary" onclick="clearAllState()">مسح جميع الحالات</button>
+                <button class="btn btn-danger" onclick="clearLog()">مسح السجل</button>
+            </div>
+        </div>
+
+        <div class="scenario-card">
+            <h4>🎯 السيناريو المطلوب للاختبار</h4>
+            <ol class="step-list">
+                <li>المستخدم يختار مدينة "الرياض"</li>
+                <li>يختار عقار "برج النخيل"</li>
+                <li>يطبق فلتر "شقق متاحة"</li>
+                <li>يعمل reload للصفحة</li>
+                <li>النتيجة: الصفحة تفتح على نفس الحالة</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 حالة التطبيق الحالية</h3>
+            <div class="state-display" id="currentState">
+                جاري تحميل حالة التطبيق...
+            </div>
+            <button class="btn btn-info" onclick="refreshState()">تحديث الحالة</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 سجل الاختبارات</h3>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">🔍 أداة اختبار نظام حفظ حالة التصفح جاهزة...</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ الميزات المطبقة</h3>
+            <ul>
+                <li>✅ حفظ تلقائي للحالة عند التغيير</li>
+                <li>✅ استعادة الحالة عند إعادة التحميل</li>
+                <li>✅ حفظ المدينة والعقار المحدد</li>
+                <li>✅ حفظ الفلاتر النشطة</li>
+                <li>✅ حفظ موضع التمرير</li>
+                <li>✅ حفظ نصوص البحث</li>
+                <li>✅ حفظ تلقائي كل 30 ثانية</li>
+                <li>✅ حفظ عند إغلاق الصفحة</li>
+                <li>✅ حفظ عند تبديل التبويبات</li>
+                <li>✅ تشخيص وإصلاح الأخطاء</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let testWindow = null;
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function openMainApp() {
+            log('🌐 فتح التطبيق الرئيسي...', 'info');
+            testWindow = window.open('index.html', 'mainApp', 'width=1200,height=800');
+            
+            if (testWindow) {
+                log('✅ تم فتح التطبيق الرئيسي بنجاح', 'success');
+                
+                // انتظار تحميل الصفحة
+                setTimeout(() => {
+                    refreshState();
+                }, 3000);
+            } else {
+                log('❌ فشل في فتح التطبيق الرئيسي', 'error');
+            }
+        }
+
+        function testStateSaving() {
+            log('💾 اختبار حفظ الحالة...', 'info');
+            
+            if (!testWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                return;
+            }
+
+            try {
+                // محاولة حفظ الحالة
+                if (testWindow.saveAppState) {
+                    testWindow.saveAppState();
+                    log('✅ تم حفظ الحالة بنجاح', 'success');
+                    
+                    // تحديث عرض الحالة
+                    setTimeout(refreshState, 500);
+                } else {
+                    log('❌ وظيفة حفظ الحالة غير متوفرة', 'error');
+                }
+            } catch (error) {
+                log('❌ خطأ في حفظ الحالة: ' + error.message, 'error');
+            }
+        }
+
+        function testStateRestoration() {
+            log('📥 اختبار استعادة الحالة...', 'info');
+            
+            if (!testWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                return;
+            }
+
+            try {
+                // محاولة استعادة الحالة
+                if (testWindow.restoreAppState) {
+                    const restored = testWindow.restoreAppState();
+                    if (restored) {
+                        log('✅ تم استعادة الحالة بنجاح', 'success');
+                    } else {
+                        log('⚠️ لا توجد حالة محفوظة للاستعادة', 'warning');
+                    }
+                    
+                    // تحديث عرض الحالة
+                    setTimeout(refreshState, 500);
+                } else {
+                    log('❌ وظيفة استعادة الحالة غير متوفرة', 'error');
+                }
+            } catch (error) {
+                log('❌ خطأ في استعادة الحالة: ' + error.message, 'error');
+            }
+        }
+
+        function simulateReload() {
+            log('🔄 محاكاة إعادة تحميل الصفحة...', 'info');
+            
+            if (!testWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                return;
+            }
+
+            try {
+                // حفظ الحالة أولاً
+                if (testWindow.saveAppState) {
+                    testWindow.saveAppState();
+                    log('💾 تم حفظ الحالة قبل إعادة التحميل', 'info');
+                }
+                
+                // إعادة تحميل الصفحة
+                testWindow.location.reload();
+                log('🔄 تم إعادة تحميل الصفحة', 'info');
+                
+                // مراقبة استعادة الحالة
+                setTimeout(() => {
+                    log('🔍 فحص استعادة الحالة بعد إعادة التحميل...', 'info');
+                    refreshState();
+                }, 5000);
+                
+            } catch (error) {
+                log('❌ خطأ في محاكاة إعادة التحميل: ' + error.message, 'error');
+            }
+        }
+
+        function clearAllState() {
+            log('🗑️ مسح جميع الحالات المحفوظة...', 'info');
+            
+            try {
+                // مسح من localStorage
+                localStorage.removeItem('realEstateAppState');
+                localStorage.removeItem('realEstateFilters');
+                localStorage.removeItem('realEstateScrollPosition');
+                
+                // مسح من التطبيق الرئيسي إذا كان مفتوحاً
+                if (testWindow && testWindow.clearAppState) {
+                    testWindow.clearAppState();
+                }
+                
+                log('✅ تم مسح جميع الحالات المحفوظة', 'success');
+                
+                // تحديث عرض الحالة
+                setTimeout(refreshState, 500);
+                
+            } catch (error) {
+                log('❌ خطأ في مسح الحالات: ' + error.message, 'error');
+            }
+        }
+
+        function refreshState() {
+            try {
+                const stateDisplay = document.getElementById('currentState');
+                
+                // قراءة الحالة من localStorage
+                const appState = localStorage.getItem('realEstateAppState');
+                const filtersState = localStorage.getItem('realEstateFilters');
+                const scrollState = localStorage.getItem('realEstateScrollPosition');
+                
+                let stateText = '📊 حالة التطبيق المحفوظة:\n\n';
+                
+                if (appState) {
+                    const state = JSON.parse(appState);
+                    stateText += '🏠 الحالة الرئيسية:\n';
+                    stateText += `  المدينة: ${state.currentCountry || 'غير محدد'}\n`;
+                    stateText += `  العقار: ${state.currentProperty || 'غير محدد'}\n`;
+                    stateText += `  فلتر الحالة: ${state.filterStatus || 'غير محدد'}\n`;
+                    stateText += `  طريقة العرض: ${state.currentView || 'غير محدد'}\n`;
+                    stateText += `  وقت الحفظ: ${new Date(state.timestamp).toLocaleString('ar-SA')}\n\n`;
+                } else {
+                    stateText += '❌ لا توجد حالة رئيسية محفوظة\n\n';
+                }
+                
+                if (filtersState) {
+                    const filters = JSON.parse(filtersState);
+                    stateText += '🔍 حالة الفلاتر:\n';
+                    stateText += `  المدينة: ${filters.currentCountry || 'غير محدد'}\n`;
+                    stateText += `  العقار: ${filters.currentProperty || 'غير محدد'}\n`;
+                    stateText += `  فلتر الحالة: ${filters.filterStatus || 'غير محدد'}\n`;
+                    stateText += `  وقت الحفظ: ${new Date(filters.timestamp).toLocaleString('ar-SA')}\n\n`;
+                } else {
+                    stateText += '❌ لا توجد فلاتر محفوظة\n\n';
+                }
+                
+                if (scrollState) {
+                    const scroll = JSON.parse(scrollState);
+                    stateText += '📜 موضع التمرير:\n';
+                    stateText += `  X: ${scroll.x}\n`;
+                    stateText += `  Y: ${scroll.y}\n`;
+                    stateText += `  وقت الحفظ: ${new Date(scroll.timestamp).toLocaleString('ar-SA')}\n\n`;
+                } else {
+                    stateText += '❌ لا يوجد موضع تمرير محفوظ\n\n';
+                }
+                
+                // إضافة معلومات من التطبيق الرئيسي إذا كان مفتوحاً
+                if (testWindow) {
+                    try {
+                        stateText += '🌐 حالة التطبيق المفتوح:\n';
+                        stateText += `  المدينة الحالية: ${testWindow.currentCountry || 'غير محدد'}\n`;
+                        stateText += `  العقار الحالي: ${testWindow.currentProperty || 'غير محدد'}\n`;
+                        stateText += `  فلتر الحالة: ${testWindow.filterStatus || 'غير محدد'}\n`;
+                        stateText += `  طريقة العرض: ${testWindow.currentView || 'غير محدد'}\n`;
+                    } catch (error) {
+                        stateText += '⚠️ لا يمكن قراءة حالة التطبيق المفتوح\n';
+                    }
+                }
+                
+                stateDisplay.textContent = stateText;
+                log('📊 تم تحديث عرض الحالة', 'info');
+                
+            } catch (error) {
+                log('❌ خطأ في تحديث عرض الحالة: ' + error.message, 'error');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry log-info">🔍 تم مسح السجل - جاهز للاختبار...</div>';
+            log('✅ تم مسح السجل', 'success');
+        }
+
+        // تحديث الحالة تلقائياً كل 5 ثوانٍ
+        setInterval(refreshState, 5000);
+
+        // رسالة ترحيب
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔍 أداة اختبار نظام حفظ حالة التصفح جاهزة', 'success');
+            log('💡 اضغط "فتح التطبيق الرئيسي" للبدء', 'info');
+            refreshState();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأيقونات المصغرة للإشعارات</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #495057;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #6c757d;
+        }
+
+        .test-section h3 {
+            color: #6c757d;
+            margin-top: 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .icon-preview {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            margin: 0 5px;
+            vertical-align: middle;
+        }
+
+        .icon-preview.success { background: #28a745; }
+        .icon-preview.error { background: #dc3545; }
+        .icon-preview.warning { background: #ffc107; }
+        .icon-preview.info { background: #17a2b8; }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+        .log-warning { color: #f6e05e; }
+        .log-info { color: #63b3ed; }
+
+        .demo-area {
+            position: relative;
+            height: 100px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .demo-area::before {
+            content: "منطقة عرض الأيقونات الصغيرة";
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        /* نسخة من CSS الأيقونات المصغرة */
+        .mini-icon-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            z-index: 10000;
+            font-size: 3px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            animation: miniIconPulse 0.5s ease-out;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        @keyframes miniIconPulse {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔸 اختبار الأيقونات المصغرة للإشعارات</h1>
+
+        <div class="test-section">
+            <h3>📋 وصف الميزة الجديدة</h3>
+            <p>تم تحويل الإشعارات النصية مثل "جميع المكونات تعمل بشكل صحيح" إلى أيقونات صغيرة جداً (4px فقط) بدون نصوص:</p>
+            <ul class="feature-list">
+                <li>أيقونات صغيرة جداً بحجم 4px فقط</li>
+                <li>ألوان مختلفة حسب نوع الإشعار</li>
+                <li>تظهر في الزاوية العلوية اليمنى</li>
+                <li>تختفي تلقائياً بعد 3 ثوانٍ</li>
+                <li>تأثير نبضة عند الظهور</li>
+                <li>لا تشغل مساحة كبيرة من الشاشة</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🎨 أنواع الأيقونات</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>نوع الإشعار</th>
+                        <th>الأيقونة</th>
+                        <th>اللون</th>
+                        <th>مثال الرسالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>نجاح</td>
+                        <td><span class="icon-preview success"></span> ✓</td>
+                        <td>أخضر (#28a745)</td>
+                        <td>جميع المكونات تعمل بشكل صحيح</td>
+                    </tr>
+                    <tr>
+                        <td>خطأ</td>
+                        <td><span class="icon-preview error"></span> ✗</td>
+                        <td>أحمر (#dc3545)</td>
+                        <td>فشل في الاتصال</td>
+                    </tr>
+                    <tr>
+                        <td>تحذير</td>
+                        <td><span class="icon-preview warning"></span> ⚠</td>
+                        <td>أصفر (#ffc107)</td>
+                        <td>تحذير: بيانات مفقودة</td>
+                    </tr>
+                    <tr>
+                        <td>معلومات</td>
+                        <td><span class="icon-preview info"></span> ℹ</td>
+                        <td>أزرق (#17a2b8)</td>
+                        <td>تم مزامنة البيانات</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبار الأيقونات</h3>
+            <div class="button-group">
+                <button class="btn btn-success" onclick="testSuccessIcon()">اختبار أيقونة النجاح</button>
+                <button class="btn btn-danger" onclick="testErrorIcon()">اختبار أيقونة الخطأ</button>
+                <button class="btn btn-warning" onclick="testWarningIcon()">اختبار أيقونة التحذير</button>
+                <button class="btn btn-info" onclick="testInfoIcon()">اختبار أيقونة المعلومات</button>
+                <button class="btn btn-secondary" onclick="testSequence()">اختبار متسلسل</button>
+            </div>
+            
+            <div class="demo-area" id="demoArea"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 سجل الاختبارات</h3>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">🔍 أداة اختبار الأيقونات المصغرة جاهزة...</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ الفوائد المحققة</h3>
+            <ul>
+                <li>✅ توفير مساحة الشاشة - الأيقونات 4px فقط</li>
+                <li>✅ تجربة مستخدم أنظف - لا توجد نصوص مزعجة</li>
+                <li>✅ إشارات بصرية سريعة - ألوان واضحة</li>
+                <li>✅ عدم إزعاج المستخدم - تختفي تلقائياً</li>
+                <li>✅ تصميم متجاوب - يعمل على جميع الأجهزة</li>
+                <li>✅ أداء محسن - أقل استهلاك للذاكرة</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // نسخة من وظائف الأيقونات المصغرة
+        function showMiniIconNotification(icon, color, duration = 3000) {
+            // إزالة الأيقونات الموجودة
+            const existingIcons = document.querySelectorAll('.mini-icon-notification');
+            existingIcons.forEach(icon => icon.remove());
+
+            // إنشاء الأيقونة الصغيرة
+            const iconElement = document.createElement('div');
+            iconElement.className = 'mini-icon-notification';
+            iconElement.textContent = icon;
+            
+            // تطبيق الأنماط
+            iconElement.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                width: 4px;
+                height: 4px;
+                background: ${color};
+                border-radius: 50%;
+                z-index: 10000;
+                font-size: 3px;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                animation: miniIconPulse 0.5s ease-out;
+                transition: all 0.3s ease;
+            `;
+
+            // إضافة للصفحة
+            document.body.appendChild(iconElement);
+
+            // إزالة تلقائية
+            setTimeout(() => {
+                if (iconElement.parentNode) {
+                    iconElement.style.opacity = '0';
+                    iconElement.style.transform = 'scale(0)';
+                    setTimeout(() => iconElement.remove(), 300);
+                }
+            }, duration);
+
+            return iconElement;
+        }
+
+        function testSuccessIcon() {
+            showMiniIconNotification('✓', '#28a745');
+            log('تم عرض أيقونة النجاح (✓) باللون الأخضر', 'success');
+        }
+
+        function testErrorIcon() {
+            showMiniIconNotification('✗', '#dc3545');
+            log('تم عرض أيقونة الخطأ (✗) باللون الأحمر', 'error');
+        }
+
+        function testWarningIcon() {
+            showMiniIconNotification('⚠', '#ffc107');
+            log('تم عرض أيقونة التحذير (⚠) باللون الأصفر', 'warning');
+        }
+
+        function testInfoIcon() {
+            showMiniIconNotification('ℹ', '#17a2b8');
+            log('تم عرض أيقونة المعلومات (ℹ) باللون الأزرق', 'info');
+        }
+
+        function testSequence() {
+            log('بدء الاختبار المتسلسل...', 'info');
+            
+            const icons = [
+                { icon: '✓', color: '#28a745', name: 'نجاح' },
+                { icon: '●', color: '#17a2b8', name: 'اتصال' },
+                { icon: '↻', color: '#17a2b8', name: 'مزامنة' },
+                { icon: '💾', color: '#28a745', name: 'حفظ' },
+                { icon: '✗', color: '#dc3545', name: 'خطأ' }
+            ];
+
+            let index = 0;
+            const interval = setInterval(() => {
+                if (index >= icons.length) {
+                    clearInterval(interval);
+                    log('انتهى الاختبار المتسلسل', 'success');
+                    return;
+                }
+
+                const iconData = icons[index];
+                showMiniIconNotification(iconData.icon, iconData.color, 1500);
+                log(`عرض أيقونة ${iconData.name}: ${iconData.icon}`, 'info');
+                
+                index++;
+            }, 1800);
+        }
+
+        // رسالة ترحيب
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔍 أداة اختبار الأيقونات المصغرة جاهزة', 'success');
+            log('💡 اضغط على الأزرار لاختبار الأيقونات المختلفة', 'info');
+            
+            // عرض أيقونة ترحيب
+            setTimeout(() => {
+                showMiniIconNotification('✓', '#28a745', 2000);
+                log('تم عرض أيقونة ترحيب', 'success');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

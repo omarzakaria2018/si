@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار شاشة إعادة التحميل للسنيدي</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #495057;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #28a745;
+        }
+
+        .test-section h3 {
+            color: #28a745;
+            margin-top: 0;
+        }
+
+        .user-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .user-info h4 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .status-display {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+        .log-warning { color: #f6e05e; }
+        .log-info { color: #63b3ed; }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+            counter-reset: step-counter;
+        }
+
+        .step-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+            position: relative;
+            padding-right: 40px;
+        }
+
+        .step-list li:before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            right: 0;
+            top: 12px;
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .highlight-box h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+
+        .success-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .success-box h4 {
+            color: #0c5460;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👤 اختبار شاشة إعادة التحميل للسنيدي (المستخدم المحدود)</h1>
+
+        <div class="user-info">
+            <h4>👤 معلومات المستخدم المحدود</h4>
+            <p><strong>اسم المستخدم:</strong> 12345</p>
+            <p><strong>كلمة المرور:</strong> 12345</p>
+            <p><strong>الاسم الكامل:</strong> السنيدي</p>
+            <p><strong>الدور:</strong> limited (مستخدم محدود الصلاحيات)</p>
+        </div>
+
+        <div class="highlight-box">
+            <h4>🎯 الهدف من الاختبار</h4>
+            <p>التأكد من ظهور شاشة التحميل الهادئة لمدة 7 ثوان عند إعادة تحميل الصفحة للمستخدم "السنيدي".</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 خطوات الاختبار</h3>
+            <ol class="step-list">
+                <li>افتح التطبيق الرئيسي</li>
+                <li>سجل دخول باسم المستخدم: 12345 وكلمة المرور: 12345</li>
+                <li>تأكد من ظهور "السنيدي" كمستخدم حالي</li>
+                <li>اعمل إعادة تحميل للصفحة (F5 أو Ctrl+R)</li>
+                <li>راقب ظهور شاشة التحميل الهادئة لمدة 7 ثوان</li>
+                <li>تأكد من ظهور زر "ابدأ" بعد اكتمال التحميل</li>
+                <li>اضغط زر "ابدأ" للتأكد من اختفاء الشاشة</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3>🛠️ أدوات الاختبار</h3>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="openMainApp()">فتح التطبيق الرئيسي</button>
+                <button class="btn btn-success" onclick="loginAsSenidi()">تسجيل دخول السنيدي</button>
+                <button class="btn btn-warning" onclick="reloadMainApp()">إعادة تحميل التطبيق</button>
+                <button class="btn btn-danger" onclick="clearLog()">مسح السجل</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 حالة الاختبار</h3>
+            <div class="status-display" id="statusDisplay">
+                جاري تحميل أداة الاختبار...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 سجل الاختبارات</h3>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">🔍 أداة اختبار شاشة إعادة التحميل للسنيدي جاهزة...</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ النتائج المتوقعة</h3>
+            <ul class="feature-list">
+                <li>شاشة تحميل هادئة بألوان مريحة للعين</li>
+                <li>أيقونة منزل تدل على التطبيق العقاري</li>
+                <li>عنوان "جاري تحميل المحتوى"</li>
+                <li>شريط تقدم يتحرك من 0% إلى 100%</li>
+                <li>مدة التحميل 7 ثوان بالضبط</li>
+                <li>زر "ابدأ" يظهر بعد اكتمال التحميل</li>
+                <li>الشاشة تختفي عند النقر على زر "ابدأ"</li>
+                <li>تعمل على جميع أحجام الشاشات</li>
+            </ul>
+        </div>
+
+        <div class="success-box">
+            <h4>🎯 ملاحظات مهمة</h4>
+            <ul>
+                <li><strong>المستخدم المحدود:</strong> هو "السنيدي" (اسم المستخدم: 12345)</li>
+                <li><strong>شاشة التحميل:</strong> تظهر فقط للمستخدم المحدود عند إعادة التحميل</li>
+                <li><strong>المدة:</strong> 7 ثوان بالضبط كما طُلب</li>
+                <li><strong>التصميم:</strong> هادئ وبسيط مناسب للمستخدم المحدود</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let mainAppWindow = null;
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateStatus(message) {
+            const statusDisplay = document.getElementById('statusDisplay');
+            statusDisplay.textContent = message;
+        }
+
+        function openMainApp() {
+            log('🌐 فتح التطبيق الرئيسي...', 'info');
+            updateStatus('فتح التطبيق الرئيسي...');
+            
+            mainAppWindow = window.open('index.html', 'mainApp', 'width=1200,height=800');
+            
+            if (mainAppWindow) {
+                log('✅ تم فتح التطبيق الرئيسي بنجاح', 'success');
+                updateStatus('تم فتح التطبيق الرئيسي - جاهز لتسجيل الدخول');
+                
+                // انتظار تحميل الصفحة
+                setTimeout(() => {
+                    log('💡 الآن سجل دخول باسم المستخدم: 12345 وكلمة المرور: 12345', 'info');
+                }, 3000);
+            } else {
+                log('❌ فشل في فتح التطبيق الرئيسي', 'error');
+                updateStatus('فشل في فتح التطبيق الرئيسي');
+            }
+        }
+
+        function loginAsSenidi() {
+            log('👤 محاولة تسجيل دخول السنيدي...', 'info');
+            
+            if (!mainAppWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                updateStatus('يجب فتح التطبيق الرئيسي أولاً');
+                return;
+            }
+
+            try {
+                // انتظار تحميل التطبيق
+                setTimeout(() => {
+                    if (mainAppWindow.setCurrentUser && mainAppWindow.users) {
+                        mainAppWindow.setCurrentUser('12345');
+                        log('✅ تم تسجيل دخول السنيدي (المستخدم المحدود)', 'success');
+                        updateStatus('تم تسجيل دخول السنيدي - جاهز لإعادة التحميل');
+                        
+                        // فحص حالة المستخدم
+                        setTimeout(() => {
+                            const currentUser = mainAppWindow.currentUser;
+                            const users = mainAppWindow.users;
+                            
+                            if (currentUser && users && users[currentUser]) {
+                                log(`📋 المستخدم الحالي: ${users[currentUser].fullName} (${users[currentUser].role})`, 'info');
+                                
+                                if (users[currentUser].role === 'limited') {
+                                    log('🔒 تم تأكيد المستخدم المحدود - شاشة التحميل ستظهر عند إعادة التحميل', 'success');
+                                    updateStatus('المستخدم المحدود مُسجل - جاهز لاختبار إعادة التحميل');
+                                } else {
+                                    log('⚠️ المستخدم ليس محدود الصلاحيات', 'warning');
+                                }
+                            }
+                        }, 1000);
+                    } else {
+                        log('❌ لا يمكن الوصول لوظائف التطبيق', 'error');
+                        updateStatus('خطأ في الوصول لوظائف التطبيق');
+                    }
+                }, 2000);
+            } catch (error) {
+                log('❌ خطأ في تسجيل الدخول: ' + error.message, 'error');
+                updateStatus('خطأ في تسجيل الدخول');
+            }
+        }
+
+        function reloadMainApp() {
+            log('🔄 إعادة تحميل التطبيق لاختبار شاشة التحميل...', 'info');
+            
+            if (!mainAppWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                updateStatus('يجب فتح التطبيق الرئيسي أولاً');
+                return;
+            }
+
+            try {
+                updateStatus('إعادة تحميل التطبيق - راقب شاشة التحميل الهادئة');
+                mainAppWindow.location.reload();
+                log('✅ تم إعادة تحميل التطبيق', 'success');
+                log('👀 راقب ظهور شاشة التحميل الهادئة لمدة 7 ثوان', 'info');
+                log('🎯 يجب أن تظهر أيقونة منزل مع شريط تقدم وزر "ابدأ" في النهاية', 'info');
+                
+                // مراقبة النتيجة
+                setTimeout(() => {
+                    log('⏰ مرت 10 ثوان - هل ظهرت شاشة التحميل الهادئة؟', 'warning');
+                }, 10000);
+            } catch (error) {
+                log('❌ خطأ في إعادة التحميل: ' + error.message, 'error');
+                updateStatus('خطأ في إعادة التحميل');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry log-info">🔍 تم مسح السجل - جاهز للاختبار...</div>';
+            updateStatus('تم مسح السجل - جاهز للاختبار');
+            log('✅ تم مسح السجل', 'success');
+        }
+
+        // رسالة ترحيب
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔍 أداة اختبار شاشة إعادة التحميل للسنيدي جاهزة', 'success');
+            log('💡 اضغط "فتح التطبيق الرئيسي" للبدء', 'info');
+            updateStatus('جاهز للاختبار - اضغط "فتح التطبيق الرئيسي"');
+        });
+    </script>
+</body>
+</html>

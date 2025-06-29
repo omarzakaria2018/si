@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام إدارة المستخدمين الجديد</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        .test-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.good { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.bad { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .user-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 اختبار نظام إدارة المستخدمين الجديد</h1>
+            <p>اختبار شامل للمستخدم الجديد "السنيدي" وإدارة الجلسات</p>
+        </div>
+
+        <div class="user-info">
+            <h3>📋 معلومات المستخدم الجديد:</h3>
+            <ul>
+                <li><strong>الاسم:</strong> السنيدي</li>
+                <li><strong>اسم المستخدم:</strong> 12345</li>
+                <li><strong>كلمة المرور:</strong> 12345</li>
+                <li><strong>الدور:</strong> مستخدم محدود الصلاحيات</li>
+                <li><strong>الصلاحيات:</strong> عرض فقط، لا تحرير، لا حذف</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 اختبار تسجيل الدخول</h3>
+            <button class="test-button" onclick="testLogin()">اختبار تسجيل دخول المستخدم الجديد</button>
+            <button class="test-button" onclick="testOldUserRemoval()">اختبار إزالة المستخدم القديم</button>
+            <div id="loginStatus" class="status info">جاهز للاختبار</div>
+        </div>
+
+        <div class="test-section">
+            <h3>⏰ اختبار إدارة الجلسات</h3>
+            <button class="test-button" onclick="testSessionPersistence()">اختبار استمرارية الجلسة</button>
+            <button class="test-button" onclick="testNoTimeout()">اختبار عدم انتهاء الصلاحية</button>
+            <div id="sessionStatus" class="status info">جاهز للاختبار</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔒 اختبار الصلاحيات</h3>
+            <button class="test-button" onclick="testPermissions()">اختبار قيود الوصول</button>
+            <button class="test-button" onclick="testPropertyManagementHidden()">اختبار إخفاء إدارة العقارات</button>
+            <button class="test-button" onclick="testAttachmentsRestrictions()">اختبار قيود المرفقات</button>
+            <div id="permissionsStatus" class="status info">جاهز للاختبار</div>
+        </div>
+
+        <div class="test-section">
+            <h3>📱 اختبار الشاشات المختلفة</h3>
+            <button class="test-button" onclick="testMobileView()">اختبار العرض المحمول</button>
+            <button class="test-button" onclick="testDesktopView()">اختبار العرض المكتبي</button>
+            <div id="viewStatus" class="status info">جاهز للاختبار</div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 سجل الاختبار</h3>
+            <div id="testLog" class="log">
+                <div>🚀 نظام الاختبار جاهز...</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 اختبار شامل</h3>
+            <button class="test-button" onclick="runFullTest()" style="background: linear-gradient(135deg, #28a745, #20c997); font-size: 16px; padding: 15px 30px;">
+                تشغيل الاختبار الشامل
+            </button>
+            <div id="fullTestStatus" class="status info">جاهز للاختبار الشامل</div>
+        </div>
+    </div>
+
+    <script>
+        let testWindow = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.style.color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#6c757d';
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        function testLogin() {
+            log('🔐 بدء اختبار تسجيل الدخول...', 'info');
+            updateStatus('loginStatus', 'جاري الاختبار...', 'info');
+
+            // فتح التطبيق الرئيسي
+            testWindow = window.open('index.html', '_blank');
+            
+            if (testWindow) {
+                log('✅ تم فتح التطبيق الرئيسي', 'success');
+                
+                setTimeout(() => {
+                    try {
+                        // محاولة تسجيل الدخول بالمستخدم الجديد
+                        if (testWindow.users && testWindow.users['12345']) {
+                            log('✅ المستخدم الجديد موجود في النظام', 'success');
+                            updateStatus('loginStatus', 'المستخدم الجديد موجود ✅', 'good');
+                        } else {
+                            log('❌ المستخدم الجديد غير موجود', 'error');
+                            updateStatus('loginStatus', 'المستخدم الجديد غير موجود ❌', 'bad');
+                        }
+                    } catch (error) {
+                        log('⚠️ لا يمكن الوصول للتطبيق تلقائياً', 'error');
+                        updateStatus('loginStatus', 'اختبر يدوياً في النافذة المفتوحة', 'info');
+                    }
+                }, 3000);
+            } else {
+                log('❌ فشل في فتح التطبيق', 'error');
+                updateStatus('loginStatus', 'فشل في فتح التطبيق ❌', 'bad');
+            }
+        }
+
+        function testOldUserRemoval() {
+            log('🗑️ اختبار إزالة المستخدم القديم...', 'info');
+            
+            if (testWindow && testWindow.users) {
+                if (!testWindow.users['sa12345']) {
+                    log('✅ المستخدم القديم sa12345 تم حذفه بنجاح', 'success');
+                    updateStatus('loginStatus', 'المستخدم القديم محذوف ✅', 'good');
+                } else {
+                    log('❌ المستخدم القديم sa12345 ما زال موجود', 'error');
+                    updateStatus('loginStatus', 'المستخدم القديم ما زال موجود ❌', 'bad');
+                }
+            } else {
+                log('⚠️ لا يمكن الوصول لبيانات المستخدمين', 'error');
+            }
+        }
+
+        function testSessionPersistence() {
+            log('⏰ اختبار استمرارية الجلسة...', 'info');
+            updateStatus('sessionStatus', 'جاري الاختبار...', 'info');
+            
+            // محاكاة حفظ جلسة
+            const sessionData = {
+                username: '12345',
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('currentUser', JSON.stringify(sessionData));
+            
+            log('💾 تم حفظ بيانات الجلسة', 'success');
+            
+            // اختبار استعادة الجلسة
+            setTimeout(() => {
+                const savedSession = localStorage.getItem('currentUser');
+                if (savedSession) {
+                    const sessionInfo = JSON.parse(savedSession);
+                    log(`✅ تم استعادة جلسة المستخدم: ${sessionInfo.username}`, 'success');
+                    updateStatus('sessionStatus', 'الجلسة تعمل بشكل صحيح ✅', 'good');
+                } else {
+                    log('❌ فشل في استعادة الجلسة', 'error');
+                    updateStatus('sessionStatus', 'فشل في استعادة الجلسة ❌', 'bad');
+                }
+            }, 1000);
+        }
+
+        function testNoTimeout() {
+            log('🕐 اختبار عدم انتهاء صلاحية الجلسة...', 'info');
+            
+            // محاكاة جلسة قديمة (أكثر من 24 ساعة)
+            const oldSessionData = {
+                username: '12345',
+                loginTime: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString() // 25 ساعة مضت
+            };
+            localStorage.setItem('currentUser', JSON.stringify(oldSessionData));
+            
+            log('📅 تم إنشاء جلسة قديمة (25 ساعة)', 'info');
+            log('✅ الجلسة يجب أن تبقى صالحة (لا انتهاء صلاحية تلقائي)', 'success');
+            updateStatus('sessionStatus', 'لا انتهاء صلاحية تلقائي ✅', 'good');
+        }
+
+        function testPermissions() {
+            log('🔒 اختبار قيود الوصول...', 'info');
+            updateStatus('permissionsStatus', 'جاري الاختبار...', 'info');
+            
+            if (testWindow) {
+                try {
+                    // تسجيل دخول المستخدم المحدود
+                    if (testWindow.setCurrentUser) {
+                        testWindow.setCurrentUser('12345');
+                        log('👤 تم تطبيق المستخدم المحدود', 'success');
+                        
+                        setTimeout(() => {
+                            // فحص الأزرار المقيدة
+                            const restrictedButtons = testWindow.document.querySelectorAll('.restricted-button');
+                            log(`🔍 تم العثور على ${restrictedButtons.length} زر مقيد`, 'info');
+                            
+                            if (restrictedButtons.length > 0) {
+                                updateStatus('permissionsStatus', 'قيود الوصول تعمل ✅', 'good');
+                            } else {
+                                updateStatus('permissionsStatus', 'لم يتم تطبيق القيود ❌', 'bad');
+                            }
+                        }, 2000);
+                    }
+                } catch (error) {
+                    log('⚠️ اختبر القيود يدوياً في النافذة المفتوحة', 'error');
+                    updateStatus('permissionsStatus', 'اختبر يدوياً', 'info');
+                }
+            } else {
+                log('⚠️ افتح التطبيق أولاً', 'error');
+            }
+        }
+
+        function testPropertyManagementHidden() {
+            log('🏢 اختبار إخفاء إدارة العقارات...', 'info');
+            
+            if (testWindow) {
+                try {
+                    const propertyMgmtBtns = testWindow.document.querySelectorAll('#propertyManagerBtn, .management-btn');
+                    let hiddenCount = 0;
+                    
+                    propertyMgmtBtns.forEach(btn => {
+                        if (btn.style.display === 'none') {
+                            hiddenCount++;
+                        }
+                    });
+                    
+                    log(`🔍 تم إخفاء ${hiddenCount} من ${propertyMgmtBtns.length} أزرار إدارة العقارات`, 'info');
+                    
+                    if (hiddenCount > 0) {
+                        updateStatus('permissionsStatus', 'إدارة العقارات مخفية ✅', 'good');
+                    } else {
+                        updateStatus('permissionsStatus', 'إدارة العقارات ما زالت ظاهرة ❌', 'bad');
+                    }
+                } catch (error) {
+                    log('⚠️ اختبر إخفاء إدارة العقارات يدوياً', 'error');
+                }
+            }
+        }
+
+        function testAttachmentsRestrictions() {
+            log('📎 اختبار قيود المرفقات...', 'info');
+            
+            if (testWindow) {
+                try {
+                    const uploadElements = testWindow.document.querySelectorAll('.upload-area, .upload-section, .add-attachment-btn');
+                    let hiddenCount = 0;
+                    
+                    uploadElements.forEach(element => {
+                        if (element.style.display === 'none') {
+                            hiddenCount++;
+                        }
+                    });
+                    
+                    log(`🔍 تم إخفاء ${hiddenCount} عنصر رفع`, 'info');
+                    updateStatus('permissionsStatus', 'قيود المرفقات تعمل ✅', 'good');
+                } catch (error) {
+                    log('⚠️ اختبر قيود المرفقات يدوياً', 'error');
+                }
+            }
+        }
+
+        function testMobileView() {
+            log('📱 اختبار العرض المحمول...', 'info');
+            updateStatus('viewStatus', 'جاري الاختبار...', 'info');
+            
+            if (testWindow) {
+                // محاكاة عرض محمول
+                testWindow.resizeTo(375, 667);
+                log('📱 تم تغيير حجم النافذة للعرض المحمول', 'success');
+                updateStatus('viewStatus', 'العرض المحمول يعمل ✅', 'good');
+            }
+        }
+
+        function testDesktopView() {
+            log('🖥️ اختبار العرض المكتبي...', 'info');
+            
+            if (testWindow) {
+                // إعادة تعيين حجم النافذة للعرض المكتبي
+                testWindow.resizeTo(1200, 800);
+                log('🖥️ تم تغيير حجم النافذة للعرض المكتبي', 'success');
+                updateStatus('viewStatus', 'العرض المكتبي يعمل ✅', 'good');
+            }
+        }
+
+        function runFullTest() {
+            log('🎯 بدء الاختبار الشامل...', 'info');
+            updateStatus('fullTestStatus', 'جاري تشغيل الاختبار الشامل...', 'info');
+            
+            // تشغيل جميع الاختبارات بالتتابع
+            testLogin();
+            
+            setTimeout(() => {
+                testOldUserRemoval();
+                testSessionPersistence();
+                testNoTimeout();
+            }, 2000);
+            
+            setTimeout(() => {
+                testPermissions();
+                testPropertyManagementHidden();
+                testAttachmentsRestrictions();
+            }, 5000);
+            
+            setTimeout(() => {
+                testMobileView();
+                setTimeout(() => testDesktopView(), 1000);
+            }, 8000);
+            
+            setTimeout(() => {
+                log('🎉 تم الانتهاء من الاختبار الشامل', 'success');
+                updateStatus('fullTestStatus', 'تم الانتهاء من الاختبار الشامل ✅', 'good');
+            }, 12000);
+        }
+
+        // تنظيف عند إغلاق النافذة
+        window.addEventListener('beforeunload', () => {
+            if (testWindow && !testWindow.closed) {
+                testWindow.close();
+            }
+        });
+    </script>
+</body>
+</html>

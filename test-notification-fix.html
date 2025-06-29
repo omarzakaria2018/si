@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح مشكلة الإشعارات للمستخدم المحدود</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+        }
+
+        .test-section h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .status-good { background: #28a745; }
+        .status-bad { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+        .status-info { background: #17a2b8; }
+        .status-unknown { background: #6c757d; }
+
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+        .log-warning { color: #f6e05e; }
+        .log-info { color: #63b3ed; }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .result-card h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .notification-demo {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification-demo.show {
+            transform: translateX(0);
+        }
+
+        .notification-demo.success { background: #28a745; }
+        .notification-demo.warning { background: #ffc107; color: #212529; }
+        .notification-demo.error { background: #dc3545; }
+        .notification-demo.info { background: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 اختبار إصلاح مشكلة الإشعارات للمستخدم المحدود</h1>
+
+        <div class="test-section">
+            <h3>📋 وصف المشكلة</h3>
+            <p>المشكلة: الإشعارات تظهر للمستخدم المحدود (12345) بعد عدة ثوانٍ أو دقيقة من إعادة التحميل ولا تختفي.</p>
+            <p><strong>السبب:</strong> وظائف Supabase تعمل في الخلفية وتظهر إشعارات دون فحص نوع المستخدم.</p>
+            <p><strong>الحل:</strong> إضافة فحص نوع المستخدم في جميع وظائف الإشعارات + مراقب دوري لإزالة الإشعارات.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبارات الإشعارات</h3>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="openMainApp()">فتح التطبيق الرئيسي</button>
+                <button class="btn btn-success" onclick="testNotificationBlocking()">اختبار منع الإشعارات</button>
+                <button class="btn btn-warning" onclick="simulateSupabaseNotifications()">محاكاة إشعارات Supabase</button>
+                <button class="btn btn-danger" onclick="testNotificationWatcher()">اختبار المراقب الدوري</button>
+                <button class="btn btn-info" onclick="clearAllTests()">مسح الاختبارات</button>
+            </div>
+        </div>
+
+        <div class="results-grid">
+            <div class="result-card">
+                <h4>📊 حالة الاختبار</h4>
+                <p id="testStatus">🔄 جاهز للاختبار</p>
+                <div class="status-indicator status-unknown" id="statusIndicator"></div>
+            </div>
+
+            <div class="result-card">
+                <h4>🔍 إحصائيات الإشعارات</h4>
+                <p>الإشعارات المحجوبة: <span id="blockedCount">0</span></p>
+                <p>الإشعارات المزالة: <span id="removedCount">0</span></p>
+                <p>مرات تشغيل المراقب: <span id="watcherRuns">0</span></p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 سجل الاختبارات</h3>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">🔍 أداة اختبار إصلاح الإشعارات جاهزة...</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ التحسينات المطبقة</h3>
+            <ul>
+                <li>✅ إضافة فحص نوع المستخدم في <code>showConnectionNotification()</code></li>
+                <li>✅ إضافة فحص نوع المستخدم في <code>showAttachmentNotification()</code></li>
+                <li>✅ إضافة فحص نوع المستخدم في <code>showCardAttachmentNotification()</code></li>
+                <li>✅ إضافة فحص نوع المستخدم في <code>showToast()</code></li>
+                <li>✅ تحسين <code>clearAllNotificationsForLimitedUser()</code></li>
+                <li>✅ إضافة مراقب دوري كل 3 ثوانٍ لإزالة الإشعارات</li>
+                <li>✅ إيقاف المراقب عند تسجيل الخروج</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let testWindow = null;
+        let blockedNotifications = 0;
+        let removedNotifications = 0;
+        let watcherExecutions = 0;
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateStatus(status, type = 'info') {
+            document.getElementById('testStatus').textContent = status;
+            const indicator = document.getElementById('statusIndicator');
+            indicator.className = `status-indicator status-${type}`;
+        }
+
+        function updateStats() {
+            document.getElementById('blockedCount').textContent = blockedNotifications;
+            document.getElementById('removedCount').textContent = removedNotifications;
+            document.getElementById('watcherRuns').textContent = watcherExecutions;
+        }
+
+        function openMainApp() {
+            log('🌐 فتح التطبيق الرئيسي...', 'info');
+            testWindow = window.open('index.html', 'mainApp', 'width=1200,height=800');
+            
+            if (testWindow) {
+                updateStatus('تم فتح التطبيق الرئيسي', 'good');
+                log('✅ تم فتح التطبيق الرئيسي بنجاح', 'success');
+                
+                // انتظار تحميل الصفحة
+                setTimeout(() => {
+                    log('🔍 فحص حالة التطبيق...', 'info');
+                    checkAppState();
+                }, 3000);
+            } else {
+                updateStatus('فشل في فتح التطبيق', 'bad');
+                log('❌ فشل في فتح التطبيق الرئيسي', 'error');
+            }
+        }
+
+        function checkAppState() {
+            if (!testWindow) {
+                log('⚠️ التطبيق الرئيسي غير مفتوح', 'warning');
+                return;
+            }
+
+            try {
+                const currentUser = testWindow.currentUser;
+                const users = testWindow.users;
+                
+                if (currentUser && users && users[currentUser]) {
+                    const userRole = users[currentUser].role;
+                    log(`👤 المستخدم الحالي: ${currentUser} (${userRole})`, 'info');
+                    
+                    if (userRole === 'limited') {
+                        log('🔒 تم اكتشاف مستخدم محدود الصلاحية', 'warning');
+                        updateStatus('مستخدم محدود - جاهز للاختبار', 'warning');
+                    } else {
+                        log('👑 مستخدم إداري - قم بتسجيل الدخول كمستخدم محدود', 'info');
+                        updateStatus('مستخدم إداري - غير مناسب للاختبار', 'info');
+                    }
+                } else {
+                    log('🔄 لم يتم تسجيل الدخول بعد', 'info');
+                    updateStatus('انتظار تسجيل الدخول', 'unknown');
+                }
+            } catch (error) {
+                log('❌ خطأ في فحص حالة التطبيق: ' + error.message, 'error');
+            }
+        }
+
+        function testNotificationBlocking() {
+            log('🛡️ اختبار منع الإشعارات...', 'info');
+            
+            if (!testWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                return;
+            }
+
+            try {
+                // محاولة إظهار إشعارات مختلفة
+                if (testWindow.showConnectionNotification) {
+                    testWindow.showConnectionNotification('اختبار إشعار الاتصال', 'info');
+                    log('📤 تم إرسال إشعار اتصال تجريبي', 'info');
+                }
+
+                if (testWindow.showToast) {
+                    testWindow.showToast('اختبار Toast', 'info');
+                    log('📤 تم إرسال Toast تجريبي', 'info');
+                }
+
+                // فحص الإشعارات بعد ثانية
+                setTimeout(() => {
+                    const notifications = testWindow.document.querySelectorAll('.connection-notification, .message-toast, [style*="position: fixed"][style*="top:"]');
+                    
+                    if (notifications.length === 0) {
+                        log('✅ تم منع جميع الإشعارات بنجاح', 'success');
+                        updateStatus('منع الإشعارات يعمل بشكل صحيح', 'good');
+                        blockedNotifications += 2;
+                    } else {
+                        log(`⚠️ تم العثور على ${notifications.length} إشعار لم يتم منعه`, 'warning');
+                        updateStatus('بعض الإشعارات لم يتم منعها', 'warning');
+                    }
+                    updateStats();
+                }, 1000);
+
+            } catch (error) {
+                log('❌ خطأ في اختبار منع الإشعارات: ' + error.message, 'error');
+            }
+        }
+
+        function simulateSupabaseNotifications() {
+            log('🔄 محاكاة إشعارات Supabase...', 'info');
+            
+            if (!testWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                return;
+            }
+
+            try {
+                // محاكاة إشعارات مختلفة كل ثانيتين
+                const notifications = [
+                    { func: 'showConnectionNotification', args: ['تم الاتصال بنجاح', 'success'] },
+                    { func: 'showAttachmentNotification', args: ['INSERT', { file_name: 'test.pdf' }] },
+                    { func: 'showCardAttachmentNotification', args: ['UPDATE', { file_name: 'card.jpg' }] },
+                    { func: 'showToast', args: ['رسالة تجريبية', 'info'] }
+                ];
+
+                let index = 0;
+                const interval = setInterval(() => {
+                    if (index >= notifications.length) {
+                        clearInterval(interval);
+                        log('✅ انتهت محاكاة إشعارات Supabase', 'success');
+                        return;
+                    }
+
+                    const notification = notifications[index];
+                    if (testWindow[notification.func]) {
+                        testWindow[notification.func](...notification.args);
+                        log(`📤 تم إرسال: ${notification.func}`, 'info');
+                    }
+
+                    index++;
+                }, 2000);
+
+                log('🔄 بدء محاكاة الإشعارات...', 'info');
+                updateStatus('جاري محاكاة إشعارات Supabase', 'info');
+
+            } catch (error) {
+                log('❌ خطأ في محاكاة الإشعارات: ' + error.message, 'error');
+            }
+        }
+
+        function testNotificationWatcher() {
+            log('👁️ اختبار المراقب الدوري...', 'info');
+            
+            if (!testWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                return;
+            }
+
+            try {
+                // فحص وجود المراقب
+                if (testWindow.limitedUserNotificationWatcher) {
+                    log('✅ المراقب الدوري نشط', 'success');
+                    updateStatus('المراقب الدوري يعمل', 'good');
+                } else {
+                    log('⚠️ المراقب الدوري غير نشط', 'warning');
+                    updateStatus('المراقب الدوري غير نشط', 'warning');
+                }
+
+                // مراقبة تشغيل المراقب
+                const originalClear = testWindow.clearAllNotificationsForLimitedUser;
+                if (originalClear) {
+                    testWindow.clearAllNotificationsForLimitedUser = function() {
+                        watcherExecutions++;
+                        updateStats();
+                        log('🧹 تم تشغيل المراقب الدوري', 'info');
+                        return originalClear.apply(this, arguments);
+                    };
+                }
+
+            } catch (error) {
+                log('❌ خطأ في اختبار المراقب: ' + error.message, 'error');
+            }
+        }
+
+        function clearAllTests() {
+            log('🧹 مسح جميع الاختبارات...', 'info');
+            
+            blockedNotifications = 0;
+            removedNotifications = 0;
+            watcherExecutions = 0;
+            updateStats();
+            
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry log-info">🔍 تم مسح السجل - جاهز للاختبار...</div>';
+            updateStatus('🔄 جاهز للاختبار', 'unknown');
+            
+            log('✅ تم مسح جميع الاختبارات', 'success');
+        }
+
+        // تحديث الإحصائيات كل ثانية
+        setInterval(updateStats, 1000);
+
+        // رسالة ترحيب
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔍 أداة اختبار إصلاح الإشعارات جاهزة', 'success');
+            log('💡 اضغط "فتح التطبيق الرئيسي" للبدء', 'info');
+        });
+    </script>
+</body>
+</html>

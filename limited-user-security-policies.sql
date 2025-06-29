@@ -45,7 +45,7 @@ INSERT INTO user_roles (username, role, permissions) VALUES
     "accessTrackingLogs": true,
     "deleteTrackingLogs": true
 }'),
-('sa12345', 'limited', '{
+('12345', 'limited', '{
     "viewData": true,
     "editData": false,
     "deleteData": false,
@@ -57,7 +57,7 @@ INSERT INTO user_roles (username, role, permissions) VALUES
     "resetStatus": false,
     "fixStatistics": false,
     "updateDates": false,
-    "accessTrackingLogs": false,
+    "accessTrackingLogs": true,
     "deleteTrackingLogs": false
 }')
 ON CONFLICT (username) DO UPDATE SET

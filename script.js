@@ -733,15 +733,32 @@ function clearAllFilters() {
     };
 
     // إعادة تعيين واجهة المستخدم
-    const countryButtons = document.querySelectorAll('.country-btn');
+    const countryButtons = document.querySelectorAll('.country-btn, .city-btn');
     countryButtons.forEach(btn => btn.classList.remove('active'));
 
     const propertyButtons = document.querySelectorAll('.property-btn');
     propertyButtons.forEach(btn => btn.classList.remove('active'));
 
-    // إعادة تحميل البيانات
-    displayProperties(properties);
+    // إعادة تعيين أزرار الفلاتر الأخرى
+    const filterButtons = document.querySelectorAll('.filter-btn, .status-btn');
+    filterButtons.forEach(btn => btn.classList.remove('active'));
+
+    // إعادة تحميل البيانات وتحديث العرض
+    if (typeof renderData === 'function') {
+        renderData();
+    } else {
+        displayProperties(properties);
+    }
+
+    // تحديث عرض الفلاتر النشطة
     updateActiveFiltersDisplay();
+
+    // تحديث الإحصائيات
+    if (typeof updateTotals === 'function') {
+        updateTotals();
+    }
+
+    // حفظ الحالة الجديدة
     saveAppState();
 
     // مسح الفلاتر من HTML
@@ -765,8 +782,19 @@ function clearAllFilters() {
     // تحديث عرض اسم العقار في الجوالات
     updateMobilePropertyName();
 
-    // إظهار إشعار مؤقت
-    showNotification('تم مسح جميع الفلاتر بنجاح', 'success');
+    // تحديث إضافي بعد تأخير قصير لضمان تحديث جميع العناصر
+    setTimeout(() => {
+        if (typeof renderData === 'function') {
+            renderData();
+        }
+        if (typeof updateTotals === 'function') {
+            updateTotals();
+        }
+        updateActiveFiltersDisplay();
+    }, 100);
+
+    // إظهار أيقونة صغيرة بدلاً من الإشعار النصي
+    showMiniIconNotification('🗑️', '#28a745', 2000);
 }
 
 // إظهار إشعار مؤقت
@@ -818,6 +846,104 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// إظهار أيقونة صغيرة بحجم 5px
+function showMiniIconNotification(icon, color, duration = 2000) {
+    // إزالة الأيقونات الموجودة
+    const existingIcons = document.querySelectorAll('.mini-icon-notification-5px');
+    existingIcons.forEach(existingIcon => existingIcon.remove());
+
+    // إنشاء الأيقونة الصغيرة
+    const iconElement = document.createElement('div');
+    iconElement.className = 'mini-icon-notification-5px';
+    iconElement.textContent = icon;
+
+    // تطبيق الأنماط
+    iconElement.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 5px;
+        height: 5px;
+        background: ${color};
+        border-radius: 50%;
+        z-index: 10000;
+        font-size: 3px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        animation: miniIconPulse5px 0.5s ease-out;
+        transition: all 0.3s ease;
+        pointer-events: none;
+    `;
+
+    // إضافة CSS للأنيميشن إذا لم يكن موجوداً
+    if (!document.getElementById('mini-icon-5px-styles')) {
+        const style = document.createElement('style');
+        style.id = 'mini-icon-5px-styles';
+        style.textContent = `
+            @keyframes miniIconPulse5px {
+                0% {
+                    transform: scale(0);
+                    opacity: 0;
+                }
+                50% {
+                    transform: scale(1.5);
+                    opacity: 1;
+                }
+                100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+
+            .mini-icon-notification-5px {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                z-index: 10000;
+                font-size: 3px;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                transition: all 0.3s ease;
+                pointer-events: none;
+            }
+
+            /* للجوال - تكبير قليل */
+            @media (max-width: 768px) {
+                .mini-icon-notification-5px {
+                    width: 6px;
+                    height: 6px;
+                    font-size: 4px;
+                    top: 15px;
+                    right: 15px;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(iconElement);
+
+    // إزالة الأيقونة بعد المدة المحددة
+    setTimeout(() => {
+        iconElement.style.opacity = '0';
+        iconElement.style.transform = 'scale(0)';
+        setTimeout(() => {
+            if (iconElement.parentNode) {
+                iconElement.parentNode.removeChild(iconElement);
+            }
+        }, 300);
+    }, duration);
+}
+
 // دوال التحكم في نافذة الفلاتر للهاتف
 function toggleMobileFilters() {
     const modal = document.getElementById('mobileFiltersModal');
@@ -865,7 +991,7 @@ const LAST_VISIT_KEY = 'alsenidi_last_visit';
 
 // إنشاء معرف جلسة فريد
 function generateSessionId() {
-    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
 }
 
 // التحقق من نوع الزيارة (جديدة أم إعادة تحميل)
@@ -895,37 +1021,112 @@ function markSessionStart() {
     console.log('🆕 بداية جلسة جديدة:', sessionId);
 }
 
-// حفظ حالة التطبيق في localStorage
+// ===== نظام حفظ حالة التصفح (State Persistence) =====
+
+// مفاتيح التخزين (تحديث المفاتيح الموجودة)
+// const STATE_STORAGE_KEY = 'realEstateAppState'; // تم تعريفه مسبقاً
+const FILTERS_STORAGE_KEY = 'realEstateFilters';
+const SCROLL_STORAGE_KEY = 'realEstateScrollPosition';
+
+// حفظ حالة التطبيق الشاملة في localStorage
 function saveAppState() {
     try {
         const state = {
+            // الحالة الأساسية
             currentView: currentView,
             currentCountry: currentCountry,
             currentProperty: currentProperty,
             filterStatus: filterStatus,
-            timestamp: Date.now(),
-            // حفظ حالة الشريط الجانبي
+
+            // الفلاتر النشطة
+            activeFilters: {
+                city: currentCountry,
+                property: currentProperty,
+                status: filterStatus,
+                contractType: typeof contractTypeFilter !== 'undefined' ? contractTypeFilter : null
+            },
+
+            // حالة الواجهة
             sidebarVisible: document.getElementById('sidebar')?.style.display !== 'none',
-            // لا نحفظ نص البحث - سيتم مسحه عند إعادة التحميل
-            // globalSearchValue: document.getElementById('globalSearch')?.value || '',
-            // propertySearchValue: document.getElementById('propertySearch')?.value || '',
-            // حفظ حالة النافذة المفتوحة (إن وجدت)
+
+            // نصوص البحث
+            searchValues: {
+                global: document.getElementById('globalSearch')?.value || '',
+                property: document.getElementById('propertySearch')?.value || ''
+            },
+
+            // موضع التمرير
+            scrollPosition: {
+                x: window.scrollX || window.pageXOffset || 0,
+                y: window.scrollY || window.pageYOffset || 0
+            },
+
+            // معلومات الجلسة
+            timestamp: Date.now(),
+            sessionId: getSessionId(),
+            version: '2.0',
+
+            // حالة النوافذ والواجهة
             openModal: document.querySelector('.modal.show') ? true : false,
-            // حفظ وضع الإدارة
-            isManagementMode: window.isManagementMode || false,
-            // حفظ الفلاتر النشطة
-            activeFilters: activeFilters,
-            // إضافة معرف الجلسة لتتبع إعادة التحميل
-            sessionId: sessionStorage.getItem(SESSION_MARKER_KEY) || generateSessionId(),
+            isManagementMode: (typeof window.isManagementMode !== 'undefined') ? window.isManagementMode : false,
+
             // تحديث وقت آخر زيارة
             lastVisit: Date.now()
         };
 
         localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(state));
         console.log('💾 تم حفظ حالة التطبيق:', state);
+
+        // حفظ إضافي للفلاتر فقط (للاستعادة السريعة)
+        saveFiltersState();
+
     } catch (error) {
         console.warn('⚠️ فشل في حفظ حالة التطبيق:', error);
     }
+}
+
+// حفظ حالة الفلاتر فقط (للاستعادة السريعة)
+function saveFiltersState() {
+    try {
+        const filtersState = {
+            currentCountry: currentCountry,
+            currentProperty: currentProperty,
+            filterStatus: filterStatus,
+            contractType: typeof contractTypeFilter !== 'undefined' ? contractTypeFilter : null,
+            timestamp: Date.now()
+        };
+
+        localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filtersState));
+        console.log('🔍 تم حفظ حالة الفلاتر:', filtersState);
+    } catch (error) {
+        console.error('❌ خطأ في حفظ حالة الفلاتر:', error);
+    }
+}
+
+// حفظ موضع التمرير
+function saveScrollPosition() {
+    try {
+        const scrollState = {
+            x: window.scrollX || window.pageXOffset || 0,
+            y: window.scrollY || window.pageYOffset || 0,
+            timestamp: Date.now()
+        };
+
+        localStorage.setItem(SCROLL_STORAGE_KEY, JSON.stringify(scrollState));
+        console.log('📜 تم حفظ موضع التمرير:', scrollState);
+    } catch (error) {
+        console.error('❌ خطأ في حفظ موضع التمرير:', error);
+    }
+}
+
+// الحصول على معرف الجلسة
+function getSessionId() {
+    let sessionId = sessionStorage.getItem('sessionId');
+    if (!sessionId) {
+        sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+        sessionStorage.setItem('sessionId', sessionId);
+    }
+    return sessionId;
 }
 
 // استعادة حالة التطبيق من localStorage مع التمييز بين الزيارة الجديدة وإعادة التحميل
@@ -980,18 +1181,16 @@ function restoreAppState() {
         currentProperty = state.currentProperty;
         filterStatus = state.filterStatus;
 
-        // مسح نص البحث عند إعادة التحميل
+        console.log('📊 تم استعادة الحالة:', {
+            currentView,
+            currentCountry,
+            currentProperty,
+            filterStatus
+        });
+
+        // تطبيق الحالة المستعادة على الواجهة
         setTimeout(() => {
-            const globalSearch = document.getElementById('globalSearch');
-            const propertySearch = document.getElementById('propertySearch');
-
-            if (globalSearch) {
-                globalSearch.value = '';
-            }
-
-            if (propertySearch) {
-                propertySearch.value = '';
-            }
+            applyRestoredState(state);
         }, 100);
 
         return state;
@@ -1002,9 +1201,134 @@ function restoreAppState() {
     }
 }
 
+// تطبيق الحالة المستعادة على الواجهة
+function applyRestoredState(state) {
+    console.log('🎯 تطبيق الحالة المستعادة على الواجهة...');
+
+    try {
+        // 1. استعادة طريقة العرض
+        if (state.currentView && state.currentView !== currentView) {
+            toggleView(state.currentView);
+            console.log('📱 تم استعادة طريقة العرض:', state.currentView);
+        }
+
+        // 2. استعادة المدينة المختارة
+        if (state.currentCountry) {
+            console.log('🏙️ استعادة المدينة:', state.currentCountry);
+
+            // تحديث أزرار المدن أولاً
+            if (typeof initCountryButtons === 'function') {
+                initCountryButtons();
+            }
+
+            // تطبيق فلتر المدينة
+            setTimeout(() => {
+                if (typeof selectCountry === 'function') {
+                    selectCountry(state.currentCountry);
+                } else {
+                    // طريقة بديلة
+                    currentCountry = state.currentCountry;
+                    updateCityButtonsState();
+                }
+            }, 50);
+        }
+
+        // 3. استعادة العقار المختار
+        if (state.currentProperty) {
+            console.log('🏢 استعادة العقار:', state.currentProperty);
+
+            setTimeout(() => {
+                // تحديث قائمة العقارات للمدينة المحددة
+                if (typeof initPropertyList === 'function') {
+                    initPropertyList(state.currentCountry);
+                }
+
+                // تطبيق فلتر العقار
+                setTimeout(() => {
+                    if (typeof selectProperty === 'function') {
+                        selectProperty(state.currentProperty);
+                    } else {
+                        // طريقة بديلة
+                        currentProperty = state.currentProperty;
+                        updatePropertyButtonsState();
+                    }
+                }, 100);
+            }, 150);
+        }
+
+        // 4. استعادة فلتر الحالة
+        if (state.filterStatus) {
+            console.log('📊 استعادة فلتر الحالة:', state.filterStatus);
+
+            setTimeout(() => {
+                if (typeof setStatusFilter === 'function') {
+                    setStatusFilter(state.filterStatus);
+                } else {
+                    // طريقة بديلة
+                    filterStatus = state.filterStatus;
+                }
+            }, 200);
+        }
+
+        // 5. استعادة نصوص البحث (إذا كانت محفوظة)
+        if (state.searchValues) {
+            setTimeout(() => {
+                const globalSearch = document.getElementById('globalSearch');
+                const propertySearch = document.getElementById('propertySearch');
+
+                if (globalSearch && state.searchValues.global) {
+                    globalSearch.value = state.searchValues.global;
+                }
+
+                if (propertySearch && state.searchValues.property) {
+                    propertySearch.value = state.searchValues.property;
+                }
+            }, 250);
+        }
+
+        // 6. استعادة موضع التمرير
+        if (state.scrollPosition) {
+            setTimeout(() => {
+                restoreScrollPosition(state.scrollPosition);
+            }, 500);
+        }
+
+        // 7. تحديث العرض النهائي
+        setTimeout(() => {
+            if (typeof renderData === 'function') {
+                renderData();
+            }
+
+            // تحديث عرض الفلاتر النشطة
+            if (typeof updateActiveFiltersDisplay === 'function') {
+                updateActiveFiltersDisplay();
+            }
+
+            console.log('✅ تم تطبيق الحالة المستعادة بنجاح');
+        }, 300);
+
+    } catch (error) {
+        console.error('❌ خطأ في تطبيق الحالة المستعادة:', error);
+    }
+}
+
+// استعادة موضع التمرير
+function restoreScrollPosition(scrollPosition) {
+    try {
+        if (scrollPosition && (scrollPosition.x || scrollPosition.y)) {
+            window.scrollTo(scrollPosition.x || 0, scrollPosition.y || 0);
+            console.log('📜 تم استعادة موضع التمرير:', scrollPosition);
+        }
+    } catch (error) {
+        console.error('❌ خطأ في استعادة موضع التمرير:', error);
+    }
+}
+
 // مسح حالة التطبيق المحفوظة
 function clearAppState() {
     localStorage.removeItem(STATE_STORAGE_KEY);
+    localStorage.removeItem(FILTERS_STORAGE_KEY);
+    localStorage.removeItem(SCROLL_STORAGE_KEY);
     console.log('🗑️ تم مسح حالة التطبيق المحفوظة');
 }
 
@@ -1030,12 +1354,13 @@ function autoSaveState() {
 
 // إعداد معالجات الأحداث لحفظ الحالة
 function setupStateEventHandlers() {
+    console.log('🔧 إعداد معالجات أحداث حفظ الحالة...');
+
     // حفظ الحالة عند إغلاق الصفحة أو تبديل التبويبات
     window.addEventListener('beforeunload', () => {
         console.log('💾 حفظ الحالة قبل إغلاق الصفحة...');
         saveAppState();
-        // تحديث وقت آخر زيارة
-        localStorage.setItem(LAST_VISIT_KEY, Date.now().toString());
+        saveScrollPosition();
     });
 
     // حفظ الحالة عند إخفاء الصفحة (تبديل التبويبات)
@@ -1043,104 +1368,100 @@ function setupStateEventHandlers() {
         if (document.hidden) {
             console.log('👁️ حفظ الحالة عند إخفاء الصفحة...');
             saveAppState();
+            saveScrollPosition();
         }
     });
 
-    // حفظ الحالة عند تغيير حجم النافذة (قد يشير إلى تغيير في الجهاز)
+    // حفظ الحالة عند تغيير حجم النافذة
     window.addEventListener('resize', () => {
         setTimeout(() => {
             saveAppState();
         }, 500);
     });
+
+    // حفظ موضع التمرير عند التمرير
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            saveScrollPosition();
+        }, 300);
+    });
+
+    // حفظ الحالة عند تغيير نصوص البحث
+    setTimeout(() => {
+        const globalSearch = document.getElementById('globalSearch');
+        const propertySearch = document.getElementById('propertySearch');
+
+        if (globalSearch) {
+            globalSearch.addEventListener('input', () => {
+                setTimeout(saveAppState, 1000); // تأخير لتجنب الحفظ المفرط
+            });
+        }
+
+        if (propertySearch) {
+            propertySearch.addEventListener('input', () => {
+                setTimeout(saveAppState, 1000);
+            });
+        }
+    }, 1000);
+
+    console.log('✅ تم إعداد معالجات أحداث حفظ الحالة');
 }
 
-// تطبيق الحالة المستعادة على التطبيق
-function applyRestoredState(state) {
-    try {
-        console.log('🔄 تطبيق الحالة المستعادة...', state);
+// ===== تحديث وظائف الفلاتر لحفظ الحالة تلقائياً =====
 
-        // استعادة طريقة العرض
-        if (state.currentView && state.currentView !== currentView) {
-            currentView = state.currentView;
-            console.log('📱 استعادة طريقة العرض:', currentView);
-        }
+// تحديث وظيفة selectCountry لحفظ الحالة
+const originalSelectCountry = selectCountry;
+selectCountry = function(country) {
+    console.log('🏙️ تحديث المدينة وحفظ الحالة:', country);
 
-        // استعادة المدينة المختارة
-        if (state.currentCountry !== undefined) {
-            currentCountry = state.currentCountry;
-            console.log('🏙️ استعادة المدينة:', currentCountry);
+    // استدعاء الوظيفة الأصلية
+    const result = originalSelectCountry.call(this, country);
 
-            // تحديث أزرار المدن
-            setTimeout(() => {
-                initCountryButtons();
-                if (currentCountry) {
-                    selectCountry(currentCountry);
-                }
-            }, 100);
-        }
+    // حفظ الحالة بعد التحديث
+    setTimeout(() => {
+        saveAppState();
+    }, 100);
 
-        // استعادة العقار المختار
-        if (state.currentProperty) {
-            currentProperty = state.currentProperty;
-            console.log('🏢 استعادة العقار:', currentProperty);
+    return result;
+};
 
-            // تحديث قائمة العقارات وتحديد العقار
-            setTimeout(() => {
-                initPropertyList(currentCountry);
-                if (currentProperty) {
-                    selectProperty(currentProperty);
-                }
-            }, 200);
-        }
+// تحديث وظيفة selectProperty لحفظ الحالة
+const originalSelectProperty = selectProperty;
+selectProperty = function(propertyName) {
+    console.log('🏢 تحديث العقار وحفظ الحالة:', propertyName);
 
-        // استعادة فلتر الحالة
-        if (state.filterStatus !== undefined) {
-            filterStatus = state.filterStatus;
-            console.log('🔍 استعادة فلتر الحالة:', filterStatus);
-        }
+    // استدعاء الوظيفة الأصلية
+    const result = originalSelectProperty.call(this, propertyName);
 
-        // مسح نص البحث عند إعادة التحميل
-        setTimeout(() => {
-            const globalSearch = document.getElementById('globalSearch');
-            const propertySearch = document.getElementById('propertySearch');
+    // حفظ الحالة بعد التحديث
+    setTimeout(() => {
+        saveAppState();
+    }, 100);
 
-            if (globalSearch) {
-                globalSearch.value = '';
-                console.log('🔍 تم مسح البحث العام');
-            }
+    return result;
+};
 
-            if (propertySearch) {
-                propertySearch.value = '';
-                console.log('🔍 تم مسح بحث العقارات');
-            }
-        }, 300);
+// تهيئة نظام حفظ حالة التصفح
+function initializeStatePersistence() {
+    console.log('🔧 تهيئة نظام حفظ حالة التصفح...');
 
-        // استعادة حالة الشريط الجانبي
-        if (state.sidebarVisible !== undefined) {
-            setTimeout(() => {
-                const sidebar = document.getElementById('sidebar');
-                if (sidebar) {
-                    if (state.sidebarVisible) {
-                        sidebar.style.display = 'block';
-                        console.log('📋 إظهار الشريط الجانبي');
-                    } else {
-                        sidebar.style.display = 'none';
-                        console.log('📋 إخفاء الشريط الجانبي');
-                    }
-                }
-            }, 400);
-        }
+    // إعداد معالجات الأحداث
+    setupStateEventHandlers();
 
-        // إعادة عرض البيانات بالحالة المستعادة
-        setTimeout(() => {
-            renderData();
-            // تحديث عرض اسم العقار في الجوالات
-            updateMobilePropertyName();
-            console.log('✅ تم تطبيق الحالة المستعادة بنجاح');
-        }, 500);
+    // بدء الحفظ التلقائي
+    autoSaveState();
 
-    } catch (error) {
-        console.warn('⚠️ خطأ في تطبيق الحالة المستعادة:', error);
+    // استعادة الحالة عند التحميل
+    const restoredState = restoreAppState();
+
+    if (restoredState) {
+        console.log('✅ تم استعادة حالة التصفح بنجاح');
+        return true;
+    } else {
+        console.log('🆕 بدء جلسة جديدة');
+        return false;
     }
 }
 
@@ -1174,6 +1495,17 @@ function addStateEventListeners() {
     });
 
     console.log('✅ تم إضافة مستمعات أحداث حفظ الحالة');
+}
+
+// حفظ تلقائي للحالة كل فترة
+function autoSaveState() {
+    // حفظ الحالة كل 30 ثانية
+    setInterval(() => {
+        console.log('⏰ حفظ تلقائي للحالة...');
+        saveAppState();
+    }, 30000);
+
+    console.log('⏰ تم تفعيل الحفظ التلقائي للحالة (كل 30 ثانية)');
 }
 
 // مراقب لإضافة زر تسجيل الخروج تلقائياً
@@ -1347,7 +1679,7 @@ function shouldHideField(fieldName) {
 
 // إظهار شاشة التحميل البلورية
 function showCrystalLoading() {
-    console.log('🔮 إظهار شاشة التحميل البلورية');
+    console.log('🔮 إظهار شاشة التحميل');
 
     // التحقق من وجود شاشة تحميل موجودة بالفعل
     const existingOverlay = document.getElementById('crystalLoadingOverlay');
@@ -1356,91 +1688,161 @@ function showCrystalLoading() {
         return;
     }
 
+    // فحص نوع المستخدم لتحديد نوع الشاشة
+    const isLimitedUser = currentUser && users[currentUser] && users[currentUser].role === 'limited';
+
+    console.log('🔍 فحص نوع المستخدم في showCrystalLoading:', {
+        currentUser: currentUser,
+        userExists: users[currentUser] ? true : false,
+        userRole: users[currentUser] ? users[currentUser].role : 'غير موجود',
+        isLimitedUser: isLimitedUser
+    });
+
     // إنشاء عنصر شاشة التحميل
     const loadingOverlay = document.createElement('div');
     loadingOverlay.id = 'crystalLoadingOverlay';
-    loadingOverlay.className = 'crystal-loading-overlay';
 
-    loadingOverlay.innerHTML = `
-        <div class="crystal-container">
-            <div class="crystal-spinner">
-                <div class="crystal-facet"></div>
-                <div class="crystal-facet"></div>
-                <div class="crystal-facet"></div>
+    if (isLimitedUser) {
+        // شاشة تحميل بسيطة وهادئة للمستخدم المحدود
+        loadingOverlay.className = 'limited-user-loading-overlay';
+        loadingOverlay.innerHTML = `
+            <div class="limited-loading-container">
+                <div class="limited-loading-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <h3 class="limited-loading-title">جاري تحميل المحتوى</h3>
+                <div class="limited-progress-container">
+                    <div class="limited-progress-bar">
+                        <div class="limited-progress-fill" id="limitedProgressFill"></div>
+                    </div>
+                    <div class="limited-progress-text" id="limitedProgressText">0%</div>
+                </div>
+                <button id="limitedStartButton" class="limited-start-btn" onclick="hideCrystalLoading()" style="display: none;">
+                    <i class="fas fa-arrow-left"></i>
+                    ابدأ
+                </button>
             </div>
-            <div class="crystal-text">جاري تحميل المحتوى</div>
-            <div class="crystal-subtitle">يرجى الانتظار...</div>
-            <div class="crystal-progress">
-                <div class="crystal-progress-bar"></div>
+        `;
+        console.log('👤 تم إنشاء شاشة تحميل بسيطة للمستخدم المحدود');
+    } else {
+        // شاشة التحميل العادية للمستخدمين الآخرين
+        loadingOverlay.className = 'crystal-loading-overlay';
+        loadingOverlay.innerHTML = `
+            <div class="simple-loading-container">
+                <h3 class="loading-title">جاري تحميل المحتوى</h3>
+                <div class="simple-progress-container">
+                    <div class="simple-progress-bar">
+                        <div class="simple-progress-fill" id="simpleProgressFill"></div>
+                    </div>
+                    <div class="simple-progress-text" id="simpleProgressText">0%</div>
+                </div>
+                <button id="startButton" class="simple-start-btn" onclick="hideCrystalLoading()" style="display: none;">
+                    <i class="fas fa-play"></i>
+                    ابدأ
+                </button>
             </div>
-
-            <!-- زر ابدأ - يظهر بعد 5 ثوان -->
-            <button id="startButton" class="crystal-start-btn" onclick="hideCrystalLoading()" style="display: none;">
-                <i class="fas fa-play"></i>
-                ابدأ
-            </button>
-        </div>
-        <div class="crystal-particles">
-            <div class="crystal-particle"></div>
-            <div class="crystal-particle"></div>
-            <div class="crystal-particle"></div>
-            <div class="crystal-particle"></div>
-            <div class="crystal-particle"></div>
-            <div class="crystal-particle"></div>
-            <div class="crystal-particle"></div>
-            <div class="crystal-particle"></div>
-        </div>
-    `;
+        `;
+        console.log('👑 تم إنشاء شاشة التحميل العادية للمستخدم العادي');
+    }
 
     // إضافة الشاشة إلى الصفحة
     document.body.appendChild(loadingOverlay);
 
-    // إظهار زر "ابدأ" بعد 5 ثوانٍ (للمستخدمين العاديين فقط)
-    setTimeout(() => {
-        // تسجيل معلومات المستخدم للتشخيص
-        console.log('🔍 فحص المستخدم الحالي:', {
-            currentUser: currentUser,
-            userExists: currentUser && users[currentUser],
-            userRole: currentUser && users[currentUser] ? users[currentUser].role : 'غير محدد',
-            isLimited: currentUser && users[currentUser] && users[currentUser].role === 'limited'
-        });
+    // بدء تحديث النسبة المئوية
+    if (isLimitedUser) {
+        startLimitedUserProgressAnimation();
+    } else {
+        startSimpleProgressAnimation();
+    }
 
-        // للمستخدمين محدودي الصلاحية: إخفاء الشاشة تلقائياً فوراً
-        if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
-            console.log('👤 مستخدم محدود الصلاحية - إخفاء شاشة التحميل فوراً');
-            hideCrystalLoading();
+    // إظهار زر "ابدأ" بعد اكتمال التحميل
+    setTimeout(() => {
+        if (isLimitedUser) {
+            // للمستخدم المحدود: إظهار زر ابدأ بعد 3 ثوانٍ
+            const startButton = document.getElementById('limitedStartButton');
+            if (startButton) {
+                startButton.style.display = 'block';
+                startButton.style.animation = 'limitedFadeIn 0.5s ease-out';
+                console.log('🎯 تم إظهار زر "ابدأ" للمستخدم المحدود');
+            }
         } else {
-            // إظهار زر "ابدأ" للمستخدمين العاديين فقط
+            // للمستخدمين العاديين: إظهار زر ابدأ بعد 5 ثوانٍ
             const startButton = document.getElementById('startButton');
             if (startButton) {
                 startButton.style.display = 'block';
                 startButton.style.animation = 'fadeInUp 0.5s ease-out';
                 console.log('🎯 تم إظهار زر "ابدأ" للمستخدم العادي');
             }
-            console.log('ℹ️ مستخدم عادي أو غير محدد - يحتاج للنقر على زر ابدأ');
+        }
+    }, isLimitedUser ? 3000 : 5000);
+}
+
+// دالة تحديث النسبة المئوية البسيطة للمستخدمين العاديين
+function startSimpleProgressAnimation() {
+    const progressFill = document.getElementById('simpleProgressFill');
+    const progressText = document.getElementById('simpleProgressText');
+
+    if (!progressFill || !progressText) return;
+
+    let progress = 0;
+    const updateInterval = 200;
+
+    const interval = setInterval(() => {
+        progress += Math.random() * 15 + 5; // زيادة عشوائية
+
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
         }
 
-        // آلية إضافية: فحص دوري للمستخدم محدود الصلاحية
-        // في حالة تأخر تعيين المستخدم
-        let checkCount = 0;
-        const maxChecks = 10; // فحص لمدة 10 ثوانٍ إضافية
+        progressFill.style.width = progress + '%';
+        progressText.textContent = Math.round(progress) + '%';
 
-        const periodicCheck = setInterval(() => {
-            checkCount++;
-
-            if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
-                console.log('👤 تم اكتشاف مستخدم محدود الصلاحية متأخراً - إخفاء الشاشة');
-                clearInterval(periodicCheck);
-                hideCrystalLoading();
-                return;
+        // إظهار زر ابدأ عند الوصول لـ 100%
+        if (progress >= 100) {
+            const startButton = document.getElementById('startButton');
+            if (startButton) {
+                startButton.style.display = 'block';
             }
+        }
+    }, updateInterval);
+}
 
-            if (checkCount >= maxChecks) {
-                console.log('⏰ انتهت مهلة الفحص الدوري للمستخدم محدود الصلاحية');
-                clearInterval(periodicCheck);
+// دالة تحديث النسبة المئوية الهادئة للمستخدم المحدود
+function startLimitedUserProgressAnimation() {
+    const progressFill = document.getElementById('limitedProgressFill');
+    const progressText = document.getElementById('limitedProgressText');
+
+    if (!progressFill || !progressText) return;
+
+    let progress = 0;
+    const updateInterval = 100; // تحديث سلس كل 100ms
+    const totalDuration = 7000; // 7 ثوان كما طُلب
+    const progressIncrement = (100 / (totalDuration / updateInterval)); // حساب الزيادة لـ 7 ثوان
+
+    console.log('🔄 بدء تحديث النسبة المئوية للمستخدم المحدود');
+
+    const interval = setInterval(() => {
+        progress += progressIncrement;
+
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            console.log('✅ اكتمل التحميل للمستخدم المحدود');
+        }
+
+        progressFill.style.width = progress + '%';
+        progressText.textContent = Math.round(progress) + '%';
+
+        // إظهار زر ابدأ عند الوصول لـ 100%
+        if (progress >= 100) {
+            const startButton = document.getElementById('limitedStartButton');
+            if (startButton) {
+                startButton.style.display = 'block';
+                startButton.style.animation = 'limitedFadeIn 0.5s ease-out';
             }
-        }, 1000);
-    }, 5000);
+        }
+    }, updateInterval);
 }
 
 // إخفاء شاشة التحميل البلورية
@@ -8371,7 +8773,7 @@ function isImportantNotification(message, type) {
     return isImportantOperation;
 }
 
-// Show toast notification مع نظام الفلترة
+// Show toast notification مع نظام الفلترة والأيقونات المصغرة
 function showToast(message, type = 'info', duration = 3000) {
     // تحميل الإعدادات
     loadNotificationSettings();
@@ -8379,6 +8781,13 @@ function showToast(message, type = 'info', duration = 3000) {
     // فحص ما إذا كانت الإشعارات مفعلة
     if (!notificationSettings.enabled) {
         console.log(`[TOAST DISABLED] ${type.toUpperCase()}: ${message}`);
+        return;
+    }
+
+    // تحويل الرسائل إلى أيقونات صغيرة إذا كانت رسائل حالة
+    const iconNotification = convertToIconNotification(message, type);
+    if (iconNotification) {
+        showMiniIconNotification(iconNotification.icon, iconNotification.color, duration);
         return;
     }
 
@@ -8410,6 +8819,92 @@ function showToast(message, type = 'info', duration = 3000) {
     }, duration);
 
     return toast;
+}
+
+// تحويل الرسائل إلى أيقونات صغيرة
+function convertToIconNotification(message, type) {
+    // قائمة الرسائل التي يجب تحويلها إلى أيقونات
+    const statusMessages = {
+        'جميع المكونات تعمل بشكل صحيح': { icon: '✓', color: '#28a745' },
+        'جميع المكونات تظهر بشكل صحيح': { icon: '✓', color: '#28a745' },
+        'النظام يعمل بشكل مثالي': { icon: '✓', color: '#28a745' },
+        'تم الاتصال بنجاح': { icon: '●', color: '#28a745' },
+        'المزامنة الفورية نشطة': { icon: '●', color: '#17a2b8' },
+        'تم مزامنة': { icon: '↻', color: '#17a2b8' },
+        'تم حفظ': { icon: '💾', color: '#28a745' },
+        'تم ربط': { icon: '🔗', color: '#28a745' },
+        'تم فصل': { icon: '🔓', color: '#ffc107' },
+        'تم حذف': { icon: '🗑', color: '#dc3545' },
+        'تم إضافة': { icon: '+', color: '#28a745' },
+        'تم تحديث': { icon: '↻', color: '#17a2b8' },
+        'فشل في': { icon: '✗', color: '#dc3545' },
+        'خطأ في': { icon: '!', color: '#dc3545' },
+        'تحذير': { icon: '⚠', color: '#ffc107' },
+        'لا يمكن الاتصال': { icon: '●', color: '#dc3545' },
+        'غير متوفر': { icon: '○', color: '#6c757d' }
+    };
+
+    // البحث عن تطابق في الرسالة
+    for (const [keyword, iconData] of Object.entries(statusMessages)) {
+        if (message.includes(keyword)) {
+            return iconData;
+        }
+    }
+
+    // إذا كان نوع الإشعار success أو error أو warning، استخدم أيقونة افتراضية
+    if (type === 'success') return { icon: '✓', color: '#28a745' };
+    if (type === 'error') return { icon: '✗', color: '#dc3545' };
+    if (type === 'warning') return { icon: '⚠', color: '#ffc107' };
+    if (type === 'info') return { icon: 'ℹ', color: '#17a2b8' };
+
+    return null; // لا تحويل، اعرض الرسالة العادية
+}
+
+// عرض أيقونة صغيرة جداً (4px)
+function showMiniIconNotification(icon, color, duration = 3000) {
+    // إزالة الأيقونات الموجودة
+    const existingIcons = document.querySelectorAll('.mini-icon-notification');
+    existingIcons.forEach(icon => icon.remove());
+
+    // إنشاء الأيقونة الصغيرة
+    const iconElement = document.createElement('div');
+    iconElement.className = 'mini-icon-notification';
+    iconElement.textContent = icon;
+
+    // تطبيق الأنماط
+    iconElement.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 4px;
+        height: 4px;
+        background: ${color};
+        border-radius: 50%;
+        z-index: 10000;
+        font-size: 3px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        animation: miniIconPulse 0.5s ease-out;
+        transition: all 0.3s ease;
+    `;
+
+    // إضافة للصفحة
+    document.body.appendChild(iconElement);
+
+    // إزالة تلقائية
+    setTimeout(() => {
+        if (iconElement.parentNode) {
+            iconElement.style.opacity = '0';
+            iconElement.style.transform = 'scale(0)';
+            setTimeout(() => iconElement.remove(), 300);
+        }
+    }, duration);
+
+    console.log(`🔸 أيقونة صغيرة: ${icon} (${color})`);
+    return iconElement;
 }
 
 // ===== DATA IMPORT SYSTEM =====
@@ -11286,7 +11781,7 @@ async function saveUnitEdit(event) {
         console.log(`🎉 جميع الفحوصات نجحت - التحديث مكتمل ودائم!`);
 
         // إضافة معرف فريد للتحديث لتتبعه
-        const updateId = `update_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const updateId = `update_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
         console.log(`🆔 معرف التحديث: ${updateId}`);
 
         // حفظ معرف التحديث في localStorage للتحقق منه لاحقاً
@@ -15164,7 +15659,7 @@ function showDeedInfoForProperty(propertyName, city) {
 // ===== Mobile Device Detection =====
 function isMobileDevice() {
     // Check multiple indicators for mobile devices
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const userAgent = navigator.userAgent || (navigator.vendor || '') || (window.opera || '');
 
     // Check for mobile user agents
     const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
@@ -15992,7 +16487,7 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
 
         // Fallback to local attachments if no cloud data
         if (!isFromCloud || cardAttachments.length === 0) {
-            cardAttachments = window.cardAttachments?.[cardKey] || [];
+            cardAttachments = (window.cardAttachments && window.cardAttachments[cardKey]) || [];
             console.log(`💾 تم جلب ${cardAttachments.length} مرفق محلي للبطاقة`);
         }
 
@@ -25988,8 +26483,8 @@ function loadSavedCities() {
                     console.log(`📊 إجمالي المدن المتاحة: ${availableCities.length}`);
 
                     // تحديث واجهة المدن إذا كانت الدوال متوفرة
-                    if (typeof updateCityButtons === 'function') {
-                        updateCityButtons();
+                    if (typeof updateCityButtonsState === 'function') {
+                        updateCityButtonsState();
                     }
                     if (typeof updateCityDropdowns === 'function') {
                         updateCityDropdowns();
@@ -30382,7 +30877,7 @@ function createChangeLog(operationType, unitData, changes = {}, additionalInfo =
     const dayName = getDayName(now);
 
     return {
-        id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         timestamp: now.toISOString(),
         date: gregorianDate,
         hijriDate: hijriDate,
@@ -31693,7 +32188,7 @@ async function showTrackingManagementModal() {
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
     // حفظ السجلات في متغير عام للاستخدام
-    window.currentManagementLogs = uniqueLogs;
+    window.managementLogsData = uniqueLogs;
 
     console.log('✅ تم عرض نافذة إدارة سجلات التتبع');
 }
@@ -32163,7 +32658,7 @@ function applyManagementFilters() {
     const userFilter = document.getElementById('mgmtUserFilter').value;
     const searchTerm = document.getElementById('mgmtSearch').value.toLowerCase();
 
-    let filteredLogs = window.currentManagementLogs || [];
+    let filteredLogs = window.managementLogsData || [];
 
     // فلترة بالتاريخ المحدد
     if (dateFilter) {
@@ -32226,9 +32721,9 @@ function clearManagementFilters() {
 
     // إعادة عرض جميع السجلات
     const container = document.getElementById('managementLogsContainer');
-    if (container && window.currentManagementLogs) {
-        container.innerHTML = renderManagementLogs(window.currentManagementLogs);
-        document.getElementById('totalLogsCount').textContent = window.currentManagementLogs.length;
+    if (container && window.managementLogsData) {
+        container.innerHTML = renderManagementLogs(window.managementLogsData);
+        document.getElementById('totalLogsCount').textContent = window.managementLogsData.length;
     }
 
     updateSelectedCount();
@@ -32245,7 +32740,7 @@ async function refreshManagementView() {
         index === self.findIndex(l => l.id === log.id)
     ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    window.currentManagementLogs = uniqueLogs;
+    window.managementLogsData = uniqueLogs;
 
     // تحديث العرض
     const container = document.getElementById('managementLogsContainer');
@@ -32260,14 +32755,14 @@ async function refreshManagementView() {
 // تحديث عدادات السجلات
 function updateLogsCount() {
     const totalElement = document.getElementById('totalLogsCount');
-    if (totalElement && window.currentManagementLogs) {
-        totalElement.textContent = window.currentManagementLogs.length;
+    if (totalElement && window.managementLogsData) {
+        totalElement.textContent = window.managementLogsData.length;
     }
 }
 
 // عرض تفاصيل السجل
 function viewLogDetails(logId) {
-    const log = window.currentManagementLogs?.find(l => l.id === logId);
+    const log = window.managementLogsData?.find(l => l.id === logId);
     if (!log) {
         showToast('لم يتم العثور على السجل', 'error');
         return;
@@ -34816,7 +35311,7 @@ function diagnosePropertyEditIssues() {
 }
 
 // إضافة الوظيفة للوحة التحكم
-window.diagnosePropertyEdit = diagnosePropertyEditIssues;
+window.diagnosePropertyEditIssues = diagnosePropertyEditIssues;
 
 // تشغيل التشخيص تلقائياً عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
@@ -37589,17 +38084,17 @@ const users = {
             manageSettings: true
         }
     },
-    'sa12345': {
-        password: 'sa12345',
+    '12345': {
+        password: '12345',
         role: 'limited',
-        fullName: 'مستخدم محدود الصلاحيات',
+        fullName: 'السنيدي',
         permissions: {
             viewData: true,
             editData: false,
             deleteData: false,
             manageProperties: false,
-            manageAttachments: true,
-            exportData: false,
+            manageAttachments: false,
+            exportData: true,
             importData: false,
             manageSettings: false
         }
@@ -37614,24 +38109,25 @@ function initializePermissionSystem() {
         try {
             const userData = JSON.parse(savedUser);
             if (users[userData.username] && userData.loginTime) {
-                // التحقق من انتهاء صلاحية الجلسة (24 /10 دقايق ساعة)
-                const loginTime = new Date(userData.loginTime);
-                const now = new Date();
-                const hoursDiff = (now - loginTime) / (1000 * 60 * 60);
+                // الجلسة صالحة دائماً - لا انتهاء صلاحية تلقائي
+                // الجلسة تنتهي فقط عند تسجيل الخروج اليدوي
+                console.log('✅ استعادة جلسة المستخدم - لا انتهاء صلاحية تلقائي');
+                setCurrentUser(userData.username);
 
-                if (hoursDiff < .10) {
-                    // الجلسة صالحة
-                    setCurrentUser(userData.username);
-
-                    // إضافة زر تسجيل الخروج فور استعادة الجلسة
-                    setTimeout(() => {
-                        addLogoutButton();
-                        updateMobileUserSection();
-                        console.log('🔑 إضافة زر تسجيل الخروج من initializePermissionSystem');
-                    }, 300);
-
-                    return;
+                // للمستخدم المحدود: إخفاء شاشة التحميل فوراً
+                if (userData.username === '12345' || (users[userData.username] && users[userData.username].role === 'limited')) {
+                    console.log('👤 مستخدم محدود - إخفاء شاشة التحميل فوراً من initializePermissionSystem');
+                    hideCrystalLoading();
                 }
+
+                // إضافة زر تسجيل الخروج فور استعادة الجلسة
+                setTimeout(() => {
+                    addLogoutButton();
+                    updateMobileUserSection();
+                    console.log('🔑 إضافة زر تسجيل الخروج من initializePermissionSystem');
+                }, 300);
+
+                return;
             }
         } catch (error) {
             console.error('خطأ في قراءة بيانات المستخدم المحفوظة:', error);
@@ -37687,12 +38183,15 @@ function handleLogin(event) {
         // تسجيل دخول ناجح
         setCurrentUser(username);
 
-        // حفظ الجلسة
+        // حفظ الجلسة مع معلومات الدور
         const userData = {
             username: username,
+            role: users[username].role,
+            fullName: users[username].fullName,
             loginTime: new Date().toISOString()
         };
         localStorage.setItem('currentUser', JSON.stringify(userData));
+        console.log('💾 تم حفظ بيانات المستخدم:', userData);
 
         // إخفاء نافذة تسجيل الدخول
         hideLoginModal();
@@ -37701,17 +38200,29 @@ function handleLogin(event) {
         console.log('🔮 إظهار شاشة التحميل بعد تسجيل الدخول الناجح');
         showCrystalLoading();
 
-        // للمستخدمين محدودي الصلاحية: إخفاء الشاشة بعد ثانية واحدة فقط
+        // للمستخدمين محدودي الصلاحية: السماح بعرض شاشة التحميل الهادئة
         if (users[username].role === 'limited') {
-            console.log('👤 مستخدم محدود الصلاحية - سيتم إخفاء الشاشة بعد ثانية واحدة');
-            setTimeout(() => {
-                console.log('👤 إخفاء شاشة التحميل للمستخدم محدود الصلاحية');
-                hideCrystalLoading();
-            }, 1000);
+            console.log('👤 مستخدم محدود الصلاحية - عرض شاشة التحميل الهادئة');
+            // لا نخفي الشاشة فوراً، بل نتركها تعمل بشكل طبيعي مع التصميم الهادئ
         }
 
         // إظهار رسالة ترحيب
         showWelcomeMessage(users[username].fullName);
+
+        // للمستخدم المحدود: إزالة جميع الإشعارات بسرعة ومراقبة دورية
+        if (users[username].role === 'limited') {
+            setTimeout(() => {
+                clearAllNotificationsForLimitedUser();
+            }, 1000);
+
+            // مراقب دوري لإزالة أي إشعارات جديدة تظهر
+            const notificationWatcher = setInterval(() => {
+                clearAllNotificationsForLimitedUser();
+            }, 3000); // كل 3 ثوانٍ
+
+            // حفظ المراقب لإيقافه عند تسجيل الخروج
+            window.limitedUserNotificationWatcher = notificationWatcher;
+        }
 
         // تحديث قسم المستخدم في الهاتف وإضافة زر تسجيل الخروج
         setTimeout(() => {
@@ -37749,13 +38260,16 @@ function setCurrentUser(username) {
         // تطبيق قيود الوصول للأزرار الإدارية للمستخدم محدود الصلاحية
         if (users[username].role === 'limited') {
             console.log('🔒 تطبيق قيود الوصول للأزرار الإدارية...');
+
+            // السماح لشاشة التحميل الهادئة بالعمل بشكل طبيعي
+            console.log('👤 مستخدم محدود - شاشة التحميل الهادئة ستعمل بشكل طبيعي');
+
+            // تطبيق فوري للقيود
             restrictAdminButtonsForLimitedUser();
 
-            // تطبيق قيود متكررة للتأكد
-            setTimeout(() => restrictAdminButtonsForLimitedUser(), 100);
-            setTimeout(() => restrictAdminButtonsForLimitedUser(), 300);
-            setTimeout(() => restrictAdminButtonsForLimitedUser(), 500);
-            setTimeout(() => restrictAdminButtonsForLimitedUser(), 1000);
+            // تطبيق قيود محسن مع أوقات أقل
+            setTimeout(() => restrictAdminButtonsForLimitedUser(), 50);
+            setTimeout(() => restrictAdminButtonsForLimitedUser(), 150);
 
             // تفعيل مراقب المرفقات
             setTimeout(() => {
@@ -37919,18 +38433,14 @@ function applyUserPermissions() {
         body.classList.add('limited-user');
         hideLimitedUserElements();
 
-        // تطبيق قيود الوصول مع تأخير
+        // تطبيق قيود الوصول محسن مع أوقات أقل
         setTimeout(() => {
             restrictAdminButtonsForLimitedUser();
-        }, 500);
+        }, 100);
 
         setTimeout(() => {
             restrictAdminButtonsForLimitedUser();
-        }, 1000);
-
-        setTimeout(() => {
-            restrictAdminButtonsForLimitedUser();
-        }, 2000);
+        }, 300);
     } else {
         body.classList.add('admin-user');
     }
@@ -37989,10 +38499,10 @@ function restrictAdminButtonsForLimitedUser() {
 
     // قائمة الأزرار الإدارية المحظورة
     const restrictedButtons = [
-        // أزرار إدارة العقارات
-        { selector: '#propertyManagerBtn', name: 'إدارة العقارات' },
-        { selector: '.management-btn', name: 'إدارة العقارات' },
-        { selector: '#mobile-property-manager-btn', name: 'إدارة العقارات' },
+        // أزرار إدارة العقارات - إخفاء كامل
+        { selector: '#propertyManagerBtn', name: 'إدارة العقارات', hide: true },
+        { selector: '.management-btn', name: 'إدارة العقارات', hide: true },
+        { selector: '#mobile-property-manager-btn', name: 'إدارة العقارات', hide: true },
 
         // أزرار تحديث التواريخ
         { selector: '#updateDatesBtn', name: 'تحديث التواريخ' },
@@ -38003,37 +38513,54 @@ function restrictAdminButtonsForLimitedUser() {
         { selector: '#mobile-fix-statistics-btn', name: 'إصلاح الإحصائيات' },
 
         // أزرار إعادة تعيين الحالة
-        { selector: '#mobile-clear-state-btn', name: 'إعادة تعيين الحالة' }
+        { selector: '#mobile-clear-state-btn', name: 'إعادة تعيين الحالة' },
+
+        // أزرار الإعدادات - إخفاء في الشاشات الكبيرة، تقييد في المحمول
+        { selector: '.settings-btn', name: 'الإعدادات', hide: true },
+        { selector: '.header-dropdown:has(.settings-btn)', name: 'قائمة الإعدادات', hide: true },
+        { selector: '#mobile-settings-btn', name: 'الإعدادات' },
+
+        // أزرار التحرير والحذف في البطاقات
+        { selector: '.edit-btn', name: 'تحرير البطاقة' },
+        { selector: '.delete-btn', name: 'حذف البطاقة' },
+        { selector: '.add-btn', name: 'إضافة جديد' }
     ];
 
     restrictedButtons.forEach(buttonInfo => {
         const buttons = document.querySelectorAll(buttonInfo.selector);
         buttons.forEach(button => {
             if (button) {
-                // إزالة جميع معالجات الأحداث السابقة
-                const newButton = button.cloneNode(true);
-                button.parentNode.replaceChild(newButton, button);
+                if (buttonInfo.hide) {
+                    // إخفاء الزر كاملاً (للعقارات)
+                    button.style.display = 'none';
+                    console.log(`🚫 تم إخفاء زر: ${buttonInfo.name}`);
+                } else {
+                    // تقييد الوصول مع الاحتفاظ بالزر مرئياً
+                    // إزالة جميع معالجات الأحداث السابقة
+                    const newButton = button.cloneNode(true);
+                    button.parentNode.replaceChild(newButton, button);
 
-                // إضافة معالج جديد يظهر رسالة عدم الصلاحية
-                newButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    showNoPermissionMessage(`ليس لديك صلاحية للوصول إلى "${buttonInfo.name}"`);
-                    return false;
-                });
+                    // إضافة معالج جديد يظهر رسالة عدم الصلاحية
+                    newButton.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showNoPermissionMessage(`ليس لديك صلاحية للوصول إلى "${buttonInfo.name}"`);
+                        return false;
+                    });
 
-                // إضافة كلاس للتصميم المحظور
-                newButton.classList.add('restricted-button');
-                newButton.title = `ليس لديك صلاحية للوصول إلى "${buttonInfo.name}"`;
+                    // إضافة كلاس للتصميم المحظور
+                    newButton.classList.add('restricted-button');
+                    newButton.title = `ليس لديك صلاحية للوصول إلى "${buttonInfo.name}"`;
 
-                console.log(`🔒 تم تقييد الوصول لزر: ${buttonInfo.name}`);
+                    console.log(`🔒 تم تقييد الوصول لزر: ${buttonInfo.name}`);
+                }
             }
         });
     });
 
     // تطبيق قيود على عناصر القائمة المنسدلة
     const dropdownItems = [
-        { selector: '[onclick*="showPropertyManager"]', name: 'إدارة العقارات' },
+        { selector: '[onclick*="showPropertyManager"]', name: 'إدارة العقارات', hide: true },
         { selector: '[onclick*="fixStatisticsNow"]', name: 'إصلاح الإحصائيات' },
         { selector: '[onclick*="showDateUpdateModal"]', name: 'تحديث التواريخ' },
         { selector: '[onclick*="openDateUpdateModal"]', name: 'تحديث التواريخ' },
@@ -38044,24 +38571,31 @@ function restrictAdminButtonsForLimitedUser() {
         const items = document.querySelectorAll(itemInfo.selector);
         items.forEach(item => {
             if (item) {
-                // إزالة onclick السابق
-                item.removeAttribute('onclick');
+                if (itemInfo.hide) {
+                    // إخفاء العنصر كاملاً
+                    item.style.display = 'none';
+                    console.log(`🚫 تم إخفاء عنصر القائمة: ${itemInfo.name}`);
+                } else {
+                    // تقييد الوصول مع الاحتفاظ بالعنصر مرئياً
+                    // إزالة onclick السابق
+                    item.removeAttribute('onclick');
 
-                // إضافة معالج جديد
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    showNoPermissionMessage(`ليس لديك صلاحية للوصول إلى "${itemInfo.name}"`);
-                    closeAllDropdowns(); // إغلاق القائمة المنسدلة
-                    return false;
-                });
+                    // إضافة معالج جديد
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showNoPermissionMessage(`ليس لديك صلاحية للوصول إلى "${itemInfo.name}"`);
+                        closeAllDropdowns(); // إغلاق القائمة المنسدلة
+                        return false;
+                    });
 
-                // إضافة مؤشر بصري
-                item.style.opacity = '0.6';
-                item.style.cursor = 'not-allowed';
-                item.title = `ليس لديك صلاحية للوصول إلى "${itemInfo.name}"`;
+                    // إضافة مؤشر بصري
+                    item.style.opacity = '0.6';
+                    item.style.cursor = 'not-allowed';
+                    item.title = `ليس لديك صلاحية للوصول إلى "${itemInfo.name}"`;
 
-                console.log(`🔒 تم تقييد الوصول لعنصر القائمة: ${itemInfo.name}`);
+                    console.log(`🔒 تم تقييد الوصول لعنصر القائمة: ${itemInfo.name}`);
+                }
             }
         });
     });
@@ -38073,21 +38607,23 @@ function restrictAdminButtonsForLimitedUser() {
 function applyAttachmentsRestrictions() {
     console.log('📎 تطبيق قيود المرفقات للمستخدم محدود الصلاحيات...');
 
-    // إخفاء مناطق الرفع
+    // إخفاء مناطق الرفع (منع إضافة مرفقات جديدة)
     const uploadElements = document.querySelectorAll(`
         .upload-area, .upload-section, .upload-dropzone, .upload-zone,
         .file-upload-area, .totals-upload-zone, .enhanced-upload,
-        .upload-notes-sidebar, .mobile-upload-section
+        .upload-notes-sidebar, .mobile-upload-section, .add-attachment-btn,
+        .upload-btn, .file-input-wrapper, .drag-drop-area
     `);
     uploadElements.forEach(element => {
         if (element) element.style.display = 'none';
     });
 
-    // إخفاء أزرار الحذف والمزامنة
+    // إخفاء أزرار الحذف والمزامنة والتحرير
     const deleteElements = document.querySelectorAll(`
         .btn-delete, .delete-btn, .mobile-action-btn.delete,
         .attachment-btn.delete-btn, .btn-enhanced.btn-delete,
-        .sync-btn, .attachment-btn.sync-btn
+        .sync-btn, .attachment-btn.sync-btn, .edit-attachment-btn,
+        .modify-btn, .update-btn
     `);
     deleteElements.forEach(element => {
         if (element) element.style.display = 'none';
@@ -38340,10 +38876,10 @@ function showWelcomeMessage(fullName) {
     // تحديد مدة عرض الرسالة حسب نوع المستخدم
     let displayDuration = 4000; // 4 ثوان للمستخدمين العاديين
 
-    // للمستخدم محدود الصلاحية: إخفاء الرسالة بعد ثانيتين فقط
+    // للمستخدم محدود الصلاحية: إخفاء الرسالة بسرعة لتحسين الأداء
     if (currentUser && users[currentUser] && users[currentUser].role === 'limited') {
-        displayDuration = 2000; // ثانيتان فقط
-        console.log('👤 مستخدم محدود الصلاحية - إخفاء رسالة الترحيب بعد ثانيتين');
+        displayDuration = 800; // أقل من ثانية واحدة
+        console.log('👤 مستخدم محدود الصلاحية - إخفاء رسالة الترحيب بسرعة');
     }
 
     // إخفاء الرسالة
@@ -38357,9 +38893,54 @@ function showWelcomeMessage(fullName) {
     }, displayDuration);
 }
 
+// إزالة جميع الإشعارات للمستخدم المحدود لتحسين الأداء
+function clearAllNotificationsForLimitedUser() {
+    console.log('🧹 إزالة جميع الإشعارات للمستخدم المحدود...');
+
+    // إزالة رسائل الترحيب
+    const welcomeMessages = document.querySelectorAll('div[style*="position: fixed"][style*="top: 20px"][style*="right: 20px"]');
+    welcomeMessages.forEach(message => {
+        if (message.textContent.includes('مرحباً')) {
+            message.remove();
+        }
+    });
+
+    // إزالة إشعارات الاتصال
+    const connectionNotifications = document.querySelectorAll('.connection-notification');
+    connectionNotifications.forEach(notification => notification.remove());
+
+    // إزالة أي إشعارات أخرى
+    const allNotifications = document.querySelectorAll('[class*="notification"], [class*="alert"], [class*="toast"], .message-toast');
+    allNotifications.forEach(notification => {
+        if (notification.style.position === 'fixed' || notification.style.position === 'absolute') {
+            notification.remove();
+        }
+    });
+
+    // إزالة جميع العناصر ذات position: fixed في الجزء العلوي
+    const fixedElements = document.querySelectorAll('div[style*="position: fixed"][style*="top:"]');
+    fixedElements.forEach(element => {
+        // تجاهل شاشة التحميل والعناصر المهمة
+        if (!element.id.includes('loading') &&
+            !element.classList.contains('crystal-loading-overlay') &&
+            !element.classList.contains('sidebar') &&
+            !element.classList.contains('navbar')) {
+            element.remove();
+        }
+    });
+
+    console.log('✅ تم إزالة جميع الإشعارات للمستخدم المحدود');
+}
+
 // تسجيل الخروج
 function logout() {
     if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+        // إيقاف مراقب الإشعارات للمستخدم المحدود
+        if (window.limitedUserNotificationWatcher) {
+            clearInterval(window.limitedUserNotificationWatcher);
+            window.limitedUserNotificationWatcher = null;
+        }
+
         // إخفاء قسم المستخدم في الهاتف
         hideMobileUserSection();
 
@@ -38835,6 +39416,12 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('🔄 إعادة تعيين الفلاتر إلى الافتراضي عند تحميل الصفحة...');
             resetFiltersToDefault();
         }, 1500);
+
+        // تهيئة نظام حفظ حالة التصفح
+        setTimeout(() => {
+            console.log('💾 تهيئة نظام حفظ حالة التصفح...');
+            initializeStatePersistence();
+        }, 2000);
 
         // تهيئة الشات بوت الذكي
         setTimeout(() => {
@@ -42414,10 +43001,46 @@ window.fixUnitLinkingIssues = fixUnitLinkingIssues;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 بدء تحميل التطبيق...');
 
-    // إظهار شاشة التحميل البلورية عند تحميل الصفحة
+    // إظهار شاشة التحميل عند تحميل الصفحة
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
         console.log('🔮 إظهار شاشة التحميل عند إعادة تحميل الصفحة');
+
+        try {
+            const userData = JSON.parse(savedUser);
+            console.log('📋 بيانات المستخدم المحفوظة:', userData);
+
+            // تعيين المستخدم الحالي مؤقتاً لتحديد نوع الشاشة
+            currentUser = userData.username;
+
+            // فحص نوع المستخدم بطرق متعددة (السنيدي = المستخدم المحدود)
+            const isLimitedUser = userData.username === '12345' ||
+                                userData.username === 'السنيدي' ||
+                                userData.role === 'limited' ||
+                                (users[userData.username] && users[userData.username].role === 'limited');
+
+            console.log('🔍 فحص نوع المستخدم:', {
+                username: userData.username,
+                role: userData.role,
+                isLimitedUser: isLimitedUser,
+                usersData: users[userData.username]
+            });
+
+            if (isLimitedUser) {
+                console.log('👤 السنيدي (مستخدم محدود) - إظهار شاشة التحميل الهادئة عند إعادة التحميل');
+                console.log('🔮 سيتم استدعاء showCrystalLoading() للسنيدي');
+            } else {
+                console.log('👑 مستخدم عادي - إظهار شاشة التحميل العادية عند إعادة التحميل');
+            }
+        } catch (error) {
+            console.error('خطأ في قراءة بيانات المستخدم:', error);
+            // في حالة الخطأ، فحص اسم المستخدم مباشرة
+            if (savedUser.includes('12345') || savedUser.includes('sa12345')) {
+                console.log('👤 اكتشاف مستخدم محدود من النص المحفوظ');
+                currentUser = 'sa12345';
+            }
+        }
+
         showCrystalLoading();
     }
 
@@ -42428,7 +43051,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // إضافة دالة اختبار عرض اسم العقار للنطاق العام
-window.testMobilePropertyName = function() {
+window.testMobilePropertyNameDisplay = function() {
     console.log('🧪 اختبار دالة عرض اسم العقار');
     console.log('currentProperty:', currentProperty);
     console.log('currentCountry:', currentCountry);

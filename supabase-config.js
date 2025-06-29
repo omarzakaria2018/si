@@ -2913,6 +2913,14 @@ function scheduleReconnection() {
 
 // Show connection status notification
 function showConnectionNotification(message, type = 'info') {
+    // فحص نوع المستخدم - إخفاء الإشعارات للمستخدم المحدود
+    if (typeof currentUser !== 'undefined' && currentUser &&
+        typeof users !== 'undefined' && users[currentUser] &&
+        users[currentUser].role === 'limited') {
+        console.log('🔇 تم منع إظهار الإشعار للمستخدم المحدود:', message);
+        return; // لا تظهر الإشعارات للمستخدم المحدود
+    }
+
     // Remove existing notifications
     const existingNotifications = document.querySelectorAll('.connection-notification');
     existingNotifications.forEach(n => n.remove());
@@ -2958,6 +2966,14 @@ function showConnectionNotification(message, type = 'info') {
 
 // Show attachment-specific notifications
 function showAttachmentNotification(eventType, attachment) {
+    // فحص نوع المستخدم - إخفاء الإشعارات للمستخدم المحدود
+    if (typeof currentUser !== 'undefined' && currentUser &&
+        typeof users !== 'undefined' && users[currentUser] &&
+        users[currentUser].role === 'limited') {
+        console.log('🔇 تم منع إظهار إشعار المرفق للمستخدم المحدود:', eventType, attachment.file_name);
+        return; // لا تظهر إشعارات المرفقات للمستخدم المحدود
+    }
+
     const messages = {
         'INSERT': `تم رفع ملف جديد: ${attachment.file_name}`,
         'UPDATE': `تم تحديث الملف: ${attachment.file_name}`,
@@ -4005,6 +4021,14 @@ function handleDeletedCardAttachment(attachment) {
 
 // Show card attachment notifications
 function showCardAttachmentNotification(eventType, attachment) {
+    // فحص نوع المستخدم - إخفاء الإشعارات للمستخدم المحدود
+    if (typeof currentUser !== 'undefined' && currentUser &&
+        typeof users !== 'undefined' && users[currentUser] &&
+        users[currentUser].role === 'limited') {
+        console.log('🔇 تم منع إظهار إشعار مرفق البطاقة للمستخدم المحدود:', eventType, attachment.file_name);
+        return; // لا تظهر إشعارات مرفقات البطاقات للمستخدم المحدود
+    }
+
     const messages = {
         'INSERT': `تم رفع ملف جديد للبطاقة: ${attachment.file_name}`,
         'UPDATE': `تم تحديث ملف البطاقة: ${attachment.file_name}`,

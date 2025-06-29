@@ -51,19 +51,19 @@ header {
 }
 
 .header-title h1 {
-  font-size: 2.5rem;
+  font-size: 4px;
   margin: 0px 40px;
   text-align: center;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4px;
+  height: 4px;
 }
 
 .header-title h1::after {
-  content: '';
-  display: block;
-  width: 50%;
-  height: 3px;
-  background-color: var(--secondary-color);
-  margin: 5px auto 0;
+  display: none;
 }
 
 .header-countries, .header-actions {
@@ -4072,7 +4072,9 @@ footer {
 }
 
   .header-title h1 {
-    font-size: 1.8rem;
+    font-size: 4px;
+    width: 4px;
+    height: 4px;
   }
 
   .header-countries {
@@ -4308,7 +4310,9 @@ footer {
 
 
   .header-title h1 {
-    font-size: 1.5rem;
+    font-size: 4px;
+    width: 4px;
+    height: 4px;
   }
 
   .card-row {
@@ -4350,7 +4354,9 @@ footer {
 /* تحسينات للشاشات الصغيرة جداً */
 @media (max-width: 300px) {
   .header-title h1 {
-    font-size: 1rem;
+    font-size: 4px;
+    width: 4px;
+    height: 4px;
   }
   
   .mobile-menu {
@@ -4375,7 +4381,9 @@ footer {
 /* تحسينات للشاشات الصغيرة جداً جداً */
 @media (max-width: 200px) {
   .header-title h1 {
-    font-size: 1rem;
+    font-size: 4px;
+    width: 4px;
+    height: 4px;
   }
 
   .card-header {
@@ -15716,7 +15724,9 @@ textarea.mobile-friendly:focus {
 .limited-user .edit-btn,
 .limited-user .delete-btn,
 .limited-user .add-btn,
-.limited-user .management-btn {
+.limited-user .management-btn,
+.limited-user .settings-btn,
+.limited-user .header-dropdown:has(.settings-btn) {
   display: none !important;
 }
 
@@ -19881,6 +19891,357 @@ body.limited-user .restricted-dropdown-item::before {
     }
 }
 
+/* ==================== شاشة التحميل البسيطة الجديدة ==================== */
+
+/* حاوي التحميل البسيط */
+.simple-loading-container {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    max-width: 400px;
+    width: 90%;
+}
+
+/* عنوان التحميل */
+.loading-title {
+    color: #2c3e50;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0 0 30px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* حاوي شريط التقدم */
+.simple-progress-container {
+    margin: 20px 0;
+}
+
+/* شريط التقدم */
+.simple-progress-bar {
+    width: 100%;
+    height: 12px;
+    background: #e9ecef;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ملء شريط التقدم */
+.simple-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997, #17a2b8);
+    border-radius: 6px;
+    width: 0%;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+/* نص النسبة المئوية */
+.simple-progress-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #495057;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* زر ابدأ البسيط */
+.simple-start-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+
+/* ==================== شاشة التحميل الهادئة للمستخدم المحدود ==================== */
+
+/* خلفية شاشة التحميل للمستخدم المحدود */
+.limited-user-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg,
+        rgba(248, 249, 250, 0.98) 0%,
+        rgba(233, 236, 239, 0.98) 50%,
+        rgba(222, 226, 230, 0.98) 100%);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: all 0.6s ease;
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+}
+
+.limited-user-loading-overlay.fade-out {
+    opacity: 0;
+    transform: scale(1.05);
+    pointer-events: none;
+}
+
+/* حاوي التحميل للمستخدم المحدود */
+.limited-loading-container {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 50px 40px;
+    border-radius: 25px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    max-width: 380px;
+    width: 90%;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* أيقونة التحميل للمستخدم المحدود */
+.limited-loading-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 25px;
+    opacity: 0.8;
+}
+
+.limited-loading-icon i {
+    animation: limitedIconPulse 2s ease-in-out infinite;
+}
+
+@keyframes limitedIconPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+/* عنوان التحميل للمستخدم المحدود */
+.limited-loading-title {
+    color: #495057;
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin: 0 0 30px 0;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* حاوي شريط التقدم للمستخدم المحدود */
+.limited-progress-container {
+    margin: 25px 0;
+}
+
+/* شريط التقدم للمستخدم المحدود */
+.limited-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ملء شريط التقدم للمستخدم المحدود */
+.limited-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6c757d, #adb5bd);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.2s ease;
+    position: relative;
+}
+
+/* نص النسبة المئوية للمستخدم المحدود */
+.limited-progress-text {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* زر ابدأ للمستخدم المحدود */
+.limited-start-btn {
+    background: linear-gradient(135deg, #6c757d, #adb5bd);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 3px 12px rgba(108, 117, 125, 0.3);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 100px;
+    justify-content: center;
+    margin: 20px auto 0;
+}
+
+.limited-start-btn:hover {
+    background: linear-gradient(135deg, #5a6268, #95a5a6);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+}
+
+.limited-start-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+.limited-start-btn i {
+    font-size: 0.9rem;
+}
+
+/* أنيميشن ظهور للمستخدم المحدود */
+@keyframes limitedFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* تحسينات للجوال - المستخدم المحدود */
+@media (max-width: 768px) {
+    .limited-loading-container {
+        padding: 40px 30px;
+        margin: 1rem;
+        border-radius: 20px;
+        max-width: 350px;
+    }
+
+    .limited-loading-icon {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+    }
+
+    .limited-loading-title {
+        font-size: 1.4rem;
+        margin-bottom: 25px;
+    }
+
+    .limited-start-btn {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+        min-width: 90px;
+    }
+
+    .limited-progress-text {
+        font-size: 1.2rem;
+    }
+
+    .limited-progress-bar {
+        height: 6px;
+        margin-bottom: 12px;
+    }
+}
+
+/* ==================== الأيقونات المصغرة للإشعارات ==================== */
+
+/* الأيقونة الصغيرة جداً (4px) */
+.mini-icon-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    z-index: 10000;
+    font-size: 3px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    animation: miniIconPulse 0.5s ease-out;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+/* أنيميشن النبضة للأيقونة الصغيرة */
+@keyframes miniIconPulse {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* حالات مختلفة للأيقونات */
+.mini-icon-notification.success {
+    background: #28a745;
+}
+
+.mini-icon-notification.error {
+    background: #dc3545;
+}
+
+.mini-icon-notification.warning {
+    background: #ffc107;
+}
+
+.mini-icon-notification.info {
+    background: #17a2b8;
+}
+
+/* تأثير hover للأيقونة الصغيرة (إذا كانت قابلة للتفاعل) */
+.mini-icon-notification:hover {
+    transform: scale(1.2);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+/* للجوال - تكبير الأيقونة قليلاً */
+@media (max-width: 768px) {
+    .mini-icon-notification {
+        width: 5px;
+        height: 5px;
+        font-size: 4px;
+        top: 15px;
+        right: 15px;
+    }
+}
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.simple-start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.simple-start-btn:active {
+    transform: translateY(0);
+}
+
+.simple-start-btn i {
+    margin-left: 8px;
+}
+
 /* ==================== نهاية شاشة التحميل البلورية ==================== */
 
 .empty-unit-notice {
@@ -21919,15 +22280,15 @@ body.limited-user .restricted-dropdown-item::before {
 
 /* تمييز اسم المستأجر - أنيق ومميز */
 .tenant-name-value {
-    font-size: 1.25em !important; /* أصغر للشاشات الكبيرة */
-    font-weight: 700 !important; /* أخف قليلاً */
+    font-size: 1em !important; /* أصغر للشاشات الكبيرة */
+    font-weight: 900 !important; /* أخف قليلاً */
     color: #2c3e50 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
-    padding: 2px 0 !important; /* أصغر للشاشات الكبيرة */
+    padding: 2px 11px !important; /* أصغر للشاشات الكبيرة */
     letter-spacing: 0.3px !important; /* أقل للشاشات الكبيرة */
 }
 

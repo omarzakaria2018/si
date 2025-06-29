@@ -1000,6 +1000,14 @@ function showInfoMessage(message) {
 
 // Generic toast function
 function showToast(message, type = 'info') {
+    // فحص نوع المستخدم - إخفاء الإشعارات للمستخدم المحدود
+    if (typeof currentUser !== 'undefined' && currentUser &&
+        typeof users !== 'undefined' && users[currentUser] &&
+        users[currentUser].role === 'limited') {
+        console.log('🔇 تم منع إظهار Toast للمستخدم المحدود:', message);
+        return; // لا تظهر Toast للمستخدم المحدود
+    }
+
     // Remove existing toasts
     const existingToasts = document.querySelectorAll('.message-toast');
     existingToasts.forEach(toast => toast.remove());
