@@ -21919,15 +21919,15 @@ body.limited-user .restricted-dropdown-item::before {
 
 /* تمييز اسم المستأجر - أنيق ومميز */
 .tenant-name-value {
-    font-size: 1.25em !important; /* أصغر للشاشات الكبيرة */
-    font-weight: 700 !important; /* أخف قليلاً */
+    font-size: 1em !important; /* أصغر للشاشات الكبيرة */
+    font-weight: 900 !important; /* أخف قليلاً */
     color: #2c3e50 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     background-clip: text !important;
-    padding: 2px 0 !important; /* أصغر للشاشات الكبيرة */
+    padding: 2px 11px !important; /* أصغر للشاشات الكبيرة */
     letter-spacing: 0.3px !important; /* أقل للشاشات الكبيرة */
 }
 
