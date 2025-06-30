@@ -38072,7 +38072,9 @@ const users = {
             editData: false,
             deleteData: false,
             manageProperties: false,
-            manageAttachments: false,
+            manageAttachments: true,
+            addAttachments: false,
+            deleteAttachments: false,
             exportData: true,
             importData: true,
             manageSettings: false
@@ -38229,6 +38231,12 @@ function setCurrentUser(username) {
     if (users[username]) {
         currentUser = username;
         userPermissions = users[username].permissions;
+
+        // تسجيل خاص لأبو تميم للتحقق من الصلاحيات
+        if (username === '1234') {
+            console.log('🔍 صلاحيات أبو تميم:', userPermissions);
+            console.log('🔍 صلاحية إدارة المرفقات:', userPermissions.manageAttachments);
+        }
 
         // إعادة تعيين الفلاتر إلى الافتراضي عند تسجيل الدخول
         resetFiltersToDefault();
@@ -38468,6 +38476,8 @@ function applyUserPermissions() {
             deleteData: permissions.deleteData,
             manageProperties: permissions.manageProperties,
             manageAttachments: permissions.manageAttachments,
+            addAttachments: permissions.addAttachments,
+            deleteAttachments: permissions.deleteAttachments,
             exportData: permissions.exportData,
             importData: permissions.importData,
             manageSettings: permissions.manageSettings
@@ -38480,6 +38490,7 @@ function applyUserPermissions() {
 
 ✅ المسموح:
 • عرض البيانات: ${testResults.viewData ? 'نعم' : 'لا'}
+• إدارة المرفقات (عرض/تحميل): ${testResults.manageAttachments ? 'نعم' : 'لا'}
 • تصدير البيانات: ${testResults.exportData ? 'نعم' : 'لا'}
 • استيراد البيانات: ${testResults.importData ? 'نعم' : 'لا'}
 
@@ -38487,10 +38498,11 @@ function applyUserPermissions() {
 • تحرير البيانات: ${testResults.editData ? 'نعم' : 'لا'}
 • حذف البيانات: ${testResults.deleteData ? 'نعم' : 'لا'}
 • إدارة العقارات: ${testResults.manageProperties ? 'نعم' : 'لا'}
-• إدارة المرفقات: ${testResults.manageAttachments ? 'نعم' : 'لا'}
+• إضافة مرفقات: ${testResults.addAttachments ? 'نعم' : 'لا'}
+• حذف مرفقات: ${testResults.deleteAttachments ? 'نعم' : 'لا'}
 • إدارة الإعدادات: ${testResults.manageSettings ? 'نعم' : 'لا'}
 
-🎯 الحالة: ${testResults.editData || testResults.deleteData || testResults.manageProperties || testResults.manageAttachments || testResults.manageSettings ? '⚠️ خطأ في الصلاحيات' : '✅ الصلاحيات صحيحة'}
+🎯 الحالة: ${testResults.editData || testResults.deleteData || testResults.manageProperties || testResults.addAttachments || testResults.deleteAttachments || testResults.manageSettings ? '⚠️ خطأ في الصلاحيات' : '✅ الصلاحيات صحيحة'}
         `;
 
         alert(message);
@@ -39176,10 +39188,24 @@ window.syncLocalAttachment = function(propertyKey, fileName) {
     if (originalSyncLocalAttachment) originalSyncLocalAttachment(propertyKey, fileName);
 };
 
-// حماية وظائف إدارة المرفقات العامة
+// حماية وظائف إدارة المرفقات العامة - السماح للمستخدمين الذين لديهم صلاحية manageAttachments
+const originalShowAttachmentsManager = window.showAttachmentsManager;
+window.showAttachmentsManager = function() {
+    // السماح للمستخدمين الذين لديهم صلاحية إدارة المرفقات (بما في ذلك أبو تميم)
+    if (!checkPermission('manageAttachments')) {
+        showNoPermissionMessage('ليس لديك صلاحية لإدارة المرفقات');
+        return;
+    }
+    if (originalShowAttachmentsManager) originalShowAttachmentsManager();
+};
+
 const originalShowAttachmentsManagerFromDropdown = window.showAttachmentsManagerFromDropdown;
 window.showAttachmentsManagerFromDropdown = function() {
-    if (!checkPermission('manageAttachments')) return;
+    // السماح للمستخدمين الذين لديهم صلاحية إدارة المرفقات (بما في ذلك أبو تميم)
+    if (!checkPermission('manageAttachments')) {
+        showNoPermissionMessage('ليس لديك صلاحية لإدارة المرفقات');
+        return;
+    }
     if (originalShowAttachmentsManagerFromDropdown) originalShowAttachmentsManagerFromDropdown();
 };
 

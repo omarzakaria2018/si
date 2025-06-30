@@ -22340,8 +22340,8 @@ body.limited-user .restricted-dropdown-item::before {
 .user-abu-tameem .fa-edit,
 .user-abu-tameem .fa-trash,
 .user-abu-tameem .fa-trash-alt,
-.user-abu-tameem .fa-plus,
-.user-abu-tameem .fa-minus,
+.user-abu-tameem .fa-plus.edit-icon,
+.user-abu-tameem .fa-minus.edit-icon,
 .user-abu-tameem .btn-danger,
 .user-abu-tameem .btn-warning,
 .user-abu-tameem .edit-icon,
@@ -22369,11 +22369,58 @@ body.limited-user .restricted-dropdown-item::before {
     display: none !important;
 }
 
-/* إخفاء أزرار إدارة المرفقات */
-.user-abu-tameem .attachments-section .add-attachment-btn,
-.user-abu-tameem .attachments-section .delete-attachment-btn,
-.user-abu-tameem .attachments-section .fa-plus,
-.user-abu-tameem .attachments-section .fa-trash {
+/* إخفاء أزرار إضافة وحذف المرفقات فقط (السماح بالعرض والتحميل) */
+.user-abu-tameem .add-attachment-btn,
+.user-abu-tameem .delete-attachment-btn,
+.user-abu-tameem .attachment-delete-btn,
+.user-abu-tameem .btn-add-attachment,
+.user-abu-tameem .btn-delete-attachment,
+.user-abu-tameem .fa-plus.attachment-icon,
+.user-abu-tameem .fa-trash.attachment-icon,
+.user-abu-tameem button[onclick*="addAttachment"],
+.user-abu-tameem button[onclick*="deleteAttachment"],
+.user-abu-tameem button[onclick*="removeAttachment"],
+.user-abu-tameem .attachment-item .delete-btn,
+.user-abu-tameem .attachment-item .remove-btn,
+.user-abu-tameem .attachment-item .fa-trash,
+.user-abu-tameem .attachment-item .fa-times,
+.user-abu-tameem .attachment-upload-btn,
+.user-abu-tameem .file-upload-btn,
+.user-abu-tameem input[type="file"],
+.user-abu-tameem .upload-area,
+.user-abu-tameem .drop-zone {
+    display: none !important;
+}
+
+/* السماح بعرض وتحميل المرفقات */
+.user-abu-tameem .attachment-item,
+.user-abu-tameem .attachment-list,
+.user-abu-tameem .attachments-section,
+.user-abu-tameem .attachment-view-btn,
+.user-abu-tameem .attachment-download-btn,
+.user-abu-tameem .fa-download,
+.user-abu-tameem .fa-eye,
+.user-abu-tameem .fa-file,
+.user-abu-tameem .fa-folder,
+.user-abu-tameem .attachment-link,
+.user-abu-tameem .attachment-name,
+.user-abu-tameem .attachment-size,
+.user-abu-tameem .attachment-date,
+.user-abu-tameem .attachments-header,
+.user-abu-tameem .attachments-count,
+.user-abu-tameem .mobile-attachments-section,
+.user-abu-tameem .mobile-attachments-header,
+.user-abu-tameem .mobile-attachments-list {
+    
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* إخفاء أزرار إدارة المرفقات في الهيدر والقوائم */
+.user-abu-tameem .manage-attachments-btn,
+.user-abu-tameem .attachments-management-btn,
+.user-abu-tameem .btn[onclick*="manageAttachments"] {
     display: none !important;
 }
 
