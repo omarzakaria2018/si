@@ -1707,42 +1707,31 @@ function showCrystalLoading() {
         loadingOverlay.className = 'limited-user-loading-overlay';
         loadingOverlay.innerHTML = `
             <div class="limited-loading-container">
-                <div class="limited-loading-icon">
-                    <i class="fas fa-home"></i>
-                </div>
-                <h3 class="limited-loading-title">جاري تحميل المحتوى</h3>
-                <div class="limited-progress-container">
-                    <div class="limited-progress-bar">
-                        <div class="limited-progress-fill" id="limitedProgressFill"></div>
+                <div class="limited-loading-content">
+                    <div class="limited-loading-icon">
+                        <div class="limited-spinner"></div>
                     </div>
+                    <h3 class="limited-loading-title">جاري تحميل المحتوى</h3>
                     <div class="limited-progress-text" id="limitedProgressText">0%</div>
                 </div>
-                <button id="limitedStartButton" class="limited-start-btn" onclick="hideCrystalLoading()" style="display: none;">
-                    <i class="fas fa-arrow-left"></i>
-                    ابدأ
-                </button>
             </div>
         `;
         console.log('👤 تم إنشاء شاشة تحميل بسيطة للمستخدم المحدود');
     } else {
-        // شاشة التحميل العادية للمستخدمين الآخرين
-        loadingOverlay.className = 'crystal-loading-overlay';
+        // شاشة التحميل البسيطة والهادئة للمستخدمين الآخرين
+        loadingOverlay.className = 'simple-loading-overlay';
         loadingOverlay.innerHTML = `
             <div class="simple-loading-container">
-                <h3 class="loading-title">جاري تحميل المحتوى</h3>
-                <div class="simple-progress-container">
-                    <div class="simple-progress-bar">
-                        <div class="simple-progress-fill" id="simpleProgressFill"></div>
+                <div class="simple-loading-content">
+                    <div class="simple-loading-icon">
+                        <div class="simple-spinner"></div>
                     </div>
+                    <h3 class="simple-loading-title">جاري تحميل المحتوى</h3>
                     <div class="simple-progress-text" id="simpleProgressText">0%</div>
                 </div>
-                <button id="startButton" class="simple-start-btn" onclick="hideCrystalLoading()" style="display: none;">
-                    <i class="fas fa-play"></i>
-                    ابدأ
-                </button>
             </div>
         `;
-        console.log('👑 تم إنشاء شاشة التحميل العادية للمستخدم العادي');
+        console.log('👑 تم إنشاء شاشة التحميل البسيطة والهادئة');
     }
 
     // إضافة الشاشة إلى الصفحة
@@ -1752,7 +1741,7 @@ function showCrystalLoading() {
     if (isLimitedUser) {
         startLimitedUserProgressAnimation();
     } else {
-        startSimpleProgressAnimation();
+        startCalmProgressAnimation();
     }
 
     // إظهار زر "ابدأ" بعد اكتمال التحميل
@@ -1777,48 +1766,43 @@ function showCrystalLoading() {
     }, isLimitedUser ? 3000 : 5000);
 }
 
-// دالة تحديث النسبة المئوية البسيطة للمستخدمين العاديين
-function startSimpleProgressAnimation() {
-    const progressFill = document.getElementById('simpleProgressFill');
+// دالة تحديث النسبة المئوية الهادئة للمستخدمين العاديين
+function startCalmProgressAnimation() {
     const progressText = document.getElementById('simpleProgressText');
 
-    if (!progressFill || !progressText) return;
+    if (!progressText) return;
 
     let progress = 0;
-    const updateInterval = 200;
+    const updateInterval = 200; // تحديث كل 200ms (أبطأ وأهدأ)
+    const increment = 3; // زيادة ثابتة 3% في كل مرة
 
     const interval = setInterval(() => {
-        progress += Math.random() * 15 + 5; // زيادة عشوائية
+        progress += increment;
 
         if (progress >= 100) {
             progress = 100;
             clearInterval(interval);
+
+            // إخفاء الشاشة تلقائياً بعد ثانية واحدة
+            setTimeout(() => {
+                hideCrystalLoading();
+            }, 1000);
         }
 
-        progressFill.style.width = progress + '%';
         progressText.textContent = Math.round(progress) + '%';
-
-        // إظهار زر ابدأ عند الوصول لـ 100%
-        if (progress >= 100) {
-            const startButton = document.getElementById('startButton');
-            if (startButton) {
-                startButton.style.display = 'block';
-            }
-        }
     }, updateInterval);
 }
 
 // دالة تحديث النسبة المئوية الهادئة للمستخدم المحدود
 function startLimitedUserProgressAnimation() {
-    const progressFill = document.getElementById('limitedProgressFill');
     const progressText = document.getElementById('limitedProgressText');
 
-    if (!progressFill || !progressText) return;
+    if (!progressText) return;
 
     let progress = 0;
-    const updateInterval = 100; // تحديث سلس كل 100ms
-    const totalDuration = 7000; // 7 ثوان كما طُلب
-    const progressIncrement = (100 / (totalDuration / updateInterval)); // حساب الزيادة لـ 7 ثوان
+    const updateInterval = 150; // تحديث كل 150ms (أبطأ وأهدأ)
+    const totalDuration = 5000; // 5 ثوان
+    const progressIncrement = (100 / (totalDuration / updateInterval)); // حساب الزيادة
 
     console.log('🔄 بدء تحديث النسبة المئوية للمستخدم المحدود');
 
@@ -1829,19 +1813,14 @@ function startLimitedUserProgressAnimation() {
             progress = 100;
             clearInterval(interval);
             console.log('✅ اكتمل التحميل للمستخدم المحدود');
+
+            // إخفاء الشاشة تلقائياً بعد ثانية واحدة
+            setTimeout(() => {
+                hideCrystalLoading();
+            }, 1000);
         }
 
-        progressFill.style.width = progress + '%';
         progressText.textContent = Math.round(progress) + '%';
-
-        // إظهار زر ابدأ عند الوصول لـ 100%
-        if (progress >= 100) {
-            const startButton = document.getElementById('limitedStartButton');
-            if (startButton) {
-                startButton.style.display = 'block';
-                startButton.style.animation = 'limitedFadeIn 0.5s ease-out';
-            }
-        }
     }, updateInterval);
 }
 
@@ -38084,10 +38063,10 @@ const users = {
             manageSettings: true
         }
     },
-    '12345': {
-        password: '12345',
-        role: 'limited',
-        fullName: 'السنيدي',
+    '1234': {
+        password: '1234',
+        role: 'restricted_assistant',
+        fullName: 'أبو تميم',
         permissions: {
             viewData: true,
             editData: false,
@@ -38095,7 +38074,7 @@ const users = {
             manageProperties: false,
             manageAttachments: false,
             exportData: true,
-            importData: false,
+            importData: true,
             manageSettings: false
         }
     }
@@ -38115,7 +38094,7 @@ function initializePermissionSystem() {
                 setCurrentUser(userData.username);
 
                 // للمستخدم المحدود: إخفاء شاشة التحميل فوراً
-                if (userData.username === '12345' || (users[userData.username] && users[userData.username].role === 'limited')) {
+                if (users[userData.username] && users[userData.username].role === 'limited') {
                     console.log('👤 مستخدم محدود - إخفاء شاشة التحميل فوراً من initializePermissionSystem');
                     hideCrystalLoading();
                 }
@@ -38462,9 +38441,60 @@ function applyUserPermissions() {
         body.classList.remove('user-mohammed');
     }
 
+    // إضافة كلاس خاص لأبو تميم لتطبيق القيود المطلوبة
+    if (currentUser === '1234') {
+        body.classList.add('user-abu-tameem');
+        console.log('🔒 تم تطبيق قيود أبو تميم - إخفاء أزرار التحرير والحذف والإعدادات');
+    } else {
+        body.classList.remove('user-abu-tameem');
+    }
+
     // تحديث وظيفة getCurrentUser
     window.getCurrentUser = function() {
         return users[currentUser]?.fullName || currentUser || 'النظام';
+    };
+
+    // دالة اختبار للمستخدم الجديد أبو تميم
+    window.testAbuTameemPermissions = function() {
+        if (currentUser !== '1234') {
+            alert('هذا الاختبار مخصص للمستخدم أبو تميم فقط');
+            return;
+        }
+
+        const permissions = users['1234'].permissions;
+        const testResults = {
+            viewData: permissions.viewData,
+            editData: permissions.editData,
+            deleteData: permissions.deleteData,
+            manageProperties: permissions.manageProperties,
+            manageAttachments: permissions.manageAttachments,
+            exportData: permissions.exportData,
+            importData: permissions.importData,
+            manageSettings: permissions.manageSettings
+        };
+
+        console.log('🧪 اختبار صلاحيات أبو تميم:', testResults);
+
+        const message = `
+🧪 نتائج اختبار صلاحيات أبو تميم:
+
+✅ المسموح:
+• عرض البيانات: ${testResults.viewData ? 'نعم' : 'لا'}
+• تصدير البيانات: ${testResults.exportData ? 'نعم' : 'لا'}
+• استيراد البيانات: ${testResults.importData ? 'نعم' : 'لا'}
+
+❌ المحظور:
+• تحرير البيانات: ${testResults.editData ? 'نعم' : 'لا'}
+• حذف البيانات: ${testResults.deleteData ? 'نعم' : 'لا'}
+• إدارة العقارات: ${testResults.manageProperties ? 'نعم' : 'لا'}
+• إدارة المرفقات: ${testResults.manageAttachments ? 'نعم' : 'لا'}
+• إدارة الإعدادات: ${testResults.manageSettings ? 'نعم' : 'لا'}
+
+🎯 الحالة: ${testResults.editData || testResults.deleteData || testResults.manageProperties || testResults.manageAttachments || testResults.manageSettings ? '⚠️ خطأ في الصلاحيات' : '✅ الصلاحيات صحيحة'}
+        `;
+
+        alert(message);
+        return testResults;
     };
 }
 
@@ -38861,10 +38891,18 @@ function showWelcomeMessage(fullName) {
         transition: transform 0.3s ease;
     `;
 
-    message.innerHTML = `
-        <i class="fas fa-check-circle" style="margin-left: 8px;"></i>
-        مرحباً ${fullName}
-    `;
+    // رسالة خاصة للمستخدم الجديد أبو تميم
+    if (currentUser === '1234') {
+        message.innerHTML = `
+            <i class="fas fa-user-check" style="margin-left: 8px;"></i>
+            مرحباً ${fullName} - مستخدم محدود الصلاحيات
+        `;
+    } else {
+        message.innerHTML = `
+            <i class="fas fa-check-circle" style="margin-left: 8px;"></i>
+            مرحباً ${fullName}
+        `;
+    }
 
     document.body.appendChild(message);
 
@@ -43013,10 +43051,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // تعيين المستخدم الحالي مؤقتاً لتحديد نوع الشاشة
             currentUser = userData.username;
 
-            // فحص نوع المستخدم بطرق متعددة (السنيدي = المستخدم المحدود)
-            const isLimitedUser = userData.username === '12345' ||
-                                userData.username === 'السنيدي' ||
-                                userData.role === 'limited' ||
+            // فحص نوع المستخدم
+            const isLimitedUser = userData.role === 'limited' ||
                                 (users[userData.username] && users[userData.username].role === 'limited');
 
             console.log('🔍 فحص نوع المستخدم:', {
@@ -43027,15 +43063,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (isLimitedUser) {
-                console.log('👤 السنيدي (مستخدم محدود) - إظهار شاشة التحميل الهادئة عند إعادة التحميل');
-                console.log('🔮 سيتم استدعاء showCrystalLoading() للسنيدي');
+                console.log('👤 مستخدم محدود - إظهار شاشة التحميل الهادئة عند إعادة التحميل');
+                console.log('🔮 سيتم استدعاء showCrystalLoading() للمستخدم المحدود');
             } else {
                 console.log('👑 مستخدم عادي - إظهار شاشة التحميل العادية عند إعادة التحميل');
             }
         } catch (error) {
             console.error('خطأ في قراءة بيانات المستخدم:', error);
             // في حالة الخطأ، فحص اسم المستخدم مباشرة
-            if (savedUser.includes('12345') || savedUser.includes('sa12345')) {
+            if (savedUser.includes('sa12345')) {
                 console.log('👤 اكتشاف مستخدم محدود من النص المحفوظ');
                 currentUser = 'sa12345';
             }

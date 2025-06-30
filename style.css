@@ -22318,3 +22318,326 @@ body.limited-user .restricted-dropdown-item::before {
     }
 }
 
+/* قيود المستخدم أبو تميم - إخفاء الأزرار المحظورة */
+.user-abu-tameem .settings-btn,
+.user-abu-tameem .property-management-btn,
+.user-abu-tameem .edit-btn,
+.user-abu-tameem .delete-btn,
+.user-abu-tameem .clear-unit-data-btn,
+.user-abu-tameem .add-attachment-btn,
+.user-abu-tameem .delete-attachment-btn,
+.user-abu-tameem .attachment-delete-btn,
+.user-abu-tameem .edit-property-btn,
+.user-abu-tameem .delete-property-btn,
+.user-abu-tameem .manage-properties-btn,
+.user-abu-tameem .unit-edit-btn,
+.user-abu-tameem .unit-delete-btn,
+.user-abu-tameem .property-edit-btn,
+.user-abu-tameem .property-delete-btn,
+.user-abu-tameem .settings-icon,
+.user-abu-tameem .gear-icon,
+.user-abu-tameem .fa-cog,
+.user-abu-tameem .fa-edit,
+.user-abu-tameem .fa-trash,
+.user-abu-tameem .fa-trash-alt,
+.user-abu-tameem .fa-plus,
+.user-abu-tameem .fa-minus,
+.user-abu-tameem .btn-danger,
+.user-abu-tameem .btn-warning,
+.user-abu-tameem .edit-icon,
+.user-abu-tameem .delete-icon,
+.user-abu-tameem .add-icon,
+.user-abu-tameem .remove-icon {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* إخفاء أزرار الإعدادات في الهيدر */
+.user-abu-tameem .header-section .settings-btn,
+.user-abu-tameem .header-section .fa-cog,
+.user-abu-tameem .header-section .gear-icon {
+    display: none !important;
+}
+
+/* إخفاء أزرار التحرير في البطاقات */
+.user-abu-tameem .card .edit-btn,
+.user-abu-tameem .card .delete-btn,
+.user-abu-tameem .card .fa-edit,
+.user-abu-tameem .card .fa-trash {
+    display: none !important;
+}
+
+/* إخفاء أزرار إدارة المرفقات */
+.user-abu-tameem .attachments-section .add-attachment-btn,
+.user-abu-tameem .attachments-section .delete-attachment-btn,
+.user-abu-tameem .attachments-section .fa-plus,
+.user-abu-tameem .attachments-section .fa-trash {
+    display: none !important;
+}
+
+/* إخفاء أزرار إدارة العقارات */
+.user-abu-tameem .property-management-section,
+.user-abu-tameem .manage-properties-btn,
+.user-abu-tameem .add-property-btn,
+.user-abu-tameem .edit-property-btn,
+.user-abu-tameem .delete-property-btn {
+    display: none !important;
+}
+
+/* إخفاء أزرار حذف بيانات الوحدات */
+.user-abu-tameem .clear-unit-data-btn,
+.user-abu-tameem .unit-data-clear-btn,
+.user-abu-tameem .clear-data-btn {
+    display: none !important;
+}
+
+/* تطبيق القيود على الشاشات الصغيرة (الجوال) */
+@media (max-width: 768px) {
+    .user-abu-tameem .mobile-edit-btn,
+    .user-abu-tameem .mobile-delete-btn,
+    .user-abu-tameem .mobile-settings-btn,
+    .user-abu-tameem .mobile-add-btn,
+    .user-abu-tameem .mobile-remove-btn {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .user-abu-tameem .mobile-header .settings-btn,
+    .user-abu-tameem .mobile-header .fa-cog {
+        display: none !important;
+    }
+}
+
+/* تطبيق القيود على الشاشات الكبيرة (الكمبيوتر) */
+@media (min-width: 769px) {
+    .user-abu-tameem .desktop-edit-btn,
+    .user-abu-tameem .desktop-delete-btn,
+    .user-abu-tameem .desktop-settings-btn,
+    .user-abu-tameem .desktop-add-btn,
+    .user-abu-tameem .desktop-remove-btn {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .user-abu-tameem .desktop-header .settings-btn,
+    .user-abu-tameem .desktop-header .fa-cog {
+        display: none !important;
+    }
+}
+
+/* التأكد من إخفاء جميع أزرار التحرير والحذف */
+.user-abu-tameem button[onclick*="edit"],
+.user-abu-tameem button[onclick*="delete"],
+.user-abu-tameem button[onclick*="remove"],
+.user-abu-tameem button[onclick*="clear"],
+.user-abu-tameem button[onclick*="settings"],
+.user-abu-tameem a[onclick*="edit"],
+.user-abu-tameem a[onclick*="delete"],
+.user-abu-tameem a[onclick*="remove"],
+.user-abu-tameem a[onclick*="clear"],
+.user-abu-tameem a[onclick*="settings"] {
+    display: none !important;
+    pointer-events: none !important;
+}
+
+/* شاشة التحميل البسيطة والهادئة */
+.simple-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    font-family: 'Tajawal', sans-serif;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}
+
+.simple-loading-overlay.fade-out {
+    opacity: 0;
+}
+
+.simple-loading-container {
+    text-align: center;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    max-width: 400px;
+    width: 90%;
+}
+
+.simple-loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.simple-loading-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.simple-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e3e3e3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: simple-spin 1.5s linear infinite;
+}
+
+@keyframes simple-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.simple-loading-title {
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: #333;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.simple-progress-text {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: #666;
+    margin: 0;
+    min-height: 1.5rem;
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .simple-loading-container {
+        padding: 30px 20px;
+        border-radius: 15px;
+    }
+
+    .simple-loading-title {
+        font-size: 1.2rem;
+    }
+
+    .simple-progress-text {
+        font-size: 1rem;
+    }
+
+    .simple-spinner {
+        width: 35px;
+        height: 35px;
+        border-width: 2px;
+    }
+}
+
+/* شاشة التحميل للمستخدم المحدود */
+.limited-user-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    font-family: 'Tajawal', sans-serif;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}
+
+.limited-user-loading-overlay.fade-out {
+    opacity: 0;
+}
+
+.limited-loading-container {
+    text-align: center;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(10px);
+    max-width: 350px;
+    width: 90%;
+}
+
+.limited-loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+}
+
+.limited-loading-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.limited-spinner {
+    width: 35px;
+    height: 35px;
+    border: 2px solid #e3e3e3;
+    border-top: 2px solid #28a745;
+    border-radius: 50%;
+    animation: limited-spin 2s linear infinite;
+}
+
+@keyframes limited-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.limited-loading-title {
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: #2d5a2d;
+    margin: 0;
+    letter-spacing: 0.3px;
+}
+
+.limited-progress-text {
+    font-size: 1rem;
+    font-weight: 300;
+    color: #5a6c5a;
+    margin: 0;
+    min-height: 1.2rem;
+}
+
+/* تحسينات للشاشات الصغيرة - المستخدم المحدود */
+@media (max-width: 768px) {
+    .limited-loading-container {
+        padding: 30px 20px;
+        border-radius: 15px;
+        max-width: 320px;
+    }
+
+    .limited-loading-title {
+        font-size: 1.1rem;
+    }
+
+    .limited-progress-text {
+        font-size: 0.9rem;
+    }
+
+    .limited-spinner {
+        width: 30px;
+        height: 30px;
+        border-width: 2px;
+    }
+}
+

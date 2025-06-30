@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة تشخيص وإصلاح الوحدات المكررة</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #dc3545;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        .diagnostic-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #dc3545;
+        }
+
+        .diagnostic-section h3 {
+            color: #dc3545;
+            margin-top: 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+        .log-warning { color: #f6e05e; }
+        .log-info { color: #63b3ed; }
+
+        .duplicates-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 12px;
+        }
+
+        .duplicates-table th,
+        .duplicates-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: right;
+        }
+
+        .duplicates-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .duplicates-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .duplicate-row {
+            background: #fff3cd !important;
+        }
+
+        .complete-row {
+            background: #d1ecf1 !important;
+        }
+
+        .incomplete-row {
+            background: #f8d7da !important;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .alert-success {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 أداة تشخيص وإصلاح الوحدات المكررة في Supabase</h1>
+
+        <div class="alert alert-danger">
+            <h4>🚨 المشكلة المحددة:</h4>
+            <p>تم اكتشاف وحدات مكررة في قاعدة بيانات Supabase تسبب فقدان البيانات. الوحدات المكررة تحتوي على بيانات ناقصة بينما الوحدات الأصلية تحتوي على البيانات الكاملة.</p>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>📊 إحصائيات سريعة</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalUnitsCount">-</div>
+                    <div class="stat-label">إجمالي الوحدات</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="duplicateUnitsCount">-</div>
+                    <div class="stat-label">الوحدات المكررة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="affectedPropertiesCount">-</div>
+                    <div class="stat-label">العقارات المتأثرة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="dataLossPercentage">-</div>
+                    <div class="stat-label">نسبة فقدان البيانات</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>🔧 أدوات التشخيص والإصلاح</h3>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="scanForDuplicates()">🔍 فحص الوحدات المكررة</button>
+                <button class="btn btn-info" onclick="analyzeDataLoss()">📊 تحليل فقدان البيانات</button>
+                <button class="btn btn-warning" onclick="previewCleanup()">👁️ معاينة التنظيف</button>
+                <button class="btn btn-success" onclick="executeCleanup()">🧹 تنفيذ التنظيف</button>
+                <button class="btn btn-danger" onclick="createBackup()">💾 إنشاء نسخة احتياطية</button>
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>📝 سجل العمليات</h3>
+            <div class="log-container" id="operationLog">
+                <div class="log-entry log-info">🔍 جاهز لبدء تشخيص الوحدات المكررة...</div>
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>📋 تفاصيل الوحدات المكررة</h3>
+            <div id="duplicatesTableContainer">
+                <p>اضغط "فحص الوحدات المكررة" لعرض التفاصيل...</p>
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>⚙️ إعدادات التنظيف</h3>
+            <div>
+                <label>
+                    <input type="checkbox" id="keepMostComplete" checked>
+                    الاحتفاظ بالوحدة الأكثر اكتمالاً (الموصى به)
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="keepLatestUpdate" checked>
+                    الاحتفاظ بآخر تحديث عند التساوي
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="createBackupBeforeCleanup" checked>
+                    إنشاء نسخة احتياطية قبل التنظيف
+                </label>
+            </div>
+        </div>
+
+        <div class="diagnostic-section">
+            <h3>🛡️ منع التكرار المستقبلي</h3>
+            <div class="button-group">
+                <button class="btn btn-info" onclick="checkDatabaseConstraints()">🔒 فحص قيود قاعدة البيانات</button>
+                <button class="btn btn-success" onclick="createUniqueConstraints()">⚡ إنشاء قيود فريدة</button>
+                <button class="btn btn-warning" onclick="optimizeSaveFunction()">🔧 تحسين دالة الحفظ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let duplicatesData = [];
+        let supabaseClient = null;
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('operationLog');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function updateStats(total, duplicates, affected, lossPercentage) {
+            document.getElementById('totalUnitsCount').textContent = total;
+            document.getElementById('duplicateUnitsCount').textContent = duplicates;
+            document.getElementById('affectedPropertiesCount').textContent = affected;
+            document.getElementById('dataLossPercentage').textContent = lossPercentage + '%';
+        }
+
+        async function initializeSupabaseConnection() {
+            try {
+                // محاولة الحصول على عميل Supabase من النافذة الرئيسية
+                if (window.opener && window.opener.supabaseClient) {
+                    supabaseClient = window.opener.supabaseClient;
+                    log('✅ تم الاتصال بـ Supabase من النافذة الرئيسية', 'success');
+                    return true;
+                }
+
+                // محاولة الحصول على عميل Supabase من النافذة الحالية
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    log('✅ تم العثور على عميل Supabase في النافذة الحالية', 'success');
+                    return true;
+                }
+
+                log('❌ لم يتم العثور على عميل Supabase', 'error');
+                return false;
+            } catch (error) {
+                log(`❌ خطأ في الاتصال بـ Supabase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function scanForDuplicates() {
+            log('🔍 بدء فحص الوحدات المكررة...', 'info');
+
+            if (!await initializeSupabaseConnection()) {
+                log('❌ يجب فتح هذه الأداة من التطبيق الرئيسي للوصول إلى Supabase', 'error');
+                return;
+            }
+
+            try {
+                log('📥 جلب جميع البيانات من Supabase...', 'info');
+
+                const { data, error } = await supabaseClient
+                    .from('properties_data')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    throw error;
+                }
+
+                log(`📊 تم جلب ${data.length} سجل من Supabase`, 'success');
+
+                // تحليل التكرارات
+                const duplicateMap = new Map();
+                const unitKeys = new Map();
+
+                data.forEach((record, index) => {
+                    if (!record.data || typeof record.data !== 'object') {
+                        return;
+                    }
+
+                    const unitData = record.data;
+                    const unitNumber = unitData['رقم  الوحدة '];
+                    const propertyName = unitData['اسم العقار'];
+
+                    if (!unitNumber || !propertyName) {
+                        return;
+                    }
+
+                    const key = `${propertyName}_${unitNumber}`;
+
+                    if (!unitKeys.has(key)) {
+                        unitKeys.set(key, []);
+                    }
+
+                    unitKeys.get(key).push({
+                        id: record.id,
+                        data: unitData,
+                        created_at: record.created_at,
+                        index: index
+                    });
+                });
+
+                // تحديد الوحدات المكررة
+                duplicatesData = [];
+                let totalDuplicates = 0;
+                const affectedProperties = new Set();
+
+                unitKeys.forEach((units, key) => {
+                    if (units.length > 1) {
+                        totalDuplicates += units.length - 1; // عدد النسخ الزائدة
+                        affectedProperties.add(units[0].data['اسم العقار']);
+
+                        duplicatesData.push({
+                            key: key,
+                            units: units,
+                            propertyName: units[0].data['اسم العقار'],
+                            unitNumber: units[0].data['رقم  الوحدة ']
+                        });
+                    }
+                });
+
+                const dataLossPercentage = Math.round((totalDuplicates / data.length) * 100);
+
+                updateStats(data.length, totalDuplicates, affectedProperties.size, dataLossPercentage);
+
+                log(`🔍 تم العثور على ${duplicatesData.length} مجموعة وحدات مكررة`, 'warning');
+                log(`📊 إجمالي النسخ الزائدة: ${totalDuplicates}`, 'warning');
+                log(`🏠 العقارات المتأثرة: ${affectedProperties.size}`, 'warning');
+
+                displayDuplicatesTable();
+
+            } catch (error) {
+                log(`❌ خطأ في فحص الوحدات المكررة: ${error.message}`, 'error');
+            }
+        }
+
+        function displayDuplicatesTable() {
+            const container = document.getElementById('duplicatesTableContainer');
+
+            if (duplicatesData.length === 0) {
+                container.innerHTML = '<p class="alert alert-success">✅ لم يتم العثور على وحدات مكررة!</p>';
+                return;
+            }
+
+            let html = `
+                <div class="alert alert-warning">
+                    <strong>⚠️ تم العثور على ${duplicatesData.length} مجموعة وحدات مكررة</strong>
+                </div>
+                <div style="max-height: 500px; overflow-y: auto;">
+                    <table class="duplicates-table">
+                        <thead>
+                            <tr>
+                                <th>العقار</th>
+                                <th>رقم الوحدة</th>
+                                <th>عدد النسخ</th>
+                                <th>المستأجر</th>
+                                <th>رقم الجوال</th>
+                                <th>الأقساط</th>
+                                <th>الإجمالي</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            duplicatesData.forEach(group => {
+                group.units.forEach((unit, index) => {
+                    const data = unit.data;
+                    const isComplete = hasCompleteData(data);
+                    const rowClass = index === 0 ? 'duplicate-row' : (isComplete ? 'complete-row' : 'incomplete-row');
+
+                    html += `
+                        <tr class="${rowClass}">
+                            <td>${data['اسم العقار'] || '-'}</td>
+                            <td>${data['رقم  الوحدة '] || '-'}</td>
+                            <td>${index === 0 ? group.units.length : ''}</td>
+                            <td>${data['اسم المستأجر'] || '-'}</td>
+                            <td>${data['رقم جوال المستأجر'] || '-'}</td>
+                            <td>${data['عدد الاقساط'] || '-'}</td>
+                            <td>${data['الاجمالى'] || '-'}</td>
+                            <td>${new Date(unit.created_at).toLocaleDateString('ar-SA')}</td>
+                            <td>${isComplete ? '✅ كاملة' : '❌ ناقصة'}</td>
+                        </tr>
+                    `;
+                });
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info">
+                    <strong>شرح الألوان:</strong><br>
+                    🟡 صف أصفر: مجموعة وحدات مكررة<br>
+                    🔵 صف أزرق: وحدة كاملة البيانات<br>
+                    🔴 صف أحمر: وحدة ناقصة البيانات
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function hasCompleteData(data) {
+            const requiredFields = [
+                'اسم المستأجر',
+                'رقم جوال المستأجر',
+                'عدد الاقساط',
+                'الاجمالى'
+            ];
+
+            return requiredFields.some(field =>
+                data[field] && data[field].toString().trim() !== ''
+            );
+        }
+
+        async function analyzeDataLoss() {
+            log('📊 تحليل فقدان البيانات...', 'info');
+
+            if (duplicatesData.length === 0) {
+                log('⚠️ يجب فحص الوحدات المكررة أولاً', 'warning');
+                return;
+            }
+
+            let totalLoss = 0;
+            let recoverable = 0;
+            const lossDetails = [];
+
+            duplicatesData.forEach(group => {
+                const completeUnits = group.units.filter(unit => hasCompleteData(unit.data));
+                const incompleteUnits = group.units.filter(unit => !hasCompleteData(unit.data));
+
+                if (completeUnits.length > 0) {
+                    recoverable += incompleteUnits.length;
+                } else {
+                    totalLoss += group.units.length;
+                }
+
+                lossDetails.push({
+                    property: group.propertyName,
+                    unit: group.unitNumber,
+                    total: group.units.length,
+                    complete: completeUnits.length,
+                    incomplete: incompleteUnits.length,
+                    recoverable: completeUnits.length > 0
+                });
+            });
+
+            log(`📊 تحليل فقدان البيانات:`, 'info');
+            log(`   • إجمالي الوحدات المتأثرة: ${duplicatesData.length}`, 'info');
+            log(`   • قابلة للاستعادة: ${recoverable}`, 'success');
+            log(`   • مفقودة نهائياً: ${totalLoss}`, 'error');
+
+            // عرض تفاصيل العقارات الأكثر تأثراً
+            const propertyLoss = {};
+            lossDetails.forEach(detail => {
+                if (!propertyLoss[detail.property]) {
+                    propertyLoss[detail.property] = { total: 0, recoverable: 0 };
+                }
+                propertyLoss[detail.property].total += detail.incomplete;
+                if (detail.recoverable) {
+                    propertyLoss[detail.property].recoverable += detail.incomplete;
+                }
+            });
+
+            log('🏠 العقارات الأكثر تأثراً:', 'warning');
+            Object.entries(propertyLoss)
+                .sort((a, b) => b[1].total - a[1].total)
+                .slice(0, 5)
+                .forEach(([property, loss]) => {
+                    log(`   • ${property}: ${loss.total} وحدة (${loss.recoverable} قابلة للاستعادة)`, 'warning');
+                });
+        }
+
+        async function previewCleanup() {
+            log('👁️ معاينة عملية التنظيف...', 'info');
+
+            if (duplicatesData.length === 0) {
+                log('⚠️ يجب فحص الوحدات المكررة أولاً', 'warning');
+                return;
+            }
+
+            const keepMostComplete = document.getElementById('keepMostComplete').checked;
+            const keepLatestUpdate = document.getElementById('keepLatestUpdate').checked;
+
+            let toKeep = 0;
+            let toDelete = 0;
+            const previewActions = [];
+
+            duplicatesData.forEach(group => {
+                const bestUnit = selectBestUnit(group.units, keepMostComplete, keepLatestUpdate);
+                const unitsToDelete = group.units.filter(unit => unit.id !== bestUnit.id);
+
+                toKeep += 1;
+                toDelete += unitsToDelete.length;
+
+                previewActions.push({
+                    property: group.propertyName,
+                    unit: group.unitNumber,
+                    keep: bestUnit.id,
+                    delete: unitsToDelete.map(u => u.id),
+                    reason: getSelectionReason(bestUnit, group.units, keepMostComplete, keepLatestUpdate)
+                });
+            });
+
+            log(`📋 معاينة التنظيف:`, 'info');
+            log(`   • سيتم الاحتفاظ بـ: ${toKeep} وحدة`, 'success');
+            log(`   • سيتم حذف: ${toDelete} وحدة مكررة`, 'warning');
+
+            // عرض أمثلة على القرارات
+            log('🔍 أمثلة على قرارات التنظيف:', 'info');
+            previewActions.slice(0, 3).forEach(action => {
+                log(`   • ${action.property} - ${action.unit}: ${action.reason}`, 'info');
+            });
+        }
+
+        function selectBestUnit(units, keepMostComplete, keepLatestUpdate) {
+            if (keepMostComplete) {
+                // ترتيب حسب اكتمال البيانات
+                const sortedByCompleteness = units.sort((a, b) => {
+                    const scoreA = calculateCompletenessScore(a.data);
+                    const scoreB = calculateCompletenessScore(b.data);
+                    return scoreB - scoreA;
+                });
+
+                // إذا كان هناك تساوي في الاكتمال وكان keepLatestUpdate مفعل
+                if (keepLatestUpdate) {
+                    const topScore = calculateCompletenessScore(sortedByCompleteness[0].data);
+                    const topUnits = sortedByCompleteness.filter(unit =>
+                        calculateCompletenessScore(unit.data) === topScore
+                    );
+
+                    if (topUnits.length > 1) {
+                        return topUnits.sort((a, b) =>
+                            new Date(b.created_at) - new Date(a.created_at)
+                        )[0];
+                    }
+                }
+
+                return sortedByCompleteness[0];
+            }
+
+            if (keepLatestUpdate) {
+                return units.sort((a, b) =>
+                    new Date(b.created_at) - new Date(a.created_at)
+                )[0];
+            }
+
+            return units[0];
+        }
+
+        function calculateCompletenessScore(data) {
+            const importantFields = [
+                'اسم المستأجر',
+                'رقم جوال المستأجر',
+                'عدد الاقساط',
+                'الاجمالى',
+                'رقم العقد',
+                'تاريخ البداية',
+                'تاريخ النهاية'
+            ];
+
+            return importantFields.reduce((score, field) => {
+                if (data[field] && data[field].toString().trim() !== '') {
+                    return score + 1;
+                }
+                return score;
+            }, 0);
+        }
+
+        function getSelectionReason(selectedUnit, allUnits, keepMostComplete, keepLatestUpdate) {
+            const selectedScore = calculateCompletenessScore(selectedUnit.data);
+            const maxScore = Math.max(...allUnits.map(u => calculateCompletenessScore(u.data)));
+
+            if (keepMostComplete && selectedScore === maxScore) {
+                if (allUnits.filter(u => calculateCompletenessScore(u.data) === maxScore).length > 1) {
+                    return keepLatestUpdate ? 'الأكثر اكتمالاً + الأحدث' : 'الأكثر اكتمالاً';
+                }
+                return 'الأكثر اكتمالاً';
+            }
+
+            if (keepLatestUpdate) {
+                return 'الأحدث تاريخاً';
+            }
+
+            return 'الأول في القائمة';
+        }
+
+        async function executeCleanup() {
+            log('🧹 بدء تنفيذ عملية التنظيف...', 'warning');
+
+            if (duplicatesData.length === 0) {
+                log('⚠️ يجب فحص الوحدات المكررة أولاً', 'warning');
+                return;
+            }
+
+            const createBackupBeforeCleanup = document.getElementById('createBackupBeforeCleanup').checked;
+
+            if (!confirm(`⚠️ تحذير: سيتم حذف ${duplicatesData.reduce((sum, group) => sum + group.units.length - 1, 0)} وحدة مكررة.\n\nهل تريد المتابعة؟`)) {
+                log('❌ تم إلغاء عملية التنظيف', 'warning');
+                return;
+            }
+
+            try {
+                // إنشاء نسخة احتياطية إذا طُلب ذلك
+                if (createBackupBeforeCleanup) {
+                    await createBackup();
+                }
+
+                const keepMostComplete = document.getElementById('keepMostComplete').checked;
+                const keepLatestUpdate = document.getElementById('keepLatestUpdate').checked;
+
+                let deletedCount = 0;
+                let errors = 0;
+
+                for (let i = 0; i < duplicatesData.length; i++) {
+                    const group = duplicatesData[i];
+
+                    log(`🔄 معالجة ${group.propertyName} - ${group.unitNumber} (${i + 1}/${duplicatesData.length})`, 'info');
+
+                    try {
+                        const bestUnit = selectBestUnit(group.units, keepMostComplete, keepLatestUpdate);
+                        const unitsToDelete = group.units.filter(unit => unit.id !== bestUnit.id);
+
+                        // حذف الوحدات المكررة
+                        for (const unit of unitsToDelete) {
+                            const { error } = await supabaseClient
+                                .from('properties_data')
+                                .delete()
+                                .eq('id', unit.id);
+
+                            if (error) {
+                                throw error;
+                            }
+
+                            deletedCount++;
+                        }
+
+                        log(`✅ تم تنظيف ${group.propertyName} - ${group.unitNumber} (حُذف ${unitsToDelete.length} نسخة)`, 'success');
+
+                    } catch (error) {
+                        log(`❌ خطأ في تنظيف ${group.propertyName} - ${group.unitNumber}: ${error.message}`, 'error');
+                        errors++;
+                    }
+
+                    // تحديث شريط التقدم
+                    const progress = ((i + 1) / duplicatesData.length) * 100;
+                    updateProgressBar(progress);
+                }
+
+                log(`🎉 تم الانتهاء من التنظيف!`, 'success');
+                log(`   • تم حذف: ${deletedCount} وحدة مكررة`, 'success');
+                log(`   • أخطاء: ${errors}`, errors > 0 ? 'error' : 'info');
+
+                // إعادة فحص للتأكد
+                setTimeout(() => {
+                    log('🔄 إعادة فحص للتأكد من التنظيف...', 'info');
+                    scanForDuplicates();
+                }, 2000);
+
+            } catch (error) {
+                log(`❌ خطأ عام في عملية التنظيف: ${error.message}`, 'error');
+            }
+        }
+
+        async function createBackup() {
+            log('💾 إنشاء نسخة احتياطية...', 'info');
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('properties_data')
+                    .select('*');
+
+                if (error) {
+                    throw error;
+                }
+
+                const backupData = {
+                    timestamp: new Date().toISOString(),
+                    totalRecords: data.length,
+                    data: data
+                };
+
+                // حفظ في localStorage
+                const backupKey = `supabase_backup_${Date.now()}`;
+                localStorage.setItem(backupKey, JSON.stringify(backupData));
+
+                // تحميل كملف
+                const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `supabase_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                log(`✅ تم إنشاء نسخة احتياطية (${data.length} سجل)`, 'success');
+                log(`💾 تم حفظ النسخة في localStorage: ${backupKey}`, 'info');
+
+            } catch (error) {
+                log(`❌ خطأ في إنشاء النسخة الاحتياطية: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        function updateProgressBar(percentage) {
+            const progressBar = document.querySelector('.progress-fill');
+            if (progressBar) {
+                progressBar.style.width = percentage + '%';
+            }
+        }
+
+        async function checkDatabaseConstraints() {
+            log('🔒 فحص قيود قاعدة البيانات...', 'info');
+
+            try {
+                // فحص الفهارس والقيود الحالية
+                log('📋 فحص الهيكل الحالي لجدول properties_data...', 'info');
+
+                // هذا يتطلب صلاحيات إدارية في Supabase
+                log('⚠️ فحص القيود يتطلب صلاحيات إدارية', 'warning');
+                log('💡 يُنصح بإضافة قيد فريد على (property_name, unit_number)', 'info');
+
+                const constraintSQL = `
+                    ALTER TABLE properties_data
+                    ADD CONSTRAINT unique_property_unit
+                    UNIQUE (
+                        (data->>'اسم العقار'),
+                        (data->>'رقم  الوحدة ')
+                    );
+                `;
+
+                log('📝 SQL المقترح لمنع التكرار:', 'info');
+                log(constraintSQL, 'info');
+
+            } catch (error) {
+                log(`❌ خطأ في فحص قيود قاعدة البيانات: ${error.message}`, 'error');
+            }
+        }
+
+        async function createUniqueConstraints() {
+            log('⚡ محاولة إنشاء قيود فريدة...', 'warning');
+
+            log('⚠️ هذه العملية تتطلب صلاحيات إدارية في Supabase', 'warning');
+            log('💡 يُرجى تنفيذ SQL التالي في لوحة تحكم Supabase:', 'info');
+
+            const sql = `
+-- إنشاء فهرس فريد لمنع تكرار الوحدات
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_property_unit
+ON properties_data (
+    (data->>'اسم العقار'),
+    (data->>'رقم  الوحدة ')
+)
+WHERE data->>'اسم العقار' IS NOT NULL
+AND data->>'رقم  الوحدة ' IS NOT NULL;
+
+-- إضافة قيد فريد
+ALTER TABLE properties_data
+ADD CONSTRAINT unique_property_unit
+UNIQUE USING INDEX idx_unique_property_unit;
+            `;
+
+            // عرض SQL في نافذة منفصلة للنسخ
+            const sqlWindow = window.open('', '_blank', 'width=800,height=600');
+            sqlWindow.document.write(`
+                <html dir="rtl">
+                <head>
+                    <title>SQL لمنع التكرار</title>
+                    <style>
+                        body { font-family: Arial; padding: 20px; }
+                        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; }
+                        button { padding: 10px 20px; margin: 10px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h2>SQL لمنع تكرار الوحدات في Supabase</h2>
+                    <p>انسخ والصق هذا الكود في SQL Editor في لوحة تحكم Supabase:</p>
+                    <pre id="sqlCode">${sql}</pre>
+                    <button onclick="navigator.clipboard.writeText(document.getElementById('sqlCode').textContent)">
+                        📋 نسخ SQL
+                    </button>
+                </body>
+                </html>
+            `);
+
+            log('📋 تم فتح نافذة جديدة مع SQL المطلوب', 'success');
+        }
+
+        async function optimizeSaveFunction() {
+            log('🔧 تحليل دالة الحفظ لمنع التكرار المستقبلي...', 'info');
+
+            const optimizedSaveCode = `
+// دالة حفظ محسنة لمنع التكرار
+async function saveToSupabaseWithDuplicateCheck(unitData) {
+    try {
+        const propertyName = unitData['اسم العقار'];
+        const unitNumber = unitData['رقم  الوحدة '];
+
+        if (!propertyName || !unitNumber) {
+            throw new Error('اسم العقار ورقم الوحدة مطلوبان');
+        }
+
+        // فحص وجود الوحدة مسبقاً
+        const { data: existingUnits, error: checkError } = await supabaseClient
+            .from('properties_data')
+            .select('id, data')
+            .eq('data->>اسم العقار', propertyName)
+            .eq('data->>رقم  الوحدة ', unitNumber);
+
+        if (checkError) {
+            throw checkError;
+        }
+
+        if (existingUnits && existingUnits.length > 0) {
+            // تحديث الوحدة الموجودة بدلاً من إنشاء جديدة
+            const { error: updateError } = await supabaseClient
+                .from('properties_data')
+                .update({
+                    data: unitData,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existingUnits[0].id);
+
+            if (updateError) {
+                throw updateError;
+            }
+
+            console.log('✅ تم تحديث الوحدة الموجودة:', propertyName, unitNumber);
+            return { action: 'updated', id: existingUnits[0].id };
+        } else {
+            // إنشاء وحدة جديدة
+            const { data: newUnit, error: insertError } = await supabaseClient
+                .from('properties_data')
+                .insert([{
+                    data: unitData,
+                    created_at: new Date().toISOString()
+                }])
+                .select();
+
+            if (insertError) {
+                throw insertError;
+            }
+
+            console.log('✅ تم إنشاء وحدة جديدة:', propertyName, unitNumber);
+            return { action: 'created', id: newUnit[0].id };
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في حفظ الوحدة:', error);
+        throw error;
+    }
+}
+            `;
+
+            // عرض الكود المحسن
+            const codeWindow = window.open('', '_blank', 'width=1000,height=700');
+            codeWindow.document.write(`
+                <html dir="rtl">
+                <head>
+                    <title>دالة الحفظ المحسنة</title>
+                    <style>
+                        body { font-family: Arial; padding: 20px; }
+                        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+                        button { padding: 10px 20px; margin: 10px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h2>دالة الحفظ المحسنة لمنع التكرار</h2>
+                    <p>استبدل دالة الحفظ الحالية بهذه النسخة المحسنة:</p>
+                    <pre id="codeBlock">${optimizedSaveCode}</pre>
+                    <button onclick="navigator.clipboard.writeText(document.getElementById('codeBlock').textContent)">
+                        📋 نسخ الكود
+                    </button>
+                </body>
+                </html>
+            `);
+
+            log('📋 تم فتح نافذة جديدة مع دالة الحفظ المحسنة', 'success');
+            log('💡 هذه الدالة تفحص وجود الوحدة قبل الحفظ وتحدثها بدلاً من إنشاء نسخة جديدة', 'info');
+        }
+
+        // إضافة شريط التقدم إلى الصفحة
+        function addProgressBar() {
+            const progressHTML = `
+                <div class="diagnostic-section" id="progressSection" style="display: none;">
+                    <h3>📊 تقدم العملية</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div id="progressText">0%</div>
+                </div>
+            `;
+
+            const container = document.querySelector('.container');
+            const logSection = container.querySelector('.diagnostic-section:nth-child(4)');
+            logSection.insertAdjacentHTML('beforebegin', progressHTML);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔍 أداة تشخيص الوحدات المكررة جاهزة', 'success');
+            log('💡 ابدأ بالضغط على "فحص الوحدات المكررة"', 'info');
+            addProgressBar();
+        });
+    </script>
+</body>
+</html>
