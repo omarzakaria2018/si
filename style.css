@@ -22688,3 +22688,703 @@ body.limited-user .restricted-dropdown-item::before {
     }
 }
 
+/* ===== أنماط الميزات الجديدة لسجلات التتبع ===== */
+
+/* أنماط الفلاتر المحسنة */
+.filter-buttons-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.unit-history-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.unit-history-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.unit-history-btn:hover::before {
+    left: 100%;
+}
+
+.unit-history-btn:hover {
+    background: linear-gradient(135deg, #218838, #1ea080);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
+}
+
+.unit-history-btn i {
+    font-size: 18px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* أنماط نافذة الحالة التاريخية للوحدة */
+.unit-history-modal {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.unit-history-modal .modal-header {
+    background: linear-gradient(135deg, #2a4b9b, #3a5db0);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.unit-history-modal .modal-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.unit-info {
+    font-size: 18px;
+    margin: 10px 0;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.history-stats {
+    font-size: 14px;
+    opacity: 0.9;
+    margin: 5px 0 0 0;
+}
+
+/* أنماط التبويبات */
+.unit-history-tabs {
+    padding: 0;
+}
+
+.tab-buttons {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.tab-btn.active {
+    background: white;
+    color: #2a4b9b;
+    border-bottom-color: #2a4b9b;
+    font-weight: 700;
+}
+
+.tab-btn i {
+    font-size: 18px;
+}
+
+/* أنماط محتوى التبويبات */
+.tab-content {
+    background: white;
+}
+
+.tab-panel {
+    display: none;
+    padding: 20px;
+    min-height: 400px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* أنماط جدول تاريخ الوحدة */
+.unit-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    font-size: 14px;
+    background: white;
+}
+
+.unit-history-table th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #495057;
+    font-weight: 700;
+    padding: 12px 8px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.unit-history-table td {
+    padding: 10px 8px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.unit-history-table tbody tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.unit-history-table tbody tr:hover {
+    background: #e3f2fd;
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+}
+
+.operation-badge {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+/* أنماط أزرار الإجراءات */
+.modal-actions {
+    padding: 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.modal-actions .export-btn,
+.modal-actions .print-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-actions .export-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.modal-actions .export-btn:hover {
+    background: linear-gradient(135deg, #218838, #1ea080);
+    transform: translateY(-2px);
+}
+
+.modal-actions .print-btn {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+}
+
+.modal-actions .print-btn:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-2px);
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .filter-buttons-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .unit-history-btn {
+        width: 100%;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+    .unit-history-modal {
+        margin: 10px;
+        max-height: 90vh;
+    }
+
+    .tab-buttons {
+        flex-direction: column;
+    }
+
+    .tab-btn {
+        border-bottom: 1px solid #e9ecef;
+        border-left: 3px solid transparent;
+    }
+
+    .tab-btn.active {
+        border-left-color: #2a4b9b;
+        border-bottom-color: transparent;
+    }
+
+    .unit-history-table {
+        font-size: 12px;
+    }
+
+    .unit-history-table th,
+    .unit-history-table td {
+        padding: 8px 4px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-actions .export-btn,
+    .modal-actions .print-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* تحسينات إضافية للجداول الطويلة */
+.table-container {
+    max-height: 450px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+.table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* ===== أنماط العرض المضمن للحالة التاريخية ===== */
+
+/* قسم الحالة التاريخية المضمن */
+.unit-history-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin: 20px 0;
+    animation: slideInFromTop 0.5s ease-out;
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* رأس القسم */
+.unit-history-header {
+    background: linear-gradient(135deg, #2a4b9b, #3a5db0);
+    color: white;
+    padding: 20px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.back-to-logs-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-to-logs-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateX(5px);
+}
+
+.unit-title h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.unit-number {
+    margin: 5px 0 0 0;
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.quick-export-btn,
+.quick-print-btn {
+    padding: 8px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: white;
+}
+
+.quick-export-btn {
+    background: rgba(40, 167, 69, 0.3);
+}
+
+.quick-export-btn:hover {
+    background: rgba(40, 167, 69, 0.5);
+    transform: translateY(-2px);
+}
+
+.quick-print-btn {
+    background: rgba(108, 117, 125, 0.3);
+}
+
+.quick-print-btn:hover {
+    background: rgba(108, 117, 125, 0.5);
+    transform: translateY(-2px);
+}
+
+/* شريط الإحصائيات */
+.unit-stats-bar {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.unit-stats-bar .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.unit-stats-bar .stat-item i {
+    font-size: 20px;
+    opacity: 0.8;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.stat-label {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* محتوى الحالة التاريخية المضمن */
+.unit-history-content-inline {
+    padding: 0;
+}
+
+/* تبويبات العرض المضمن */
+.inline-history-tabs {
+    background: white;
+}
+
+.inline-tab-buttons {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.inline-tab-btn {
+    flex: 1;
+    padding: 15px 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #6c757d;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+}
+
+.inline-tab-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.inline-tab-btn.active {
+    background: white;
+    color: #2a4b9b;
+    border-bottom-color: #2a4b9b;
+    font-weight: 700;
+}
+
+.inline-tab-btn i {
+    font-size: 18px;
+}
+
+/* محتوى التبويبات المضمن */
+.inline-tab-content {
+    background: white;
+}
+
+.inline-tab-panel {
+    display: none;
+    padding: 20px;
+    min-height: 400px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.inline-tab-panel.active {
+    display: block;
+}
+
+/* جدول التاريخ المضمن */
+.inline-table-container {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.inline-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    font-size: 14px;
+    background: white;
+}
+
+.inline-history-table th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #495057;
+    font-weight: 700;
+    padding: 12px 8px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.inline-history-table th i {
+    margin-left: 5px;
+    color: #6c757d;
+}
+
+.inline-history-table td {
+    padding: 12px 8px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.inline-history-table tbody tr {
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+}
+
+.inline-history-table tbody tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.inline-history-table tbody tr:hover {
+    background: #e3f2fd;
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* أنماط خاصة للخلايا */
+.tenant-name {
+    font-weight: 600;
+    color: #2a4b9b;
+}
+
+.contract-number {
+    font-family: monospace;
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+
+.operation-badge-inline {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.operation-date,
+.operation-time {
+    font-family: monospace;
+    font-size: 13px;
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .quick-actions {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .unit-stats-bar {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .inline-tab-buttons {
+        flex-direction: column;
+    }
+
+    .inline-tab-btn {
+        border-bottom: 1px solid #e9ecef;
+        border-left: 3px solid transparent;
+    }
+
+    .inline-tab-btn.active {
+        border-left-color: #2a4b9b;
+        border-bottom-color: transparent;
+    }
+
+    .inline-history-table {
+        font-size: 12px;
+    }
+
+    .inline-history-table th,
+    .inline-history-table td {
+        padding: 8px 4px;
+    }
+
+    .inline-tab-panel {
+        padding: 15px;
+        max-height: 500px;
+    }
+}
+
+/* تحسينات إضافية للتمرير */
+.inline-table-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.inline-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.inline-table-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.inline-table-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+

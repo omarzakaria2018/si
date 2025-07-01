@@ -3688,23 +3688,7 @@ function renderTotals(data) {
         // استخدم رقم العقد كمفتاح فريد
         const contractKey = property['رقم العقد'];
 
-        // إذا لم يتم معالجة هذا العقد من قبل
-        if (!uniqueContracts[contractKey]) {
-            uniqueContracts[contractKey] = true;
-            tenantsCount++;
-
-            // حساب الإجمالي بطريقة ذكية
-            const smartTotal = calculateSmartTotal(property);
-            const totalAmount = smartTotal.amount;
-
-            if (property['نوع العقد'] === 'ضريبي') {
-                totalCommercial += totalAmount;
-            } else {
-                totalResidential += totalAmount;
-            }
-        }
-
-        // حساب الحالات
+        // حساب الحالات أولاً لتحديد ما إذا كان العقد نشطاً
         const status = calculateStatus(property);
         if (status.final === 'جاري') {
             countActive++;
@@ -3712,6 +3696,24 @@ function renderTotals(data) {
             countExpired++;
         } else if (status.final === 'على وشك') {
             countPending++;
+        }
+
+        // إذا لم يتم معالجة هذا العقد من قبل
+        if (!uniqueContracts[contractKey]) {
+            uniqueContracts[contractKey] = true;
+            tenantsCount++;
+
+            // حساب الإجمالي فقط للعقود الجارية وعلى وشك الانتهاء (استبعاد المنتهية)
+            if (status.final === 'جاري' || status.final === 'على وشك') {
+                const smartTotal = calculateSmartTotal(property);
+                const totalAmount = smartTotal.amount;
+
+                if (property['نوع العقد'] === 'ضريبي') {
+                    totalCommercial += totalAmount;
+                } else {
+                    totalResidential += totalAmount;
+                }
+            }
         }
     });
 
@@ -3789,6 +3791,9 @@ function renderTotals(data) {
         financialCard.className = 'total-card';
         financialCard.innerHTML = `
             <h3><i class="fas fa-money-bill-wave"></i> الإجماليات المالية</h3>
+            <div style="font-size: 12px; color: #6c757d; margin-bottom: 10px; text-align: center;">
+                <i class="fas fa-info-circle"></i> يشمل العقود الجارية وعلى وشك الانتهاء فقط
+            </div>
             <div class="stat-grid">
                 <div class="stat-item">
                     <div class="stat-value" style="color: #2a4b9b;">${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})}</div>
@@ -3912,7 +3917,6 @@ function renderMobileTotals(data) {
     container.innerHTML = '';
 
     // حساب نفس الإحصائيات كما في الشاشة الكبيرة
-    const today = new Date();
     let countEmpty = 0, countExpired = 0, countPending = 0;
     let totalCommercial = 0, totalResidential = 0;
     let tenantsCount = 0;
@@ -3926,33 +3930,30 @@ function renderMobileTotals(data) {
             return;
         }
 
+        // حساب الحالات أولاً لتحديد ما إذا كان العقد نشطاً
+        const status = calculateStatus(property);
+        if (status.final === 'جاري') {
+            // لا نحتاج لزيادة العداد هنا لأنه يتم حسابه في activeCount
+        } else if (status.final === 'منتهى') {
+            countExpired++;
+        } else if (status.final === 'على وشك') {
+            countPending++;
+        }
+
         const contractKey = property['رقم العقد'];
         if (!uniqueContracts[contractKey]) {
             uniqueContracts[contractKey] = true;
             tenantsCount++;
 
-            // حساب الإجمالي بطريقة ذكية
-            const smartTotal = calculateSmartTotal(property);
-            const totalAmount = smartTotal.amount;
+            // حساب الإجمالي فقط للعقود الجارية وعلى وشك الانتهاء (استبعاد المنتهية)
+            if (status.final === 'جاري' || status.final === 'على وشك') {
+                const smartTotal = calculateSmartTotal(property);
+                const totalAmount = smartTotal.amount;
 
-            if (property['نوع العقد'] === 'ضريبي') {
-                totalCommercial += totalAmount;
-            } else {
-                totalResidential += totalAmount;
-            }
-        }
-
-        const endDateStr = property['تاريخ النهاية'];
-        if (endDateStr) {
-            const parts = endDateStr.split(/[\/\-]/);
-            if (parts.length === 3) {
-                const [day, month, year] = parts.map(Number);
-                const endDate = new Date(year, month - 1, day);
-                const diffDays = Math.floor((endDate - today) / (1000 * 60 * 60 * 24));
-                if (diffDays < 0) {
-                    countExpired++;
-                } else if (diffDays <= 60) {
-                    countPending++;
+                if (property['نوع العقد'] === 'ضريبي') {
+                    totalCommercial += totalAmount;
+                } else {
+                    totalResidential += totalAmount;
                 }
             }
         }
@@ -21276,6 +21277,27 @@ async function savePropertyEdit(event) {
 
                 await addChangeLog(operationType, updatedProperty, changes, additionalInfo);
                 console.log('📝 تم إضافة سجل التتبع للعملية:', operationType);
+
+                // إنشاء سجلات تتبع للوحدات المرتبطة إذا كان هناك تغيير في البيانات المشتركة
+                if (updatedProperty['رقم العقد'] && updatedProperty['اسم العقار']) {
+                    const sharedFieldsChanged = ['اسم المستأجر', 'رقم العقد', 'قيمة  الايجار ', 'تاريخ بداية العقد', 'تاريخ نهاية العقد'].some(field =>
+                        originalData[field] !== updatedProperty[field]
+                    );
+
+                    if (sharedFieldsChanged) {
+                        try {
+                            await createTrackingLogsForLinkedUnits(
+                                updatedProperty['رقم العقد'],
+                                updatedProperty['اسم العقار'],
+                                updatedProperty['رقم  الوحدة '],
+                                'تحديث بيانات الوحدات المرتبطة'
+                            );
+                            console.log('📝 تم إنشاء سجلات التتبع للوحدات المرتبطة');
+                        } catch (linkedError) {
+                            console.warn('⚠️ فشل في إنشاء سجلات التتبع للوحدات المرتبطة:', linkedError);
+                        }
+                    }
+                }
             } catch (error) {
                 console.warn('⚠️ خطأ في إضافة سجل التتبع (لن يؤثر على الحفظ):', error);
             }
@@ -21403,6 +21425,130 @@ function viewPropertyUnits(propertyName) {
 
 // ==================== وظائف ربط الوحدات المحسنة ====================
 
+// إنشاء سجلات تتبع لجميع الوحدات المرتبطة
+async function createTrackingLogsForLinkedUnits(contractNumber, propertyName, excludeUnitNumber, operationType) {
+    try {
+        console.log(`📝 إنشاء سجلات تتبع للوحدات المرتبطة بالعقد ${contractNumber}...`);
+
+        if (!contractNumber || contractNumber.trim() === '') {
+            console.warn('⚠️ رقم العقد فارغ، تخطي إنشاء سجلات التتبع');
+            return { success: false, reason: 'رقم العقد فارغ' };
+        }
+
+        // البحث عن جميع الوحدات المرتبطة بنفس العقد (باستثناء الوحدة المستثناة)
+        const linkedUnits = properties.filter(p =>
+            p['رقم العقد'] === contractNumber &&
+            p['اسم العقار'] === propertyName &&
+            p['رقم  الوحدة '] !== excludeUnitNumber
+        );
+
+        if (linkedUnits.length === 0) {
+            console.log('ℹ️ لا توجد وحدات أخرى مربوطة لإنشاء سجلات التتبع');
+            return { success: true, createdCount: 0, reason: 'لا توجد وحدات أخرى' };
+        }
+
+        console.log(`📋 تم العثور على ${linkedUnits.length} وحدة مربوطة لإنشاء سجلات التتبع`);
+
+        let createdCount = 0;
+
+        // إنشاء سجل تتبع لكل وحدة مرتبطة
+        for (const unit of linkedUnits) {
+            try {
+                await addChangeLog(
+                    operationType,
+                    unit,
+                    {}, // لا توجد تغييرات فعلية، فقط إشعار بالربط
+                    {
+                        contractNumber: contractNumber,
+                        propertyName: propertyName,
+                        newLinkedUnit: excludeUnitNumber,
+                        reason: `تم ربط وحدة جديدة (${excludeUnitNumber}) بنفس العقد`,
+                        relatedOperation: 'unit_linking_notification'
+                    }
+                );
+                createdCount++;
+                console.log(`📝 تم إنشاء سجل تتبع للوحدة ${unit['رقم  الوحدة ']}`);
+            } catch (logError) {
+                console.warn(`⚠️ فشل في إنشاء سجل التتبع للوحدة ${unit['رقم  الوحدة ']}:`, logError);
+            }
+        }
+
+        console.log(`✅ تم إنشاء ${createdCount} سجل تتبع للوحدات المرتبطة`);
+
+        return {
+            success: true,
+            createdCount,
+            totalUnits: linkedUnits.length
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في إنشاء سجلات التتبع للوحدات المرتبطة:', error);
+        return { success: false, reason: error.message };
+    }
+}
+
+// إنشاء سجلات تتبع لجميع الوحدات المرتبطة
+async function createTrackingLogsForLinkedUnits(contractNumber, propertyName, excludeUnitNumber, operationType) {
+    try {
+        console.log(`📝 إنشاء سجلات تتبع للوحدات المرتبطة بالعقد ${contractNumber}...`);
+
+        if (!contractNumber || contractNumber.trim() === '') {
+            console.warn('⚠️ رقم العقد فارغ، تخطي إنشاء سجلات التتبع');
+            return { success: false, reason: 'رقم العقد فارغ' };
+        }
+
+        // البحث عن جميع الوحدات المرتبطة بنفس العقد (باستثناء الوحدة المستثناة)
+        const linkedUnits = properties.filter(p =>
+            p['رقم العقد'] === contractNumber &&
+            p['اسم العقار'] === propertyName &&
+            p['رقم  الوحدة '] !== excludeUnitNumber
+        );
+
+        if (linkedUnits.length === 0) {
+            console.log('ℹ️ لا توجد وحدات أخرى مربوطة لإنشاء سجلات التتبع');
+            return { success: true, createdCount: 0, reason: 'لا توجد وحدات أخرى' };
+        }
+
+        console.log(`📋 تم العثور على ${linkedUnits.length} وحدة مربوطة لإنشاء سجلات التتبع`);
+
+        let createdCount = 0;
+
+        // إنشاء سجل تتبع لكل وحدة مرتبطة
+        for (const unit of linkedUnits) {
+            try {
+                await addChangeLog(
+                    operationType,
+                    unit,
+                    {}, // لا توجد تغييرات فعلية، فقط إشعار بالربط
+                    {
+                        contractNumber: contractNumber,
+                        propertyName: propertyName,
+                        newLinkedUnit: excludeUnitNumber,
+                        reason: `تم ربط وحدة جديدة (${excludeUnitNumber}) بنفس العقد`,
+                        relatedOperation: 'unit_linking_notification'
+                    }
+                );
+                createdCount++;
+                console.log(`📝 تم إنشاء سجل تتبع للوحدة ${unit['رقم  الوحدة ']}`);
+            } catch (logError) {
+                console.warn(`⚠️ فشل في إنشاء سجل التتبع للوحدة ${unit['رقم  الوحدة ']}:`, logError);
+            }
+        }
+
+        console.log(`✅ تم إنشاء ${createdCount} سجل تتبع للوحدات المرتبطة`);
+
+        return {
+            success: true,
+            createdCount,
+            totalUnits: linkedUnits.length
+        };
+
+    } catch (error) {
+        console.error('❌ خطأ في إنشاء سجلات التتبع للوحدات المرتبطة:', error);
+        return { success: false, reason: error.message };
+    }
+}
+
 // 🔧 دالة مشاركة البيانات بين الوحدات المربوطة
 async function syncLinkedUnitsData(contractNumber, propertyName, sourceUnitData, operationType = 'link') {
     try {
@@ -21503,6 +21649,52 @@ async function syncLinkedUnitsData(contractNumber, propertyName, sourceUnitData,
 
                 updatedCount++;
                 console.log(`✅ تم تحديث الوحدة ${unit['رقم  الوحدة ']} بالبيانات المشتركة`);
+
+                // إنشاء سجل تتبع لكل وحدة مرتبطة
+                try {
+                    const changes = {};
+                    // تسجيل التغييرات المهمة
+                    if (sharedData['اسم المستأجر'] !== unit['اسم المستأجر']) {
+                        changes['اسم المستأجر'] = {
+                            old: unit['اسم المستأجر'] || 'فارغ',
+                            new: sharedData['اسم المستأجر'] || 'فارغ',
+                            fieldName: 'اسم المستأجر'
+                        };
+                    }
+                    if (sharedData['رقم العقد'] !== unit['رقم العقد']) {
+                        changes['رقم العقد'] = {
+                            old: unit['رقم العقد'] || 'فارغ',
+                            new: sharedData['رقم العقد'] || 'فارغ',
+                            fieldName: 'رقم العقد'
+                        };
+                    }
+                    if (sharedData['قيمة  الايجار '] !== unit['قيمة  الايجار ']) {
+                        changes['قيمة  الايجار '] = {
+                            old: unit['قيمة  الايجار '] || '0',
+                            new: sharedData['قيمة  الايجار '] || '0',
+                            fieldName: 'قيمة الإيجار'
+                        };
+                    }
+
+                    // إضافة سجل تتبع للوحدة المرتبطة
+                    if (typeof addChangeLog === 'function') {
+                        await addChangeLog(
+                            operationType === 'link' ? 'ربط وحدة' : 'مزامنة بيانات الوحدات المرتبطة',
+                            properties[unitIndex],
+                            changes,
+                            {
+                                contractNumber: contractNumber,
+                                propertyName: propertyName,
+                                operationType: operationType,
+                                syncedFields: Object.keys(sharedData).length,
+                                reason: `مزامنة مع الوحدات المرتبطة بالعقد ${contractNumber}`
+                            }
+                        );
+                        console.log(`📝 تم إنشاء سجل تتبع للوحدة ${unit['رقم  الوحدة ']}`);
+                    }
+                } catch (logError) {
+                    console.warn(`⚠️ فشل في إنشاء سجل التتبع للوحدة ${unit['رقم  الوحدة ']}:`, logError);
+                }
 
                 // إضافة للقائمة للحفظ في Supabase
                 supabaseUpdates.push(properties[unitIndex]);
@@ -21616,6 +21808,40 @@ async function updateLinkedUnitsOnEdit(editedUnitData) {
 
                     updatedCount++;
                     console.log(`✅ تم تحديث الوحدة ${unit['رقم  الوحدة ']} بالبيانات المشتركة`);
+
+                    // إنشاء سجل تتبع للوحدة المحدثة
+                    try {
+                        const changes = {};
+                        // تسجيل التغييرات المهمة فقط
+                        for (const field of sharedFields) {
+                            if (editedUnitData[field] !== undefined &&
+                                unit[field] !== editedUnitData[field]) {
+                                changes[field] = {
+                                    old: unit[field] || 'فارغ',
+                                    new: editedUnitData[field] || 'فارغ',
+                                    fieldName: field
+                                };
+                            }
+                        }
+
+                        // إضافة سجل تتبع للوحدة المرتبطة
+                        if (typeof addChangeLog === 'function' && Object.keys(changes).length > 0) {
+                            await addChangeLog(
+                                'تحديث بيانات الوحدات المرتبطة',
+                                properties[unitIndex],
+                                changes,
+                                {
+                                    contractNumber: contractNumber,
+                                    propertyName: propertyName,
+                                    updatedFields: Object.keys(changes),
+                                    reason: `تحديث تلقائي للوحدات المرتبطة بالعقد ${contractNumber}`
+                                }
+                            );
+                            console.log(`📝 تم إنشاء سجل تتبع للوحدة ${unit['رقم  الوحدة ']}`);
+                        }
+                    } catch (logError) {
+                        console.warn(`⚠️ فشل في إنشاء سجل التتبع للوحدة ${unit['رقم  الوحدة ']}:`, logError);
+                    }
 
                     // إضافة للقائمة للحفظ في Supabase
                     supabaseUpdates.push(properties[unitIndex]);
@@ -24221,6 +24447,13 @@ async function linkUnitToContract(unitNumber, propertyName, contractNumber) {
             });
         } catch (error) {
             console.warn('⚠️ فشل في إضافة سجل التتبع لربط الوحدة:', error);
+        }
+
+        // إنشاء سجلات تتبع لجميع الوحدات المرتبطة الأخرى
+        try {
+            await createTrackingLogsForLinkedUnits(contractNumber, propertyName, unitNumber, 'ربط وحدة جديدة');
+        } catch (error) {
+            console.warn('⚠️ فشل في إنشاء سجلات التتبع للوحدات المرتبطة:', error);
         }
 
         // تحديث العرض
@@ -31261,8 +31494,8 @@ async function saveTrackingLogToNewTable(changeLog, unitData) {
 
             // معلومات العقد
             rent_value: unitData['قيمة  الايجار '] || null,
-            start_date: unitData['تاريخ البداية'] || null,
-            end_date: unitData['تاريخ النهاية'] || null,
+            start_date: formatDateForDatabase(unitData['تاريخ البداية']) || null,
+            end_date: formatDateForDatabase(unitData['تاريخ النهاية']) || null,
             contract_type: unitData['نوع العقد'] || null,
 
             // معلومات التغييرات
@@ -31767,6 +32000,12 @@ async function showChangeTrackingModal() {
                     </button>
                     <h2><i class="fas fa-history"></i> سجل تتبع التغييرات</h2>
                     <p class="tracking-stats">إجمالي السجلات: ${uniqueLogs.length}</p>
+                    <div class="new-features-notice" style="background: rgba(40, 167, 69, 0.1); padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 14px; color: #155724;">
+                        <i class="fas fa-star" style="color: #28a745;"></i>
+                        <strong>ميزات جديدة:</strong>
+                        ابحث عن رقم وحدة لإظهار زر "الحالة التاريخية للوحدة" •
+                        استخدم فلتر "عمليات تعديل البيانات" للتحكم في عرض عمليات التعديل
+                    </div>
                 </div>
             </div>
 
@@ -31790,30 +32029,60 @@ async function showChangeTrackingModal() {
                 </div>
                 <div class="filter-group">
                     <label>البحث:</label>
-                    <input type="text" id="trackingSearch" placeholder="بحث في الوحدات، العقارات، أو المستأجرين...">
+                    <input type="text" id="trackingSearch" placeholder="بحث في الوحدات، العقارات، أو المستأجرين (يشمل الوحدات المرتبطة)..." oninput="handleTrackingSearch()">
                 </div>
-                <button onclick="filterTrackingLogs()" class="filter-btn">
-                    <i class="fas fa-filter"></i> تطبيق الفلتر
-                </button>
-                <button onclick="clearTrackingFilters()" class="clear-filter-btn">
-                    <i class="fas fa-times"></i> مسح الفلاتر
-                </button>
+
+                <!-- فلتر جديد: إخفاء/إظهار عمليات تعديل البيانات -->
+                <div class="filter-group">
+                    <label>عمليات تعديل البيانات:</label>
+                    <select id="trackingDataEditFilter" title="تحكم في عرض عمليات تعديل البيانات">
+                        <option value="all">إظهار الكل</option>
+                        <option value="hide">إخفاء عمليات التعديل</option>
+                        <option value="first_only">إظهار أول عملية تعديل فقط</option>
+                    </select>
+                </div>
+
+                <div class="filter-buttons-row">
+                    <button onclick="filterTrackingLogs()" class="filter-btn">
+                        <i class="fas fa-filter"></i> تطبيق الفلتر
+                    </button>
+                    <button onclick="clearTrackingFilters()" class="clear-filter-btn">
+                        <i class="fas fa-times"></i> مسح الفلاتر
+                    </button>
+
+                    <!-- زر الحالة التاريخية للوحدة -->
+                    <button onclick="showUnitHistoryModal()" class="unit-history-btn" id="unitHistoryBtn" style="display: none;"
+                            title="عرض تاريخ كامل للوحدة مع جميع المستأجرين والعمليات">
+                        <i class="fas fa-history"></i> الحالة التاريخية للوحدة
+                    </button>
+                </div>
             </div>
 
             <div class="tracking-actions">
-                <button onclick="exportTrackingLogs()" class="export-btn">
-                    <i class="fas fa-download"></i> تصدير Excel
-                </button>
-                <button onclick="printTrackingLogs()" class="print-btn">
-                    <i class="fas fa-print"></i> طباعة
-                </button>
-                <button onclick="refreshTrackingLogs()" class="refresh-btn">
-                    <i class="fas fa-sync-alt"></i> تحديث
-                </button>
+                <div class="view-toggle-group">
+                    <button onclick="toggleTrackingView('cards')" class="view-toggle-btn" id="trackingCardsBtn">
+                        <i class="fas fa-th-large"></i> بطاقات
+                    </button>
+                    <button onclick="toggleTrackingView('table')" class="view-toggle-btn active" id="trackingTableBtn">
+                        <i class="fas fa-table"></i> جدول
+                    </button>
+                </div>
+
+                <div class="action-buttons-group">
+                    <button onclick="exportTrackingLogs()" class="export-btn">
+                        <i class="fas fa-download"></i> تصدير Excel
+                    </button>
+                    <button onclick="printTrackingLogs()" class="print-btn">
+                        <i class="fas fa-print"></i> طباعة
+                    </button>
+                    <button onclick="refreshTrackingLogs()" class="refresh-btn">
+                        <i class="fas fa-sync-alt"></i> تحديث
+                    </button>
+                </div>
             </div>
 
             <div class="tracking-logs-container" id="trackingLogsContainer">
-                ${renderTrackingLogs(uniqueLogs)}
+                <!-- سيتم تحديد العرض بناءً على التفضيل المحفوظ -->
             </div>
         </div>
     `;
@@ -31841,6 +32110,17 @@ async function showChangeTrackingModal() {
 
     // حفظ مرجع لإزالة المعالج لاحقاً
     window.trackingEscapeHandler = handleEscapeKey;
+
+    // حفظ البيانات للاستخدام في التبديل بين العروض
+    window.currentTrackingLogs = uniqueLogs;
+
+    // تطبيق العرض المفضل
+    const preferredView = localStorage.getItem('trackingViewPreference') || 'table';
+
+    // تأخير قصير للتأكد من تحميل DOM
+    setTimeout(() => {
+        toggleTrackingView(preferredView);
+    }, 200);
 
     console.log('✅ تم عرض سجلات التتبع في القسم الرئيسي');
 }
@@ -34135,6 +34415,13 @@ async function absoluteUnlinkUnit(unitNumber, propertyName, contractNumber) {
             }
         } catch (trackingError) {
             console.warn('⚠️ فشل في حفظ سجل التتبع:', trackingError);
+        }
+
+        // إنشاء سجلات تتبع لجميع الوحدات المرتبطة الأخرى
+        try {
+            await createTrackingLogsForLinkedUnits(contractNumber, propertyName, unitNumber, 'فصل وحدة من العقد');
+        } catch (error) {
+            console.warn('⚠️ فشل في إنشاء سجلات التتبع للوحدات المرتبطة:', error);
         }
 
         // 5. تحديث العرض
@@ -37649,6 +37936,480 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ===== نهاية اختبار سريع لإصلاح مشكلة Supabase =====
 
+// ===== نظام فلترة الجداول التفاعلي =====
+
+// تطبيق نظام الفلترة على جدول سجلات التتبع
+function initializeTrackingTableFilter(logs) {
+    console.log('🔧 تهيئة نظام الفلترة لجدول سجلات التتبع...');
+
+    // إنشاء جدول HTML للسجلات
+    const tableHtml = createTrackingLogsTable(logs);
+
+    // إضافة الجدول للحاوية
+    const container = document.getElementById('trackingLogsContainer');
+    if (container) {
+        container.innerHTML = tableHtml;
+
+        // تهيئة نظام الفلترة مع تأخير أطول للتأكد من تحميل DOM
+        setTimeout(() => {
+            if (window.tableFilterSystem) {
+                console.log('🔧 محاولة تهيئة نظام الفلترة...');
+
+                // التحقق من وجود الجدول
+                const table = document.getElementById('trackingLogsTable');
+                if (!table) {
+                    console.error('❌ لم يتم العثور على جدول trackingLogsTable');
+                    return;
+                }
+
+                console.log('✅ تم العثور على الجدول، بدء تهيئة الفلترة...');
+                const success = window.tableFilterSystem.initializeTable('trackingLogsTable', logs);
+
+                if (success) {
+                    console.log('✅ تم تفعيل نظام الفلترة لجدول سجلات التتبع بنجاح');
+
+                    // إضافة عداد النتائج
+                    addTrackingTableCounter(logs.length);
+
+                    // إضافة معالج لتحديث العداد عند الفلترة
+                    updateTrackingTableCounter();
+                } else {
+                    console.warn('⚠️ فشل في تفعيل نظام الفلترة');
+                }
+            } else {
+                console.error('❌ نظام الفلترة غير متوفر (window.tableFilterSystem)');
+            }
+        }, 300);
+    }
+}
+
+// إنشاء جدول HTML لسجلات التتبع
+function createTrackingLogsTable(logs) {
+    if (!logs || logs.length === 0) {
+        return '<div class="no-logs">لا توجد سجلات تتبع</div>';
+    }
+
+    return `
+        <div class="tracking-table-container">
+            <div class="table-controls">
+                <div class="table-counter" id="trackingTableCounter" data-table-counter="trackingLogsTable">
+                    عرض ${logs.length} من أصل ${logs.length} سجل
+                </div>
+                <div class="table-actions">
+                    <button class="clear-filters-btn" onclick="clearTrackingTableFilters()">
+                        <i class="fas fa-eraser"></i> مسح الفلاتر
+                    </button>
+                    <button class="clear-search-btn" onclick="clearTrackingSearch()">
+                        <i class="fas fa-times"></i> مسح البحث
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="tracking-logs-table" id="trackingLogsTable">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الوقت</th>
+                            <th>نوع العملية</th>
+                            <th>المستأجر</th>
+                            <th>رقم العقد</th>
+                            <th>المستخدم</th>
+                            <th>العقار</th>
+                            <th>رقم الوحدة</th>
+                            <th>المدينة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${logs.map(log => `
+                            <tr>
+                                <td>${log.date || formatDate(log.timestamp)}</td>
+                                <td>${log.time || formatTime(log.timestamp)}</td>
+                                <td>${log.operationType || log.operation_type || 'غير محدد'}</td>
+                                <td>${log.tenantName || log.tenant_name || 'غير محدد'}</td>
+                                <td>${log.contractNumber || log.contract_number || 'غير محدد'}</td>
+                                <td>${log.user || log.user_name || 'غير محدد'}</td>
+                                <td>${log.propertyName || log.property_name || 'غير محدد'}</td>
+                                <td>${log.unitNumber || log.unit_number || 'غير محدد'}</td>
+                                <td>${log.city || 'غير محدد'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+// إضافة عداد النتائج
+function addTrackingTableCounter(totalCount) {
+    const counterHtml = `
+        <style>
+            .tracking-table-container {
+                background: white;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                margin: 20px 0;
+            }
+
+            .table-controls {
+                background: #f8f9fa;
+                padding: 15px 20px;
+                border-bottom: 1px solid #dee2e6;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .table-counter {
+                font-weight: 600;
+                color: #495057;
+                font-size: 14px;
+            }
+
+            .table-actions {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .clear-filters-btn, .clear-search-btn {
+                border: none;
+                padding: 8px 15px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 13px;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-weight: 500;
+            }
+
+            .clear-filters-btn {
+                background: #dc3545;
+                color: white;
+            }
+
+            .clear-filters-btn:hover {
+                background: #c82333;
+                transform: translateY(-1px);
+            }
+
+            .clear-search-btn {
+                background: #6c757d;
+                color: white;
+            }
+
+            .clear-search-btn:hover {
+                background: #5a6268;
+                transform: translateY(-1px);
+            }
+
+            .table-wrapper {
+                overflow-x: auto;
+                max-height: 600px;
+                overflow-y: auto;
+            }
+
+            .tracking-logs-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13px;
+                min-width: 800px;
+            }
+
+            .tracking-logs-table thead {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+
+            .tracking-logs-table th {
+                padding: 12px 8px;
+                text-align: right;
+                font-weight: 600;
+                border-bottom: 2px solid #dee2e6;
+                white-space: nowrap;
+            }
+
+            .tracking-logs-table td {
+                padding: 10px 8px;
+                border-bottom: 1px solid #dee2e6;
+                text-align: right;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 150px;
+            }
+
+            .tracking-logs-table tbody tr:hover {
+                background: #f8f9fa;
+            }
+
+            .tracking-logs-table tbody tr:nth-child(even) {
+                background: #f9f9f9;
+            }
+
+            .tracking-logs-table tbody tr:nth-child(even):hover {
+                background: #f1f1f1;
+            }
+
+            /* أنماط أزرار التبديل */
+            .view-toggle-group {
+                display: flex;
+                gap: 5px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 4px;
+            }
+
+            .view-toggle-btn {
+                padding: 8px 15px;
+                border: none;
+                background: transparent;
+                color: #6c757d;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 13px;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+
+            .view-toggle-btn:hover {
+                background: #e9ecef;
+                color: #495057;
+            }
+
+            .view-toggle-btn.active {
+                background: #007bff;
+                color: white;
+                box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+            }
+
+            .action-buttons-group {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .tracking-actions {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-bottom: 20px;
+                padding: 15px 20px;
+                background: #f8f9fa;
+                border-radius: 10px;
+                border: 1px solid #dee2e6;
+            }
+
+            @media (max-width: 768px) {
+                .table-controls {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .table-counter {
+                    text-align: center;
+                }
+
+                .tracking-logs-table {
+                    font-size: 11px;
+                }
+
+                .tracking-logs-table th,
+                .tracking-logs-table td {
+                    padding: 6px 4px;
+                    max-width: 100px;
+                }
+
+                .tracking-actions {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+
+                .view-toggle-group,
+                .action-buttons-group {
+                    justify-content: center;
+                }
+
+                .action-buttons-group {
+                    flex-wrap: wrap;
+                }
+
+                .table-actions {
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .clear-filters-btn, .clear-search-btn {
+                    width: 100%;
+                    justify-content: center;
+                }
+            }
+        </style>
+    `;
+
+    // إضافة الأنماط إذا لم تكن موجودة
+    if (!document.getElementById('tracking-table-styles')) {
+        const styleElement = document.createElement('div');
+        styleElement.id = 'tracking-table-styles';
+        styleElement.innerHTML = counterHtml;
+        document.head.appendChild(styleElement);
+    }
+}
+
+// معالج البحث الموحد للبطاقات والجدول
+function handleTrackingSearch() {
+    const searchInput = document.getElementById('trackingSearch');
+    if (!searchInput) return;
+
+    const searchTerm = searchInput.value.trim();
+    console.log(`🔍 معالج البحث: "${searchTerm}"`);
+
+    // تحديد نوع العرض الحالي
+    const tableContainer = document.getElementById('trackingLogsTable');
+    const isTableView = tableContainer && tableContainer.style.display !== 'none';
+
+    if (isTableView) {
+        // تطبيق البحث على الجدول
+        applySearchToTable(searchTerm);
+    } else {
+        // تطبيق البحث على البطاقات (الطريقة الأصلية)
+        filterTrackingLogs();
+    }
+}
+
+// تطبيق البحث على الجدول
+function applySearchToTable(searchTerm) {
+    console.log(`🔍 تطبيق البحث "${searchTerm}" على الجدول...`);
+
+    if (window.tableFilterSystem) {
+        if (searchTerm && searchTerm.trim() !== '') {
+            window.tableFilterSystem.applySearch('trackingLogsTable', searchTerm.trim());
+        } else {
+            window.tableFilterSystem.clearSearch('trackingLogsTable');
+        }
+    } else {
+        console.warn('⚠️ نظام الفلترة غير متوفر');
+    }
+}
+
+// تحديث عداد جدول التتبع
+function updateTrackingTableCounter() {
+    const table = document.getElementById('trackingLogsTable');
+    const counter = document.getElementById('trackingTableCounter');
+
+    if (table && counter) {
+        const totalRows = table.querySelectorAll('tbody tr').length;
+        const visibleRows = table.querySelectorAll('tbody tr:not([style*="display: none"])').length;
+
+        counter.textContent = `عرض ${visibleRows} من أصل ${totalRows} سجل`;
+
+        // تحديث العداد كل ثانية للتأكد من دقة البيانات
+        setTimeout(updateTrackingTableCounter, 1000);
+    }
+}
+
+// مسح فلاتر جدول التتبع
+function clearTrackingTableFilters() {
+    if (window.tableFilterSystem) {
+        window.tableFilterSystem.clearAllFilters('trackingLogsTable');
+        showToast('تم مسح جميع فلاتر الجدول', 'success');
+
+        // تحديث العداد بعد مسح الفلاتر
+        setTimeout(updateTrackingTableCounter, 100);
+    }
+}
+
+// مسح البحث في سجلات التتبع
+function clearTrackingSearch() {
+    const searchInput = document.getElementById('trackingSearch');
+    if (searchInput) {
+        searchInput.value = '';
+
+        // تطبيق البحث الفارغ
+        handleTrackingSearch();
+
+        showToast('تم مسح البحث', 'info');
+    }
+}
+
+// تبديل عرض سجلات التتبع بين الجدول والبطاقات
+function toggleTrackingView(viewType) {
+    console.log(`🔄 تبديل عرض سجلات التتبع إلى: ${viewType}`);
+
+    const container = document.getElementById('trackingLogsContainer');
+    if (!container) return;
+
+    // تحديث أزرار التبديل
+    const cardsBtn = document.getElementById('trackingCardsBtn');
+    const tableBtn = document.getElementById('trackingTableBtn');
+
+    if (cardsBtn && tableBtn) {
+        cardsBtn.classList.remove('active');
+        tableBtn.classList.remove('active');
+
+        if (viewType === 'cards') {
+            cardsBtn.classList.add('active');
+        } else {
+            tableBtn.classList.add('active');
+        }
+    }
+
+    // الحصول على البيانات الحالية
+    const currentLogs = window.currentTrackingLogs || [];
+
+    if (viewType === 'table') {
+        // عرض الجدول مع الفلترة
+        console.log('🔄 تبديل إلى عرض الجدول...');
+        initializeTrackingTableFilter(currentLogs);
+
+        // تطبيق البحث الحالي على الجدول إذا وجد
+        const searchInput = document.getElementById('trackingSearch');
+        if (searchInput && searchInput.value.trim() !== '') {
+            console.log('🔍 تطبيق البحث الحالي على الجدول...');
+            setTimeout(() => {
+                applySearchToTable(searchInput.value.trim());
+            }, 500);
+        }
+    } else {
+        // عرض البطاقات (العرض الأصلي)
+        console.log('🔄 تبديل إلى عرض البطاقات...');
+        container.innerHTML = renderTrackingLogs(currentLogs);
+    }
+
+    // حفظ تفضيل العرض
+    localStorage.setItem('trackingViewPreference', viewType);
+
+    showToast(`تم التبديل إلى عرض ${viewType === 'table' ? 'الجدول' : 'البطاقات'}`, 'info');
+}
+
+// تنسيق التاريخ
+function formatDate(timestamp) {
+    if (!timestamp) return 'غير محدد';
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('ar-SA');
+}
+
+// تنسيق الوقت
+function formatTime(timestamp) {
+    if (!timestamp) return 'غير محدد';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('ar-SA');
+}
+
 // عرض سجلات التتبع
 function renderTrackingLogs(logs) {
     if (logs.length === 0) {
@@ -37752,6 +38513,41 @@ function renderChangeDetails(log) {
     }).filter(item => item !== '').join('');
 }
 
+// التحقق من ارتباط الوحدة بمصطلح البحث
+function isUnitLinkedToSearchTerm(unitNumber, propertyName, contractNumber, searchTerm) {
+    try {
+        // إذا لم تكن هناك بيانات أو عقد، لا يمكن البحث في الوحدات المرتبطة
+        if (!properties || !contractNumber || contractNumber.trim() === '') {
+            return false;
+        }
+
+        // البحث عن جميع الوحدات المرتبطة بنفس العقد
+        const linkedUnits = properties.filter(p =>
+            p['رقم العقد'] === contractNumber &&
+            p['اسم العقار'] === propertyName
+        );
+
+        // التحقق من وجود مصطلح البحث في أي من الوحدات المرتبطة
+        return linkedUnits.some(unit => {
+            const unitFields = [
+                unit['رقم  الوحدة '] || '',
+                unit['اسم المستأجر'] || '',
+                unit['رقم الجوال'] || '',
+                unit['رقم الجوال الاضافي'] || '',
+                unit['المساحة'] || '',
+                unit['ملاحظات الوحدة'] || ''
+            ];
+
+            return unitFields.some(field =>
+                field.toString().toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        });
+    } catch (error) {
+        console.warn('⚠️ خطأ في البحث عن الوحدات المرتبطة:', error);
+        return false;
+    }
+}
+
 // فلترة سجلات التتبع المحسنة والمصححة
 async function filterTrackingLogs() {
     console.log('🔍 بدء فلترة سجلات التتبع...');
@@ -37760,8 +38556,9 @@ async function filterTrackingLogs() {
     const monthFilter = document.getElementById('trackingMonthFilter')?.value;
     const operationType = document.getElementById('trackingOperationType')?.value;
     const searchTerm = document.getElementById('trackingSearch')?.value?.toLowerCase() || '';
+    const dataEditFilter = document.getElementById('trackingDataEditFilter')?.value || 'all';
 
-    console.log('📋 معايير الفلترة:', { dateFilter, monthFilter, operationType, searchTerm });
+    console.log('📋 معايير الفلترة:', { dateFilter, monthFilter, operationType, searchTerm, dataEditFilter });
 
     // تحميل جميع السجلات
     const cloudLogs = await loadChangeLogsFromSupabase(1000);
@@ -37811,7 +38608,7 @@ async function filterTrackingLogs() {
             return false;
         }
 
-        // فلتر البحث المحسن
+        // فلتر البحث المحسن مع دعم الوحدات المرتبطة
         if (searchTerm) {
             const searchFields = [
                 log.unitNumber || '',
@@ -37824,9 +38621,15 @@ async function filterTrackingLogs() {
                 log.user || ''
             ];
 
-            const matchFound = searchFields.some(field =>
+            // البحث العادي في الحقول
+            let matchFound = searchFields.some(field =>
                 field.toString().toLowerCase().includes(searchTerm)
             );
+
+            // إذا لم يتم العثور على تطابق، ابحث في الوحدات المرتبطة
+            if (!matchFound && log.unitNumber && log.propertyName && log.contractNumber) {
+                matchFound = isUnitLinkedToSearchTerm(log.unitNumber, log.propertyName, log.contractNumber, searchTerm);
+            }
 
             if (!matchFound) {
                 return false;
@@ -37835,6 +38638,35 @@ async function filterTrackingLogs() {
 
         return true;
     });
+
+    // تطبيق فلتر عمليات تعديل البيانات
+    if (dataEditFilter !== 'all') {
+        if (dataEditFilter === 'hide') {
+            // إخفاء جميع عمليات تعديل البيانات
+            filteredLogs = filteredLogs.filter(log =>
+                log.operationType !== 'تحرير بيانات' &&
+                log.operationType !== 'تعديل بيانات'
+            );
+        } else if (dataEditFilter === 'first_only') {
+            // إظهار أول عملية تعديل فقط لكل وحدة
+            const editOperationsMap = new Map();
+            const nonEditLogs = [];
+
+            filteredLogs.forEach(log => {
+                if (log.operationType === 'تحرير بيانات' || log.operationType === 'تعديل بيانات') {
+                    const unitKey = `${log.propertyName}_${log.unitNumber}`;
+                    if (!editOperationsMap.has(unitKey)) {
+                        editOperationsMap.set(unitKey, log);
+                    }
+                } else {
+                    nonEditLogs.push(log);
+                }
+            });
+
+            // دمج العمليات غير التحريرية مع أول عملية تحرير لكل وحدة
+            filteredLogs = [...nonEditLogs, ...Array.from(editOperationsMap.values())];
+        }
+    }
 
     // ترتيب حسب التاريخ (الأحدث أولاً)
     filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -37877,6 +38709,33 @@ async function filterTrackingLogs() {
         }
     }
 
+    // إظهار/إخفاء زر الحالة التاريخية للوحدة
+    const unitHistoryBtn = document.getElementById('unitHistoryBtn');
+    if (unitHistoryBtn) {
+        // إظهار الزر إذا كان هناك بحث عن رقم وحدة محدد
+        const isUnitSearch = searchTerm && searchTerm.length >= 2 && filteredLogs.some(log =>
+            log.unitNumber && log.unitNumber.toLowerCase().includes(searchTerm)
+        );
+
+        if (isUnitSearch) {
+            unitHistoryBtn.style.display = 'inline-flex';
+            // حفظ رقم الوحدة المبحوث عنها
+            window.currentSearchedUnit = searchTerm;
+
+            // تحديث نص الزر ليشمل رقم الوحدة
+            const unitCount = filteredLogs.filter(log =>
+                log.unitNumber && log.unitNumber.toLowerCase().includes(searchTerm)
+            ).length;
+            unitHistoryBtn.innerHTML = `
+                <i class="fas fa-history"></i>
+                الحالة التاريخية للوحدة (${unitCount} سجل)
+            `;
+        } else {
+            unitHistoryBtn.style.display = 'none';
+            window.currentSearchedUnit = null;
+        }
+    }
+
     console.log(`🔍 انتهت عملية الفلترة: ${resultsCount}/${totalCount} سجل`);
 }
 
@@ -37889,11 +38748,20 @@ function clearTrackingFilters() {
     const monthFilter = document.getElementById('trackingMonthFilter');
     const operationType = document.getElementById('trackingOperationType');
     const searchInput = document.getElementById('trackingSearch');
+    const dataEditFilter = document.getElementById('trackingDataEditFilter');
 
     if (dateFilter) dateFilter.value = '';
     if (monthFilter) monthFilter.value = '';
     if (operationType) operationType.value = '';
     if (searchInput) searchInput.value = '';
+    if (dataEditFilter) dataEditFilter.value = 'all';
+
+    // إخفاء زر الحالة التاريخية للوحدة
+    const unitHistoryBtn = document.getElementById('unitHistoryBtn');
+    if (unitHistoryBtn) {
+        unitHistoryBtn.style.display = 'none';
+    }
+    window.currentSearchedUnit = null;
 
     // إعادة تطبيق الفلتر لعرض جميع السجلات
     filterTrackingLogs();
@@ -37905,6 +38773,780 @@ function clearTrackingFilters() {
     }
 
     console.log('✅ تم مسح جميع فلاتر التتبع وإعادة عرض جميع السجلات');
+}
+
+// ===== ميزة الحالة التاريخية للوحدة =====
+
+// عرض الحالة التاريخية للوحدة في القسم الحالي
+async function showUnitHistoryModal() {
+    console.log('📋 عرض الحالة التاريخية للوحدة...');
+
+    const searchTerm = window.currentSearchedUnit;
+    if (!searchTerm) {
+        showToast('يرجى البحث عن رقم وحدة أولاً', 'warning');
+        return;
+    }
+
+    // تحميل جميع السجلات المتعلقة بالوحدة
+    const cloudLogs = await loadChangeLogsFromSupabase(2000);
+    const allLogs = [...cloudLogs, ...changeTrackingLogs];
+
+    // إزالة المكررات وفلترة السجلات المتعلقة بالوحدة
+    const uniqueLogs = allLogs.filter((log, index, self) =>
+        index === self.findIndex(l => l.id === log.id)
+    );
+
+    // البحث عن جميع السجلات المتعلقة بالوحدة المحددة
+    const unitLogs = uniqueLogs.filter(log =>
+        log.unitNumber && log.unitNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (unitLogs.length === 0) {
+        showToast('لا توجد سجلات لهذه الوحدة', 'info');
+        return;
+    }
+
+    // ترتيب السجلات حسب التاريخ (الأقدم أولاً للحالة التاريخية)
+    unitLogs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    // تجميع البيانات التاريخية
+    const unitHistory = buildUnitHistory(unitLogs);
+
+    // عرض البيانات في القسم الحالي
+    displayUnitHistoryInSection(searchTerm, unitHistory, unitLogs);
+
+    console.log('✅ تم عرض الحالة التاريخية للوحدة');
+}
+
+// عرض الحالة التاريخية للوحدة في القسم الحالي
+function displayUnitHistoryInSection(unitNumber, unitHistory, unitLogs) {
+    // العثور على منطقة عرض السجلات
+    const logsContainer = document.getElementById('trackingLogsContainer');
+    if (!logsContainer) {
+        showToast('خطأ في العثور على منطقة العرض', 'error');
+        return;
+    }
+
+    // إخفاء السجلات العادية وعرض الحالة التاريخية
+    const originalContent = logsContainer.innerHTML;
+
+    // حفظ المحتوى الأصلي للعودة إليه
+    window.originalTrackingContent = originalContent;
+
+    // إنشاء واجهة الحالة التاريخية
+    const historyHtml = `
+        <div class="unit-history-section">
+            <!-- رأس القسم -->
+            <div class="unit-history-header">
+                <div class="header-content">
+                    <button onclick="returnToTrackingLogs()" class="back-to-logs-btn">
+                        <i class="fas fa-arrow-right"></i> العودة للسجلات
+                    </button>
+                    <div class="unit-title">
+                        <h3><i class="fas fa-history"></i> الحالة التاريخية للوحدة</h3>
+                        <p class="unit-number">رقم الوحدة: <strong>${unitNumber}</strong></p>
+                    </div>
+                    <div class="quick-actions">
+                        <button onclick="exportCurrentUnitHistory()" class="quick-export-btn">
+                            <i class="fas fa-download"></i> تصدير Excel
+                        </button>
+                        <button onclick="printCurrentUnitHistory()" class="quick-print-btn">
+                            <i class="fas fa-print"></i> طباعة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- إحصائيات سريعة -->
+                <div class="unit-stats-bar">
+                    <div class="stat-item">
+                        <i class="fas fa-users"></i>
+                        <span class="stat-number">${unitHistory.tenants.length}</span>
+                        <span class="stat-label">مستأجر</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-list"></i>
+                        <span class="stat-number">${unitHistory.operations.length}</span>
+                        <span class="stat-label">عملية</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-calendar"></i>
+                        <span class="stat-number">${getDateRange(unitLogs)}</span>
+                        <span class="stat-label">الفترة الزمنية</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- محتوى الحالة التاريخية -->
+            <div class="unit-history-content-inline">
+                ${renderUnitHistoryInline(unitHistory)}
+            </div>
+        </div>
+    `;
+
+    // عرض المحتوى الجديد
+    logsContainer.innerHTML = historyHtml;
+
+    // حفظ البيانات للتصدير والطباعة
+    window.currentUnitHistory = {
+        unitNumber: unitNumber,
+        history: unitHistory,
+        logs: unitLogs
+    };
+
+    // تمرير سلس إلى أعلى القسم
+    logsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // إظهار رسالة ترحيبية
+    showToast(`تم عرض الحالة التاريخية للوحدة ${unitNumber} بنجاح`, 'success');
+}
+
+// العودة إلى السجلات العادية
+function returnToTrackingLogs() {
+    const logsContainer = document.getElementById('trackingLogsContainer');
+    if (logsContainer && window.originalTrackingContent) {
+        logsContainer.innerHTML = window.originalTrackingContent;
+        window.originalTrackingContent = null;
+        window.currentUnitHistory = null;
+        showToast('تم العودة إلى سجلات التتبع', 'info');
+    }
+}
+
+// حساب النطاق الزمني للسجلات
+function getDateRange(logs) {
+    if (logs.length === 0) return 'غير محدد';
+
+    const dates = logs.map(log => new Date(log.timestamp)).sort((a, b) => a - b);
+    const firstDate = formatDateToGregorian(dates[0]);
+    const lastDate = formatDateToGregorian(dates[dates.length - 1]);
+
+    if (firstDate === lastDate) {
+        return firstDate;
+    }
+
+    return `${firstDate} - ${lastDate}`;
+}
+
+// عرض تاريخ الوحدة في القسم الحالي (مبسط)
+function renderUnitHistoryInline(unitHistory) {
+    return `
+        <div class="inline-history-tabs">
+            <div class="inline-tab-buttons">
+                <button class="inline-tab-btn active" onclick="switchInlineTab('tenants')">
+                    <i class="fas fa-users"></i> المستأجرين (${unitHistory.tenants.length})
+                </button>
+                <button class="inline-tab-btn" onclick="switchInlineTab('operations')">
+                    <i class="fas fa-list"></i> العمليات (${unitHistory.operations.length})
+                </button>
+            </div>
+
+            <div class="inline-tab-content">
+                <!-- جدول المستأجرين -->
+                <div id="inline-tenants-tab" class="inline-tab-panel active">
+                    <div class="inline-table-container">
+                        <table class="inline-history-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-user"></i> اسم المستأجر</th>
+                                    <th><i class="fas fa-file-contract"></i> رقم العقد</th>
+                                    <th><i class="fas fa-calendar-plus"></i> تاريخ البداية</th>
+                                    <th><i class="fas fa-calendar-minus"></i> تاريخ النهاية</th>
+                                    <th><i class="fas fa-clock"></i> أول ظهور</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${unitHistory.tenants.map((tenant, index) => `
+                                    <tr class="tenant-row" style="animation-delay: ${index * 0.1}s">
+                                        <td class="tenant-name">
+                                            <strong>${tenant.name}</strong>
+                                        </td>
+                                        <td class="contract-number">${tenant.contractNumber}</td>
+                                        <td class="start-date">${tenant.startDate}</td>
+                                        <td class="end-date">${tenant.endDate}</td>
+                                        <td class="first-seen">${tenant.firstSeen}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- جدول العمليات -->
+                <div id="inline-operations-tab" class="inline-tab-panel">
+                    <div class="inline-table-container">
+                        <table class="inline-history-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-calendar"></i> التاريخ</th>
+                                    <th><i class="fas fa-clock"></i> الوقت</th>
+                                    <th><i class="fas fa-cog"></i> نوع العملية</th>
+                                    <th><i class="fas fa-user"></i> المستأجر</th>
+                                    <th><i class="fas fa-file-contract"></i> رقم العقد</th>
+                                    <th><i class="fas fa-user-cog"></i> المستخدم</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${unitHistory.operations.map((op, index) => `
+                                    <tr class="operation-row" style="animation-delay: ${index * 0.05}s">
+                                        <td class="operation-date">${op.date}</td>
+                                        <td class="operation-time">${op.time}</td>
+                                        <td class="operation-type">
+                                            <span class="operation-badge-inline">${op.operation}</span>
+                                        </td>
+                                        <td class="operation-tenant">${op.tenant}</td>
+                                        <td class="operation-contract">${op.contractNumber}</td>
+                                        <td class="operation-user">${op.user}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// التبديل بين التبويبات في العرض المضمن
+function switchInlineTab(tabName) {
+    // إزالة التفعيل من جميع الأزرار والتبويبات
+    document.querySelectorAll('.inline-tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.inline-tab-panel').forEach(panel => panel.classList.remove('active'));
+
+    // تفعيل التبويب المحدد
+    document.querySelector(`[onclick="switchInlineTab('${tabName}')"]`).classList.add('active');
+    document.getElementById(`inline-${tabName}-tab`).classList.add('active');
+}
+
+// تصدير سريع للحالة التاريخية الحالية
+async function exportCurrentUnitHistory() {
+    if (!window.currentUnitHistory) {
+        showToast('لا توجد بيانات للتصدير', 'error');
+        return;
+    }
+
+    const { unitNumber, history } = window.currentUnitHistory;
+
+    // إنشاء ورقة عمل للمستأجرين
+    const tenantsData = [
+        ['اسم المستأجر', 'رقم العقد', 'تاريخ البداية', 'تاريخ النهاية', 'تاريخ أول ظهور'],
+        ...history.tenants.map(tenant => [
+            tenant.name,
+            tenant.contractNumber,
+            tenant.startDate,
+            tenant.endDate,
+            tenant.firstSeen
+        ])
+    ];
+
+    // إنشاء ورقة عمل للعمليات
+    const operationsData = [
+        ['التاريخ', 'الوقت', 'نوع العملية', 'المستأجر', 'رقم العقد', 'تاريخ البداية', 'تاريخ النهاية', 'المستخدم'],
+        ...history.operations.map(op => [
+            op.date,
+            op.time,
+            op.operation,
+            op.tenant,
+            op.contractNumber,
+            op.startDate,
+            op.endDate,
+            op.user
+        ])
+    ];
+
+    // إنشاء كتاب العمل
+    const wb = XLSX.utils.book_new();
+    const tenantsWs = XLSX.utils.aoa_to_sheet(tenantsData);
+    const operationsWs = XLSX.utils.aoa_to_sheet(operationsData);
+
+    XLSX.utils.book_append_sheet(wb, tenantsWs, 'المستأجرين');
+    XLSX.utils.book_append_sheet(wb, operationsWs, 'العمليات');
+
+    // تحميل الملف
+    const fileName = `تاريخ_الوحدة_${unitNumber}_${formatDateToGregorian(new Date()).replace(/\//g, '-')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    showToast('تم تصدير تاريخ الوحدة بنجاح', 'success');
+}
+
+// طباعة سريعة للحالة التاريخية الحالية
+function printCurrentUnitHistory() {
+    if (!window.currentUnitHistory) {
+        showToast('لا توجد بيانات للطباعة', 'error');
+        return;
+    }
+
+    const { unitNumber, history } = window.currentUnitHistory;
+    const printWindow = window.open('', '_blank');
+
+    printWindow.document.write(`
+        <html dir="rtl">
+        <head>
+            <title>تاريخ الوحدة ${unitNumber}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; direction: rtl; }
+                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                .section { margin-bottom: 30px; }
+                .section h3 { background: #f5f5f5; padding: 10px; margin: 0 0 15px 0; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+                th { background-color: #f2f2f2; font-weight: bold; }
+                .operation-badge { background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>تاريخ الوحدة ${unitNumber}</h1>
+                <p>تاريخ الطباعة: ${formatDateToGregorian(new Date())}</p>
+                <p>إجمالي المستأجرين: ${history.tenants.length} | إجمالي العمليات: ${history.operations.length}</p>
+            </div>
+
+            <div class="section">
+                <h3>المستأجرين</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم المستأجر</th>
+                            <th>رقم العقد</th>
+                            <th>تاريخ البداية</th>
+                            <th>تاريخ النهاية</th>
+                            <th>تاريخ أول ظهور</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${history.tenants.map(tenant => `
+                            <tr>
+                                <td><strong>${tenant.name}</strong></td>
+                                <td>${tenant.contractNumber}</td>
+                                <td>${tenant.startDate}</td>
+                                <td>${tenant.endDate}</td>
+                                <td>${tenant.firstSeen}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h3>جميع العمليات</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الوقت</th>
+                            <th>نوع العملية</th>
+                            <th>المستأجر</th>
+                            <th>رقم العقد</th>
+                            <th>المستخدم</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${history.operations.map(op => `
+                            <tr>
+                                <td>${op.date}</td>
+                                <td>${op.time}</td>
+                                <td><span class="operation-badge">${op.operation}</span></td>
+                                <td>${op.tenant}</td>
+                                <td>${op.contractNumber}</td>
+                                <td>${op.user}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// بناء تاريخ الوحدة من السجلات
+function buildUnitHistory(unitLogs) {
+    const tenants = [];
+    const operations = [];
+
+    unitLogs.forEach(log => {
+        // إضافة العملية
+        operations.push({
+            date: formatDateToGregorian(new Date(log.timestamp)),
+            time: new Date(log.timestamp).toLocaleTimeString('ar-SA'),
+            operation: log.operationType || log.operation_type || 'غير محدد',
+            tenant: log.tenantName || log.tenant_name || log.newTenant || 'غير محدد',
+            contractNumber: log.contractNumber || log.contract_number || 'غير محدد',
+            startDate: formatDateField(log.startDate || log.start_date) || 'غير محدد',
+            endDate: formatDateField(log.endDate || log.end_date) || 'غير محدد',
+            user: log.user || log.user_name || 'النظام',
+            description: log.description || ''
+        });
+
+        // تجميع المستأجرين الفريدين
+        const tenantName = log.tenantName || log.tenant_name || log.newTenant;
+        if (tenantName && tenantName !== 'غير محدد' && tenantName.trim() !== '') {
+            const existingTenant = tenants.find(t => t.name === tenantName);
+            if (!existingTenant) {
+                tenants.push({
+                    name: tenantName,
+                    contractNumber: log.contractNumber || log.contract_number || 'غير محدد',
+                    startDate: formatDateField(log.startDate || log.start_date) || 'غير محدد',
+                    endDate: formatDateField(log.endDate || log.end_date) || 'غير محدد',
+                    firstSeen: formatDateToGregorian(new Date(log.timestamp))
+                });
+            }
+        }
+    });
+
+    return {
+        tenants: tenants,
+        operations: operations
+    };
+}
+
+// تنسيق التاريخ إلى التقويم الميلادي
+function formatDateToGregorian(date) {
+    if (!date || isNaN(date.getTime())) return 'غير محدد';
+
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+}
+
+// تنسيق حقل التاريخ من البيانات
+function formatDateField(dateStr) {
+    if (!dateStr || dateStr === 'غير محدد') return null;
+
+    // إذا كان التاريخ بصيغة dd/mm/yyyy فهو صحيح
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        return dateStr;
+    }
+
+    // إذا كان التاريخ بصيغة yyyy-mm-dd، قم بتحويله
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{1,2}-\d{1,2}/)) {
+        const parts = dateStr.split('-');
+        if (parts.length >= 3) {
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+            }
+        }
+    }
+
+    // محاولة تحويل التاريخ كـ Date object
+    try {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            return formatDateToGregorian(date);
+        }
+    } catch (e) {
+        // تجاهل الأخطاء
+    }
+
+    return dateStr; // إرجاع القيمة الأصلية إذا لم يتم التحويل
+}
+
+// تنسيق التاريخ لقاعدة البيانات (YYYY-MM-DD)
+function formatDateForDatabase(dateStr) {
+    if (!dateStr || dateStr === 'غير محدد') return null;
+
+    // إزالة النص العربي إذا كان موجوداً (مثل: "15/03/2024 (15/مارس/2024)")
+    if (typeof dateStr === 'string' && dateStr.includes('(') && dateStr.includes(')')) {
+        const numericPart = dateStr.split('(')[0].trim();
+        if (numericPart) {
+            dateStr = numericPart;
+        }
+    }
+
+    // إذا كان التاريخ بصيغة dd/mm/yyyy، قم بتحويله إلى yyyy-mm-dd
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const year = parseInt(parts[2]);
+
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            }
+        }
+    }
+
+    // إذا كان التاريخ بصيغة yyyy-mm-dd، فهو صحيح
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{1,2}-\d{1,2}$/)) {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+
+            if (year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            }
+        }
+    }
+
+    // محاولة تحويل التاريخ كـ Date object
+    try {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+
+            if (year >= 1900 && year <= 2100) {
+                return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            }
+        }
+    } catch (e) {
+        // تجاهل الأخطاء
+    }
+
+    return null; // إرجاع null إذا لم يتم التحويل
+}
+
+// عرض جدول تاريخ الوحدة
+function renderUnitHistoryTable(unitHistory) {
+    return `
+        <div class="unit-history-tabs">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchUnitHistoryTab('tenants')">
+                    <i class="fas fa-users"></i> المستأجرين (${unitHistory.tenants.length})
+                </button>
+                <button class="tab-btn" onclick="switchUnitHistoryTab('operations')">
+                    <i class="fas fa-list"></i> جميع العمليات (${unitHistory.operations.length})
+                </button>
+            </div>
+
+            <div class="tab-content">
+                <!-- جدول المستأجرين -->
+                <div id="tenants-tab" class="tab-panel active">
+                    <div class="table-container">
+                        <table class="unit-history-table">
+                            <thead>
+                                <tr>
+                                    <th>اسم المستأجر</th>
+                                    <th>رقم العقد</th>
+                                    <th>تاريخ البداية</th>
+                                    <th>تاريخ النهاية</th>
+                                    <th>تاريخ أول ظهور</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${unitHistory.tenants.map(tenant => `
+                                    <tr>
+                                        <td><strong>${tenant.name}</strong></td>
+                                        <td>${tenant.contractNumber}</td>
+                                        <td>${tenant.startDate}</td>
+                                        <td>${tenant.endDate}</td>
+                                        <td>${tenant.firstSeen}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- جدول العمليات -->
+                <div id="operations-tab" class="tab-panel">
+                    <div class="table-container">
+                        <table class="unit-history-table">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ</th>
+                                    <th>الوقت</th>
+                                    <th>نوع العملية</th>
+                                    <th>المستأجر</th>
+                                    <th>رقم العقد</th>
+                                    <th>تاريخ البداية</th>
+                                    <th>تاريخ النهاية</th>
+                                    <th>المستخدم</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${unitHistory.operations.map(op => `
+                                    <tr>
+                                        <td>${op.date}</td>
+                                        <td>${op.time}</td>
+                                        <td><span class="operation-badge">${op.operation}</span></td>
+                                        <td>${op.tenant}</td>
+                                        <td>${op.contractNumber}</td>
+                                        <td>${op.startDate}</td>
+                                        <td>${op.endDate}</td>
+                                        <td>${op.user}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// التبديل بين تبويبات تاريخ الوحدة
+function switchUnitHistoryTab(tabName) {
+    // إزالة التفعيل من جميع الأزرار والتبويبات
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+    // تفعيل التبويب المحدد
+    document.querySelector(`[onclick="switchUnitHistoryTab('${tabName}')"]`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+}
+
+// تصدير تاريخ الوحدة إلى Excel
+async function exportUnitHistory(unitNumber) {
+    if (!window.currentUnitHistory) {
+        showToast('لا توجد بيانات للتصدير', 'error');
+        return;
+    }
+
+    const { history } = window.currentUnitHistory;
+
+    // إنشاء ورقة عمل للمستأجرين
+    const tenantsData = [
+        ['اسم المستأجر', 'رقم العقد', 'تاريخ البداية', 'تاريخ النهاية', 'تاريخ أول ظهور'],
+        ...history.tenants.map(tenant => [
+            tenant.name,
+            tenant.contractNumber,
+            tenant.startDate,
+            tenant.endDate,
+            tenant.firstSeen
+        ])
+    ];
+
+    // إنشاء ورقة عمل للعمليات
+    const operationsData = [
+        ['التاريخ', 'الوقت', 'نوع العملية', 'المستأجر', 'رقم العقد', 'تاريخ البداية', 'تاريخ النهاية', 'المستخدم'],
+        ...history.operations.map(op => [
+            op.date,
+            op.time,
+            op.operation,
+            op.tenant,
+            op.contractNumber,
+            op.startDate,
+            op.endDate,
+            op.user
+        ])
+    ];
+
+    // إنشاء كتاب العمل
+    const wb = XLSX.utils.book_new();
+    const tenantsWs = XLSX.utils.aoa_to_sheet(tenantsData);
+    const operationsWs = XLSX.utils.aoa_to_sheet(operationsData);
+
+    XLSX.utils.book_append_sheet(wb, tenantsWs, 'المستأجرين');
+    XLSX.utils.book_append_sheet(wb, operationsWs, 'العمليات');
+
+    // تحميل الملف
+    const fileName = `تاريخ_الوحدة_${unitNumber}_${formatDateToGregorian(new Date()).replace(/\//g, '-')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+    showToast('تم تصدير تاريخ الوحدة بنجاح', 'success');
+}
+
+// طباعة تاريخ الوحدة
+function printUnitHistory(unitNumber) {
+    if (!window.currentUnitHistory) {
+        showToast('لا توجد بيانات للطباعة', 'error');
+        return;
+    }
+
+    const { history } = window.currentUnitHistory;
+    const printWindow = window.open('', '_blank');
+
+    printWindow.document.write(`
+        <html dir="rtl">
+        <head>
+            <title>تاريخ الوحدة ${unitNumber}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; direction: rtl; }
+                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                .section { margin-bottom: 30px; }
+                .section h3 { background: #f5f5f5; padding: 10px; margin: 0 0 15px 0; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+                th { background-color: #f2f2f2; font-weight: bold; }
+                .operation-badge { background: #007bff; color: white; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>تاريخ الوحدة ${unitNumber}</h1>
+                <p>تاريخ الطباعة: ${formatDateToGregorian(new Date())}</p>
+                <p>إجمالي المستأجرين: ${history.tenants.length} | إجمالي العمليات: ${history.operations.length}</p>
+            </div>
+
+            <div class="section">
+                <h3>المستأجرين</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>اسم المستأجر</th>
+                            <th>رقم العقد</th>
+                            <th>تاريخ البداية</th>
+                            <th>تاريخ النهاية</th>
+                            <th>تاريخ أول ظهور</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${history.tenants.map(tenant => `
+                            <tr>
+                                <td><strong>${tenant.name}</strong></td>
+                                <td>${tenant.contractNumber}</td>
+                                <td>${tenant.startDate}</td>
+                                <td>${tenant.endDate}</td>
+                                <td>${tenant.firstSeen}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h3>جميع العمليات</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الوقت</th>
+                            <th>نوع العملية</th>
+                            <th>المستأجر</th>
+                            <th>رقم العقد</th>
+                            <th>تاريخ البداية</th>
+                            <th>تاريخ النهاية</th>
+                            <th>المستخدم</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${history.operations.map(op => `
+                            <tr>
+                                <td>${op.date}</td>
+                                <td>${op.time}</td>
+                                <td><span class="operation-badge">${op.operation}</span></td>
+                                <td>${op.tenant}</td>
+                                <td>${op.contractNumber}</td>
+                                <td>${op.startDate}</td>
+                                <td>${op.endDate}</td>
+                                <td>${op.user}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.print();
 }
 
 // تصدير سجلات التتبع إلى Excel
@@ -38066,7 +39708,7 @@ const users = {
     '1234': {
         password: '1234',
         role: 'restricted_assistant',
-        fullName: 'أبو تميم',
+        fullName: 'شركة السنيدي',
         permissions: {
             viewData: true,
             editData: false,

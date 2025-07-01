@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام الفلترة المحسن</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f8f9fa;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .search-test {
+            margin-bottom: 20px;
+        }
+
+        .search-test input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 14px;
+            direction: rtl;
+        }
+
+        .test-results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .linked-units-demo {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .linked-units-demo h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .unit-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .unit-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+            font-size: 13px;
+        }
+
+        .contract-info {
+            background: #cce5ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-vial"></i> اختبار نظام الفلترة المحسن</h1>
+            <p>اختبار الفلترة التفاعلية والبحث في الوحدات المرتبطة</p>
+        </div>
+
+        <div class="content">
+            <!-- قسم اختبار تهيئة النظام -->
+            <div class="test-section">
+                <h3><i class="fas fa-cogs"></i> اختبار تهيئة النظام</h3>
+                <div class="test-controls">
+                    <button class="btn btn-primary" onclick="testSystemInitialization()">
+                        <i class="fas fa-play"></i> اختبار التهيئة
+                    </button>
+                    <button class="btn btn-success" onclick="createTestTable()">
+                        <i class="fas fa-table"></i> إنشاء جدول اختبار
+                    </button>
+                    <button class="btn btn-warning" onclick="populateTestData()">
+                        <i class="fas fa-database"></i> إضافة بيانات تجريبية
+                    </button>
+                </div>
+                <div id="systemTestResults" class="test-results"></div>
+            </div>
+
+            <!-- قسم اختبار البحث في الوحدات المرتبطة -->
+            <div class="test-section">
+                <h3><i class="fas fa-search"></i> اختبار البحث في الوحدات المرتبطة</h3>
+                
+                <div class="linked-units-demo">
+                    <h4>مثال على الوحدات المرتبطة:</h4>
+                    <div class="unit-group">
+                        <div class="unit-item">وحدة 101 - أحمد محمد</div>
+                        <div class="unit-item">وحدة 102 - أحمد محمد</div>
+                        <div class="unit-item">وحدة 103 - أحمد محمد</div>
+                    </div>
+                    <div class="contract-info">
+                        <strong>رقم العقد:</strong> CONTRACT-2025-001 | 
+                        <strong>العقار:</strong> برج السلام | 
+                        <strong>المستأجر:</strong> أحمد محمد
+                    </div>
+                </div>
+
+                <div class="search-test">
+                    <input type="text" id="linkedSearchInput" placeholder="ابحث عن رقم وحدة (مثال: 101)" 
+                           oninput="testLinkedUnitsSearch(this.value)">
+                </div>
+
+                <div class="test-controls">
+                    <button class="btn btn-primary" onclick="testLinkedUnitsSearch('101')">
+                        <i class="fas fa-search"></i> بحث عن الوحدة 101
+                    </button>
+                    <button class="btn btn-success" onclick="testLinkedUnitsSearch('أحمد')">
+                        <i class="fas fa-user"></i> بحث عن المستأجر أحمد
+                    </button>
+                    <button class="btn btn-warning" onclick="testLinkedUnitsSearch('CONTRACT-2025-001')">
+                        <i class="fas fa-file-contract"></i> بحث عن العقد
+                    </button>
+                    <button class="btn btn-danger" onclick="clearSearchTest()">
+                        <i class="fas fa-times"></i> مسح البحث
+                    </button>
+                </div>
+                <div id="searchTestResults" class="test-results"></div>
+            </div>
+
+            <!-- قسم اختبار الفلاتر التفاعلية -->
+            <div class="test-section">
+                <h3><i class="fas fa-filter"></i> اختبار الفلاتر التفاعلية</h3>
+                <div class="test-controls">
+                    <button class="btn btn-primary" onclick="testColumnFilters()">
+                        <i class="fas fa-columns"></i> اختبار فلاتر الأعمدة
+                    </button>
+                    <button class="btn btn-success" onclick="testMultipleFilters()">
+                        <i class="fas fa-layer-group"></i> اختبار فلاتر متعددة
+                    </button>
+                    <button class="btn btn-warning" onclick="testFilterPerformance()">
+                        <i class="fas fa-tachometer-alt"></i> اختبار الأداء
+                    </button>
+                    <button class="btn btn-danger" onclick="clearAllFiltersTest()">
+                        <i class="fas fa-eraser"></i> مسح جميع الفلاتر
+                    </button>
+                </div>
+                <div id="filterTestResults" class="test-results"></div>
+            </div>
+
+            <!-- منطقة عرض الجدول -->
+            <div class="test-section">
+                <h3><i class="fas fa-table"></i> جدول الاختبار</h3>
+                <div id="testTableContainer">
+                    <!-- سيتم إنشاء الجدول هنا -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين نظام الفلترة -->
+    <script src="table-filter-system.js"></script>
+    
+    <script>
+        // بيانات اختبار مع وحدات مرتبطة
+        const testData = [
+            { date: '2025-01-01', time: '10:30', operation: 'تحرير بيانات', tenant: 'أحمد محمد', contract: 'CONTRACT-2025-001', user: 'المدير', property: 'برج السلام', unit: '101' },
+            { date: '2025-01-01', time: '10:31', operation: 'تحرير بيانات', tenant: 'أحمد محمد', contract: 'CONTRACT-2025-001', user: 'المدير', property: 'برج السلام', unit: '102' },
+            { date: '2025-01-01', time: '10:32', operation: 'تحرير بيانات', tenant: 'أحمد محمد', contract: 'CONTRACT-2025-001', user: 'المدير', property: 'برج السلام', unit: '103' },
+            { date: '2025-01-02', time: '14:15', operation: 'فسخ عقد', tenant: 'سارة أحمد', contract: 'CONTRACT-2025-002', user: 'المدير', property: 'مجمع النور', unit: '201' },
+            { date: '2025-01-02', time: '14:16', operation: 'فسخ عقد', tenant: 'سارة أحمد', contract: 'CONTRACT-2025-002', user: 'المدير', property: 'مجمع النور', unit: '202' },
+            { date: '2025-01-03', time: '09:45', operation: 'إضافة مستأجر', tenant: 'محمد علي', contract: 'CONTRACT-2025-003', user: 'الموظف', property: 'فيلا الورد', unit: '301' }
+        ];
+
+        // محاكاة دالة البحث في الوحدات المرتبطة
+        window.isUnitLinkedToSearchTerm = function(unitNumber, propertyName, contractNumber, searchTerm) {
+            // البحث في البيانات التجريبية
+            const linkedUnits = testData.filter(item => 
+                item.contract === contractNumber && item.property === propertyName
+            );
+
+            return linkedUnits.some(unit => {
+                const fields = [unit.unit, unit.tenant, unit.property, unit.contract];
+                return fields.some(field => 
+                    field.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            });
+        };
+
+        // اختبار تهيئة النظام
+        function testSystemInitialization() {
+            const results = document.getElementById('systemTestResults');
+            results.textContent = 'جاري اختبار تهيئة النظام...\n';
+
+            try {
+                if (typeof window.tableFilterSystem === 'undefined') {
+                    throw new Error('نظام الفلترة غير محمل');
+                }
+
+                results.textContent += '✅ نظام الفلترة محمل بنجاح\n';
+                results.textContent += '✅ الدوال الأساسية متوفرة\n';
+                results.textContent += '✅ جاهز للاستخدام\n';
+
+            } catch (error) {
+                results.textContent += `❌ خطأ: ${error.message}\n`;
+            }
+        }
+
+        // إنشاء جدول اختبار
+        function createTestTable() {
+            const container = document.getElementById('testTableContainer');
+            container.innerHTML = `
+                <table id="testTable" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead style="background: #f8f9fa;">
+                        <tr>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">التاريخ</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">الوقت</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">نوع العملية</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">المستأجر</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">رقم العقد</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">المستخدم</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">العقار</th>
+                            <th style="padding: 10px; border: 1px solid #dee2e6;">رقم الوحدة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="testTableBody">
+                        <!-- سيتم إضافة البيانات هنا -->
+                    </tbody>
+                </table>
+            `;
+
+            const results = document.getElementById('systemTestResults');
+            results.textContent += '✅ تم إنشاء جدول الاختبار\n';
+        }
+
+        // إضافة بيانات تجريبية
+        function populateTestData() {
+            const tbody = document.getElementById('testTableBody');
+            if (!tbody) {
+                alert('يجب إنشاء الجدول أولاً');
+                return;
+            }
+
+            tbody.innerHTML = testData.map(row => `
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">${row.date}</td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">${row.time}</td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">${row.operation}</td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">${row.tenant}</td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">${row.contract}</td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">${row.user}</td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">${row.property}</td>
+                    <td style="padding: 8px; border: 1px solid #dee2e6;">${row.unit}</td>
+                </tr>
+            `).join('');
+
+            // تهيئة نظام الفلترة
+            window.tableFilterSystem.initializeTable('testTable', testData);
+
+            const results = document.getElementById('systemTestResults');
+            results.textContent += `✅ تم إضافة ${testData.length} صف من البيانات\n`;
+            results.textContent += '✅ تم تفعيل نظام الفلترة\n';
+        }
+
+        // اختبار البحث في الوحدات المرتبطة
+        function testLinkedUnitsSearch(searchTerm) {
+            const results = document.getElementById('searchTestResults');
+            results.textContent = `🔍 اختبار البحث عن: "${searchTerm}"\n`;
+
+            if (window.tableFilterSystem) {
+                window.tableFilterSystem.applySearch('testTable', searchTerm);
+                results.textContent += '✅ تم تطبيق البحث على الجدول\n';
+                
+                // عد النتائج المرئية
+                const table = document.getElementById('testTable');
+                if (table) {
+                    const visibleRows = table.querySelectorAll('tbody tr:not([style*="display: none"])').length;
+                    const totalRows = table.querySelectorAll('tbody tr').length;
+                    results.textContent += `📊 النتائج: ${visibleRows} من أصل ${totalRows} صف\n`;
+                }
+            } else {
+                results.textContent += '❌ نظام الفلترة غير متوفر\n';
+            }
+        }
+
+        // مسح البحث
+        function clearSearchTest() {
+            const input = document.getElementById('linkedSearchInput');
+            if (input) input.value = '';
+
+            if (window.tableFilterSystem) {
+                window.tableFilterSystem.clearSearch('testTable');
+            }
+
+            const results = document.getElementById('searchTestResults');
+            results.textContent += '🧹 تم مسح البحث\n';
+        }
+
+        // اختبار فلاتر الأعمدة
+        function testColumnFilters() {
+            const results = document.getElementById('filterTestResults');
+            results.textContent = '🔧 اختبار فلاتر الأعمدة...\n';
+            results.textContent += '💡 انقر على أيقونات الفلتر في رؤوس الأعمدة لاختبار الفلترة\n';
+        }
+
+        // اختبار فلاتر متعددة
+        function testMultipleFilters() {
+            const results = document.getElementById('filterTestResults');
+            results.textContent += '🔧 اختبار الفلاتر المتعددة...\n';
+            results.textContent += '💡 طبق فلاتر على عدة أعمدة لاختبار التفاعل\n';
+        }
+
+        // اختبار الأداء
+        function testFilterPerformance() {
+            const results = document.getElementById('filterTestResults');
+            const startTime = performance.now();
+            
+            // محاكاة عمليات فلترة متعددة
+            for (let i = 0; i < 100; i++) {
+                if (window.tableFilterSystem) {
+                    window.tableFilterSystem.applyAllFilters('testTable');
+                }
+            }
+            
+            const endTime = performance.now();
+            const duration = (endTime - startTime).toFixed(2);
+            
+            results.textContent += `⚡ اختبار الأداء: ${duration} مللي ثانية لـ 100 عملية فلترة\n`;
+        }
+
+        // مسح جميع الفلاتر
+        function clearAllFiltersTest() {
+            if (window.tableFilterSystem) {
+                window.tableFilterSystem.clearAllFilters('testTable');
+            }
+
+            const results = document.getElementById('filterTestResults');
+            results.textContent += '🧹 تم مسح جميع الفلاتر\n';
+        }
+
+        // تهيئة تلقائية عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                testSystemInitialization();
+                createTestTable();
+                populateTestData();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
