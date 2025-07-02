@@ -51,19 +51,39 @@ header {
 }
 
 .header-title h1 {
-  font-size: 4px;
+  font-size: 1.8rem;
   margin: 0px 40px;
   text-align: center;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 4px;
-  height: 4px;
+  width: auto;
+  height: auto;
+ color: #f7f7f5;
+    font-weight: 900;
+  white-space: nowrap;
 }
 
 .header-title h1::after {
   display: none;
+}
+
+/* تحسينات إضافية للعنوان */
+.header-title h1 i {
+  margin-left: 10px;
+  color: #e2f18f;
+  font-size: 1.6rem;
+}
+
+/* تأثير hover للعنوان */
+
+
+/* تحسين العنوان للشاشات المتوسطة */
+@media (max-width: 1200px) {
+  .header-title h1 {
+    font-size: 1.6rem;
+  }
 }
 
 .header-countries, .header-actions {
@@ -4072,9 +4092,9 @@ footer {
 }
 
   .header-title h1 {
-    font-size: 4px;
-    width: 4px;
-    height: 4px;
+    font-size: 1.4rem;
+    width: auto;
+    height: auto;
   }
 
   .header-countries {
@@ -4310,9 +4330,9 @@ footer {
 
 
   .header-title h1 {
-    font-size: 4px;
-    width: 4px;
-    height: 4px;
+    font-size: 1.2rem;
+    width: auto;
+    height: auto;
   }
 
   .card-row {
@@ -4354,9 +4374,9 @@ footer {
 /* تحسينات للشاشات الصغيرة جداً */
 @media (max-width: 300px) {
   .header-title h1 {
-    font-size: 4px;
-    width: 4px;
-    height: 4px;
+    font-size: 1rem;
+    width: auto;
+    height: auto;
   }
   
   .mobile-menu {
@@ -4381,9 +4401,9 @@ footer {
 /* تحسينات للشاشات الصغيرة جداً جداً */
 @media (max-width: 200px) {
   .header-title h1 {
-    font-size: 4px;
-    width: 4px;
-    height: 4px;
+    font-size: 0.9rem;
+    width: auto;
+    height: auto;
   }
 
   .card-header {

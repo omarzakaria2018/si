@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح سجلات التتبع للوحدات المتعددة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+
+        .status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 5px;
+            display: inline-block;
+        }
+
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+
+        .test-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .test-card h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .test-steps {
+            list-style: none;
+            padding: 0;
+        }
+
+        .test-steps li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .test-steps li:last-child {
+            border-bottom: none;
+        }
+
+        .step-number {
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-check-circle"></i> اختبار إصلاح سجلات التتبع</h1>
+            <p>التحقق من عمل سجلات التتبع للوحدات المتعددة بعد الإصلاح</p>
+        </div>
+
+        <div class="content">
+            <!-- حالة الإصلاح -->
+            <div class="test-section">
+                <h3><i class="fas fa-info-circle"></i> حالة الإصلاح المطبق</h3>
+                <div class="test-card">
+                    <h4>✅ التحسينات المطبقة:</h4>
+                    <ul>
+                        <li>🔧 إصلاح دالة <code>savePropertyEdit</code> - تحسين شرط إنشاء سجلات التتبع</li>
+                        <li>🔧 إصلاح دالة <code>savePropertyEditForUnit</code> - إضافة سجلات التتبع المفقودة</li>
+                        <li>🔧 تحسين دالة <code>createTrackingLogsForLinkedUnits</code> - معالجة أخطاء أفضل</li>
+                        <li>🔧 إضافة نظام احتياطي للحفظ في جدول العقارات</li>
+                        <li>🔧 إضافة معالجة شاملة للأخطاء مع إشعارات المستخدم</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- خطوات الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-list"></i> خطوات الاختبار المطلوبة</h3>
+                
+                <div class="test-card">
+                    <h4>🧪 اختبار 1: الوحدات المتعددة</h4>
+                    <ol class="test-steps">
+                        <li><span class="step-number">1</span>افتح التطبيق الرئيسي (<code>index.html</code>)</li>
+                        <li><span class="step-number">2</span>ابحث عن عقد يحتوي على وحدات متعددة (مثل العقد في الصورة)</li>
+                        <li><span class="step-number">3</span>اضغط "تحرير" على إحدى البطاقات</li>
+                        <li><span class="step-number">4</span>قم بتعديل أي بيانات (اسم المستأجر، قيمة الإيجار، إلخ)</li>
+                        <li><span class="step-number">5</span>احفظ التغييرات</li>
+                        <li><span class="step-number">6</span>افتح سجلات التتبع وابحث عن رقم الوحدة</li>
+                        <li><span class="step-number">7</span>تأكد من ظهور سجلات التتبع لجميع الوحدات المرتبطة</li>
+                    </ol>
+                </div>
+
+                <div class="test-card">
+                    <h4>🧪 اختبار 2: الوحدة المفردة</h4>
+                    <ol class="test-steps">
+                        <li><span class="step-number">1</span>ابحث عن عقد يحتوي على وحدة واحدة فقط</li>
+                        <li><span class="step-number">2</span>اضغط "تحرير" على البطاقة</li>
+                        <li><span class="step-number">3</span>قم بتعديل أي بيانات</li>
+                        <li><span class="step-number">4</span>احفظ التغييرات</li>
+                        <li><span class="step-number">5</span>تأكد من ظهور سجل التتبع في سجلات التتبع</li>
+                    </ol>
+                </div>
+
+                <div class="test-card">
+                    <h4>🧪 اختبار 3: العمليات المختلفة</h4>
+                    <ol class="test-steps">
+                        <li><span class="step-number">1</span>جرب عملية "عميل جديد" على وحدة متعددة</li>
+                        <li><span class="step-number">2</span>جرب عملية "إفراغ وحدة" على وحدة متعددة</li>
+                        <li><span class="step-number">3</span>جرب عملية "تجديد عقد" على وحدة متعددة</li>
+                        <li><span class="step-number">4</span>تأكد من ظهور سجلات التتبع لجميع العمليات</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- أدوات التشخيص -->
+            <div class="test-section">
+                <h3><i class="fas fa-tools"></i> أدوات التشخيص</h3>
+                <button class="btn btn-primary" onclick="openDiagnosticTool()">
+                    <i class="fas fa-external-link-alt"></i> فتح أداة التشخيص
+                </button>
+                <button class="btn btn-success" onclick="openMainApp()">
+                    <i class="fas fa-home"></i> فتح التطبيق الرئيسي
+                </button>
+                <button class="btn btn-warning" onclick="checkConsoleInstructions()">
+                    <i class="fas fa-terminal"></i> تعليمات فحص Console
+                </button>
+                <div id="toolsResults" class="results"></div>
+            </div>
+
+            <!-- النتائج المتوقعة -->
+            <div class="test-section">
+                <h3><i class="fas fa-bullseye"></i> النتائج المتوقعة</h3>
+                <div class="test-card">
+                    <h4>✅ بعد الإصلاح يجب أن ترى:</h4>
+                    <ul>
+                        <li>🎯 <strong>سجلات تتبع للوحدة المحررة</strong> - السجل الأساسي للوحدة التي تم تعديلها</li>
+                        <li>🎯 <strong>سجلات تتبع للوحدات المرتبطة</strong> - سجلات إضافية لجميع الوحدات الأخرى في نفس العقد</li>
+                        <li>🎯 <strong>تفاصيل التغييرات</strong> - معلومات واضحة عن ما تم تغييره</li>
+                        <li>🎯 <strong>معلومات العقد والعقار</strong> - رقم العقد واسم العقار في كل سجل</li>
+                        <li>🎯 <strong>طوابع زمنية صحيحة</strong> - تاريخ ووقت العملية</li>
+                        <li>🎯 <strong>نوع العملية واضح</strong> - تحرير، عميل جديد، إفراغ وحدة، إلخ</li>
+                    </ul>
+                </div>
+
+                <div class="test-card">
+                    <h4>❌ إذا لم تظهر السجلات:</h4>
+                    <ul>
+                        <li>🔍 تحقق من وجود جدول <code>tracking_logs</code> في Supabase</li>
+                        <li>🔍 افتح Developer Console وابحث عن رسائل الخطأ</li>
+                        <li>🔍 استخدم أداة التشخيص للفحص الشامل</li>
+                        <li>🔍 تأكد من الاتصال بـ Supabase</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- معلومات إضافية -->
+            <div class="test-section">
+                <h3><i class="fas fa-lightbulb"></i> معلومات مهمة</h3>
+                <div class="test-card">
+                    <h4>📋 ملاحظات للاختبار:</h4>
+                    <ul>
+                        <li>🕐 <strong>الوقت</strong>: قد يستغرق ظهور السجلات بضع ثوانٍ</li>
+                        <li>🔄 <strong>التحديث</strong>: قد تحتاج لإعادة تحميل صفحة سجلات التتبع</li>
+                        <li>🔍 <strong>البحث</strong>: استخدم رقم الوحدة للبحث في سجلات التتبع</li>
+                        <li>📊 <strong>التفاصيل</strong>: اضغط على السجل لرؤية التفاصيل الكاملة</li>
+                        <li>⚠️ <strong>الأخطاء</strong>: راقب رسائل الخطأ في Developer Console</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openDiagnosticTool() {
+            const results = document.getElementById('toolsResults');
+            results.textContent = '🔧 فتح أداة التشخيص...\n';
+            
+            // فتح أداة التشخيص
+            window.open('debug-tracking-logs-supabase.html', '_blank');
+            
+            results.textContent += '✅ تم فتح أداة التشخيص في نافذة جديدة\n';
+            results.textContent += '💡 استخدم الأداة للتحقق من حالة النظام\n';
+        }
+
+        function openMainApp() {
+            const results = document.getElementById('toolsResults');
+            results.textContent = '🏠 فتح التطبيق الرئيسي...\n';
+            
+            // فتح التطبيق الرئيسي
+            window.open('index.html', '_blank');
+            
+            results.textContent += '✅ تم فتح التطبيق الرئيسي في نافذة جديدة\n';
+            results.textContent += '💡 ابدأ اختبار تعديل البطاقات\n';
+        }
+
+        function checkConsoleInstructions() {
+            const results = document.getElementById('toolsResults');
+            results.textContent = `📋 تعليمات فحص Developer Console:
+
+1. اضغط F12 أو Ctrl+Shift+I لفتح Developer Tools
+2. اذهب إلى تبويب "Console"
+3. ابحث عن الرسائل التالية عند تعديل البطاقات:
+
+✅ رسائل النجاح المتوقعة:
+   - "📝 تم إضافة سجل التتبع للعملية"
+   - "📝 بدء إنشاء سجلات التتبع للوحدات المرتبطة"
+   - "✅ تم إنشاء X سجل تتبع للوحدات المرتبطة"
+   - "💾 حفظ سجل تتبع في Supabase"
+   - "✅ تم حفظ سجل التتبع بنجاح في Supabase"
+
+❌ رسائل الخطأ المحتملة:
+   - "❌ خطأ في حفظ سجل التتبع"
+   - "⚠️ فشل في حفظ سجل التتبع في الجدول المخصص"
+   - "❌ جدول tracking_logs غير موجود"
+
+🔧 إذا رأيت رسائل خطأ:
+   - استخدم أداة التشخيص لإصلاح المشاكل
+   - تأكد من إنشاء جدول tracking_logs في Supabase
+   - تحقق من الاتصال بقاعدة البيانات
+
+💡 نصائح:
+   - امسح Console قبل كل اختبار (Ctrl+L)
+   - راقب الرسائل أثناء حفظ التعديلات
+   - ابحث عن كلمات مثل "tracking" أو "سجل" أو "تتبع"
+`;
+        }
+
+        // تهيئة تلقائية
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 صفحة اختبار إصلاح سجلات التتبع جاهزة');
+            console.log('📋 اتبع الخطوات المذكورة لاختبار الإصلاح');
+        });
+    </script>
+</body>
+</html>

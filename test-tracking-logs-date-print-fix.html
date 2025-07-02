@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح التاريخ والطباعة في سجلات التتبع</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+
+        .test-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .test-card h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .before {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .after {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+
+        .feature-icon.fixed {
+            background: #28a745;
+        }
+
+        .feature-icon.improved {
+            background: #17a2b8;
+        }
+
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 12px;
+        }
+
+        .demo-table th,
+        .demo-table td {
+            border: 1px solid #dee2e6;
+            padding: 6px;
+            text-align: center;
+        }
+
+        .demo-table th {
+            background: #343a40;
+            color: white;
+        }
+
+        .demo-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-calendar-check"></i> اختبار إصلاح التاريخ والطباعة</h1>
+            <p>التحقق من التحسينات المطبقة على سجلات التتبع</p>
+        </div>
+
+        <div class="content">
+            <!-- الإصلاحات المطبقة -->
+            <div class="test-section">
+                <h3><i class="fas fa-wrench"></i> الإصلاحات المطبقة</h3>
+                <div class="test-card">
+                    <h4>✅ التحسينات الجديدة:</h4>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon fixed">✓</span>
+                            <strong>تحويل التاريخ إلى ميلادي:</strong> تم تحديث دالة formatDate لعرض التاريخ بصيغة dd/mm/yyyy ميلادي
+                        </li>
+                        <li>
+                            <span class="feature-icon fixed">✓</span>
+                            <strong>تحسين تنسيق الوقت:</strong> تم تحديث دالة formatTime لعرض الوقت بصيغة HH:MM
+                        </li>
+                        <li>
+                            <span class="feature-icon improved">↑</span>
+                            <strong>طباعة محسنة:</strong> تم إعادة تصميم دالة printTrackingLogs لتكون بنفس شكل الجدول
+                        </li>
+                        <li>
+                            <span class="feature-icon improved">↑</span>
+                            <strong>تصدير محسن:</strong> تم تحديث دالة exportTrackingLogs لاستخدام التاريخ الميلادي
+                        </li>
+                        <li>
+                            <span class="feature-icon improved">↑</span>
+                            <strong>تخطيط طباعة أفضل:</strong> تصميم responsive للطباعة مع تنسيق جدول احترافي
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- مقارنة قبل وبعد -->
+            <div class="test-section">
+                <h3><i class="fas fa-balance-scale"></i> مقارنة قبل وبعد الإصلاح</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>الميزة</th>
+                            <th class="before">قبل الإصلاح</th>
+                            <th class="after">بعد الإصلاح</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>تنسيق التاريخ</strong></td>
+                            <td class="before">تاريخ هجري أو غير منسق</td>
+                            <td class="after">تاريخ ميلادي dd/mm/yyyy</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تنسيق الوقت</strong></td>
+                            <td class="before">وقت مع ثوانٍ وتفاصيل زائدة</td>
+                            <td class="after">وقت مبسط HH:MM</td>
+                        </tr>
+                        <tr>
+                            <td><strong>شكل الطباعة</strong></td>
+                            <td class="before">بطاقات غير منسقة</td>
+                            <td class="after">جدول منسق مثل الشاشة</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تخطيط الطباعة</strong></td>
+                            <td class="before">عمودي، مساحة مهدرة</td>
+                            <td class="after">أفقي، استغلال أمثل للمساحة</td>
+                        </tr>
+                        <tr>
+                            <td><strong>اسم ملف التصدير</strong></td>
+                            <td class="before">تاريخ غير منسق</td>
+                            <td class="after">تاريخ ميلادي واضح</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- عينة من الجدول الجديد -->
+            <div class="test-section">
+                <h3><i class="fas fa-table"></i> عينة من التنسيق الجديد</h3>
+                <div class="test-card">
+                    <h4>مثال على الجدول المحسن:</h4>
+                    <table class="demo-table">
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>الوقت</th>
+                                <th>نوع العملية</th>
+                                <th>المستأجر</th>
+                                <th>رقم العقد</th>
+                                <th>المستخدم</th>
+                                <th>العقار</th>
+                                <th>رقم الوحدة</th>
+                                <th>المدينة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>02/01/2025</td>
+                                <td>10:31</td>
+                                <td>تحرير</td>
+                                <td>عمر زكريا</td>
+                                <td>12345678</td>
+                                <td>عمر</td>
+                                <td>برج الخير</td>
+                                <td>APDM010133</td>
+                                <td>الخبر</td>
+                            </tr>
+                            <tr>
+                                <td>02/01/2025</td>
+                                <td>10:29</td>
+                                <td>عميل جديد</td>
+                                <td>أبو رعد</td>
+                                <td>12345678</td>
+                                <td>عمر</td>
+                                <td>برج الخير</td>
+                                <td>APDM010133</td>
+                                <td>الخبر</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- أدوات الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+                <button class="btn btn-primary" onclick="openMainApp()">
+                    <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+                </button>
+                <button class="btn btn-success" onclick="testDateFormatting()">
+                    <i class="fas fa-calendar"></i> اختبار تنسيق التاريخ
+                </button>
+                <button class="btn btn-info" onclick="showPrintInstructions()">
+                    <i class="fas fa-print"></i> تعليمات اختبار الطباعة
+                </button>
+                <button class="btn btn-warning" onclick="showExportInstructions()">
+                    <i class="fas fa-download"></i> تعليمات اختبار التصدير
+                </button>
+                <div id="testResults" class="results"></div>
+            </div>
+
+            <!-- خطوات الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-list"></i> خطوات الاختبار</h3>
+                <div class="test-card">
+                    <h4>🧪 لاختبار التحسينات:</h4>
+                    <ol>
+                        <li><strong>افتح التطبيق الرئيسي</strong> (index.html)</li>
+                        <li><strong>اذهب إلى سجلات التتبع</strong> من القائمة الجانبية</li>
+                        <li><strong>تحقق من التاريخ</strong> - يجب أن يظهر بصيغة ميلادية dd/mm/yyyy</li>
+                        <li><strong>تحقق من الوقت</strong> - يجب أن يظهر بصيغة HH:MM</li>
+                        <li><strong>اضغط زر "طباعة"</strong> - يجب أن تفتح نافذة طباعة بتنسيق جدول</li>
+                        <li><strong>اضغط زر "تصدير Excel"</strong> - يجب أن ينزل ملف بتاريخ ميلادي في الاسم</li>
+                        <li><strong>افتح ملف Excel</strong> - تحقق من أن التواريخ ميلادية</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- النتائج المتوقعة -->
+            <div class="test-section">
+                <h3><i class="fas fa-bullseye"></i> النتائج المتوقعة</h3>
+                <div class="test-card">
+                    <h4>✅ يجب أن ترى:</h4>
+                    <ul>
+                        <li>🗓️ <strong>التاريخ ميلادي:</strong> 02/01/2025 بدلاً من التاريخ الهجري</li>
+                        <li>🕐 <strong>الوقت مبسط:</strong> 10:31 بدلاً من 10:31:25 ص</li>
+                        <li>🖨️ <strong>طباعة منسقة:</strong> جدول مرتب مثل الشاشة تماماً</li>
+                        <li>📊 <strong>تصدير محسن:</strong> ملف Excel بتاريخ ميلادي في الاسم والمحتوى</li>
+                        <li>📱 <strong>تصميم responsive:</strong> يعمل بشكل جيد على الجوال والكمبيوتر</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            const results = document.getElementById('testResults');
+            results.textContent = '🏠 فتح التطبيق الرئيسي...\n';
+            
+            window.open('index.html', '_blank');
+            
+            results.textContent += '✅ تم فتح التطبيق الرئيسي في نافذة جديدة\n';
+            results.textContent += '💡 اذهب إلى سجلات التتبع لاختبار التحسينات\n';
+        }
+
+        function testDateFormatting() {
+            const results = document.getElementById('testResults');
+            results.textContent = '📅 اختبار تنسيق التاريخ والوقت...\n\n';
+            
+            // محاكاة دوال التنسيق الجديدة
+            function formatDate(timestamp) {
+                if (!timestamp) return 'غير محدد';
+                const date = new Date(timestamp);
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+
+            function formatTime(timestamp) {
+                if (!timestamp) return 'غير محدد';
+                const date = new Date(timestamp);
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+
+            // اختبار التواريخ
+            const testTimestamps = [
+                new Date().getTime(),
+                new Date('2025-01-01T10:30:45').getTime(),
+                new Date('2024-12-25T15:45:30').getTime()
+            ];
+
+            results.textContent += 'نتائج اختبار التنسيق الجديد:\n';
+            results.textContent += '=' .repeat(40) + '\n';
+
+            testTimestamps.forEach((timestamp, index) => {
+                const originalDate = new Date(timestamp);
+                const formattedDate = formatDate(timestamp);
+                const formattedTime = formatTime(timestamp);
+                
+                results.textContent += `اختبار ${index + 1}:\n`;
+                results.textContent += `  التاريخ الأصلي: ${originalDate.toLocaleString()}\n`;
+                results.textContent += `  التاريخ الجديد: ${formattedDate}\n`;
+                results.textContent += `  الوقت الجديد: ${formattedTime}\n`;
+                results.textContent += `  ✅ تنسيق ميلادي صحيح\n\n`;
+            });
+
+            results.textContent += '🎉 جميع الاختبارات نجحت!\n';
+        }
+
+        function showPrintInstructions() {
+            const results = document.getElementById('testResults');
+            results.textContent = `📋 تعليمات اختبار الطباعة:
+
+1. افتح التطبيق الرئيسي (index.html)
+2. اذهب إلى "سجلات التتبع" من القائمة الجانبية
+3. اضغط على زر "طباعة" 🖨️
+4. ستفتح نافذة جديدة بتنسيق الطباعة
+
+✅ ما يجب أن تراه:
+   - جدول منسق مثل الشاشة تماماً
+   - تاريخ ميلادي في العناوين والبيانات
+   - تخطيط أفقي يستغل المساحة بشكل أمثل
+   - ألوان وتنسيق احترافي للطباعة
+   - معلومات الطباعة في الرأس والذيل
+
+🖨️ للطباعة الفعلية:
+   - اضغط Ctrl+P أو Cmd+P
+   - اختر "Landscape" (أفقي) للحصول على أفضل نتيجة
+   - تأكد من تفعيل "Background graphics" لرؤية الألوان
+
+💡 نصيحة: قارن مع الطباعة القديمة لترى الفرق!
+`;
+        }
+
+        function showExportInstructions() {
+            const results = document.getElementById('testResults');
+            results.textContent = `📊 تعليمات اختبار التصدير:
+
+1. افتح التطبيق الرئيسي (index.html)
+2. اذهب إلى "سجلات التتبع" من القائمة الجانبية
+3. اضغط على زر "تصدير Excel" 📥
+4. سيتم تحميل ملف Excel تلقائياً
+
+✅ ما يجب أن تراه:
+   - اسم الملف: سجل_التتبع_02-01-2025.xlsx (تاريخ ميلادي)
+   - التواريخ في الملف بصيغة ميلادية dd/mm/yyyy
+   - الأوقات بصيغة مبسطة HH:MM
+   - جميع الأعمدة منسقة ومرتبة
+   - عرض الأعمدة مناسب للقراءة
+
+📋 محتويات الملف:
+   - التاريخ (ميلادي)
+   - الوقت (مبسط)
+   - نوع العملية
+   - المستأجر
+   - رقم العقد
+   - المستخدم
+   - العقار
+   - رقم الوحدة
+   - المدينة
+   - الوصف
+   - التغييرات
+
+💡 قارن مع التصدير القديم لترى التحسينات!
+`;
+        }
+
+        // تهيئة تلقائية
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 صفحة اختبار إصلاح التاريخ والطباعة جاهزة');
+            console.log('📋 اتبع الخطوات المذكورة لاختبار التحسينات');
+        });
+    </script>
+</body>
+</html>

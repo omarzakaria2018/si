@@ -12874,7 +12874,7 @@ function renderPropertiesTab() {
                                id="propertiesSearchInput"
                                placeholder="البحث في العقارات بالاسم أو المدينة..."
                                class="properties-search-input"
-                               oninput="searchProperties(this.value)"
+                               oninput="handlePropertiesSearch(this.value)"
                                autocomplete="off">
                         <button class="clear-search-btn" onclick="clearPropertiesSearch()" style="display: none;">
                             <i class="fas fa-times"></i>
@@ -19262,6 +19262,74 @@ async function savePropertyEditForUnit(unit, formData, operationType) {
         await saveToSupabase(updatedProperty);
     }
 
+    // إضافة سجل التتبع للوحدة المحدثة
+    try {
+        const changes = compareDataAndCreateChanges(originalData, updatedProperty);
+
+        let additionalInfo = {
+            originalData: originalData,
+            newData: updatedProperty,
+            editMethod: 'single_unit_edit'
+        };
+
+        // معلومات إضافية حسب نوع العملية
+        if (operationType === OPERATION_TYPES.NEW_CLIENT) {
+            additionalInfo.previousTenant = originalData['اسم المستأجر'];
+            additionalInfo.newTenant = updatedProperty['اسم المستأجر'];
+        } else if (operationType === OPERATION_TYPES.EMPTY_UNIT) {
+            additionalInfo.previousTenant = originalData['اسم المستأجر'];
+            additionalInfo.reason = 'إفراغ وحدة';
+        } else if (operationType === OPERATION_TYPES.RENEW_CONTRACT) {
+            additionalInfo.previousTenant = originalData['اسم المستأجر'];
+            additionalInfo.newTenant = updatedProperty['اسم المستأجر'];
+        }
+
+        await addChangeLog(operationType, updatedProperty, changes, additionalInfo);
+        console.log('📝 تم إضافة سجل التتبع للوحدة المفردة:', operationType);
+
+        // إنشاء سجلات تتبع للوحدات المرتبطة إذا كان هناك تغيير في أي بيانات
+        if (updatedProperty['رقم العقد'] && updatedProperty['اسم العقار']) {
+            const hasAnyChanges = Object.keys(changes).length > 0 ||
+                                 JSON.stringify(originalData) !== JSON.stringify(updatedProperty);
+
+            console.log('🔍 فحص التغييرات للوحدات المرتبطة (وحدة مفردة):', {
+                hasChanges: hasAnyChanges,
+                changesCount: Object.keys(changes).length,
+                contractNumber: updatedProperty['رقم العقد'],
+                propertyName: updatedProperty['اسم العقار'],
+                unitNumber: updatedProperty['رقم  الوحدة ']
+            });
+
+            if (hasAnyChanges) {
+                try {
+                    console.log('📝 بدء إنشاء سجلات التتبع للوحدات المرتبطة (من وحدة مفردة)...');
+                    const result = await createTrackingLogsForLinkedUnits(
+                        updatedProperty['رقم العقد'],
+                        updatedProperty['اسم العقار'],
+                        updatedProperty['رقم  الوحدة '],
+                        `تحديث بيانات مرتبطة - ${operationType}`
+                    );
+
+                    if (result && result.success) {
+                        console.log(`✅ تم إنشاء ${result.createdCount} سجل تتبع للوحدات المرتبطة (من وحدة مفردة)`);
+                        if (result.failedCount > 0) {
+                            console.warn(`⚠️ فشل في إنشاء ${result.failedCount} سجل تتبع`);
+                        }
+                    } else {
+                        console.log('ℹ️ لا توجد وحدات مرتبطة أو لم يتم إنشاء سجلات');
+                    }
+                } catch (linkedError) {
+                    console.warn('⚠️ فشل في إنشاء سجلات التتبع للوحدات المرتبطة (من وحدة مفردة):', linkedError);
+                }
+            } else {
+                console.log('ℹ️ لا توجد تغييرات، تخطي إنشاء سجلات التتبع للوحدات المرتبطة (من وحدة مفردة)');
+            }
+        }
+
+    } catch (trackingError) {
+        console.warn('⚠️ فشل في إضافة سجل التتبع للوحدة المفردة:', trackingError);
+    }
+
     console.log(`✅ تم حفظ الوحدة ${originalUnitNumber} بنجاح`);
 }
 
@@ -21278,24 +21346,43 @@ async function savePropertyEdit(event) {
                 await addChangeLog(operationType, updatedProperty, changes, additionalInfo);
                 console.log('📝 تم إضافة سجل التتبع للعملية:', operationType);
 
-                // إنشاء سجلات تتبع للوحدات المرتبطة إذا كان هناك تغيير في البيانات المشتركة
+                // إنشاء سجلات تتبع للوحدات المرتبطة إذا كان هناك تغيير في أي بيانات
                 if (updatedProperty['رقم العقد'] && updatedProperty['اسم العقار']) {
-                    const sharedFieldsChanged = ['اسم المستأجر', 'رقم العقد', 'قيمة  الايجار ', 'تاريخ بداية العقد', 'تاريخ نهاية العقد'].some(field =>
-                        originalData[field] !== updatedProperty[field]
-                    );
+                    // التحقق من وجود أي تغييرات في البيانات (ليس فقط الحقول المشتركة)
+                    const hasAnyChanges = Object.keys(changes).length > 0 ||
+                                         JSON.stringify(originalData) !== JSON.stringify(updatedProperty);
 
-                    if (sharedFieldsChanged) {
+                    console.log('🔍 فحص التغييرات للوحدات المرتبطة:', {
+                        hasChanges: hasAnyChanges,
+                        changesCount: Object.keys(changes).length,
+                        contractNumber: updatedProperty['رقم العقد'],
+                        propertyName: updatedProperty['اسم العقار'],
+                        unitNumber: updatedProperty['رقم  الوحدة ']
+                    });
+
+                    if (hasAnyChanges) {
                         try {
-                            await createTrackingLogsForLinkedUnits(
+                            console.log('📝 بدء إنشاء سجلات التتبع للوحدات المرتبطة...');
+                            const result = await createTrackingLogsForLinkedUnits(
                                 updatedProperty['رقم العقد'],
                                 updatedProperty['اسم العقار'],
                                 updatedProperty['رقم  الوحدة '],
-                                'تحديث بيانات الوحدات المرتبطة'
+                                `تحديث بيانات مرتبطة - ${operationType}`
                             );
-                            console.log('📝 تم إنشاء سجلات التتبع للوحدات المرتبطة');
+
+                            if (result && result.success) {
+                                console.log(`✅ تم إنشاء ${result.createdCount} سجل تتبع للوحدات المرتبطة`);
+                                if (result.failedCount > 0) {
+                                    console.warn(`⚠️ فشل في إنشاء ${result.failedCount} سجل تتبع`);
+                                }
+                            } else {
+                                console.log('ℹ️ لا توجد وحدات مرتبطة أو لم يتم إنشاء سجلات');
+                            }
                         } catch (linkedError) {
                             console.warn('⚠️ فشل في إنشاء سجلات التتبع للوحدات المرتبطة:', linkedError);
                         }
+                    } else {
+                        console.log('ℹ️ لا توجد تغييرات، تخطي إنشاء سجلات التتبع للوحدات المرتبطة');
                     }
                 }
             } catch (error) {
@@ -21450,39 +21537,60 @@ async function createTrackingLogsForLinkedUnits(contractNumber, propertyName, ex
         console.log(`📋 تم العثور على ${linkedUnits.length} وحدة مربوطة لإنشاء سجلات التتبع`);
 
         let createdCount = 0;
+        let failedCount = 0;
 
         // إنشاء سجل تتبع لكل وحدة مرتبطة
         for (const unit of linkedUnits) {
             try {
-                await addChangeLog(
-                    operationType,
-                    unit,
-                    {}, // لا توجد تغييرات فعلية، فقط إشعار بالربط
-                    {
-                        contractNumber: contractNumber,
-                        propertyName: propertyName,
-                        newLinkedUnit: excludeUnitNumber,
-                        reason: `تم ربط وحدة جديدة (${excludeUnitNumber}) بنفس العقد`,
-                        relatedOperation: 'unit_linking_notification'
-                    }
-                );
+                // إنشاء سجل التتبع مع معلومات إضافية
+                const additionalInfo = {
+                    contractNumber: contractNumber,
+                    propertyName: propertyName,
+                    newLinkedUnit: excludeUnitNumber,
+                    reason: `تم ربط وحدة جديدة (${excludeUnitNumber}) بنفس العقد`,
+                    relatedOperation: 'unit_linking_notification',
+                    affectedUnits: linkedUnits.map(u => u['رقم  الوحدة ']),
+                    totalLinkedUnits: linkedUnits.length + 1
+                };
+
+                await addChangeLog(operationType, unit, {}, additionalInfo);
                 createdCount++;
                 console.log(`📝 تم إنشاء سجل تتبع للوحدة ${unit['رقم  الوحدة ']}`);
+
+                // تأخير قصير لتجنب تحميل قاعدة البيانات
+                await new Promise(resolve => setTimeout(resolve, 100));
+
             } catch (logError) {
                 console.warn(`⚠️ فشل في إنشاء سجل التتبع للوحدة ${unit['رقم  الوحدة ']}:`, logError);
+                failedCount++;
             }
         }
 
+        // مسح كاش سجلات التتبع لضمان ظهور السجلات الجديدة
+        if (typeof clearTrackingLogsCache === 'function') {
+            clearTrackingLogsCache();
+        }
+
         console.log(`✅ تم إنشاء ${createdCount} سجل تتبع للوحدات المرتبطة`);
+        if (failedCount > 0) {
+            console.warn(`⚠️ فشل في إنشاء ${failedCount} سجل تتبع`);
+        }
+
+        // إرسال إشعار للمستخدم
+        if (createdCount > 0) {
+            showToast(`تم إنشاء ${createdCount} سجل تتبع للوحدات المرتبطة`, 'success');
+        }
 
         return {
             success: true,
             createdCount,
+            failedCount,
             totalUnits: linkedUnits.length
         };
 
     } catch (error) {
         console.error('❌ خطأ في إنشاء سجلات التتبع للوحدات المرتبطة:', error);
+        showToast('خطأ في إنشاء سجلات التتبع للوحدات المرتبطة', 'error');
         return { success: false, reason: error.message };
     }
 }
@@ -21530,6 +21638,11 @@ async function createTrackingLogsForLinkedUnits(contractNumber, propertyName, ex
                 );
                 createdCount++;
                 console.log(`📝 تم إنشاء سجل تتبع للوحدة ${unit['رقم  الوحدة ']}`);
+
+                // مسح كاش سجلات التتبع لضمان ظهور السجلات الجديدة
+                if (typeof clearTrackingLogsCache === 'function') {
+                    clearTrackingLogsCache();
+                }
             } catch (logError) {
                 console.warn(`⚠️ فشل في إنشاء سجل التتبع للوحدة ${unit['رقم  الوحدة ']}:`, logError);
             }
@@ -31085,7 +31198,8 @@ const OPERATION_TYPES = {
 function createChangeLog(operationType, unitData, changes = {}, additionalInfo = {}) {
     const now = new Date();
     const hijriDate = getHijriDate(now);
-    const gregorianDate = now.toLocaleDateString('ar-SA');
+    // استخدام التاريخ الميلادي بدلاً من الهجري
+    const gregorianDate = formatDate(now); // استخدام دالة formatDate المحدثة
     const dayName = getDayName(now);
 
     return {
@@ -31409,11 +31523,11 @@ async function loadChangeLogsFromSupabase(limit = 500, offset = 0) {
                     destinationProperty: log.destination_property || log.destinationProperty
                 };
 
-                // إضافة معلومات التاريخ إذا لم تكن موجودة
+                // إضافة معلومات التاريخ إذا لم تكن موجودة - استخدام التاريخ الميلادي
                 if (!processedLog.date && processedLog.timestamp) {
                     const date = new Date(processedLog.timestamp);
-                    processedLog.date = date.toLocaleDateString('ar-SA');
-                    processedLog.time = date.toLocaleTimeString('ar-SA');
+                    processedLog.date = formatDate(date); // استخدام التاريخ الميلادي
+                    processedLog.time = formatTime(date); // استخدام الوقت المبسط
                     processedLog.dayName = getDayName(date);
                     processedLog.hijriDate = getHijriDate(date);
                 } else {
@@ -31458,13 +31572,74 @@ async function addChangeLog(operationType, unitData, changes = {}, additionalInf
         console.warn('⚠️ لم يتم حفظ سجلات التتبع محلياً:', error);
     }
 
-    // حفظ في الجدول المخصص الجديد
-    await saveTrackingLogToNewTable(changeLog, unitData);
+    // حفظ في الجدول المخصص الجديد (مع معالجة الأخطاء)
+    try {
+        await saveTrackingLogToNewTable(changeLog, unitData);
+    } catch (error) {
+        console.warn('⚠️ فشل في حفظ سجل التتبع في الجدول المخصص:', error.message);
+        // المتابعة مع النظام القديم
+    }
 
-    // حفظ في النظام القديم للتوافق
-    await saveChangeLogToSupabase(changeLog);
+    // حفظ في النظام القديم للتوافق (مع معالجة الأخطاء)
+    try {
+        await saveChangeLogToSupabase(changeLog);
+    } catch (error) {
+        console.warn('⚠️ فشل في حفظ سجل التتبع في النظام القديم:', error.message);
+        // حفظ في جدول العقارات كحل بديل
+        await saveTrackingLogToPropertiesTable(changeLog, unitData);
+    }
 
     console.log('📝 تم إضافة سجل تتبع:', operationType, '- الوحدة:', changeLog.unitNumber);
+}
+
+// حفظ سجل التتبع في جدول العقارات كحل بديل
+async function saveTrackingLogToPropertiesTable(changeLog, unitData) {
+    try {
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase غير متصل، تخطي الحفظ البديل');
+            return;
+        }
+
+        console.log('💾 حفظ سجل التتبع في جدول العقارات كحل بديل...');
+
+        // البحث عن العقار المرتبط
+        const { data: existingProperty, error: searchError } = await supabaseClient
+            .from('properties')
+            .select('id, tracking_logs')
+            .eq('unit_number', unitData['رقم  الوحدة '] || changeLog.unitNumber)
+            .eq('property_name', unitData['اسم العقار'] || changeLog.propertyName)
+            .single();
+
+        if (searchError && !searchError.message.includes('No rows')) {
+            console.error('❌ خطأ في البحث عن العقار:', searchError);
+            return;
+        }
+
+        if (existingProperty) {
+            // إضافة السجل إلى العقار الموجود
+            const existingLogs = existingProperty.tracking_logs || [];
+            const updatedLogs = [changeLog, ...existingLogs.slice(0, 49)]; // الاحتفاظ بآخر 50 سجل
+
+            const { error: updateError } = await supabaseClient
+                .from('properties')
+                .update({
+                    tracking_logs: updatedLogs,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existingProperty.id);
+
+            if (updateError) {
+                console.error('❌ خطأ في تحديث سجلات التتبع:', updateError);
+            } else {
+                console.log('✅ تم حفظ سجل التتبع في جدول العقارات');
+            }
+        } else {
+            console.warn('⚠️ لم يتم العثور على العقار المرتبط لحفظ سجل التتبع');
+        }
+
+    } catch (error) {
+        console.error('❌ خطأ في حفظ سجل التتبع البديل:', error);
+    }
 }
 
 // حفظ سجل التتبع في الجدول المخصص الجديد
@@ -31718,8 +31893,8 @@ async function testTrackingFunction() {
             tenant_name: 'مستأجر تجريبي',
             user_name: 'نظام الاختبار',
             description: 'سجل اختبار للتحقق من عمل النظام',
-            date: new Date().toLocaleDateString('ar-SA'),
-            time: new Date().toLocaleTimeString('ar-SA')
+            date: formatDate(new Date()), // استخدام التاريخ الميلادي
+            time: formatTime(new Date()) // استخدام الوقت المبسط
         };
 
         const success = await saveChangeLogToSupabase(testLog);
@@ -32069,11 +32244,11 @@ async function showChangeTrackingModal() {
                 </div>
 
                 <div class="action-buttons-group">
-                    <button onclick="exportTrackingLogs()" class="export-btn">
-                        <i class="fas fa-download"></i> تصدير Excel
+                    <button onclick="exportTrackingLogs()" class="export-btn" title="تصدير السجلات المفلترة الظاهرة فقط">
+                        <i class="fas fa-download"></i> تصدير المفلتر
                     </button>
-                    <button onclick="printTrackingLogs()" class="print-btn">
-                        <i class="fas fa-print"></i> طباعة
+                    <button onclick="printTrackingLogs()" class="print-btn" title="طباعة السجلات المفلترة الظاهرة فقط">
+                        <i class="fas fa-print"></i> طباعة المفلتر
                     </button>
                     <button onclick="refreshTrackingLogs()" class="refresh-btn">
                         <i class="fas fa-sync-alt"></i> تحديث
@@ -32726,7 +32901,7 @@ async function deleteByDate() {
     console.log(`🗑️ حذف عمليات يوم ${date}...`);
 
     try {
-        const targetDate = new Date(date).toLocaleDateString('ar-SA');
+        const targetDate = formatDate(new Date(date)); // استخدام التاريخ الميلادي
 
         // العثور على السجلات المطابقة
         const logsToDelete = changeTrackingLogs.filter(log => log.date === targetDate);
@@ -34643,6 +34818,38 @@ window.addEventListener('load', async () => {
 // متغير لحفظ نتائج البحث
 let currentPropertiesSearchResults = [];
 let originalPropertiesList = [];
+let propertiesSearchTimeout = null;
+
+// معالج البحث المحسن للعقارات مع debouncing
+function handlePropertiesSearch(searchTerm) {
+    const searchInput = document.getElementById('propertiesSearchInput');
+    if (!searchInput) return;
+
+    // إلغاء البحث السابق إذا كان موجوداً
+    if (propertiesSearchTimeout) {
+        clearTimeout(propertiesSearchTimeout);
+    }
+
+    // إضافة مؤشر بصري للبحث
+    searchInput.classList.add('search-indicator', 'searching');
+
+    // تأخير البحث لـ 250ms بعد توقف الكتابة
+    propertiesSearchTimeout = setTimeout(() => {
+        // تنفيذ البحث الفعلي
+        searchProperties(searchTerm);
+
+        // إزالة مؤشر البحث
+        searchInput.classList.remove('searching');
+
+        // إضافة مؤشر النجاح مؤقتاً
+        if (searchTerm) {
+            searchInput.style.borderColor = '#28a745';
+            setTimeout(() => {
+                searchInput.style.borderColor = '';
+            }, 800);
+        }
+    }, 250);
+}
 
 // البحث المباشر في العقارات
 function searchProperties(searchTerm) {
@@ -38160,6 +38367,48 @@ function addTrackingTableCounter(totalCount) {
                 background: #f1f1f1;
             }
 
+            /* تحسينات البحث السلس */
+            input[type="text"], input[type="search"] {
+                transition: all 0.3s ease;
+                border: 2px solid #ced4da;
+            }
+
+            input[type="text"]:focus, input[type="search"]:focus {
+                outline: none;
+                border-color: #007bff;
+                box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+            }
+
+            /* مؤشرات البحث */
+            .search-indicator {
+                position: relative;
+            }
+
+            .search-indicator::after {
+                content: '';
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 12px;
+                height: 12px;
+                border: 2px solid #007bff;
+                border-top: 2px solid transparent;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .search-indicator.searching::after {
+                opacity: 1;
+            }
+
+            @keyframes spin {
+                0% { transform: translateY(-50%) rotate(0deg); }
+                100% { transform: translateY(-50%) rotate(360deg); }
+            }
+
             /* أنماط أزرار التبديل */
             .view-toggle-group {
                 display: flex;
@@ -38270,14 +38519,45 @@ function addTrackingTableCounter(totalCount) {
     }
 }
 
-// معالج البحث الموحد للبطاقات والجدول
+// متغير لحفظ مؤقت البحث
+let searchTimeout = null;
+
+// معالج البحث المحسن مع debouncing
 function handleTrackingSearch() {
     const searchInput = document.getElementById('trackingSearch');
     if (!searchInput) return;
 
-    const searchTerm = searchInput.value.trim();
-    console.log(`🔍 معالج البحث: "${searchTerm}"`);
+    // إلغاء البحث السابق إذا كان موجوداً
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
 
+    // إضافة مؤشر بصري للبحث
+    searchInput.classList.add('search-indicator', 'searching');
+
+    // تأخير البحث لـ 300ms بعد توقف الكتابة
+    searchTimeout = setTimeout(() => {
+        const searchTerm = searchInput.value.trim();
+        console.log(`🔍 تنفيذ البحث: "${searchTerm}"`);
+
+        // تنفيذ البحث الفعلي
+        executeTrackingSearch(searchTerm);
+
+        // إزالة مؤشر البحث
+        searchInput.classList.remove('searching');
+
+        // إضافة مؤشر النجاح مؤقتاً
+        if (searchTerm) {
+            searchInput.style.borderColor = '#28a745';
+            setTimeout(() => {
+                searchInput.style.borderColor = '';
+            }, 1000);
+        }
+    }, 300); // تأخير 300ms
+}
+
+// تنفيذ البحث الفعلي في سجلات التتبع
+function executeTrackingSearch(searchTerm) {
     // تحديد نوع العرض الحالي
     const tableContainer = document.getElementById('trackingLogsTable');
     const isTableView = tableContainer && tableContainer.style.display !== 'none';
@@ -38396,18 +38676,81 @@ function toggleTrackingView(viewType) {
     showToast(`تم التبديل إلى عرض ${viewType === 'table' ? 'الجدول' : 'البطاقات'}`, 'info');
 }
 
-// تنسيق التاريخ
-function formatDate(timestamp) {
-    if (!timestamp) return 'غير محدد';
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('ar-SA');
+// الحصول على السجلات الظاهرة فقط (المفلترة)
+function getVisibleTrackingLogs() {
+    console.log('🔍 جمع السجلات الظاهرة للطباعة...');
+
+    const table = document.getElementById('trackingLogsTable');
+    if (!table) {
+        console.warn('⚠️ لم يتم العثور على جدول سجلات التتبع');
+        // إذا لم يكن هناك جدول، استخدم جميع السجلات الحالية
+        return window.currentTrackingLogs || [];
+    }
+
+    const visibleRows = table.querySelectorAll('tbody tr:not([style*="display: none"])');
+    const visibleLogs = [];
+
+    visibleRows.forEach((row, index) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 9) {
+            // استخراج البيانات من خلايا الجدول
+            const log = {
+                date: cells[0].textContent.trim(),
+                time: cells[1].textContent.trim(),
+                operationType: cells[2].textContent.trim(),
+                tenantName: cells[3].textContent.trim(),
+                contractNumber: cells[4].textContent.trim(),
+                user: cells[5].textContent.trim(),
+                propertyName: cells[6].textContent.trim(),
+                unitNumber: cells[7].textContent.trim(),
+                city: cells[8].textContent.trim()
+            };
+
+            visibleLogs.push(log);
+        }
+    });
+
+    console.log(`📋 تم جمع ${visibleLogs.length} سجل ظاهر من أصل ${table.querySelectorAll('tbody tr').length} سجل`);
+    return visibleLogs;
 }
 
-// تنسيق الوقت
+// تنسيق التاريخ - ميلادي بصيغة dd/mm/yyyy
+function formatDate(timestamp) {
+    if (!timestamp) return 'غير محدد';
+
+    try {
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return 'غير محدد';
+
+        // تنسيق ميلادي بصيغة dd/mm/yyyy
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+
+        return `${day}/${month}/${year}`;
+    } catch (error) {
+        console.warn('خطأ في تنسيق التاريخ:', error);
+        return 'غير محدد';
+    }
+}
+
+// تنسيق الوقت - بصيغة 24 ساعة
 function formatTime(timestamp) {
     if (!timestamp) return 'غير محدد';
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('ar-SA');
+
+    try {
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return 'غير محدد';
+
+        // تنسيق الوقت بصيغة HH:MM
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+
+        return `${hours}:${minutes}`;
+    } catch (error) {
+        console.warn('خطأ في تنسيق الوقت:', error);
+        return 'غير محدد';
+    }
 }
 
 // عرض سجلات التتبع
@@ -38548,6 +38891,18 @@ function isUnitLinkedToSearchTerm(unitNumber, propertyName, contractNumber, sear
     }
 }
 
+// متغير لحفظ السجلات المحملة مؤقتاً
+let cachedTrackingLogs = null;
+let lastCacheTime = 0;
+const CACHE_DURATION = 30000; // 30 ثانية
+
+// مسح كاش سجلات التتبع
+function clearTrackingLogsCache() {
+    cachedTrackingLogs = null;
+    lastCacheTime = 0;
+    console.log('🗑️ تم مسح كاش سجلات التتبع');
+}
+
 // فلترة سجلات التتبع المحسنة والمصححة
 async function filterTrackingLogs() {
     console.log('🔍 بدء فلترة سجلات التتبع...');
@@ -38560,14 +38915,28 @@ async function filterTrackingLogs() {
 
     console.log('📋 معايير الفلترة:', { dateFilter, monthFilter, operationType, searchTerm, dataEditFilter });
 
-    // تحميل جميع السجلات
-    const cloudLogs = await loadChangeLogsFromSupabase(1000);
-    const allLogs = [...cloudLogs, ...changeTrackingLogs];
+    // استخدام الكاش إذا كان متوفراً وحديثاً
+    let uniqueLogs;
+    const currentTime = Date.now();
 
-    // إزالة المكررات
-    const uniqueLogs = allLogs.filter((log, index, self) =>
-        index === self.findIndex(l => l.id === log.id)
-    );
+    if (cachedTrackingLogs && (currentTime - lastCacheTime) < CACHE_DURATION) {
+        console.log('📦 استخدام السجلات المحفوظة مؤقتاً');
+        uniqueLogs = cachedTrackingLogs;
+    } else {
+        console.log('🔄 تحميل السجلات من قاعدة البيانات...');
+        // تحميل جميع السجلات
+        const cloudLogs = await loadChangeLogsFromSupabase(1000);
+        const allLogs = [...cloudLogs, ...changeTrackingLogs];
+
+        // إزالة المكررات
+        uniqueLogs = allLogs.filter((log, index, self) =>
+            index === self.findIndex(l => l.id === log.id)
+        );
+
+        // حفظ في الكاش
+        cachedTrackingLogs = uniqueLogs;
+        lastCacheTime = currentTime;
+    }
 
     console.log(`📊 إجمالي السجلات قبل الفلترة: ${uniqueLogs.length}`);
 
@@ -39171,7 +39540,7 @@ function buildUnitHistory(unitLogs) {
         // إضافة العملية
         operations.push({
             date: formatDateToGregorian(new Date(log.timestamp)),
-            time: new Date(log.timestamp).toLocaleTimeString('ar-SA'),
+            time: formatTime(log.timestamp), // استخدام الوقت المبسط
             operation: log.operationType || log.operation_type || 'غير محدد',
             tenant: log.tenantName || log.tenant_name || log.newTenant || 'غير محدد',
             contractNumber: log.contractNumber || log.contract_number || 'غير محدد',
@@ -39549,37 +39918,38 @@ function printUnitHistory(unitNumber) {
     printWindow.print();
 }
 
-// تصدير سجلات التتبع إلى Excel
+// تصدير سجلات التتبع إلى Excel - محسنة لتصدير المفلتر فقط
 async function exportTrackingLogs() {
-    const cloudLogs = await loadChangeLogsFromSupabase(1000);
-    const allLogs = [...cloudLogs, ...changeTrackingLogs];
+    console.log('📊 بدء تصدير سجلات التتبع المفلترة...');
 
-    // إزالة المكررات وترتيب
-    const uniqueLogs = allLogs.filter((log, index, self) =>
-        index === self.findIndex(l => l.id === log.id)
-    ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // الحصول على السجلات الظاهرة فقط
+    const visibleLogs = getVisibleTrackingLogs();
 
-    // تحويل البيانات للتصدير
-    const exportData = uniqueLogs.map(log => ({
-        'التاريخ': log.date,
-        'الوقت': log.time,
-        'نوع العملية': log.operationType,
-        'المستخدم': log.user,
-        'رقم الوحدة': log.unitNumber,
-        'اسم العقار': log.propertyName,
-        'المدينة': log.city,
-        'رقم العقد': log.contractNumber || '',
-        'المستأجر الجديد': log.newTenant || '',
-        'المستأجر السابق': log.previousTenant || '',
-        'العقار المصدر': log.sourceProperty || '',
-        'العقار الوجهة': log.destinationProperty || '',
-        'السبب': log.reason || '',
+    if (visibleLogs.length === 0) {
+        showToast('لا توجد سجلات ظاهرة للتصدير', 'warning');
+        return;
+    }
+
+    console.log(`📊 سيتم تصدير ${visibleLogs.length} سجل من السجلات المفلترة`);
+
+    // تحويل البيانات للتصدير مع التاريخ الميلادي
+    const exportData = visibleLogs.map(log => ({
+        'التاريخ': log.date || formatDate(log.timestamp),
+        'الوقت': log.time || formatTime(log.timestamp),
+        'نوع العملية': log.operationType || log.operation_type || 'غير محدد',
+        'المستأجر': log.tenantName || log.tenant_name || 'غير محدد',
+        'رقم العقد': log.contractNumber || log.contract_number || 'غير محدد',
+        'المستخدم': log.user || log.user_name || 'غير محدد',
+        'العقار': log.propertyName || log.property_name || 'غير محدد',
+        'رقم الوحدة': log.unitNumber || log.unit_number || 'غير محدد',
+        'المدينة': log.city || 'غير محدد',
+        'الوصف': log.description || '',
         'التغييرات': Object.keys(log.changes || {}).length > 0 ?
             Object.entries(log.changes).map(([field, change]) => {
                 if (!change || typeof change !== 'object') return '';
                 const fieldName = change.fieldName || field || 'حقل غير محدد';
                 return `${fieldName}: ${change.old || 'فارغ'} → ${change.new || 'فارغ'}`;
-            }).filter(item => item !== '').join('; ') : ''
+            }).filter(item => item !== '').join('; ') : 'لا توجد تغييرات'
     }));
 
     // إنشاء ملف Excel
@@ -39606,65 +39976,227 @@ async function exportTrackingLogs() {
     ];
     ws['!cols'] = colWidths;
 
-    // تحميل الملف
-    const fileName = `سجل_التتبع_${new Date().toLocaleDateString('ar-SA').replace(/\//g, '-')}.xlsx`;
+    // تحميل الملف مع التاريخ الميلادي
+    const currentDate = formatDate(new Date()).replace(/\//g, '-');
+    const fileName = `سجل_التتبع_${currentDate}.xlsx`;
     XLSX.writeFile(wb, fileName);
+
+    console.log('✅ تم تصدير سجلات التتبع بنجاح');
+    showToast(`تم تصدير ${exportData.length} سجل إلى ملف Excel`, 'success');
 }
 
-// طباعة سجلات التتبع
+// طباعة سجلات التتبع - محسنة لطباعة المفلتر فقط
 function printTrackingLogs() {
-    const container = document.getElementById('trackingLogsContainer');
+    console.log('🖨️ بدء طباعة سجلات التتبع المفلترة...');
+
+    // الحصول على الصفوف الظاهرة فقط من الجدول
+    const visibleLogs = getVisibleTrackingLogs();
+
+    if (visibleLogs.length === 0) {
+        showToast('لا توجد سجلات ظاهرة للطباعة', 'warning');
+        return;
+    }
+
+    console.log(`📋 سيتم طباعة ${visibleLogs.length} سجل من السجلات المفلترة`);
+
     const printWindow = window.open('', '_blank');
+    const currentDate = formatDate(new Date());
+    const currentTime = formatTime(new Date());
 
     printWindow.document.write(`
         <html dir="rtl">
         <head>
             <title>سجل تتبع التغييرات</title>
+            <meta charset="UTF-8">
             <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .change-log-entry {
-                    border: 1px solid #ddd;
+                @page {
+                    size: A4 landscape;
+                    margin: 15mm;
+                }
+
+                body {
+                    font-family: 'Arial', sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    font-size: 12px;
+                    line-height: 1.4;
+                    direction: rtl;
+                }
+
+                .header {
+                    text-align: center;
                     margin-bottom: 20px;
-                    padding: 15px;
-                    page-break-inside: avoid;
+                    border-bottom: 2px solid #333;
+                    padding-bottom: 15px;
                 }
-                .change-log-header {
-                    background: #f5f5f5;
+
+                .header h1 {
+                    margin: 0 0 10px 0;
+                    font-size: 24px;
+                    color: #333;
+                }
+
+                .header .print-info {
+                    font-size: 14px;
+                    color: #666;
+                    margin: 5px 0;
+                }
+
+                .summary-info {
+                    background: #f8f9fa;
                     padding: 10px;
-                    margin: -15px -15px 15px -15px;
+                    border-radius: 5px;
+                    margin-bottom: 20px;
+                    text-align: center;
+                    border: 1px solid #dee2e6;
+                }
+
+                .tracking-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 20px;
+                    font-size: 11px;
+                }
+
+                .tracking-table th {
+                    background: #343a40;
+                    color: white;
+                    padding: 8px 6px;
+                    text-align: center;
                     font-weight: bold;
+                    border: 1px solid #dee2e6;
+                    white-space: nowrap;
                 }
-                .change-log-details {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 10px;
+
+                .tracking-table td {
+                    padding: 6px 4px;
+                    border: 1px solid #dee2e6;
+                    text-align: center;
+                    vertical-align: middle;
+                    word-wrap: break-word;
+                    max-width: 120px;
                 }
-                .change-detail-item {
-                    background: #f9f9f9;
-                    padding: 8px;
-                    border-right: 3px solid #007bff;
+
+                .tracking-table tbody tr:nth-child(even) {
+                    background: #f8f9fa;
                 }
-                .change-detail-label { font-weight: bold; margin-bottom: 5px; }
-                .change-detail-old { color: #dc3545; text-decoration: line-through; }
-                .change-detail-new { color: #28a745; font-weight: bold; }
+
+                .tracking-table tbody tr:hover {
+                    background: #e9ecef;
+                }
+
+                .operation-type {
+                    font-weight: bold;
+                    color: #495057;
+                }
+
+                .tenant-name {
+                    color: #007bff;
+                    font-weight: 500;
+                }
+
+                .contract-number {
+                    color: #28a745;
+                    font-weight: 500;
+                }
+
+                .date-cell {
+                    color: #6c757d;
+                    font-size: 10px;
+                }
+
+                .time-cell {
+                    color: #6c757d;
+                    font-size: 10px;
+                }
+
+                .footer {
+                    margin-top: 30px;
+                    text-align: center;
+                    font-size: 10px;
+                    color: #6c757d;
+                    border-top: 1px solid #dee2e6;
+                    padding-top: 10px;
+                }
+
                 @media print {
-                    .change-log-entry { page-break-inside: avoid; }
+                    body {
+                        font-size: 10px;
+                    }
+
+                    .tracking-table {
+                        font-size: 9px;
+                    }
+
+                    .tracking-table th,
+                    .tracking-table td {
+                        padding: 4px 3px;
+                    }
+
+                    .header h1 {
+                        font-size: 20px;
+                    }
+
+                    .print-info {
+                        font-size: 12px;
+                    }
                 }
             </style>
         </head>
         <body>
             <div class="header">
                 <h1>سجل تتبع التغييرات</h1>
-                <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}</p>
+                <div class="print-info">تاريخ الطباعة: ${currentDate}</div>
+                <div class="print-info">وقت الطباعة: ${currentTime}</div>
             </div>
-            ${container.innerHTML}
+
+            <div class="summary-info">
+                عرض ${visibleLogs.length} سجل مفلتر للطباعة
+            </div>
+
+            <table class="tracking-table">
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>الوقت</th>
+                        <th>نوع العملية</th>
+                        <th>المستأجر</th>
+                        <th>رقم العقد</th>
+                        <th>المستخدم</th>
+                        <th>العقار</th>
+                        <th>رقم الوحدة</th>
+                        <th>المدينة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${visibleLogs.map(log => `
+                        <tr>
+                            <td class="date-cell">${log.date || formatDate(log.timestamp)}</td>
+                            <td class="time-cell">${log.time || formatTime(log.timestamp)}</td>
+                            <td class="operation-type">${log.operationType || log.operation_type || 'غير محدد'}</td>
+                            <td class="tenant-name">${log.tenantName || log.tenant_name || 'غير محدد'}</td>
+                            <td class="contract-number">${log.contractNumber || log.contract_number || 'غير محدد'}</td>
+                            <td>${log.user || log.user_name || 'غير محدد'}</td>
+                            <td>${log.propertyName || log.property_name || 'غير محدد'}</td>
+                            <td>${log.unitNumber || log.unit_number || 'غير محدد'}</td>
+                            <td>${log.city || 'غير محدد'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+
+            <div class="footer">
+                تم إنشاء هذا التقرير بواسطة نظام إدارة المرفقات - ${currentDate} ${currentTime}
+            </div>
         </body>
         </html>
     `);
 
     printWindow.document.close();
     printWindow.print();
+
+    console.log('✅ تم إرسال سجلات التتبع للطباعة');
+    showToast('تم إرسال سجلات التتبع للطباعة', 'success');
 }
 
 // ==================== نظام الصلاحيات ====================

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار طباعة وتصدير المفلتر فقط</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            background: #28a745;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .before {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .after {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .step-list {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            counter-increment: step-counter;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            position: relative;
+            padding-right: 50px;
+        }
+
+        .step-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #007bff;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .highlight h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-filter"></i> اختبار طباعة وتصدير المفلتر فقط</h1>
+            <p>التحقق من أن الطباعة والتصدير يعملان على السجلات المفلترة الظاهرة فقط</p>
+        </div>
+
+        <div class="content">
+            <!-- الميزة الجديدة -->
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> الميزة الجديدة</h3>
+                <div class="highlight">
+                    <h4>🎯 طباعة وتصدير ذكي</h4>
+                    <p>الآن عندما تضغط على "طباعة" أو "تصدير Excel" سيتم طباعة/تصدير <strong>السجلات المفلترة الظاهرة فقط</strong> وليس جميع السجلات!</p>
+                </div>
+                
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <strong>طباعة ذكية:</strong> يطبع فقط الصفوف الظاهرة في الجدول بعد الفلترة
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <strong>تصدير ذكي:</strong> يصدر فقط السجلات المفلترة إلى Excel
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <strong>عداد دقيق:</strong> يظهر عدد السجلات المفلترة في الطباعة والتصدير
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <strong>أزرار محدثة:</strong> تسمية الأزرار تشير إلى "طباعة المفلتر" و "تصدير المفلتر"
+                    </li>
+                </ul>
+            </div>
+
+            <!-- مقارنة قبل وبعد -->
+            <div class="test-section">
+                <h3><i class="fas fa-balance-scale"></i> مقارنة قبل وبعد التحديث</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>الوظيفة</th>
+                            <th class="before">قبل التحديث ❌</th>
+                            <th class="after">بعد التحديث ✅</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>طباعة الجدول</strong></td>
+                            <td class="before">يطبع جميع السجلات (حتى المخفية)</td>
+                            <td class="after">يطبع السجلات الظاهرة فقط</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تصدير Excel</strong></td>
+                            <td class="before">يصدر جميع السجلات</td>
+                            <td class="after">يصدر السجلات المفلترة فقط</td>
+                        </tr>
+                        <tr>
+                            <td><strong>عداد السجلات</strong></td>
+                            <td class="before">عدد ثابت لجميع السجلات</td>
+                            <td class="after">عدد السجلات المفلترة الفعلية</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تسمية الأزرار</strong></td>
+                            <td class="before">"طباعة" و "تصدير Excel"</td>
+                            <td class="after">"طباعة المفلتر" و "تصدير المفلتر"</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- خطوات الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-list"></i> خطوات اختبار الميزة الجديدة</h3>
+                <ol class="step-list">
+                    <li>
+                        <strong>افتح التطبيق الرئيسي</strong><br>
+                        اذهب إلى index.html وادخل إلى سجلات التتبع
+                    </li>
+                    <li>
+                        <strong>تأكد من وجود سجلات متعددة</strong><br>
+                        يجب أن يكون هناك عدة سجلات في الجدول (مثلاً 10 سجلات أو أكثر)
+                    </li>
+                    <li>
+                        <strong>طبق فلتر على الجدول</strong><br>
+                        استخدم فلاتر الأعمدة أو البحث لإخفاء بعض السجلات (مثلاً اختر وحدة معينة)
+                    </li>
+                    <li>
+                        <strong>تحقق من العداد</strong><br>
+                        يجب أن يظهر "عرض X من أصل Y سجل" حيث X أقل من Y
+                    </li>
+                    <li>
+                        <strong>اختبر الطباعة</strong><br>
+                        اضغط "طباعة المفلتر" - يجب أن تطبع السجلات الظاهرة فقط
+                    </li>
+                    <li>
+                        <strong>اختبر التصدير</strong><br>
+                        اضغط "تصدير المفلتر" - يجب أن يصدر السجلات الظاهرة فقط
+                    </li>
+                </ol>
+            </div>
+
+            <!-- أمثلة عملية -->
+            <div class="test-section">
+                <h3><i class="fas fa-lightbulb"></i> أمثلة عملية للاختبار</h3>
+                
+                <div class="highlight">
+                    <h4>🔍 مثال 1: فلترة حسب الوحدة</h4>
+                    <p>1. اختر وحدة معينة من فلتر "رقم الوحدة" (مثل STR10004)</p>
+                    <p>2. ستظهر فقط سجلات هذه الوحدة (مثلاً 3 سجلات من أصل 20)</p>
+                    <p>3. اضغط "طباعة المفلتر" - يجب أن تطبع 3 سجلات فقط</p>
+                </div>
+
+                <div class="highlight">
+                    <h4>🔍 مثال 2: فلترة حسب نوع العملية</h4>
+                    <p>1. اختر "تحرير" من فلتر "نوع العملية"</p>
+                    <p>2. ستظهر فقط سجلات التحرير</p>
+                    <p>3. اضغط "تصدير المفلتر" - ملف Excel سيحتوي على سجلات التحرير فقط</p>
+                </div>
+
+                <div class="highlight">
+                    <h4>🔍 مثال 3: البحث النصي</h4>
+                    <p>1. ابحث عن اسم مستأجر معين في مربع البحث</p>
+                    <p>2. ستظهر فقط سجلات هذا المستأجر</p>
+                    <p>3. الطباعة والتصدير ستشمل هذه السجلات فقط</p>
+                </div>
+            </div>
+
+            <!-- أدوات الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+                <button class="btn btn-primary" onclick="openMainApp()">
+                    <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+                </button>
+                <button class="btn btn-success" onclick="showTestInstructions()">
+                    <i class="fas fa-list-check"></i> عرض تعليمات الاختبار
+                </button>
+                <button class="btn btn-info" onclick="showExpectedResults()">
+                    <i class="fas fa-bullseye"></i> النتائج المتوقعة
+                </button>
+                <div id="testResults" class="results"></div>
+            </div>
+
+            <!-- النتائج المتوقعة -->
+            <div class="test-section">
+                <h3><i class="fas fa-check-circle"></i> النتائج المتوقعة</h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <strong>عند الفلترة:</strong> العداد يتغير ليظهر عدد السجلات الظاهرة
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <strong>عند الطباعة:</strong> تطبع السجلات الظاهرة فقط مع العدد الصحيح
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <strong>عند التصدير:</strong> ملف Excel يحتوي على السجلات المفلترة فقط
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <strong>تسمية الأزرار:</strong> "طباعة المفلتر" و "تصدير المفلتر"
+                    </li>
+                    <li>
+                        <span class="feature-icon">✓</span>
+                        <strong>رسائل التأكيد:</strong> تظهر عدد السجلات المطبوعة/المصدرة
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            const results = document.getElementById('testResults');
+            results.textContent = '🏠 فتح التطبيق الرئيسي...\n';
+            
+            window.open('index.html', '_blank');
+            
+            results.textContent += '✅ تم فتح التطبيق الرئيسي في نافذة جديدة\n';
+            results.textContent += '💡 اذهب إلى سجلات التتبع واتبع خطوات الاختبار\n';
+        }
+
+        function showTestInstructions() {
+            const results = document.getElementById('testResults');
+            results.textContent = `📋 تعليمات الاختبار التفصيلية:
+
+🔸 الخطوة 1: التحضير
+   - افتح التطبيق الرئيسي
+   - اذهب إلى سجلات التتبع
+   - تأكد من وجود عدة سجلات (10+ سجل)
+
+🔸 الخطوة 2: تطبيق الفلترة
+   - استخدم فلاتر الأعمدة (مثل رقم الوحدة)
+   - أو استخدم البحث النصي
+   - لاحظ تغير العداد "عرض X من أصل Y"
+
+🔸 الخطوة 3: اختبار الطباعة
+   - اضغط "طباعة المفلتر"
+   - تحقق أن الطباعة تحتوي على السجلات الظاهرة فقط
+   - تحقق من العدد في رأس الطباعة
+
+🔸 الخطوة 4: اختبار التصدير
+   - اضغط "تصدير المفلتر"
+   - افتح ملف Excel المحمل
+   - تحقق أنه يحتوي على السجلات المفلترة فقط
+
+🔸 الخطوة 5: التحقق النهائي
+   - امسح الفلاتر واختبر مرة أخرى
+   - يجب أن تطبع/تصدر جميع السجلات عند عدم وجود فلاتر
+`;
+        }
+
+        function showExpectedResults() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🎯 النتائج المتوقعة:
+
+✅ عند تطبيق فلتر:
+   - العداد: "عرض 3 من أصل 20 سجل" (مثال)
+   - الطباعة: 3 سجلات فقط
+   - التصدير: ملف Excel بـ 3 سجلات
+
+✅ عند البحث عن مستأجر:
+   - العداد: "عرض 5 من أصل 20 سجل" (مثال)
+   - الطباعة: 5 سجلات لهذا المستأجر فقط
+   - التصدير: ملف Excel بـ 5 سجلات
+
+✅ عند عدم وجود فلاتر:
+   - العداد: "عرض 20 من أصل 20 سجل"
+   - الطباعة: جميع السجلات (20)
+   - التصدير: ملف Excel بجميع السجلات
+
+✅ تسمية الأزرار:
+   - "طباعة المفلتر" بدلاً من "طباعة"
+   - "تصدير المفلتر" بدلاً من "تصدير Excel"
+
+✅ رسائل التأكيد:
+   - "تم إرسال X سجل للطباعة"
+   - "تم تصدير X سجل إلى ملف Excel"
+
+🚫 ما لا يجب أن يحدث:
+   - طباعة سجلات مخفية بالفلاتر
+   - تصدير سجلات غير ظاهرة
+   - عداد خاطئ في الطباعة/التصدير
+`;
+        }
+
+        // تهيئة تلقائية
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 صفحة اختبار الطباعة والتصدير المفلتر جاهزة');
+            console.log('📋 اتبع الخطوات لاختبار الميزة الجديدة');
+        });
+    </script>
+</body>
+</html>

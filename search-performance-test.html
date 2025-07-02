@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار أداء البحث المحسن</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .search-demo {
+            margin: 20px 0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ced4da;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+
+        /* مؤشرات البحث */
+        .search-indicator {
+            position: relative;
+        }
+        
+        .search-indicator::after {
+            content: '';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid #007bff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .search-indicator.searching::after {
+            opacity: 1;
+        }
+        
+        @keyframes spin {
+            0% { transform: translateY(-50%) rotate(0deg); }
+            100% { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        .performance-stats {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #007bff;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #e3f2fd;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-item {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .old-method {
+            background: #f8d7da;
+            border: 1px solid #dc3545;
+        }
+
+        .new-method {
+            background: #d4edda;
+            border: 1px solid #28a745;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-tachometer-alt"></i> اختبار أداء البحث المحسن</h1>
+            <p>مقارنة بين البحث العادي والبحث المحسن مع Debouncing</p>
+        </div>
+
+        <div class="content">
+            <!-- اختبار البحث المحسن -->
+            <div class="test-section">
+                <h3><i class="fas fa-rocket"></i> البحث المحسن مع Debouncing</h3>
+                <p>هذا البحث يستخدم تأخير ذكي (300ms) ومؤشرات بصرية لتحسين الأداء</p>
+                
+                <div class="search-demo">
+                    <input type="text" 
+                           class="search-input search-indicator" 
+                           id="optimizedSearch"
+                           placeholder="اكتب هنا لتجربة البحث المحسن..."
+                           oninput="handleOptimizedSearch(this.value)">
+                </div>
+
+                <div class="performance-stats" id="optimizedStats">
+                    <h5>📊 إحصائيات الأداء:</h5>
+                    <div class="stat-item">
+                        <span>عدد عمليات البحث:</span>
+                        <span class="stat-value" id="optimizedSearchCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>متوسط وقت الاستجابة:</span>
+                        <span class="stat-value" id="optimizedAvgTime">0ms</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>آخر وقت بحث:</span>
+                        <span class="stat-value" id="optimizedLastTime">-</span>
+                    </div>
+                </div>
+
+                <div id="optimizedResults" class="results"></div>
+            </div>
+
+            <!-- اختبار البحث العادي -->
+            <div class="test-section">
+                <h3><i class="fas fa-search"></i> البحث العادي (للمقارنة)</h3>
+                <p>هذا البحث يحدث فوراً مع كل حرف (بدون تأخير)</p>
+                
+                <div class="search-demo">
+                    <input type="text" 
+                           class="search-input" 
+                           id="normalSearch"
+                           placeholder="اكتب هنا لتجربة البحث العادي..."
+                           oninput="handleNormalSearch(this.value)">
+                </div>
+
+                <div class="performance-stats" id="normalStats">
+                    <h5>📊 إحصائيات الأداء:</h5>
+                    <div class="stat-item">
+                        <span>عدد عمليات البحث:</span>
+                        <span class="stat-value" id="normalSearchCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>متوسط وقت الاستجابة:</span>
+                        <span class="stat-value" id="normalAvgTime">0ms</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>آخر وقت بحث:</span>
+                        <span class="stat-value" id="normalLastTime">-</span>
+                    </div>
+                </div>
+
+                <div id="normalResults" class="results"></div>
+            </div>
+
+            <!-- مقارنة الأداء -->
+            <div class="test-section">
+                <h3><i class="fas fa-chart-bar"></i> مقارنة الأداء</h3>
+                
+                <div class="comparison">
+                    <div class="comparison-item old-method">
+                        <h4>❌ البحث العادي</h4>
+                        <p>• بحث فوري مع كل حرف</p>
+                        <p>• استهلاك موارد عالي</p>
+                        <p>• بطء في الكتابة</p>
+                        <p>• عمليات بحث مكررة</p>
+                    </div>
+                    <div class="comparison-item new-method">
+                        <h4>✅ البحث المحسن</h4>
+                        <p>• تأخير ذكي (300ms)</p>
+                        <p>• استهلاك موارد محسن</p>
+                        <p>• كتابة سلسة وسريعة</p>
+                        <p>• مؤشرات بصرية</p>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin: 20px 0;">
+                    <button class="btn btn-primary" onclick="runPerformanceTest()">
+                        <i class="fas fa-play"></i> تشغيل اختبار الأداء
+                    </button>
+                    <button class="btn btn-success" onclick="clearAllTests()">
+                        <i class="fas fa-broom"></i> مسح النتائج
+                    </button>
+                </div>
+
+                <div id="comparisonResults" class="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // متغيرات الإحصائيات
+        let optimizedStats = { count: 0, totalTime: 0, times: [] };
+        let normalStats = { count: 0, totalTime: 0, times: [] };
+        let optimizedTimeout = null;
+
+        // البحث المحسن مع debouncing
+        function handleOptimizedSearch(value) {
+            const input = document.getElementById('optimizedSearch');
+            
+            // إلغاء البحث السابق
+            if (optimizedTimeout) {
+                clearTimeout(optimizedTimeout);
+            }
+
+            // إضافة مؤشر البحث
+            input.classList.add('searching');
+
+            // تأخير البحث
+            optimizedTimeout = setTimeout(() => {
+                const startTime = performance.now();
+                
+                // محاكاة البحث
+                performSearch(value, 'optimized');
+                
+                const endTime = performance.now();
+                const searchTime = endTime - startTime;
+                
+                // تحديث الإحصائيات
+                optimizedStats.count++;
+                optimizedStats.totalTime += searchTime;
+                optimizedStats.times.push(searchTime);
+                
+                updateStats('optimized', searchTime);
+                
+                // إزالة مؤشر البحث
+                input.classList.remove('searching');
+                
+                // مؤشر النجاح
+                input.style.borderColor = '#28a745';
+                setTimeout(() => {
+                    input.style.borderColor = '';
+                }, 800);
+            }, 300);
+        }
+
+        // البحث العادي (فوري)
+        function handleNormalSearch(value) {
+            const startTime = performance.now();
+            
+            // محاكاة البحث
+            performSearch(value, 'normal');
+            
+            const endTime = performance.now();
+            const searchTime = endTime - startTime;
+            
+            // تحديث الإحصائيات
+            normalStats.count++;
+            normalStats.totalTime += searchTime;
+            normalStats.times.push(searchTime);
+            
+            updateStats('normal', searchTime);
+        }
+
+        // محاكاة عملية البحث
+        function performSearch(query, type) {
+            const results = document.getElementById(type + 'Results');
+            
+            if (query.length === 0) {
+                results.textContent = '';
+                return;
+            }
+
+            // محاكاة بيانات للبحث
+            const mockData = [
+                'أحمد محمد - الوحدة 101',
+                'سارة أحمد - الوحدة 102', 
+                'محمد علي - الوحدة 103',
+                'فاطمة خالد - الوحدة 201',
+                'عبدالله سعد - الوحدة 202'
+            ];
+
+            // البحث في البيانات
+            const searchResults = mockData.filter(item => 
+                item.toLowerCase().includes(query.toLowerCase())
+            );
+
+            // عرض النتائج
+            results.textContent = `🔍 البحث عن: "${query}"\n`;
+            results.textContent += `📊 النتائج: ${searchResults.length} عنصر\n\n`;
+            
+            if (searchResults.length > 0) {
+                results.textContent += searchResults.join('\n');
+            } else {
+                results.textContent += 'لا توجد نتائج';
+            }
+        }
+
+        // تحديث الإحصائيات
+        function updateStats(type, lastTime) {
+            const stats = type === 'optimized' ? optimizedStats : normalStats;
+            const avgTime = stats.totalTime / stats.count;
+
+            document.getElementById(type + 'SearchCount').textContent = stats.count;
+            document.getElementById(type + 'AvgTime').textContent = avgTime.toFixed(2) + 'ms';
+            document.getElementById(type + 'LastTime').textContent = lastTime.toFixed(2) + 'ms';
+        }
+
+        // اختبار الأداء
+        function runPerformanceTest() {
+            const results = document.getElementById('comparisonResults');
+            results.textContent = '🚀 بدء اختبار الأداء...\n\n';
+
+            // محاكاة كتابة سريعة
+            const testQuery = 'أحمد محمد';
+            let currentText = '';
+
+            results.textContent += '⌨️ محاكاة كتابة سريعة...\n';
+
+            for (let i = 0; i < testQuery.length; i++) {
+                setTimeout(() => {
+                    currentText += testQuery[i];
+                    
+                    // البحث العادي (سيحدث مع كل حرف)
+                    handleNormalSearch(currentText);
+                    
+                    // البحث المحسن (سيحدث مرة واحدة فقط في النهاية)
+                    handleOptimizedSearch(currentText);
+                    
+                    if (i === testQuery.length - 1) {
+                        setTimeout(() => {
+                            showPerformanceComparison();
+                        }, 1000);
+                    }
+                }, i * 100);
+            }
+        }
+
+        // عرض مقارنة الأداء
+        function showPerformanceComparison() {
+            const results = document.getElementById('comparisonResults');
+            
+            results.textContent += '\n📊 نتائج المقارنة:\n';
+            results.textContent += '═══════════════════════════════════\n';
+            results.textContent += `البحث العادي: ${normalStats.count} عملية بحث\n`;
+            results.textContent += `البحث المحسن: ${optimizedStats.count} عملية بحث\n\n`;
+            
+            const improvement = ((normalStats.count - optimizedStats.count) / normalStats.count * 100).toFixed(1);
+            results.textContent += `🎯 تحسن الأداء: ${improvement}% أقل عمليات بحث\n`;
+            results.textContent += `⚡ النتيجة: البحث المحسن أسرع وأكثر كفاءة!\n`;
+        }
+
+        // مسح جميع الاختبارات
+        function clearAllTests() {
+            optimizedStats = { count: 0, totalTime: 0, times: [] };
+            normalStats = { count: 0, totalTime: 0, times: [] };
+            
+            document.getElementById('optimizedSearch').value = '';
+            document.getElementById('normalSearch').value = '';
+            
+            document.getElementById('optimizedResults').textContent = '';
+            document.getElementById('normalResults').textContent = '';
+            document.getElementById('comparisonResults').textContent = '';
+            
+            // إعادة تعيين الإحصائيات
+            ['optimized', 'normal'].forEach(type => {
+                document.getElementById(type + 'SearchCount').textContent = '0';
+                document.getElementById(type + 'AvgTime').textContent = '0ms';
+                document.getElementById(type + 'LastTime').textContent = '-';
+            });
+        }
+    </script>
+</body>
+</html>

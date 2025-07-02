@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تشخيص مشكلة سجلات التتبع في Supabase</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+
+        .status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 5px;
+            display: inline-block;
+        }
+
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-bug"></i> تشخيص مشكلة سجلات التتبع</h1>
+            <p>فحص شامل لنظام سجلات التتبع في Supabase</p>
+        </div>
+
+        <div class="content">
+            <!-- فحص الاتصال -->
+            <div class="test-section">
+                <h3><i class="fas fa-wifi"></i> فحص الاتصال بـ Supabase</h3>
+                <button class="btn btn-primary" onclick="testSupabaseConnection()">
+                    <i class="fas fa-plug"></i> فحص الاتصال
+                </button>
+                <div id="connectionResults" class="results"></div>
+            </div>
+
+            <!-- فحص جدول tracking_logs -->
+            <div class="test-section">
+                <h3><i class="fas fa-table"></i> فحص جدول tracking_logs</h3>
+                <button class="btn btn-warning" onclick="checkTrackingLogsTable()">
+                    <i class="fas fa-search"></i> فحص الجدول
+                </button>
+                <button class="btn btn-success" onclick="createTrackingLogsTable()">
+                    <i class="fas fa-plus"></i> إنشاء الجدول
+                </button>
+                <div id="tableResults" class="results"></div>
+            </div>
+
+            <!-- اختبار إنشاء سجل -->
+            <div class="test-section">
+                <h3><i class="fas fa-plus-circle"></i> اختبار إنشاء سجل تتبع</h3>
+                <button class="btn btn-success" onclick="testCreateTrackingLog()">
+                    <i class="fas fa-plus"></i> إنشاء سجل تجريبي
+                </button>
+                <button class="btn btn-primary" onclick="testMultipleUnitsLog()">
+                    <i class="fas fa-layer-group"></i> اختبار الوحدات المتعددة
+                </button>
+                <div id="createResults" class="results"></div>
+            </div>
+
+            <!-- فحص السجلات الموجودة -->
+            <div class="test-section">
+                <h3><i class="fas fa-list"></i> فحص السجلات الموجودة</h3>
+                <button class="btn btn-primary" onclick="loadExistingLogs()">
+                    <i class="fas fa-download"></i> تحميل السجلات
+                </button>
+                <button class="btn btn-warning" onclick="searchSpecificUnit()">
+                    <i class="fas fa-search"></i> البحث عن وحدة محددة
+                </button>
+                <div id="loadResults" class="results"></div>
+            </div>
+
+            <!-- إصلاح المشاكل -->
+            <div class="test-section">
+                <h3><i class="fas fa-wrench"></i> إصلاح المشاكل</h3>
+                <button class="btn btn-danger" onclick="fixTrackingLogsIssues()">
+                    <i class="fas fa-tools"></i> إصلاح تلقائي
+                </button>
+                <button class="btn btn-warning" onclick="clearAllTestLogs()">
+                    <i class="fas fa-broom"></i> مسح السجلات التجريبية
+                </button>
+                <div id="fixResults" class="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تحميل المكتبات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="tracking-logs-manager.js"></script>
+
+    <script>
+        // متغيرات التشخيص
+        let diagnosticResults = {
+            connection: false,
+            table: false,
+            manager: false,
+            create: false
+        };
+
+        // فحص الاتصال بـ Supabase
+        async function testSupabaseConnection() {
+            const results = document.getElementById('connectionResults');
+            results.textContent = '🔄 فحص الاتصال بـ Supabase...\n';
+
+            try {
+                // فحص وجود supabaseClient
+                if (typeof supabaseClient === 'undefined' || !supabaseClient) {
+                    results.textContent += '❌ supabaseClient غير متوفر\n';
+                    results.textContent += '🔧 محاولة تهيئة Supabase...\n';
+                    
+                    if (typeof initSupabase === 'function') {
+                        const initialized = initSupabase();
+                        if (initialized) {
+                            results.textContent += '✅ تم تهيئة Supabase بنجاح\n';
+                        } else {
+                            results.textContent += '❌ فشل في تهيئة Supabase\n';
+                            return;
+                        }
+                    } else {
+                        results.textContent += '❌ دالة initSupabase غير متوفرة\n';
+                        return;
+                    }
+                }
+
+                // اختبار الاتصال
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    results.textContent += `❌ خطأ في الاتصال: ${error.message}\n`;
+                    diagnosticResults.connection = false;
+                } else {
+                    results.textContent += '✅ الاتصال بـ Supabase يعمل بنجاح\n';
+                    results.textContent += `📊 عدد العقارات: ${data || 'غير محدد'}\n`;
+                    diagnosticResults.connection = true;
+                }
+
+            } catch (error) {
+                results.textContent += `❌ خطأ خطير: ${error.message}\n`;
+                diagnosticResults.connection = false;
+            }
+        }
+
+        // فحص جدول tracking_logs
+        async function checkTrackingLogsTable() {
+            const results = document.getElementById('tableResults');
+            results.textContent = '🔍 فحص جدول tracking_logs...\n';
+
+            try {
+                if (!supabaseClient) {
+                    results.textContent += '❌ Supabase غير متصل\n';
+                    return;
+                }
+
+                // فحص وجود الجدول
+                const { data, error } = await supabaseClient
+                    .from('tracking_logs')
+                    .select('count', { count: 'exact', head: true });
+
+                if (error) {
+                    if (error.message.includes('relation "public.tracking_logs" does not exist')) {
+                        results.textContent += '❌ جدول tracking_logs غير موجود\n';
+                        results.textContent += '💡 يجب إنشاء الجدول أولاً\n';
+                        diagnosticResults.table = false;
+                    } else {
+                        results.textContent += `❌ خطأ في الوصول للجدول: ${error.message}\n`;
+                        diagnosticResults.table = false;
+                    }
+                } else {
+                    results.textContent += '✅ جدول tracking_logs موجود ويعمل\n';
+                    results.textContent += `📊 عدد السجلات: ${data || 0}\n`;
+                    diagnosticResults.table = true;
+
+                    // فحص بنية الجدول
+                    const { data: sampleData } = await supabaseClient
+                        .from('tracking_logs')
+                        .select('*')
+                        .limit(1);
+
+                    if (sampleData && sampleData.length > 0) {
+                        results.textContent += '📋 أعمدة الجدول:\n';
+                        Object.keys(sampleData[0]).forEach(column => {
+                            results.textContent += `  - ${column}\n`;
+                        });
+                    }
+                }
+
+            } catch (error) {
+                results.textContent += `❌ خطأ في فحص الجدول: ${error.message}\n`;
+                diagnosticResults.table = false;
+            }
+        }
+
+        // إنشاء جدول tracking_logs
+        async function createTrackingLogsTable() {
+            const results = document.getElementById('tableResults');
+            results.textContent += '\n🔧 محاولة إنشاء جدول tracking_logs...\n';
+
+            try {
+                // عرض تعليمات الإنشاء
+                const sqlInstructions = `
+-- نسخ والصق هذا الكود في Supabase SQL Editor:
+
+CREATE TABLE IF NOT EXISTS tracking_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    operation_type TEXT NOT NULL,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    unit_number TEXT,
+    property_name TEXT,
+    contract_number TEXT,
+    city TEXT,
+    tenant_name TEXT,
+    tenant_phone TEXT,
+    tenant_phone_2 TEXT,
+    rent_value DECIMAL(15,2),
+    start_date DATE,
+    end_date DATE,
+    contract_type TEXT,
+    changes JSONB,
+    additional_info JSONB,
+    user_name TEXT DEFAULT 'النظام',
+    user_id TEXT DEFAULT 'system',
+    ip_address TEXT,
+    user_agent TEXT,
+    description TEXT,
+    status TEXT DEFAULT 'completed',
+    source TEXT DEFAULT 'web_app',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- إنشاء فهارس
+CREATE INDEX IF NOT EXISTS idx_tracking_logs_timestamp ON tracking_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_tracking_logs_unit_property ON tracking_logs(unit_number, property_name);
+
+-- تفعيل RLS
+ALTER TABLE tracking_logs ENABLE ROW LEVEL SECURITY;
+
+-- سياسات الأمان
+CREATE POLICY "Allow all access to tracking_logs" ON tracking_logs FOR ALL USING (true);
+                `;
+
+                results.textContent += sqlInstructions;
+                results.textContent += '\n📋 يرجى نسخ الكود أعلاه وتنفيذه في Supabase SQL Editor\n';
+
+            } catch (error) {
+                results.textContent += `❌ خطأ: ${error.message}\n`;
+            }
+        }
+
+        // اختبار إنشاء سجل تتبع
+        async function testCreateTrackingLog() {
+            const results = document.getElementById('createResults');
+            results.textContent = '🧪 اختبار إنشاء سجل تتبع...\n';
+
+            try {
+                // فحص وجود مدير سجلات التتبع
+                if (typeof window.trackingLogsManager === 'undefined') {
+                    results.textContent += '❌ مدير سجلات التتبع غير متوفر\n';
+                    diagnosticResults.manager = false;
+                    return;
+                } else {
+                    results.textContent += '✅ مدير سجلات التتبع متوفر\n';
+                    diagnosticResults.manager = true;
+                }
+
+                // إنشاء سجل تجريبي
+                const testLogData = {
+                    operation_type: 'اختبار تشخيصي',
+                    timestamp: new Date().toISOString(),
+                    unit_number: 'TEST-' + Date.now(),
+                    property_name: 'عقار تجريبي',
+                    contract_number: 'CONTRACT-TEST-' + Date.now(),
+                    city: 'الرياض',
+                    tenant_name: 'مستأجر تجريبي',
+                    tenant_phone: '0501234567',
+                    rent_value: 5000,
+                    start_date: '2025-01-01',
+                    end_date: '2025-12-31',
+                    contract_type: 'سكني',
+                    changes: { test: 'تجريبي' },
+                    additional_info: { source: 'diagnostic_test' },
+                    user_name: 'مشخص النظام',
+                    description: 'سجل تجريبي لاختبار النظام',
+                    status: 'completed',
+                    source: 'diagnostic_tool'
+                };
+
+                results.textContent += '📝 إنشاء سجل تجريبي...\n';
+                const result = await window.trackingLogsManager.saveTrackingLogToSupabase(testLogData);
+
+                if (result) {
+                    results.textContent += '✅ تم إنشاء السجل التجريبي بنجاح\n';
+                    results.textContent += `📋 معرف السجل: ${result.id}\n`;
+                    diagnosticResults.create = true;
+                } else {
+                    results.textContent += '❌ فشل في إنشاء السجل التجريبي\n';
+                    diagnosticResults.create = false;
+                }
+
+            } catch (error) {
+                results.textContent += `❌ خطأ في إنشاء السجل: ${error.message}\n`;
+                diagnosticResults.create = false;
+            }
+        }
+
+        // اختبار الوحدات المتعددة
+        async function testMultipleUnitsLog() {
+            const results = document.getElementById('createResults');
+            results.textContent += '\n🏢 اختبار سجلات الوحدات المتعددة...\n';
+
+            try {
+                const contractNumber = 'MULTI-TEST-' + Date.now();
+                const propertyName = 'برج الاختبار';
+
+                // إنشاء سجلات لوحدات متعددة
+                const units = ['101', '102', '103'];
+                
+                for (let i = 0; i < units.length; i++) {
+                    const unitNumber = units[i];
+                    
+                    const logData = {
+                        operation_type: i === 0 ? 'ربط وحدة' : 'ربط وحدة جديدة',
+                        timestamp: new Date().toISOString(),
+                        unit_number: unitNumber,
+                        property_name: propertyName,
+                        contract_number: contractNumber,
+                        city: 'الرياض',
+                        tenant_name: 'مستأجر متعدد الوحدات',
+                        tenant_phone: '0501234567',
+                        rent_value: 5000 + (i * 500),
+                        changes: { 
+                            operation: i === 0 ? 'ربط_وحدة_رئيسية' : 'ربط_وحدة_إضافية',
+                            related_units: units 
+                        },
+                        additional_info: { 
+                            test_type: 'multiple_units',
+                            unit_index: i,
+                            total_units: units.length
+                        },
+                        description: `${i === 0 ? 'ربط وحدة رئيسية' : 'ربط وحدة إضافية'} - ${unitNumber}`,
+                        source: 'multiple_units_test'
+                    };
+
+                    const result = await window.trackingLogsManager.saveTrackingLogToSupabase(logData);
+                    
+                    if (result) {
+                        results.textContent += `✅ تم إنشاء سجل للوحدة ${unitNumber}\n`;
+                    } else {
+                        results.textContent += `❌ فشل في إنشاء سجل للوحدة ${unitNumber}\n`;
+                    }
+                }
+
+                results.textContent += `🎉 تم إنشاء ${units.length} سجل للوحدات المتعددة\n`;
+                results.textContent += `📋 رقم العقد: ${contractNumber}\n`;
+
+            } catch (error) {
+                results.textContent += `❌ خطأ في اختبار الوحدات المتعددة: ${error.message}\n`;
+            }
+        }
+
+        // تحميل السجلات الموجودة
+        async function loadExistingLogs() {
+            const results = document.getElementById('loadResults');
+            results.textContent = '📥 تحميل السجلات الموجودة...\n';
+
+            try {
+                if (!supabaseClient) {
+                    results.textContent += '❌ Supabase غير متصل\n';
+                    return;
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('tracking_logs')
+                    .select('*')
+                    .order('timestamp', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    results.textContent += `❌ خطأ في تحميل السجلات: ${error.message}\n`;
+                } else {
+                    results.textContent += `📊 تم تحميل ${data.length} سجل\n\n`;
+                    
+                    if (data.length > 0) {
+                        results.textContent += 'آخر السجلات:\n';
+                        data.forEach((log, index) => {
+                            results.textContent += `${index + 1}. ${log.operation_type} - ${log.unit_number} (${log.timestamp})\n`;
+                        });
+                    } else {
+                        results.textContent += 'لا توجد سجلات في الجدول\n';
+                    }
+                }
+
+            } catch (error) {
+                results.textContent += `❌ خطأ: ${error.message}\n`;
+            }
+        }
+
+        // البحث عن وحدة محددة
+        async function searchSpecificUnit() {
+            const results = document.getElementById('loadResults');
+            const unitNumber = prompt('أدخل رقم الوحدة للبحث عنها:');
+            
+            if (!unitNumber) return;
+
+            results.textContent += `\n🔍 البحث عن الوحدة: ${unitNumber}\n`;
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('tracking_logs')
+                    .select('*')
+                    .eq('unit_number', unitNumber)
+                    .order('timestamp', { ascending: false });
+
+                if (error) {
+                    results.textContent += `❌ خطأ في البحث: ${error.message}\n`;
+                } else {
+                    results.textContent += `📊 تم العثور على ${data.length} سجل للوحدة ${unitNumber}\n\n`;
+                    
+                    if (data.length > 0) {
+                        data.forEach((log, index) => {
+                            results.textContent += `${index + 1}. ${log.operation_type} - ${log.timestamp}\n`;
+                            results.textContent += `   العقار: ${log.property_name}\n`;
+                            results.textContent += `   المستأجر: ${log.tenant_name || 'غير محدد'}\n`;
+                            results.textContent += `   الوصف: ${log.description || 'غير محدد'}\n\n`;
+                        });
+                    }
+                }
+
+            } catch (error) {
+                results.textContent += `❌ خطأ: ${error.message}\n`;
+            }
+        }
+
+        // إصلاح المشاكل
+        async function fixTrackingLogsIssues() {
+            const results = document.getElementById('fixResults');
+            results.textContent = '🔧 بدء الإصلاح التلقائي...\n';
+
+            // فحص شامل
+            await testSupabaseConnection();
+            await checkTrackingLogsTable();
+
+            if (!diagnosticResults.connection) {
+                results.textContent += '❌ لا يمكن الإصلاح: مشكلة في الاتصال\n';
+                return;
+            }
+
+            if (!diagnosticResults.table) {
+                results.textContent += '⚠️ جدول tracking_logs غير موجود\n';
+                results.textContent += '📋 يرجى إنشاء الجدول باستخدام الزر أعلاه\n';
+                return;
+            }
+
+            results.textContent += '✅ جميع المكونات تعمل بشكل صحيح\n';
+            results.textContent += '🎉 لا توجد مشاكل تحتاج إصلاح\n';
+        }
+
+        // مسح السجلات التجريبية
+        async function clearAllTestLogs() {
+            const results = document.getElementById('fixResults');
+            
+            if (!confirm('هل أنت متأكد من حذف جميع السجلات التجريبية؟')) {
+                return;
+            }
+
+            results.textContent += '\n🗑️ حذف السجلات التجريبية...\n';
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('tracking_logs')
+                    .delete()
+                    .or('source.eq.diagnostic_tool,source.eq.multiple_units_test,operation_type.eq.اختبار تشخيصي');
+
+                if (error) {
+                    results.textContent += `❌ خطأ في الحذف: ${error.message}\n`;
+                } else {
+                    results.textContent += '✅ تم حذف السجلات التجريبية بنجاح\n';
+                }
+
+            } catch (error) {
+                results.textContent += `❌ خطأ: ${error.message}\n`;
+            }
+        }
+
+        // تهيئة تلقائية
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 أداة تشخيص سجلات التتبع جاهزة');
+            
+            // فحص تلقائي للاتصال
+            setTimeout(() => {
+                testSupabaseConnection();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
