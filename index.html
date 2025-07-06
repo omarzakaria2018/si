@@ -477,7 +477,12 @@
         <i class="fas fa-sort"></i>
       </button>
     </div>
-    <input type="text" id="propertySearch" placeholder="بحث في العقارات...">
+    <div class="property-search-container">
+      <input type="text" id="propertySearch" placeholder="بحث في العقارات...">
+      <button class="property-clear-btn" onclick="clearPropertySearch()" title="مسح البحث" style="display: none;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
     <div id="propertyList"></div>
   </aside>
 

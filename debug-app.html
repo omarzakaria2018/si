@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 تصحيح التطبيق</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            background: #f8f9ff;
+        }
+        .result {
+            background: #f1f3f4;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 تصحيح مشكلة عدم ظهور البيانات</h1>
+        
+        <div class="test-section">
+            <h3>📊 فحص سريع</h3>
+            <button onclick="quickCheck()">فحص سريع</button>
+            <div id="quickResults" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚀 فتح التطبيق</h3>
+            <button onclick="openApp()">فتح التطبيق الرئيسي</button>
+            <button onclick="openAppDebug()">فتح مع وضع التصحيح</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 تشخيص المشكلة</h3>
+            <div id="diagnosis" class="result">
+                <strong>المشاكل المحتملة:</strong>
+                
+                1. ملف properties.js غير موجود أو لا يتم تحميله
+                2. خطأ في JavaScript يمنع تهيئة التطبيق
+                3. مشكلة في دالة initAutoPropertySearch
+                4. ترتيب تحميل الملفات غير صحيح
+                
+                <strong>الحلول:</strong>
+                
+                ✅ تم إصلاح استدعاء initPropertySearch → initAutoPropertySearch
+                ✅ تم تحسين دالة initAutoPropertySearch لتجنب استبدال العناصر
+                ✅ تم إضافة فحص وجود العناصر قبل التهيئة
+                
+                <strong>خطوات التحقق:</strong>
+                
+                1. افتح التطبيق الرئيسي
+                2. اضغط F12 لفتح Developer Tools
+                3. تحقق من وجود أخطاء في Console
+                4. تحقق من تحميل ملف properties.js في Network tab
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function quickCheck() {
+            const results = document.getElementById('quickResults');
+            results.textContent = '🔍 فحص سريع للملفات...\n';
+
+            // فحص ملف properties.js
+            fetch('properties.js')
+                .then(response => {
+                    if (response.ok) {
+                        results.textContent += '✅ ملف properties.js موجود\n';
+                        return response.text();
+                    } else {
+                        results.textContent += '❌ ملف properties.js غير موجود\n';
+                        throw new Error('properties.js not found');
+                    }
+                })
+                .then(data => {
+                    if (data.includes('let properties')) {
+                        results.textContent += '✅ متغير properties موجود\n';
+                        
+                        // عد العقارات
+                        const matches = data.match(/{\s*['"]رقم/g);
+                        if (matches) {
+                            results.textContent += `✅ عدد العقارات: ${matches.length}\n`;
+                        }
+                    }
+                    
+                    // فحص script.js
+                    return fetch('script.js');
+                })
+                .then(response => {
+                    if (response.ok) {
+                        results.textContent += '✅ ملف script.js موجود\n';
+                        return response.text();
+                    } else {
+                        results.textContent += '❌ ملف script.js غير موجود\n';
+                        throw new Error('script.js not found');
+                    }
+                })
+                .then(js => {
+                    if (js.includes('function initAutoPropertySearch')) {
+                        results.textContent += '✅ دالة initAutoPropertySearch موجودة\n';
+                    } else {
+                        results.textContent += '❌ دالة initAutoPropertySearch غير موجودة\n';
+                    }
+                    
+                    if (js.includes('initAutoPropertySearch()')) {
+                        results.textContent += '✅ يتم استدعاء initAutoPropertySearch\n';
+                    } else {
+                        results.textContent += '❌ لا يتم استدعاء initAutoPropertySearch\n';
+                    }
+                    
+                    results.textContent += '\n🎉 الفحص مكتمل! افتح التطبيق للاختبار.\n';
+                })
+                .catch(error => {
+                    results.textContent += `❌ خطأ: ${error.message}\n`;
+                    results.textContent += '💡 تأكد من وجود جميع الملفات في نفس المجلد\n';
+                });
+        }
+
+        function openApp() {
+            window.open('index.html', '_blank');
+        }
+
+        function openAppDebug() {
+            window.open('index.html?debug=true', '_blank');
+        }
+
+        // تشغيل الفحص تلقائياً
+        window.addEventListener('load', function() {
+            setTimeout(quickCheck, 500);
+        });
+    </script>
+</body>
+</html>

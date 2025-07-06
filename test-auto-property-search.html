@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 البحث التلقائي في العقارات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .feature-section {
+            background: #f8f9fa;
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .demo-section {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .step {
+            background: #fff;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .demo-search-container {
+            position: relative;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            max-width: 300px;
+        }
+
+        .demo-search-input {
+            width: 100%;
+            padding: 12px;
+            padding-left: 40px;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .demo-search-input:focus {
+            border-color: #20c997;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+        }
+
+        .demo-clear-btn {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .demo-clear-btn:hover {
+            background: #c82333;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .demo-clear-btn.show {
+            display: flex;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .comparison-table th {
+            background: #28a745;
+            color: white;
+            font-weight: 600;
+        }
+
+        .old-way {
+            background: #fff5f5;
+            color: #721c24;
+        }
+
+        .new-way {
+            background: #f0fff4;
+            color: #155724;
+        }
+
+        .icon {
+            font-size: 1.5em;
+            margin-left: 10px;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .info {
+            color: #17a2b8;
+        }
+
+        .warning {
+            color: #ffc107;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .test-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .comparison-table {
+                font-size: 14px;
+            }
+            
+            .comparison-table th,
+            .comparison-table td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-search"></i> البحث التلقائي في العقارات</h1>
+            <p>تحسين تجربة البحث - بحث فوري بدون أزرار!</p>
+        </div>
+
+        <div class="feature-section">
+            <h2><i class="fas fa-magic success"></i> الميزات الجديدة</h2>
+            
+            <div class="step">
+                <h3>🚀 بحث تلقائي فوري</h3>
+                <p>البحث يحدث أثناء الكتابة مع تأخير ذكي (300ms) لتجنب البحث مع كل حرف</p>
+            </div>
+
+            <div class="step">
+                <h3>🎯 زر مسح ذكي</h3>
+                <p>يظهر زر المسح تلقائياً عند وجود نص ويختفي عند المسح</p>
+            </div>
+
+            <div class="step">
+                <h3>⚡ أداء محسن</h3>
+                <p>لا مزيد من النقر على أزرار - تجربة سلسة ومباشرة</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2><i class="fas fa-play-circle info"></i> تجربة تفاعلية</h2>
+            <p>جرب البحث التلقائي هنا:</p>
+            
+            <div class="demo-search-container">
+                <input type="text" class="demo-search-input" placeholder="ابدأ الكتابة للبحث..." id="demoSearch">
+                <button class="demo-clear-btn" onclick="clearDemoSearch()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="demoResults" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 6px; min-height: 40px;">
+                <span style="color: #6c757d;">ابدأ الكتابة لرؤية النتائج...</span>
+            </div>
+        </div>
+
+        <div class="feature-section">
+            <h2><i class="fas fa-balance-scale"></i> مقارنة: قبل وبعد</h2>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>الخاصية</th>
+                        <th class="old-way">الطريقة القديمة</th>
+                        <th class="new-way">الطريقة الجديدة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>البحث</strong></td>
+                        <td class="old-way">اكتب + انقر زر البحث</td>
+                        <td class="new-way">اكتب فقط - بحث تلقائي!</td>
+                    </tr>
+                    <tr>
+                        <td><strong>المسح</strong></td>
+                        <td class="old-way">انقر زر المسح</td>
+                        <td class="new-way">زر مسح ذكي يظهر عند الحاجة</td>
+                    </tr>
+                    <tr>
+                        <td><strong>السرعة</strong></td>
+                        <td class="old-way">خطوتان: كتابة + نقر</td>
+                        <td class="new-way">خطوة واحدة: كتابة فقط</td>
+                    </tr>
+                    <tr>
+                        <td><strong>تجربة المستخدم</strong></td>
+                        <td class="old-way">تحتاج تفكير ونقرات</td>
+                        <td class="new-way">سلسة وطبيعية</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="step">
+            <h3><i class="fas fa-cogs"></i> التحسينات التقنية:</h3>
+            <ul>
+                <li><strong>تأخير ذكي:</strong> 300ms لتجنب البحث المفرط</li>
+                <li><strong>إلغاء البحث السابق:</strong> عند الكتابة السريعة</li>
+                <li><strong>بحث فوري مع Enter:</strong> للحصول على نتائج فورية</li>
+                <li><strong>حماية السايدبار:</strong> منع الإغلاق أثناء البحث</li>
+                <li><strong>مؤشرات بصرية:</strong> زر مسح يظهر/يختفي تلقائياً</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h2><i class="fas fa-rocket success"></i> جاهز للاختبار!</h2>
+            <p>التحسينات تم تطبيقها على التطبيق الرئيسي</p>
+            
+            <button class="test-btn" onclick="openMainApp()">
+                <i class="fas fa-external-link-alt"></i>
+                فتح التطبيق الرئيسي
+            </button>
+            
+            <button class="test-btn" onclick="showTestSteps()">
+                <i class="fas fa-list-check"></i>
+                خطوات الاختبار
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // تجربة البحث التفاعلية
+        let demoTimeout;
+        const demoProperties = ['فواكة فرغلي للعصيرات', 'عمارة سما الأولى', 'عمارة سما الثانية', 'عمارة سما الثالثة', 'مجمع تجاري', 'شقق سكنية'];
+        
+        document.getElementById('demoSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.trim().toLowerCase();
+            const clearBtn = document.querySelector('.demo-clear-btn');
+            const resultsDiv = document.getElementById('demoResults');
+            
+            // إظهار/إخفاء زر المسح
+            clearBtn.classList.toggle('show', searchTerm.length > 0);
+            
+            // إلغاء البحث السابق
+            clearTimeout(demoTimeout);
+            
+            // تأخير البحث
+            demoTimeout = setTimeout(() => {
+                if (searchTerm) {
+                    const results = demoProperties.filter(prop => 
+                        prop.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    if (results.length > 0) {
+                        resultsDiv.innerHTML = `
+                            <div style="color: #28a745; font-weight: bold;">
+                                <i class="fas fa-check-circle"></i> 
+                                وجدت ${results.length} نتيجة:
+                            </div>
+                            ${results.map(result => `
+                                <div style="padding: 5px 0; color: #495057;">
+                                    <i class="fas fa-building" style="color: #007bff;"></i> ${result}
+                                </div>
+                            `).join('')}
+                        `;
+                    } else {
+                        resultsDiv.innerHTML = `
+                            <div style="color: #dc3545;">
+                                <i class="fas fa-exclamation-circle"></i> 
+                                لا توجد نتائج لـ "${searchTerm}"
+                            </div>
+                        `;
+                    }
+                } else {
+                    resultsDiv.innerHTML = '<span style="color: #6c757d;">ابدأ الكتابة لرؤية النتائج...</span>';
+                }
+            }, 300);
+        });
+        
+        function clearDemoSearch() {
+            const input = document.getElementById('demoSearch');
+            const clearBtn = document.querySelector('.demo-clear-btn');
+            const resultsDiv = document.getElementById('demoResults');
+            
+            input.value = '';
+            clearBtn.classList.remove('show');
+            resultsDiv.innerHTML = '<span style="color: #6c757d;">ابدأ الكتابة لرؤية النتائج...</span>';
+            input.focus();
+        }
+        
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        function showTestSteps() {
+            alert(`📋 خطوات اختبار البحث التلقائي:
+
+1️⃣ افتح التطبيق الرئيسي
+2️⃣ انقر على قائمة العقارات (السايدبار)
+3️⃣ ابدأ الكتابة في حقل البحث
+4️⃣ لاحظ البحث التلقائي أثناء الكتابة
+5️⃣ لاحظ ظهور زر المسح (X) عند الكتابة
+6️⃣ انقر زر المسح لمسح البحث
+7️⃣ جرب البحث عن "سما" أو "فرغلي"
+
+✅ النتيجة المتوقعة:
+• بحث فوري بدون أزرار
+• زر مسح يظهر/يختفي تلقائياً
+• تجربة سلسة ومريحة`);
+        }
+    </script>
+</body>
+</html>

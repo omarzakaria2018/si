@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح المساحة الفارغة في بحث العقارات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e9ecef;
+        }
+
+        .test-section h3 {
+            color: #dc3545;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .problem-highlight {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .problem-highlight h4 {
+            color: #721c24;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .solution-highlight {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .solution-highlight h4 {
+            color: #155724;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            direction: ltr;
+            text-align: left;
+        }
+
+        .steps-list {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .steps-list h4 {
+            color: #856404;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .steps-list ol {
+            color: #856404;
+            padding-right: 20px;
+        }
+
+        .steps-list li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .test-button.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .test-button.success:hover {
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before, .after {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .before {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .after {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .before h4, .after h4 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        /* تجاوب للجوال */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .comparison-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .test-section {
+                padding: 20px;
+            }
+
+            .code-block {
+                font-size: 12px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-search"></i>
+                اختبار إصلاح المساحة الفارغة في بحث العقارات
+            </h1>
+            <p>إصلاح المساحة الفارغة الكبيرة في منطقة المحتوى عند البحث عن العقارات في الشاشات الصغيرة</p>
+        </div>
+
+        <!-- وصف المشكلة المحددة -->
+        <div class="test-section">
+            <h3><i class="fas fa-exclamation-triangle"></i> المشكلة المحددة</h3>
+            
+            <div class="problem-highlight">
+                <h4><i class="fas fa-bug"></i> السيناريو المحدد للمشكلة</h4>
+                <p><strong>المشكلة الحقيقية المكتشفة:</strong></p>
+                <ol style="margin-top: 10px; padding-right: 20px; color: #721c24;">
+                    <li>البحث عن عقار في قائمة العقارات (الشريط الجانبي)</li>
+                    <li>مثال: البحث عن "سما" يظهر جميع عقارات سما</li>
+                    <li>اختيار أحد العقارات من نتائج البحث</li>
+                    <li>عرض الصفحة على شاشة صغيرة (أقل من 768px)</li>
+                    <li>ظهور مساحة فارغة كبيرة في منطقة المحتوى الرئيسية</li>
+                </ol>
+                <p style="margin-top: 15px; font-weight: bold;">النتيجة: مساحة فارغة كبيرة في قسم البطاقات/الجدول في الشاشات الصغيرة</p>
+            </div>
+
+            <div class="comparison-grid">
+                <div class="before">
+                    <h4>❌ قبل الإصلاح</h4>
+                    <p>مسافة صغيرة جداً (0.5rem) تجعل التخطيط مضغوط ومزعج</p>
+                </div>
+                <div class="after">
+                    <h4>✅ بعد الإصلاح</h4>
+                    <p>مسافة مناسبة (0.8rem) تعطي توازن بصري أفضل</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- الحل التقني -->
+        <div class="test-section">
+            <h3><i class="fas fa-wrench"></i> الحل التقني المطبق</h3>
+            
+            <div class="solution-highlight">
+                <h4><i class="fas fa-code"></i> تحديث قاعدة CSS</h4>
+                <p>تم تحديث قاعدة CSS للشاشات الصغيرة لتتفوق على القواعد الأخرى:</p>
+                
+                <div class="code-block">
+/* تحسين المسافات في الشاشات الصغيرة */
+@media (max-width: 768px) {
+  /* إعطاء مسافة أكبر ومناسبة لعنصر main في الشاشات الصغيرة */
+  main {
+    padding: 0.8rem 0.75rem 0.5rem 0.75rem !important;
+  }
+
+  /* تأكيد المسافة في جميع الحالات - حتى بعد البحث واختيار العقار */
+  body main {
+    padding-top: 0.8rem !important;
+  }
+
+  #searchSection {
+    margin: 8px 10px 15px 10px;
+  }
+
+  /* تحسين منطقة المحتوى لتقليل المساحة الفارغة */
+  #content {
+    min-height: auto !important;
+    padding: 0 !important;
+  }
+
+  /* تحسين عرض البطاقات في الشاشات الصغيرة */
+  .cards-container {
+    gap: 12px !important;
+    padding: 8px !important;
+  }
+
+  /* تقليل المساحة بين البطاقات */
+  .card {
+    margin-bottom: 12px !important;
+  }
+
+  /* تحسين عرض الجدول في الشاشات الصغيرة */
+  .table-container {
+    padding: 5px !important;
+    margin: 0 !important;
+  }
+}
+
+/* تحسين إضافي للشاشات الصغيرة جداً */
+@media (max-width: 480px) {
+  /* تحسين منطقة المحتوى في الشاشات الصغيرة */
+  #content {
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* تقليل المساحة الفارغة في البطاقات */
+  .cards-container {
+    gap: 10px !important;
+    padding: 5px !important;
+  }
+
+  .card {
+    margin-bottom: 10px !important;
+  }
+}
+                </div>
+                
+                <p><strong>السبب الجذري المكتشف:</strong> المشكلة في تخطيط منطقة المحتوى:</p>
+                <ul style="margin-top: 10px; padding-right: 20px; color: #155724;">
+                    <li>عند البحث عن عقار في الشريط الجانبي، يتم فلترة العقارات في القائمة فقط</li>
+                    <li>منطقة المحتوى الرئيسية (`#content`) تحتوي على مساحة فارغة كبيرة</li>
+                    <li>في الشاشات الصغيرة، هذه المساحة تصبح مزعجة ومرئية بوضوح</li>
+                    <li>CSS الافتراضي لا يحسن استخدام المساحة في الشاشات الصغيرة</li>
+                </ul>
+                <p style="margin-top: 15px;"><strong>الحل:</strong> تحسين CSS لمنطقة المحتوى والبطاقات في الشاشات الصغيرة لتقليل المساحة الفارغة وتحسين استخدام المساحة.</p>
+            </div>
+        </div>
+
+        <!-- خطوات الاختبار -->
+        <div class="test-section">
+            <h3><i class="fas fa-clipboard-check"></i> خطوات اختبار الإصلاح</h3>
+            
+            <div class="steps-list">
+                <h4><i class="fas fa-list-ol"></i> اتبع هذه الخطوات بالضبط</h4>
+                <ol>
+                    <li>افتح التطبيق الرئيسي (index.html)</li>
+                    <li>صغر نافذة المتصفح لأقل من 768px عرض (أو افتح على جهاز جوال)</li>
+                    <li><strong>ابحث عن عقار في قائمة العقارات</strong> (الشريط الجانبي) - مثل "سما"</li>
+                    <li>ستظهر جميع العقارات التي تحتوي على "سما" في القائمة</li>
+                    <li><strong>اختر أحد العقارات من نتائج البحث</strong></li>
+                    <li>لاحظ منطقة المحتوى الرئيسية (حيث تظهر البطاقات أو الجدول)</li>
+                    <li>يجب أن تكون المساحة الفارغة قليلة ومناسبة</li>
+                    <li>لا يجب أن تكون هناك مساحة فارغة كبيرة مزعجة</li>
+                </ol>
+            </div>
+
+            <div style="text-align: center; margin-top: 25px;">
+                <button class="test-button" onclick="openMainApp()">
+                    <i class="fas fa-external-link-alt"></i>
+                    فتح التطبيق للاختبار
+                </button>
+                
+                <button class="test-button success" onclick="showTestResults()">
+                    <i class="fas fa-check-circle"></i>
+                    عرض النتائج المتوقعة
+                </button>
+            </div>
+        </div>
+
+        <!-- النتائج المتوقعة -->
+        <div class="test-section">
+            <h3><i class="fas fa-bullseye"></i> النتائج المتوقعة</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; border: 1px solid #28a745;">
+                    <h4 style="color: #155724; margin-bottom: 10px;">✅ الشاشات الصغيرة</h4>
+                    <ul style="color: #155724; padding-right: 20px;">
+                        <li>مسافة مناسبة بين الهيدر وحقل البحث</li>
+                        <li>لا توجد مسافة مفرطة أو ضيقة</li>
+                        <li>توازن بصري محسن</li>
+                        <li>تجربة مستخدم أفضل</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border: 1px solid #2196f3;">
+                    <h4 style="color: #0d47a1; margin-bottom: 10px;">✅ الشاشات الكبيرة</h4>
+                    <ul style="color: #0d47a1; padding-right: 20px;">
+                        <li>لا تغيير في التخطيط الأصلي</li>
+                        <li>المسافات تبقى متوازنة</li>
+                        <li>عدم تأثر الوظائف الأخرى</li>
+                        <li>استقرار التصميم</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            window.open('index.html', '_blank');
+            alert('تم فتح التطبيق الرئيسي في نافذة جديدة.\n\n🔍 اختبر السيناريو المحدد:\n1. صغر نافذة المتصفح لأقل من 768px\n2. استخدم البحث العام\n3. اختر عقار من النتائج\n4. لاحظ المسافة المحسنة');
+        }
+
+        function showTestResults() {
+            alert('🎯 النتائج المتوقعة بعد الإصلاح:\n\n✅ في الشاشات الصغيرة:\n• مسافة مناسبة (0.8rem) بين الهيدر وحقل البحث\n• لا توجد مسافة مفرطة أو ضيقة\n• توازن بصري أفضل\n\n✅ في الشاشات الكبيرة:\n• لا تغيير في التخطيط الأصلي\n• استقرار التصميم');
+        }
+
+        // إظهار رسالة ترحيب
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                console.log('🔍 تم تحميل صفحة اختبار إصلاح المساحة الفارغة في بحث العقارات');
+                console.log('📱 اختبر البحث في قائمة العقارات في الشاشات الصغيرة');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
