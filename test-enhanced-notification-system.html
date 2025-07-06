@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام الإشعارات الذكي المحسن</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .demo-section {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .demo-notification-button {
+            position: relative;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            margin: 10px;
+        }
+
+        .demo-notification-button:hover {
+            background: rgba(102, 126, 234, 0.2);
+            transform: scale(1.05);
+        }
+
+        .demo-counter {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            border: 2px solid white;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .tabs-demo {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .tabs-header {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .tab-demo {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-demo.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            font-weight: 600;
+        }
+
+        .tab-counter-demo {
+            background: #dc3545;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab-counter-demo.installments {
+            background: #28a745;
+        }
+
+        .tab-counter-demo.contracts {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .tab-content-demo {
+            padding: 20px;
+            display: none;
+        }
+
+        .tab-content-demo.active {
+            display: block;
+        }
+
+        .notification-item-demo {
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .notification-item-demo:hover {
+            background: #f8f9fa;
+            transform: translateX(-2px);
+        }
+
+        .notification-item-demo.installment {
+            border-right: 4px solid #28a745;
+        }
+
+        .notification-item-demo.contract {
+            border-right: 4px solid #ffc107;
+        }
+
+        .notification-item-demo.urgent {
+            background: linear-gradient(90deg, #ffebee 0%, #ffffff 100%);
+        }
+
+        .notification-title-demo {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .notification-message-demo {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .countdown-demo {
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            background: #d4edda;
+            color: #155724;
+            display: inline-block;
+        }
+
+        .countdown-demo.urgent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .countdown-demo.overdue {
+            background: #dc3545;
+            color: white;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            background: #28a745;
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .highlight h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .before {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .after {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-bell"></i> نظام الإشعارات الذكي المحسن</h1>
+            <p>اختبار شامل للنظام المحدث مع التبويبات والعد التنازلي والتفاعل الذكي</p>
+        </div>
+
+        <div class="content">
+            <!-- الميزات الجديدة -->
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3><i class="fas fa-map-marker-alt"></i> موقع محسن في الهيدر</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            زر الإشعارات في الهيدر بجانب عناصر التنقل
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            تصميم متناسق مع باقي عناصر الواجهة
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            لا يتداخل مع العناصر الأخرى
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3><i class="fas fa-tabs"></i> نظام التبويبات</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            تبويب "تاريخ نهاية القسط" مع زر "تم التعديل"
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            تبويب "تاريخ نهاية العقد" مع زر "معلوم"
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            حفظ التبويب المختار في localStorage
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3><i class="fas fa-clock"></i> العد التنازلي الذكي</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            "باقي X أيام" قبل الانتهاء
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            "متأخر X أيام" بعد الانتهاء
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            ألوان مختلفة حسب الحالة
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3><i class="fas fa-mouse-pointer"></i> التفاعل الذكي</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            النقر على إشعار القسط → نافذة تعديل التاريخ
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            النقر على إشعار العقد → تفاصيل العقد
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            أزرار "تم التعديل" و "معلوم"
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- عرض توضيحي للزر في الهيدر -->
+            <div class="demo-section">
+                <h3>عرض توضيحي لزر الإشعارات في الهيدر</h3>
+                <p style="margin-bottom: 20px;">هكذا سيظهر زر الإشعارات في الهيدر بجانب عناصر التنقل:</p>
+                
+                <div style="background: #667eea; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; color: white; margin: 20px 0;">
+                    <div>شعار الموقع</div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <span>الرئيسية</span>
+                        <span>العقارات</span>
+                        <span>التقارير</span>
+                        <div class="demo-notification-button" onclick="showDemoAlert()">
+                            <i class="fas fa-bell"></i>
+                            <span class="demo-counter">7</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <p style="color: #666; font-size: 14px;">
+                    <i class="fas fa-info-circle"></i> 
+                    الزر متناسق مع تصميم الهيدر ولا يتداخل مع العناصر الأخرى
+                </p>
+            </div>
+
+            <!-- عرض توضيحي للتبويبات -->
+            <div class="demo-section">
+                <h3>عرض توضيحي لنظام التبويبات</h3>
+                
+                <div class="tabs-demo">
+                    <div class="tabs-header">
+                        <button class="tab-demo active" onclick="switchDemoTab('installments')">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>تاريخ نهاية القسط</span>
+                            <span class="tab-counter-demo installments">3</span>
+                        </button>
+                        <button class="tab-demo" onclick="switchDemoTab('contracts')">
+                            <i class="fas fa-file-contract"></i>
+                            <span>تاريخ نهاية العقد</span>
+                            <span class="tab-counter-demo contracts">4</span>
+                        </button>
+                    </div>
+                    
+                    <div class="tab-content-demo active" id="installments-demo">
+                        <div class="notification-item-demo installment urgent">
+                            <div class="notification-title-demo">
+                                قسط متأخر - أحمد محمد
+                                <span style="background: #28a745; color: white; padding: 2px 6px; border-radius: 8px; font-size: 9px; margin-right: 10px;">تم التعديل</span>
+                            </div>
+                            <div class="notification-message-demo">القسط متأخر منذ 3 أيام - يحتاج تجديد عاجل</div>
+                            <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                                <strong>الوحدة:</strong> A101 | <strong>تاريخ الانتهاء:</strong> 28/06/2025
+                            </div>
+                            <span class="countdown-demo overdue">متأخر 3 أيام</span>
+                        </div>
+                        
+                        <div class="notification-item-demo installment">
+                            <div class="notification-title-demo">انتهاء قسط - فاطمة علي</div>
+                            <div class="notification-message-demo">تاريخ نهاية القسط يحتاج إلى تجديد وإضافة أقساط جديدة</div>
+                            <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                                <strong>الوحدة:</strong> B202 | <strong>تاريخ الانتهاء:</strong> 07/07/2025
+                            </div>
+                            <span class="countdown-demo">باقي 5 أيام</span>
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-success" style="font-size: 11px; padding: 4px 12px;">
+                                    <i class="fas fa-edit"></i> تم التعديل
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content-demo" id="contracts-demo">
+                        <div class="notification-item-demo contract urgent">
+                            <div class="notification-title-demo">عقد منتهي - سارة أحمد</div>
+                            <div class="notification-message-demo">العقد منتهي منذ 5 أيام - يحتاج تجديد عاجل</div>
+                            <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                                <strong>الوحدة:</strong> C303 | <strong>تاريخ الانتهاء:</strong> 25/06/2025
+                            </div>
+                            <span class="countdown-demo overdue">متأخر 5 أيام</span>
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-info" style="font-size: 11px; padding: 4px 12px;">
+                                    <i class="fas fa-check"></i> معلوم
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- مقارنة قبل وبعد التحسين -->
+            <div class="feature-card" style="margin-top: 30px;">
+                <h3><i class="fas fa-balance-scale"></i> مقارنة قبل وبعد التحسين</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>الميزة</th>
+                            <th class="before">النسخة السابقة ❌</th>
+                            <th class="after">النسخة المحسنة ✅</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>موقع الزر</strong></td>
+                            <td class="before">أعلى يسار الصفحة (منفصل)</td>
+                            <td class="after">في الهيدر مع عناصر التنقل</td>
+                        </tr>
+                        <tr>
+                            <td><strong>أنواع الإشعارات</strong></td>
+                            <td class="before">أقساط فقط</td>
+                            <td class="after">أقساط وعقود منفصلة</td>
+                        </tr>
+                        <tr>
+                            <td><strong>التنظيم</strong></td>
+                            <td class="before">قائمة واحدة مختلطة</td>
+                            <td class="after">تبويبات منفصلة ومنظمة</td>
+                        </tr>
+                        <tr>
+                            <td><strong>العد التنازلي</strong></td>
+                            <td class="before">"X يوم متبقي" فقط</td>
+                            <td class="after">"باقي/متأخر X أيام" ذكي</td>
+                        </tr>
+                        <tr>
+                            <td><strong>التفاعل</strong></td>
+                            <td class="before">توجيه للبطاقة فقط</td>
+                            <td class="after">نوافذ تعديل وتفاصيل</td>
+                        </tr>
+                        <tr>
+                            <td><strong>إدارة الحالة</strong></td>
+                            <td class="before">مقروء/غير مقروء فقط</td>
+                            <td class="after">"تم التعديل" و "معلوم"</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- خطوات الاختبار -->
+            <div class="feature-card" style="margin-top: 30px;">
+                <h3><i class="fas fa-clipboard-list"></i> خطوات اختبار النظام المحسن</h3>
+
+                <div class="highlight">
+                    <h4>⚠️ متطلبات الاختبار</h4>
+                    <p>تأكد من وجود وحدات مع تواريخ "نهاية القسط" و "نهاية العقد" قريبة من التاريخ الحالي</p>
+                </div>
+
+                <ol style="list-style: decimal; padding-right: 20px;">
+                    <li style="margin-bottom: 15px;">
+                        <strong>افتح التطبيق الرئيسي</strong><br>
+                        <small>اذهب إلى index.html وانتظر تحميل البيانات</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <strong>ابحث عن زر الإشعارات في الهيدر</strong><br>
+                        <small>يجب أن تجد أيقونة جرس في الهيدر بجانب عناصر التنقل</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <strong>اضغط على زر الإشعارات</strong><br>
+                        <small>ستظهر نافذة مع تبويبين: "تاريخ نهاية القسط" و "تاريخ نهاية العقد"</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <strong>اختبر التبديل بين التبويبات</strong><br>
+                        <small>انقر على كل تبويب وتحقق من عرض الإشعارات المناسبة</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <strong>اختبر النقر على إشعار قسط</strong><br>
+                        <small>يجب أن يوجهك للوحدة ويفتح نافذة تعديل تاريخ القسط</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <strong>اختبر النقر على إشعار عقد</strong><br>
+                        <small>يجب أن يوجهك للوحدة ويظهر تفاصيل العقد</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <strong>اختبر أزرار "تم التعديل" و "معلوم"</strong><br>
+                        <small>يجب أن تحدث حالة الإشعار وتقلل العداد</small>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- أدوات الاختبار -->
+            <div class="feature-card" style="margin-top: 30px;">
+                <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+                <button class="btn btn-primary" onclick="openMainApp()">
+                    <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+                </button>
+                <button class="btn btn-success" onclick="showTestInstructions()">
+                    <i class="fas fa-list-check"></i> تعليمات مفصلة
+                </button>
+                <button class="btn btn-warning" onclick="showExpectedResults()">
+                    <i class="fas fa-bullseye"></i> النتائج المتوقعة
+                </button>
+                <button class="btn btn-info" onclick="showTroubleshooting()">
+                    <i class="fas fa-wrench"></i> استكشاف الأخطاء
+                </button>
+                <div id="testResults" class="results"></div>
+            </div>
+
+            <!-- النتائج المتوقعة -->
+            <div class="feature-card" style="margin-top: 30px;">
+                <h3><i class="fas fa-check-circle"></i> النتائج المتوقعة</h3>
+
+                <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #c3e6cb;">
+                    <h4 style="color: #155724; margin-bottom: 10px;">✅ عند وجود إشعارات</h4>
+                    <ul style="color: #155724; margin: 0; padding-right: 20px;">
+                        <li>زر الإشعارات في الهيدر مع عداد ملون</li>
+                        <li>نافذة إشعارات مع تبويبين منفصلين</li>
+                        <li>عدادات منفصلة لكل تبويب</li>
+                        <li>عد تنازلي ذكي ("باقي/متأخر X أيام")</li>
+                        <li>ألوان مختلفة حسب الحالة (عاجل، تحذير، عادي)</li>
+                        <li>أزرار "تم التعديل" و "معلوم" تعمل بشكل صحيح</li>
+                    </ul>
+                </div>
+
+                <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #bee5eb;">
+                    <h4 style="color: #0c5460; margin-bottom: 10px;">ℹ️ التفاعل المتوقع</h4>
+                    <ul style="color: #0c5460; margin: 0; padding-right: 20px;">
+                        <li>النقر على إشعار قسط → توجيه + نافذة تعديل التاريخ</li>
+                        <li>النقر على إشعار عقد → توجيه + نافذة تفاصيل العقد</li>
+                        <li>زر "تم التعديل" → تغيير حالة الإشعار + تقليل العداد</li>
+                        <li>زر "معلوم" → تغيير حالة الإشعار + تقليل العداد</li>
+                        <li>حفظ حالة التبويب المختار في localStorage</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showDemoAlert() {
+            alert('🔔 هذا مثال على زر الإشعارات في الهيدر!\n\nالميزات الجديدة:\n• موقع محسن في الهيدر\n• نظام تبويبات للأقساط والعقود\n• عد تنازلي ذكي\n• تفاعل محسن مع الإشعارات');
+        }
+
+        function switchDemoTab(tabName) {
+            // تحديث التبويبات
+            document.querySelectorAll('.tab-demo').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`.tab-demo:nth-child(${tabName === 'installments' ? '1' : '2'})`).classList.add('active');
+
+            // تحديث المحتوى
+            document.querySelectorAll('.tab-content-demo').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-demo`).classList.add('active');
+        }
+
+        function openMainApp() {
+            const results = document.getElementById('testResults');
+            results.textContent = '🏠 فتح التطبيق الرئيسي...\n';
+
+            window.open('index.html', '_blank');
+
+            results.textContent += '✅ تم فتح التطبيق الرئيسي في نافذة جديدة\n';
+            results.textContent += '🔔 ابحث عن زر الإشعارات في الهيدر\n';
+            results.textContent += '📋 اتبع خطوات الاختبار المفصلة\n';
+        }
+
+        function showTestInstructions() {
+            const results = document.getElementById('testResults');
+            results.textContent = `📋 تعليمات الاختبار المفصلة:
+
+🔸 الخطوة 1: التحضير
+   - افتح التطبيق الرئيسي (index.html)
+   - انتظر تحميل البيانات بالكامل
+   - تأكد من وجود وحدات مع تواريخ انتهاء قريبة
+
+🔸 الخطوة 2: فحص زر الإشعارات
+   - ابحث عن أيقونة الجرس في الهيدر
+   - يجب أن يكون بجانب عناصر التنقل الأخرى
+   - تحقق من وجود عداد أحمر إذا كانت هناك إشعارات
+
+🔸 الخطوة 3: اختبار نافذة الإشعارات
+   - اضغط على زر الإشعارات
+   - تحقق من ظهور نافذة مع تبويبين
+   - "تاريخ نهاية القسط" و "تاريخ نهاية العقد"
+
+🔸 الخطوة 4: اختبار التبويبات
+   - انقر على كل تبويب
+   - تحقق من عرض الإشعارات المناسبة
+   - لاحظ العدادات المنفصلة لكل تبويب
+
+🔸 الخطوة 5: اختبار إشعارات الأقساط
+   - انقر على إشعار في تبويب "تاريخ نهاية القسط"
+   - يجب أن يوجهك للوحدة
+   - يجب أن تظهر نافذة تعديل تاريخ القسط
+   - اختبر زر "تم التعديل"
+
+🔸 الخطوة 6: اختبار إشعارات العقود
+   - انقر على إشعار في تبويب "تاريخ نهاية العقد"
+   - يجب أن يوجهك للوحدة
+   - يجب أن تظهر نافذة تفاصيل العقد
+   - اختبر زر "معلوم"
+
+🔸 الخطوة 7: اختبار العد التنازلي
+   - لاحظ النصوص: "باقي X أيام" أو "متأخر X أيام"
+   - تحقق من الألوان المختلفة حسب الحالة
+   - عاجل (أحمر)، تحذير (أصفر)، عادي (أخضر)
+
+🔸 الخطوة 8: اختبار الحفظ
+   - اختر تبويب معين
+   - أعد تحميل الصفحة
+   - يجب أن يفتح نفس التبويب المختار
+`;
+        }
+
+        function showExpectedResults() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🎯 النتائج المتوقعة بالتفصيل:
+
+✅ زر الإشعارات في الهيدر:
+   - موقع: في الهيدر بجانب عناصر التنقل
+   - شكل: أيقونة جرس دائرية مع خلفية شفافة
+   - عداد: دائرة حمراء صغيرة مع عدد الإشعارات
+   - تأثير: تكبير طفيف عند التمرير
+
+✅ نافذة الإشعارات:
+   - موقع: أسفل الزر مباشرة في الجانب الأيمن
+   - حجم: 420px عرض، حد أقصى 600px ارتفاع
+   - تبويبات: تبويبين منفصلين مع أيقونات وعدادات
+
+✅ تبويب الأقساط:
+   - أيقونة: تقويم مع علامة صح
+   - لون: أخضر للعداد
+   - محتوى: إشعارات انتهاء الأقساط
+   - زر: "تم التعديل" (أخضر)
+
+✅ تبويب العقود:
+   - أيقونة: ملف عقد
+   - لون: أصفر للعداد
+   - محتوى: إشعارات انتهاء العقود
+   - زر: "معلوم" (أزرق)
+
+✅ العد التنازلي:
+   - قبل الانتهاء: "باقي X أيام" (أخضر/أصفر)
+   - يوم الانتهاء: "ينتهي اليوم" (أحمر)
+   - بعد الانتهاء: "متأخر X أيام" (أحمر نابض)
+
+✅ التفاعل:
+   - النقر على إشعار قسط: توجيه + نافذة تعديل
+   - النقر على إشعار عقد: توجيه + نافذة تفاصيل
+   - الأزرار: تحديث فوري للحالة والعداد
+   - الحفظ: localStorage يحفظ جميع الحالات
+`;
+        }
+
+        function showTroubleshooting() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🔧 استكشاف الأخطاء وحلها:
+
+❌ لا يظهر زر الإشعارات في الهيدر:
+   🔍 تحقق من وجود عنصر header أو .header في الصفحة
+   🔍 تأكد من تحميل ملف script.js بالكامل
+   🔍 افتح Developer Tools وابحث عن أخطاء JavaScript
+   🔍 تحقق من استدعاء دالة initializeNotificationSystem()
+
+❌ النافذة تظهر بدون تبويبات:
+   🔍 تحقق من تحميل أنماط CSS الجديدة
+   🔍 تأكد من وجود دالة createNotificationPanel() المحدثة
+   🔍 افحص console.log للرسائل التشخيصية
+
+❌ التبويبات لا تعمل:
+   🔍 تحقق من وجود دالة switchNotificationTab()
+   🔍 تأكد من تحميل البيانات في المتغيرات الصحيحة
+   🔍 افحص installmentNotifications و contractNotifications
+
+❌ العد التنازلي لا يظهر بشكل صحيح:
+   🔍 تحقق من صيغة التاريخ في البيانات (DD/MM/YYYY)
+   🔍 تأكد من وجود دالة getCountdownText()
+   🔍 افحص حساب diffDays في دوال الإشعارات
+
+❌ الأزرار لا تعمل:
+   🔍 تحقق من وجود دوال markInstallmentAsModified و markContractAsAcknowledged
+   🔍 تأكد من تحديث notificationStates بشكل صحيح
+   🔍 افحص حفظ البيانات في localStorage
+
+❌ التوجيه للوحدات لا يعمل:
+   🔍 تحقق من وجود دوال navigateToPropertyAndEditInstallment و navigateToPropertyAndShowContract
+   🔍 تأكد من وجود دالة searchProperties
+   🔍 افحص تطابق أرقام الوحدات في البيانات
+
+🛠️ أدوات التشخيص المتقدمة:
+   • افتح Developer Tools (F12)
+   • Console: ابحث عن رسائل تبدأ بـ 🔔
+   • Application > Local Storage: افحص 'propertyNotifications'
+   • Network: تحقق من تحميل جميع الملفات
+   • Elements: افحص هيكل HTML للإشعارات
+
+💡 نصائح للاختبار:
+   • استخدم createTestNotificationData() لإنشاء بيانات اختبار
+   • امسح localStorage إذا كانت هناك مشاكل في الحفظ
+   • أعد تحميل الصفحة بعد تغيير البيانات
+   • تحقق من التواريخ - يجب أن تكون قريبة من اليوم
+`;
+        }
+
+        // تهيئة تلقائية
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 صفحة اختبار النظام المحسن جاهزة');
+            console.log('🔔 النظام الجديد يتضمن:');
+            console.log('   • زر إشعارات في الهيدر');
+            console.log('   • تبويبات منفصلة للأقساط والعقود');
+            console.log('   • عد تنازلي ذكي');
+            console.log('   • تفاعل محسن مع نوافذ التعديل');
+            console.log('   • حفظ الحالة في localStorage');
+        });
+    </script>
+</body>
+</html>

@@ -407,7 +407,7 @@ aside.active {
 #propertySearch {
     width: 90%;
     padding: 0.8rem;
-    margin: 1.2rem;
+    margin: 1.5rem;
     border: 1px solid #ddd;
     border-radius: 8px;
     font-size: 1rem;
@@ -417,6 +417,233 @@ aside.active {
     z-index: 1600; /* أعلى من السايدبار */
     background: white;
     touch-action: manipulation; /* منع التداخل مع اللمس */
+}
+
+/* أنماط أزرار البحث المحسن */
+.search-buttons-container {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+    justify-content: center;
+    padding: 0 1.2rem;
+}
+
+.search-btn, .clear-btn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    flex: 1;
+    max-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.clear-btn {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+}
+
+.search-btn:hover, .clear-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.search-btn:active, .clear-btn:active {
+    transform: translateY(0);
+}
+
+/* مؤشر البحث */
+.search-indicator {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #17a2b8;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-top: 2px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* رسائل نتائج البحث */
+.search-results-message {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 8px 12px;
+    text-align: center;
+    font-size: 13px;
+    color: #495057;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* تحسينات للبحث العام - تخطيط أفقي */
+#searchSection {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.global-search-container {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: white;
+    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    max-width: 100%;
+}
+
+.global-search-container:focus-within {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.15), 0 4px 12px rgba(0,0,0,0.15);
+}
+
+#globalSearch {
+    flex: 2;
+    padding: 16px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    outline: none;
+    min-height: 50px;
+    min-width: 300px;
+}
+
+#globalSearch:focus {
+    background: white;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+
+.global-search-btn, .global-clear-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.global-search-btn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+}
+
+.global-search-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 12px rgba(0,123,255,0.4);
+}
+
+.global-clear-btn {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+    box-shadow: 0 2px 4px rgba(108,117,125,0.3);
+}
+
+.global-clear-btn:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 12px rgba(108,117,125,0.4);
+}
+
+.global-search-btn:active, .global-clear-btn:active {
+    transform: translateY(0);
+}
+
+/* تحسينات للجوال */
+@media (max-width: 768px) {
+    .search-buttons-container {
+        padding: 0 0.8rem;
+    }
+
+    .search-btn, .clear-btn {
+        font-size: 12px;
+        padding: 6px 12px;
+        max-width: 100px;
+    }
+
+    /* تحسينات البحث العام للجوال */
+    .global-search-container {
+        gap: 8px;
+        padding: 8px;
+    }
+
+    #globalSearch {
+        font-size: 16px; /* منع التكبير في iOS */
+        padding: 14px 18px;
+        min-height: 46px;
+        min-width: 250px;
+        flex: 3;
+    }
+
+    .global-search-btn, .global-clear-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
+}
+
+/* تحسينات للشاشات المتوسطة */
+@media (max-width: 992px) and (min-width: 769px) {
+    .global-search-container {
+        gap: 8px;
+        padding: 6px;
+    }
+
+    .global-search-btn, .global-clear-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+}
+
+/* تحسينات للشاشات الصغيرة جداً */
+@media (max-width: 480px) {
+    .global-search-container {
+        margin: 0 10px;
+        gap: 6px;
+        padding: 6px;
+    }
+
+    #globalSearch {
+        min-width: 200px;
+        flex: 4;
+    }
+
+    .global-search-btn, .global-clear-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 10px;
+    }
 }
 
 #propertyList {
@@ -484,10 +711,17 @@ main.with-sidebar {
   background: none;
 }
 
+/* تقليل المسافة في الشاشات الصغيرة */
+@media (max-width: 768px) {
+  #searchSection {
+    margin: 5px 10px 15px 10px;
+  }
+}
+
 #globalSearch {
   width: 100%;
   max-width: 350px;
-  padding: 10px 16px;
+  padding: 10px 25px;
   border: 1px solid #d1d5db;
   border-radius: 10px;
   font-size: 1.1rem;
@@ -710,7 +944,7 @@ main {
   main {
     margin-right: 0 !important;
     margin-left: 0 !important;
-    padding: 1rem 0.75rem !important;
+    padding: 0.5rem 0.75rem !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }

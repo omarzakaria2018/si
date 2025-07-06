@@ -2630,10 +2630,16 @@ function initializeApp() {
     
     // تهيئة البحث في العقارات
     initPropertySearch();
-    
+
     // تهيئة فلتر التاريخ
     initDateFilter();
-    
+
+    // تهيئة أزرار البحث المحسن
+    initializeEnhancedSearch();
+
+    // ضمان تطبيق التحسينات
+    ensureSearchEnhancements();
+
     // عرض البيانات الأولية
     renderData();
 
@@ -3137,19 +3143,477 @@ function initStatusFilter() {
     container.appendChild(button);
 }
 
-// تهيئة البحث العام
+// متغيرات البحث المحسن
+let searchState = {
+    global: '',
+    property: '',
+    isSearchActive: false
+};
+
+// تهيئة البحث العام المحسن مع التخطيط الأفقي
 function initGlobalSearch() {
     const searchInput = document.getElementById('globalSearch');
-    searchInput.addEventListener('input', renderData);
+    if (!searchInput) return;
+
+    // إزالة البحث التلقائي القديم
+    searchInput.removeEventListener('input', renderData);
+
+    // إضافة مستمع للضغط على Enter
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performGlobalSearch();
+        }
+    });
+
+    // التأكد من ربط الأحداث بالأزرار الموجودة في HTML
+    const searchBtn = document.querySelector('.global-search-btn');
+    const clearBtn = document.querySelector('.global-clear-btn');
+
+    if (searchBtn && !searchBtn.hasAttribute('data-initialized')) {
+        searchBtn.addEventListener('click', performGlobalSearch);
+        searchBtn.setAttribute('data-initialized', 'true');
+    }
+
+    if (clearBtn && !clearBtn.hasAttribute('data-initialized')) {
+        clearBtn.addEventListener('click', clearGlobalSearch);
+        clearBtn.setAttribute('data-initialized', 'true');
+    }
+
+    console.log('✅ تم تهيئة البحث العام المحسن مع التخطيط الأفقي');
 }
 
-// تهيئة البحث في العقارات
+// إضافة أزرار البحث والمسح (محدثة للتخطيط الجديد)
+function addSearchButtons(inputId) {
+    const searchInput = document.getElementById(inputId);
+    if (!searchInput) return;
+
+    // للبحث العام، الأزرار موجودة بالفعل في HTML
+    if (inputId === 'globalSearch') {
+        console.log('✅ أزرار البحث العام موجودة في HTML');
+        return;
+    }
+
+    // للبحث في العقارات، نستخدم النظام القديم
+    if (inputId === 'propertySearch') {
+        // التحقق من وجود الأزرار مسبقاً
+        const existingContainer = searchInput.parentElement.querySelector('.search-buttons-container');
+        if (existingContainer) {
+            existingContainer.remove();
+        }
+
+        // إنشاء حاوية الأزرار
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'search-buttons-container';
+        buttonsContainer.style.cssText = `
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+            justify-content: center;
+        `;
+
+        // زر البحث
+        const searchButton = document.createElement('button');
+        searchButton.className = 'search-btn';
+        searchButton.innerHTML = '<i class="fas fa-search"></i> بحث';
+        searchButton.style.cssText = `
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            flex: 1;
+            max-width: 120px;
+        `;
+
+        // زر المسح
+        const clearButton = document.createElement('button');
+        clearButton.className = 'clear-btn';
+        clearButton.innerHTML = '<i class="fas fa-times"></i> مسح';
+        clearButton.style.cssText = `
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            flex: 1;
+            max-width: 120px;
+        `;
+
+        // تأثيرات التمرير
+        [searchButton, clearButton].forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+            });
+
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = 'none';
+            });
+        });
+
+        // ربط الأحداث
+        searchButton.addEventListener('click', performPropertySearch);
+        clearButton.addEventListener('click', clearPropertySearch);
+
+        // إضافة الأزرار للحاوية
+        buttonsContainer.appendChild(searchButton);
+        buttonsContainer.appendChild(clearButton);
+
+        // إضافة الحاوية بعد حقل البحث
+        searchInput.parentElement.insertBefore(buttonsContainer, searchInput.nextSibling);
+    }
+}
+
+// تنفيذ البحث العام
+function performGlobalSearch() {
+    const searchInput = document.getElementById('globalSearch');
+    if (!searchInput) return;
+
+    const searchTerm = searchInput.value.trim();
+    console.log('🔍 تنفيذ البحث العام:', searchTerm);
+
+    // حفظ حالة البحث
+    searchState.global = searchTerm;
+    searchState.isSearchActive = searchTerm.length > 0;
+
+    // تنفيذ البحث
+    renderData();
+
+    // إظهار مؤشر البحث
+    if (searchTerm) {
+        showSearchIndicator(searchInput, 'جاري البحث...');
+        setTimeout(() => {
+            showSearchIndicator(searchInput, `تم العثور على النتائج`, 'success');
+        }, 500);
+    }
+}
+
+// مسح البحث العام
+function clearGlobalSearch() {
+    const searchInput = document.getElementById('globalSearch');
+    if (!searchInput) return;
+
+    console.log('🧹 مسح البحث العام');
+
+    // مسح النص
+    searchInput.value = '';
+
+    // مسح حالة البحث
+    searchState.global = '';
+    searchState.isSearchActive = false;
+
+    // إعادة عرض جميع البيانات
+    renderData();
+
+    // إظهار مؤشر المسح
+    showSearchIndicator(searchInput, 'تم مسح البحث', 'info');
+}
+
+// مسح البحث العام تلقائياً عند التنقل (بدون مؤشرات بصرية)
+function clearGlobalSearchOnNavigation() {
+    const searchInput = document.getElementById('globalSearch');
+    if (!searchInput) return;
+
+    // التحقق من وجود بحث نشط
+    if (!searchState.global || searchState.global.trim() === '') {
+        return; // لا يوجد بحث نشط، لا حاجة للمسح
+    }
+
+    console.log('🔄 مسح البحث العام تلقائياً عند التنقل');
+
+    // مسح النص
+    searchInput.value = '';
+
+    // مسح حالة البحث
+    searchState.global = '';
+    searchState.isSearchActive = false;
+
+    // لا نستدعي renderData() هنا لأن دوال التنقل ستستدعيها
+    // لا نظهر مؤشرات بصرية لأن هذا مسح تلقائي
+}
+
+// تنفيذ البحث في العقارات
+function performPropertySearch() {
+    const searchInput = document.getElementById('propertySearch');
+    if (!searchInput) return;
+
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    console.log('🔍 تنفيذ البحث في العقارات:', searchTerm);
+
+    // حفظ حالة البحث
+    searchState.property = searchTerm;
+
+    // تطبيق البحث على قائمة العقارات
+    const propertyItems = document.querySelectorAll('#propertyList div:not(.no-properties)');
+    let visibleCount = 0;
+
+    propertyItems.forEach(item => {
+        const propertyName = item.textContent.toLowerCase();
+        const isVisible = !searchTerm || propertyName.includes(searchTerm);
+
+        item.style.display = isVisible ? '' : 'none';
+        if (isVisible) visibleCount++;
+    });
+
+    // إظهار رسالة إذا لم توجد نتائج
+    updatePropertySearchResults(visibleCount, searchTerm);
+
+    // إظهار مؤشر البحث
+    if (searchTerm) {
+        showSearchIndicator(searchInput, `${visibleCount} نتيجة`, 'success');
+    }
+}
+
+// مسح البحث في العقارات
+function clearPropertySearch() {
+    const searchInput = document.getElementById('propertySearch');
+    if (!searchInput) return;
+
+    console.log('🧹 مسح البحث في العقارات');
+
+    // مسح النص
+    searchInput.value = '';
+
+    // مسح حالة البحث
+    searchState.property = '';
+
+    // إظهار جميع العقارات
+    const propertyItems = document.querySelectorAll('#propertyList div:not(.no-properties)');
+    propertyItems.forEach(item => {
+        item.style.display = '';
+    });
+
+    // إزالة رسائل البحث
+    const searchResults = document.querySelector('#propertyList .search-results-message');
+    if (searchResults) {
+        searchResults.remove();
+    }
+
+    // تحديث عداد النتائج (إزالة رسائل البحث)
+    updatePropertySearchResults(0, '');
+
+    // إظهار مؤشر المسح
+    showSearchIndicator(searchInput, 'تم مسح البحث', 'info');
+}
+
+// إظهار مؤشر البحث
+function showSearchIndicator(inputElement, message, type = 'info') {
+    if (!inputElement) return;
+
+    // إزالة المؤشر السابق
+    const existingIndicator = inputElement.parentElement.querySelector('.search-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+
+    // إنشاء مؤشر جديد
+    const indicator = document.createElement('div');
+    indicator.className = 'search-indicator';
+    indicator.textContent = message;
+
+    // تحديد اللون حسب النوع
+    let backgroundColor = '#17a2b8'; // info
+    if (type === 'success') backgroundColor = '#28a745';
+    if (type === 'warning') backgroundColor = '#ffc107';
+    if (type === 'error') backgroundColor = '#dc3545';
+
+    indicator.style.cssText = `
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${backgroundColor};
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+        margin-top: 2px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    `;
+
+    // إضافة المؤشر
+    inputElement.parentElement.style.position = 'relative';
+    inputElement.parentElement.appendChild(indicator);
+
+    // إظهار المؤشر
+    setTimeout(() => {
+        indicator.style.opacity = '1';
+    }, 10);
+
+    // إخفاء المؤشر بعد 3 ثوان
+    setTimeout(() => {
+        indicator.style.opacity = '0';
+        setTimeout(() => {
+            if (indicator.parentElement) {
+                indicator.remove();
+            }
+        }, 300);
+    }, 3000);
+}
+
+// تحديث نتائج البحث في العقارات
+function updatePropertySearchResults(visibleCount, searchTerm) {
+    const propertyList = document.getElementById('propertyList');
+    if (!propertyList) return;
+
+    // إزالة رسالة النتائج السابقة
+    const existingMessage = propertyList.querySelector('.search-results-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    // إضافة رسالة النتائج الجديدة إذا كان هناك بحث نشط
+    if (searchTerm) {
+        const resultsMessage = document.createElement('div');
+        resultsMessage.className = 'search-results-message';
+        resultsMessage.style.cssText = `
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 8px 12px;
+            text-align: center;
+            font-size: 13px;
+            color: #495057;
+        `;
+
+        if (visibleCount === 0) {
+            resultsMessage.innerHTML = `
+                <i class="fas fa-search" style="color: #6c757d; margin-left: 5px;"></i>
+                لا توجد نتائج للبحث: "${searchTerm}"
+            `;
+            resultsMessage.style.color = '#6c757d';
+        } else {
+            resultsMessage.innerHTML = `
+                <i class="fas fa-check-circle" style="color: #28a745; margin-left: 5px;"></i>
+                ${visibleCount} نتيجة للبحث: "${searchTerm}"
+            `;
+            resultsMessage.style.color = '#28a745';
+        }
+
+        // إضافة الرسالة في بداية القائمة
+        propertyList.insertBefore(resultsMessage, propertyList.firstChild);
+    }
+}
+
+// استعادة حالة البحث في العقارات
+function restorePropertySearchState(searchTerm) {
+    const searchInput = document.getElementById('propertySearch');
+    if (!searchInput || !searchTerm) return;
+
+    console.log('🔄 استعادة حالة البحث في العقارات:', searchTerm);
+
+    // استعادة النص في حقل البحث
+    searchInput.value = searchTerm;
+
+    // تطبيق البحث
+    searchState.property = searchTerm;
+    performPropertySearch();
+}
+
+// تحديث دالة renderData لاستخدام حالة البحث المحفوظة
+function getGlobalSearchTerm() {
+    // استخدام حالة البحث المحفوظة بدلاً من قراءة القيمة مباشرة
+    return searchState.isSearchActive ? searchState.global : '';
+}
+
+// تهيئة نظام البحث المحسن
+function initializeEnhancedSearch() {
+    console.log('🔍 تهيئة نظام البحث المحسن...');
+
+    // التأكد من إضافة الأزرار للبحث العام
+    setTimeout(() => {
+        const globalSearchInput = document.getElementById('globalSearch');
+        if (globalSearchInput && !globalSearchInput.parentElement.querySelector('.search-buttons-container')) {
+            addSearchButtons('globalSearch');
+        }
+    }, 100);
+
+    // التأكد من إضافة الأزرار لبحث العقارات
+    setTimeout(() => {
+        const propertySearchInput = document.getElementById('propertySearch');
+        if (propertySearchInput && !propertySearchInput.parentElement.querySelector('.search-buttons-container')) {
+            addSearchButtons('propertySearch');
+        }
+    }, 200);
+
+    console.log('✅ تم تهيئة نظام البحث المحسن');
+}
+
+// دالة لضمان تطبيق التحسينات عند تحميل الصفحة (محدثة للتخطيط الجديد)
+function ensureSearchEnhancements() {
+    // التحقق من وجود أزرار البحث وإضافتها إذا لم تكن موجودة
+    setTimeout(() => {
+        const globalSearch = document.getElementById('globalSearch');
+        const propertySearch = document.getElementById('propertySearch');
+
+        // للبحث العام، التحقق من الأزرار في HTML
+        if (globalSearch) {
+            const searchBtn = document.querySelector('.global-search-btn');
+            const clearBtn = document.querySelector('.global-clear-btn');
+
+            if (searchBtn && !searchBtn.hasAttribute('data-initialized')) {
+                searchBtn.addEventListener('click', performGlobalSearch);
+                searchBtn.setAttribute('data-initialized', 'true');
+                console.log('🔧 تم ربط زر البحث العام...');
+            }
+
+            if (clearBtn && !clearBtn.hasAttribute('data-initialized')) {
+                clearBtn.addEventListener('click', clearGlobalSearch);
+                clearBtn.setAttribute('data-initialized', 'true');
+                console.log('🔧 تم ربط زر مسح البحث العام...');
+            }
+
+            // إضافة مستمع Enter إذا لم يكن موجوداً
+            if (!globalSearch.hasAttribute('data-enter-initialized')) {
+                globalSearch.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        performGlobalSearch();
+                    }
+                });
+                globalSearch.setAttribute('data-enter-initialized', 'true');
+            }
+        }
+
+        // لبحث العقارات، استخدام النظام القديم
+        if (propertySearch && !propertySearch.parentElement.querySelector('.search-buttons-container')) {
+            console.log('🔧 إضافة أزرار بحث العقارات...');
+            addSearchButtons('propertySearch');
+        }
+
+        console.log('✅ تم ضمان تطبيق تحسينات البحث مع التخطيط الجديد');
+    }, 1000);
+}
+
+// تهيئة البحث في العقارات المحسن
 function initPropertySearch() {
     const searchInput = document.getElementById('propertySearch');
     if (!searchInput) return;
 
+    // إزالة البحث التلقائي القديم
+    const oldInputListener = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(oldInputListener, searchInput);
+    const newSearchInput = document.getElementById('propertySearch');
+
+    // إضافة أزرار البحث والمسح
+    addSearchButtons('propertySearch');
+
     // منع إغلاق السايدبار عند التفاعل مع البحث
-    searchInput.addEventListener('focus', function(e) {
+    newSearchInput.addEventListener('focus', function(e) {
         e.stopPropagation();
         // إضافة كلاس حماية للسايدبار
         const sidebar = document.querySelector('aside');
@@ -3158,7 +3622,7 @@ function initPropertySearch() {
         }
     });
 
-    searchInput.addEventListener('blur', function(e) {
+    newSearchInput.addEventListener('blur', function() {
         // إزالة كلاس الحماية بعد تأخير قصير
         setTimeout(() => {
             const sidebar = document.querySelector('aside');
@@ -3168,33 +3632,33 @@ function initPropertySearch() {
         }, 300);
     });
 
-    searchInput.addEventListener('input', function(e) {
-        e.stopPropagation(); // منع انتشار الحدث
-        const searchTerm = this.value.toLowerCase();
-        const propertyItems = document.querySelectorAll('#propertyList div');
-
-        propertyItems.forEach(item => {
-            const propertyName = item.textContent.toLowerCase();
-            if (propertyName.includes(searchTerm)) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
-        });
+    // إضافة مستمع للضغط على Enter
+    newSearchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performPropertySearch();
+        }
     });
 
     // منع إغلاق السايدبار عند النقر على البحث
-    searchInput.addEventListener('click', function(e) {
+    newSearchInput.addEventListener('click', function(e) {
         e.stopPropagation();
     });
 
-    searchInput.addEventListener('touchstart', function(e) {
+    newSearchInput.addEventListener('touchstart', function(e) {
         e.stopPropagation();
     });
+
+    console.log('✅ تم تهيئة البحث في العقارات المحسن');
 }
 
 // اختيار بلد
 function selectCountry(country) {
+    console.log('🏙️ تغيير المدينة إلى:', country);
+
+    // مسح البحث العام تلقائياً عند تغيير المدينة
+    clearGlobalSearchOnNavigation();
+
     // عند اختيار "الكل" أزل كل الفلاتر
     if (!country || country === 'الكل') {
         currentCountry = null;
@@ -3225,9 +3689,15 @@ function selectCountry(country) {
     saveAppState();
 }
 
-// اختيار عقار
+// اختيار عقار مع الحفاظ على حالة البحث
 function selectProperty(propertyName) {
     console.log('🏢 اختيار عقار:', propertyName, 'العقار الحالي:', currentProperty);
+
+    // مسح البحث العام تلقائياً عند تغيير العقار
+    clearGlobalSearchOnNavigation();
+
+    // حفظ حالة البحث الحالية
+    const currentSearchTerm = searchState.property;
 
     // إذا تم اختيار نفس العقار أزل الفلتر
     if (currentProperty === propertyName) {
@@ -3237,8 +3707,17 @@ function selectProperty(propertyName) {
         currentProperty = propertyName;
         console.log('✅ تم اختيار العقار:', currentProperty);
     }
+
     // تحديث تمييز العقار في القائمة الجانبية
     initPropertyList(currentCountry);
+
+    // استعادة حالة البحث بعد تحديث القائمة
+    if (currentSearchTerm) {
+        setTimeout(() => {
+            restorePropertySearchState(currentSearchTerm);
+        }, 100);
+    }
+
     renderData();
 
     // تحديث عرض اسم العقار في الجوالات
@@ -3601,11 +4080,11 @@ function renderData() {
     });
   }
   
-  // تصفية البيانات حسب البحث العام
-  const searchTerm = document.getElementById('globalSearch').value.toLowerCase();
+  // تصفية البيانات حسب البحث العام المحسن
+  const searchTerm = getGlobalSearchTerm().toLowerCase();
   if (searchTerm) {
     filteredData = filteredData.filter(property => {
-      return Object.values(property).some(value => 
+      return Object.values(property).some(value =>
         value && value.toString().toLowerCase().includes(searchTerm)
       );
     });
@@ -27206,7 +27685,7 @@ function showPropertyStatisticsPrintModal() {
                                 <button onclick="deselectAllPropertiesForPrint()" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.3s; flex: 1;">
                                     <i class="fas fa-times"></i> إلغاء التحديد
                                 </button>
-                                <button onclick="clearPropertySearch()" style="background: linear-gradient(135deg, #6c757d, #5a6268); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.3s; flex: 1;">
+                                <button onclick="clearPropertySearchForPrint()" style="background: linear-gradient(135deg, #6c757d, #5a6268); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.3s; flex: 1;">
                                     <i class="fas fa-eraser"></i> مسح البحث
                                 </button>
                             </div>
@@ -27541,7 +28020,7 @@ function filterPropertiesForPrint() {
     updatePrintSelection();
 }
 
-function clearPropertySearch() {
+function clearPropertySearchForPrint() {
     document.getElementById('propertySearchInput').value = '';
     filterPropertiesForPrint();
 }

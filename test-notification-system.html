@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام الإشعارات الذكي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            background: #28a745;
+        }
+
+        .step-list {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            counter-increment: step-counter;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            position: relative;
+            padding-right: 50px;
+        }
+
+        .step-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #007bff;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .highlight h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+
+        .notification-demo {
+            position: relative;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .demo-notification-button {
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            font-size: 24px;
+            border: none;
+        }
+
+        .demo-notification-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .demo-counter {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid white;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .before {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .after {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid transparent;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-bell"></i> نظام الإشعارات الذكي</h1>
+            <p>اختبار شامل لنظام إشعارات انتهاء الأقساط مع التوجيه التلقائي للبطاقات</p>
+        </div>
+
+        <div class="content">
+            <!-- نظرة عامة على النظام -->
+            <div class="test-section">
+                <h3><i class="fas fa-info-circle"></i> نظرة عامة على النظام</h3>
+                
+                <div class="alert alert-info">
+                    <h4>🎯 الهدف من النظام</h4>
+                    <p>تنبيه المستخدم تلقائياً عند اقتراب انتهاء أقساط الوحدات (خلال 30 يوم) مع إمكانية التوجه المباشر للوحدة المحددة</p>
+                </div>
+
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-icon">🔔</span>
+                        <strong>زر إشعارات ذكي:</strong> أيقونة جرس في الهيدر مع عداد ديناميكي
+                    </li>
+                    <li>
+                        <span class="feature-icon">🎯</span>
+                        <strong>فحص تلقائي:</strong> يفحص جميع الوحدات للعثور على الأقساط المنتهية قريباً
+                    </li>
+                    <li>
+                        <span class="feature-icon">🚨</span>
+                        <strong>تصنيف الأولوية:</strong> عاجل (7 أيام)، تحذير (15 يوم)، عادي (30 يوم)
+                    </li>
+                    <li>
+                        <span class="feature-icon">📱</span>
+                        <strong>نافذة تفاعلية:</strong> قائمة إشعارات قابلة للنقر مع تفاصيل كاملة
+                    </li>
+                    <li>
+                        <span class="feature-icon">🎯</span>
+                        <strong>توجيه ذكي:</strong> النقر على إشعار يوجه للبطاقة مع تمييزها
+                    </li>
+                    <li>
+                        <span class="feature-icon">💾</span>
+                        <strong>حفظ الحالة:</strong> تذكر الإشعارات المقروءة في localStorage
+                    </li>
+                </ul>
+            </div>
+
+            <!-- عرض توضيحي للزر -->
+            <div class="test-section">
+                <h3><i class="fas fa-mouse-pointer"></i> عرض توضيحي لزر الإشعارات</h3>
+                
+                <div class="notification-demo">
+                    <p style="margin-bottom: 20px;">هكذا سيظهر زر الإشعارات في الهيدر:</p>
+                    <button class="demo-notification-button" onclick="showDemoAlert()">
+                        <i class="fas fa-bell"></i>
+                        <span class="demo-counter">5</span>
+                    </button>
+                    <p style="margin-top: 20px; color: #666;">
+                        <small>العداد الأحمر يظهر عدد الإشعارات غير المقروءة مع تأثير النبض</small>
+                    </p>
+                </div>
+            </div>
+
+            <!-- منطق عمل النظام -->
+            <div class="test-section">
+                <h3><i class="fas fa-cogs"></i> منطق عمل النظام</h3>
+                
+                <ol class="step-list">
+                    <li>
+                        <strong>فحص تلقائي عند التحميل</strong><br>
+                        يفحص جميع الوحدات للعثور على "تاريخ نهاية القسط" القريب من الانتهاء
+                    </li>
+                    <li>
+                        <strong>تحديد الأولوية</strong><br>
+                        عاجل (≤7 أيام) - أحمر نابض | تحذير (≤15 يوم) - أصفر | عادي (≤30 يوم) - رمادي
+                    </li>
+                    <li>
+                        <strong>إنشاء الإشعارات</strong><br>
+                        كل إشعار يحتوي على: اسم المستأجر، رقم الوحدة، تاريخ الانتهاء، الأيام المتبقية
+                    </li>
+                    <li>
+                        <strong>عرض العداد</strong><br>
+                        يظهر عدد الإشعارات غير المقروءة مع لون يعكس أعلى أولوية
+                    </li>
+                    <li>
+                        <strong>التفاعل مع الإشعار</strong><br>
+                        النقر → إغلاق النافذة → البحث عن الوحدة → تمييز البطاقة → وضع علامة مقروء
+                    </li>
+                </ol>
+            </div>
+
+            <!-- مقارنة قبل وبعد -->
+            <div class="test-section">
+                <h3><i class="fas fa-balance-scale"></i> مقارنة قبل وبعد النظام</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>الجانب</th>
+                            <th class="before">قبل النظام ❌</th>
+                            <th class="after">بعد النظام ✅</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>تتبع الأقساط</strong></td>
+                            <td class="before">فحص يدوي لكل وحدة</td>
+                            <td class="after">تنبيه تلقائي فوري</td>
+                        </tr>
+                        <tr>
+                            <td><strong>العثور على الوحدة</strong></td>
+                            <td class="before">بحث يدوي في القائمة</td>
+                            <td class="after">توجيه مباشر بنقرة واحدة</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تذكر المراجعة</strong></td>
+                            <td class="before">اعتماد على الذاكرة</td>
+                            <td class="after">حفظ حالة المراجعة</td>
+                        </tr>
+                        <tr>
+                            <td><strong>تصنيف الأولوية</strong></td>
+                            <td class="before">لا يوجد تصنيف</td>
+                            <td class="after">عاجل، تحذير، عادي</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- خطوات الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-list"></i> خطوات اختبار النظام</h3>
+                
+                <div class="alert alert-warning">
+                    <h4>⚠️ متطلبات الاختبار</h4>
+                    <p>تأكد من وجود وحدات في النظام مع تواريخ "نهاية القسط" قريبة من التاريخ الحالي (خلال 30 يوم)</p>
+                </div>
+
+                <ol class="step-list">
+                    <li>
+                        <strong>افتح التطبيق الرئيسي</strong><br>
+                        اذهب إلى index.html وانتظر تحميل البيانات
+                    </li>
+                    <li>
+                        <strong>ابحث عن زر الإشعارات</strong><br>
+                        يجب أن تجد أيقونة جرس في أعلى يسار الصفحة مع عداد أحمر
+                    </li>
+                    <li>
+                        <strong>اضغط على زر الإشعارات</strong><br>
+                        ستظهر نافذة منبثقة تحتوي على قائمة الإشعارات
+                    </li>
+                    <li>
+                        <strong>اختبر النقر على إشعار</strong><br>
+                        اضغط على أي إشعار - يجب أن يوجهك للوحدة ويميزها
+                    </li>
+                    <li>
+                        <strong>تحقق من تحديث العداد</strong><br>
+                        العداد يجب أن ينقص عند وضع علامة مقروء على الإشعارات
+                    </li>
+                </ol>
+            </div>
+
+            <!-- أدوات الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+                <button class="btn btn-primary" onclick="openMainApp()">
+                    <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+                </button>
+                <button class="btn btn-success" onclick="showTestData()">
+                    <i class="fas fa-database"></i> عرض بيانات الاختبار
+                </button>
+                <button class="btn btn-info" onclick="showExpectedBehavior()">
+                    <i class="fas fa-bullseye"></i> السلوك المتوقع
+                </button>
+                <button class="btn btn-warning" onclick="showTroubleshooting()">
+                    <i class="fas fa-wrench"></i> استكشاف الأخطاء
+                </button>
+                <div id="testResults" class="results"></div>
+            </div>
+
+            <!-- النتائج المتوقعة -->
+            <div class="test-section">
+                <h3><i class="fas fa-check-circle"></i> النتائج المتوقعة</h3>
+                
+                <div class="alert alert-success">
+                    <h4>✅ عند وجود أقساط منتهية قريباً</h4>
+                    <ul>
+                        <li>ظهور زر الإشعارات مع عداد أحمر نابض</li>
+                        <li>نافذة إشعارات تحتوي على قائمة مرتبة حسب الأولوية</li>
+                        <li>كل إشعار يحتوي على تفاصيل كاملة (المستأجر، الوحدة، التاريخ، الأيام المتبقية)</li>
+                        <li>النقر على إشعار يوجه للوحدة ويميزها بإطار أحمر</li>
+                        <li>تحديث العداد عند وضع علامة مقروء</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-info">
+                    <h4>ℹ️ عند عدم وجود أقساط منتهية</h4>
+                    <ul>
+                        <li>زر الإشعارات بدون عداد</li>
+                        <li>نافذة إشعارات تظهر "لا توجد إشعارات"</li>
+                        <li>رسالة واضحة مع أيقونة جرس مشطوب</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            const results = document.getElementById('testResults');
+            results.textContent = '🏠 فتح التطبيق الرئيسي...\n';
+            
+            window.open('index.html', '_blank');
+            
+            results.textContent += '✅ تم فتح التطبيق الرئيسي في نافذة جديدة\n';
+            results.textContent += '🔔 ابحث عن زر الإشعارات في أعلى يسار الصفحة\n';
+        }
+
+        function showDemoAlert() {
+            alert('🔔 هذا مثال على زر الإشعارات!\n\nفي التطبيق الحقيقي:\n• النقر يفتح نافذة الإشعارات\n• العداد يظهر الإشعارات غير المقروءة\n• اللون يتغير حسب الأولوية');
+        }
+
+        function showTestData() {
+            const results = document.getElementById('testResults');
+            results.textContent = `📊 بيانات الاختبار المطلوبة:
+
+🔸 لاختبار النظام تحتاج وحدات مع:
+   - حقل "تاريخ نهاية القسط" مملوء
+   - التاريخ خلال 30 يوم من اليوم
+   - مثال: ${new Date(Date.now() + 10*24*60*60*1000).toLocaleDateString('ar-SA')}
+
+🔸 أمثلة لبيانات الاختبار:
+   - وحدة A101: تنتهي خلال 5 أيام (عاجل - أحمر)
+   - وحدة B202: تنتهي خلال 12 يوم (تحذير - أصفر)  
+   - وحدة C303: تنتهي خلال 25 يوم (عادي - رمادي)
+
+🔸 إذا لم تجد إشعارات:
+   - تحقق من وجود حقل "تاريخ نهاية القسط"
+   - تأكد أن التاريخ بصيغة صحيحة (DD/MM/YYYY)
+   - تحقق أن التاريخ خلال 30 يوم القادمة
+`;
+        }
+
+        function showExpectedBehavior() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🎯 السلوك المتوقع للنظام:
+
+🔔 عند تحميل الصفحة:
+   ✅ ظهور زر الإشعارات في أعلى يسار الصفحة
+   ✅ فحص تلقائي لجميع الوحدات
+   ✅ إنشاء إشعارات للأقساط المنتهية خلال 30 يوم
+   ✅ عرض عداد بعدد الإشعارات غير المقروءة
+
+🖱️ عند النقر على زر الإشعارات:
+   ✅ فتح نافذة منبثقة أنيقة
+   ✅ عرض قائمة الإشعارات مرتبة حسب الأولوية
+   ✅ كل إشعار يحتوي على تفاصيل كاملة
+
+👆 عند النقر على إشعار معين:
+   ✅ إغلاق نافذة الإشعارات
+   ✅ البحث التلقائي عن الوحدة
+   ✅ التمرير إلى البطاقة وتمييزها
+   ✅ وضع علامة مقروء على الإشعار
+   ✅ تحديث العداد
+
+💾 الحفظ والاستمرارية:
+   ✅ حفظ حالة الإشعارات في localStorage
+   ✅ تذكر الإشعارات المقروءة
+   ✅ تنظيف الإشعارات القديمة (أكثر من 30 يوم)
+`;
+        }
+
+        function showTroubleshooting() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🔧 استكشاف الأخطاء وحلها:
+
+❌ لا يظهر زر الإشعارات:
+   🔍 تحقق من وجود عنصر header في الصفحة
+   🔍 تأكد من تحميل ملف script.js بالكامل
+   🔍 افتح Developer Tools وابحث عن أخطاء JavaScript
+
+❌ العداد يظهر 0 رغم وجود أقساط منتهية:
+   🔍 تحقق من صيغة التاريخ في حقل "تاريخ نهاية القسط"
+   🔍 تأكد أن التاريخ خلال 30 يوم القادمة
+   🔍 افحص console.log للرسائل التشخيصية
+
+❌ النقر على الإشعار لا يوجه للوحدة:
+   🔍 تحقق من وجود دالة searchProperties
+   🔍 تأكد من وجود حقل البحث في الصفحة
+   🔍 تحقق من تطابق رقم الوحدة في الإشعار والبيانات
+
+❌ الإشعارات لا تُحفظ:
+   🔍 تحقق من دعم localStorage في المتصفح
+   🔍 تأكد من عدم وجود قيود على التخزين المحلي
+   🔍 امسح localStorage وأعد تحميل الصفحة
+
+🛠️ أدوات التشخيص:
+   • افتح Developer Tools (F12)
+   • اذهب إلى Console وابحث عن رسائل تبدأ بـ 🔔
+   • تحقق من Application > Local Storage
+   • ابحث عن مفتاح 'propertyNotifications'
+`;
+        }
+
+        // تهيئة تلقائية
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 صفحة اختبار نظام الإشعارات جاهزة');
+            console.log('🔔 اتبع الخطوات لاختبار النظام الجديد');
+        });
+    </script>
+</body>
+</html>

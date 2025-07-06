@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار زر مسح بحث العقارات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .demo-section {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .step-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-right: 4px solid #007bff;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .step-description {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .problem-solution {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .problem-card, .solution-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .problem-title {
+            background: #f8d7da;
+            color: #721c24;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .solution-title {
+            background: #d4edda;
+            color: #155724;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+
+        .feature-icon.good {
+            background: #28a745;
+        }
+
+        .feature-icon.bad {
+            background: #dc3545;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .highlight h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .code-example {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+
+        .function-name {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .comment {
+            color: #28a745;
+            font-style: italic;
+        }
+
+        .error-highlight {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .error-highlight h4 {
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+
+        .fix-highlight {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .fix-highlight h4 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+
+        /* تجاوب للجوال */
+        @media (max-width: 768px) {
+            .problem-solution {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-bug"></i> إصلاح زر مسح بحث العقارات</h1>
+            <p>حل مشكلة عدم عمل زر المسح في بحث العقارات</p>
+        </div>
+
+        <div class="content">
+            <!-- وصف المشكلة والحل -->
+            <div class="demo-section">
+                <h3><i class="fas fa-exclamation-triangle"></i> المشكلة المكتشفة والحل</h3>
+                
+                <div class="error-highlight">
+                    <h4>❌ المشكلة:</h4>
+                    <p>كان هناك دالتان بنفس الاسم <code>clearPropertySearch()</code> في الكود:</p>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>الدالة الأولى:</strong> للبحث في العقارات (القائمة الجانبية) - السطر 3378</li>
+                        <li><strong>الدالة الثانية:</strong> لبحث العقارات في نافذة الطباعة - السطر 28020</li>
+                    </ul>
+                    <p>الدالة الثانية كانت تعيد تعريف الأولى، مما يجعل زر المسح لا يعمل بشكل صحيح.</p>
+                </div>
+
+                <div class="fix-highlight">
+                    <h4>✅ الحل المطبق:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>إعادة تسمية الدالة الثانية إلى <code>clearPropertySearchForPrint()</code></li>
+                        <li>تحديث استدعاء الدالة في نافذة الطباعة</li>
+                        <li>تحسين دالة <code>clearPropertySearch()</code> الأصلية</li>
+                        <li>إضافة تحديث عداد النتائج عند المسح</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- مقارنة قبل وبعد الإصلاح -->
+            <div class="problem-solution">
+                <div class="problem-card">
+                    <div class="problem-title">❌ قبل الإصلاح</div>
+                    
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            دالتان بنفس الاسم تتداخلان
+                        </li>
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            زر المسح لا يعمل في بحث العقارات
+                        </li>
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            رسائل البحث لا تختفي عند المسح
+                        </li>
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            حالة البحث لا تتم إعادة تعيينها
+                        </li>
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            تجربة مستخدم مكسورة
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="solution-card">
+                    <div class="solution-title">✅ بعد الإصلاح</div>
+                    
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            دوال منفصلة بأسماء واضحة
+                        </li>
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            زر المسح يعمل بشكل صحيح
+                        </li>
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            رسائل البحث تختفي تلقائياً
+                        </li>
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            حالة البحث تتم إعادة تعيينها
+                        </li>
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            تجربة مستخدم سلسة
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- التفاصيل التقنية -->
+            <div class="demo-section">
+                <h3><i class="fas fa-code"></i> التفاصيل التقنية للإصلاح</h3>
+                
+                <h4>🔧 التغييرات المطبقة:</h4>
+                
+                <div class="code-example">
+<span class="comment">// قبل الإصلاح - دالتان بنفس الاسم</span>
+<span class="function-name">function clearPropertySearch()</span> { <span class="comment">// السطر 3378</span>
+    <span class="comment">// للبحث في العقارات (القائمة الجانبية)</span>
+}
+
+<span class="function-name">function clearPropertySearch()</span> { <span class="comment">// السطر 28020 ❌</span>
+    <span class="comment">// لبحث العقارات في نافذة الطباعة</span>
+}
+                </div>
+
+                <div class="code-example">
+<span class="comment">// بعد الإصلاح - دوال منفصلة</span>
+<span class="function-name">function clearPropertySearch()</span> { <span class="comment">// للبحث في العقارات</span>
+    const searchInput = document.getElementById('propertySearch');
+    searchInput.value = '';
+    searchState.property = '';
+    <span class="comment">// إظهار جميع العقارات وإزالة رسائل البحث</span>
+}
+
+<span class="function-name">function clearPropertySearchForPrint()</span> { <span class="comment">// للطباعة ✅</span>
+    document.getElementById('propertySearchInput').value = '';
+    filterPropertiesForPrint();
+}
+                </div>
+
+                <div class="code-example">
+<span class="comment">// تحديث الاستدعاء في نافذة الطباعة</span>
+&lt;button onclick="<span class="function-name">clearPropertySearchForPrint()</span>"&gt;
+    &lt;i class="fas fa-eraser"&gt;&lt;/i&gt; مسح البحث
+&lt;/button&gt;
+                </div>
+            </div>
+
+            <!-- خطوات الاختبار -->
+            <div class="demo-section">
+                <h3><i class="fas fa-clipboard-list"></i> خطوات اختبار الإصلاح</h3>
+                
+                <div class="step-card">
+                    <span class="step-number">1</span>
+                    <div class="step-title">افتح التطبيق الرئيسي</div>
+                    <div class="step-description">
+                        اذهب إلى index.html وانتظر تحميل البيانات بالكامل
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <span class="step-number">2</span>
+                    <div class="step-title">افتح القائمة الجانبية</div>
+                    <div class="step-description">
+                        انقر على زر القائمة الجانبية لإظهار قائمة العقارات
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <span class="step-number">3</span>
+                    <div class="step-title">ابحث في العقارات</div>
+                    <div class="step-description">
+                        اكتب أي كلمة في حقل "بحث في العقارات" وانقر "بحث" - ستظهر النتائج المفلترة
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <span class="step-number">4</span>
+                    <div class="step-title">اختبر زر المسح</div>
+                    <div class="step-description">
+                        انقر على زر "مسح" - يجب أن يتم مسح النص وإظهار جميع العقارات وإزالة رسائل البحث
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <span class="step-number">5</span>
+                    <div class="step-title">تحقق من النتائج</div>
+                    <div class="step-description">
+                        تأكد أن حقل البحث أصبح فارغاً وأن جميع العقارات ظاهرة ولا توجد رسائل بحث
+                    </div>
+                </div>
+            </div>
+
+            <!-- أدوات الاختبار -->
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 30px;">
+                <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+                <button class="btn btn-primary" onclick="openMainApp()">
+                    <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+                </button>
+                <button class="btn btn-success" onclick="showTestInstructions()">
+                    <i class="fas fa-list-check"></i> تعليمات مفصلة
+                </button>
+                <button class="btn btn-info" onclick="showExpectedResults()">
+                    <i class="fas fa-bullseye"></i> النتائج المتوقعة
+                </button>
+                <button class="btn btn-warning" onclick="showTroubleshooting()">
+                    <i class="fas fa-wrench"></i> استكشاف الأخطاء
+                </button>
+                <button class="btn btn-danger" onclick="showCodeChanges()">
+                    <i class="fas fa-code"></i> تفاصيل التغييرات
+                </button>
+                <div id="testResults" class="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            const results = document.getElementById('testResults');
+            results.textContent = '🏠 فتح التطبيق الرئيسي...\n';
+            
+            window.open('index.html', '_blank');
+            
+            results.textContent += '✅ تم فتح التطبيق الرئيسي في نافذة جديدة\n';
+            results.textContent += '🔍 اختبر زر مسح بحث العقارات\n';
+            results.textContent += '📋 اتبع خطوات الاختبار المفصلة\n';
+        }
+
+        function showTestInstructions() {
+            const results = document.getElementById('testResults');
+            results.textContent = `📋 تعليمات اختبار زر مسح بحث العقارات:
+
+🔸 الخطوة 1: الوصول لبحث العقارات
+   - افتح التطبيق الرئيسي (index.html)
+   - انقر على زر القائمة الجانبية (☰)
+   - ابحث عن حقل "بحث في العقارات"
+   - تحقق من وجود أزرار "بحث" و "مسح"
+
+🔸 الخطوة 2: اختبار البحث
+   - اكتب أي كلمة في حقل البحث (مثل "شقة")
+   - انقر على زر "بحث"
+   - تحقق من ظهور النتائج المفلترة
+   - لاحظ رسالة عدد النتائج
+
+🔸 الخطوة 3: اختبار زر المسح
+   - انقر على زر "مسح" (أيقونة X)
+   - تحقق من مسح النص من حقل البحث
+   - تأكد من ظهور جميع العقارات
+   - تحقق من اختفاء رسائل البحث
+
+🔸 الخطوة 4: اختبار متكرر
+   - كرر العملية عدة مرات
+   - جرب كلمات بحث مختلفة
+   - تأكد من عمل المسح في كل مرة
+
+🔸 الخطوة 5: اختبار نافذة الطباعة
+   - افتح نافذة الطباعة
+   - ابحث في العقارات داخل النافذة
+   - اختبر زر "مسح البحث" في النافذة
+   - تأكد من عدم تداخل الوظائف
+`;
+        }
+
+        function showExpectedResults() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🎯 النتائج المتوقعة بعد الإصلاح:
+
+✅ زر مسح بحث العقارات:
+   - يعمل بشكل صحيح عند النقر
+   - يمسح النص من حقل البحث
+   - يعيد تعيين searchState.property إلى فارغ
+   - يظهر جميع العقارات في القائمة
+   - يزيل رسائل البحث والعدادات
+
+✅ رسائل البحث:
+   - تختفي تلقائياً عند المسح
+   - لا تظهر رسائل خطأ أو تداخل
+   - العدادات تتم إعادة تعيينها
+
+✅ حالة البحث:
+   - searchState.property يصبح فارغاً
+   - حقل البحث يصبح فارغاً
+   - جميع العقارات تصبح مرئية
+
+✅ التفاعل مع الوظائف الأخرى:
+   - لا يؤثر على البحث العام
+   - لا يؤثر على بحث العقارات في نافذة الطباعة
+   - يعمل مع جميع المتصفحات
+
+✅ الأداء:
+   - مسح فوري وسريع
+   - لا تأخير أو تجمد
+   - استجابة سلسة للمستخدم
+
+✅ تجربة المستخدم:
+   - سلوك متوقع وبديهي
+   - مؤشرات بصرية واضحة
+   - تجربة سلسة ومتناسقة
+`;
+        }
+
+        function showTroubleshooting() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🔧 استكشاف أخطاء زر مسح بحث العقارات:
+
+❌ زر المسح لا يعمل:
+   🔍 تحقق من وجود دالة clearPropertySearch() الصحيحة
+   🔍 افحص console للأخطاء في JavaScript
+   🔍 تأكد من عدم وجود دوال مكررة بنفس الاسم
+   🔍 تحقق من ربط الحدث addEventListener
+
+❌ النص لا يتم مسحه:
+   🔍 تحقق من وجود عنصر #propertySearch
+   🔍 افحص قيمة searchInput.value
+   🔍 تأكد من تنفيذ searchInput.value = ''
+
+❌ العقارات لا تظهر:
+   🔍 تحقق من إظهار جميع عناصر propertyItems
+   🔍 افحص style.display للعناصر
+   🔍 تأكد من عدم وجود فلاتر أخرى نشطة
+
+❌ رسائل البحث لا تختفي:
+   🔍 تحقق من إزالة .search-results-message
+   🔍 افحص استدعاء updatePropertySearchResults
+   🔍 تأكد من تمرير المعاملات الصحيحة
+
+❌ تداخل مع نافذة الطباعة:
+   🔍 تحقق من استخدام clearPropertySearchForPrint()
+   🔍 افحص عدم تداخل الدوال
+   🔍 تأكد من استهداف العناصر الصحيحة
+
+🛠️ أدوات التشخيص:
+   • افتح Developer Tools (F12)
+   • Console: ابحث عن رسائل تبدأ بـ 🧹
+   • Elements: افحص وجود أزرار البحث
+   • تحقق من قيم searchState في Console
+   • راقب تغييرات DOM عند المسح
+
+💡 نصائح للاختبار:
+   • امسح cache المتصفح قبل الاختبار
+   • اختبر على متصفحات مختلفة
+   • جرب سيناريوهات متنوعة
+   • تحقق من عمل الميزة مع البيانات الفعلية
+`;
+        }
+
+        function showCodeChanges() {
+            const results = document.getElementById('testResults');
+            results.textContent = `💻 تفاصيل التغييرات في الكود:
+
+🔧 التغيير 1: إعادة تسمية الدالة المكررة
+   الملف: script.js
+   السطر: 28020
+   قبل: function clearPropertySearch()
+   بعد: function clearPropertySearchForPrint()
+
+🔧 التغيير 2: تحديث استدعاء الدالة
+   الملف: script.js
+   السطر: 27685
+   قبل: onclick="clearPropertySearch()"
+   بعد: onclick="clearPropertySearchForPrint()"
+
+🔧 التغيير 3: تحسين دالة المسح الأصلية
+   الملف: script.js
+   السطر: 3377-3407
+   إضافة: updatePropertySearchResults(0, '');
+   الهدف: إزالة رسائل البحث عند المسح
+
+🔧 الدالة المحسنة:
+function clearPropertySearch() {
+    const searchInput = document.getElementById('propertySearch');
+    if (!searchInput) return;
+
+    console.log('🧹 مسح البحث في العقارات');
+
+    // مسح النص
+    searchInput.value = '';
+
+    // مسح حالة البحث
+    searchState.property = '';
+
+    // إظهار جميع العقارات
+    const propertyItems = document.querySelectorAll('#propertyList div:not(.no-properties)');
+    propertyItems.forEach(item => {
+        item.style.display = '';
+    });
+
+    // إزالة رسائل البحث
+    const searchResults = document.querySelector('#propertyList .search-results-message');
+    if (searchResults) {
+        searchResults.remove();
+    }
+
+    // تحديث عداد النتائج (إزالة رسائل البحث)
+    updatePropertySearchResults(0, '');
+
+    // إظهار مؤشر المسح
+    showSearchIndicator(searchInput, 'تم مسح البحث', 'info');
+}
+
+🎯 النتيجة:
+   ✅ زر المسح يعمل بشكل صحيح
+   ✅ لا تداخل بين الدوال
+   ✅ رسائل البحث تختفي تلقائياً
+   ✅ تجربة مستخدم محسنة
+`;
+        }
+
+        // تهيئة تلقائية
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 صفحة اختبار إصلاح زر مسح بحث العقارات جاهزة');
+            console.log('🔧 الإصلاحات المطبقة:');
+            console.log('   • إزالة تداخل الدوال المكررة');
+            console.log('   • تحسين دالة clearPropertySearch');
+            console.log('   • إضافة تحديث عداد النتائج');
+            console.log('   • فصل دالة الطباعة عن البحث العام');
+        });
+    </script>
+</body>
+</html>

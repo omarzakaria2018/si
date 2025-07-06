@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار المسح التلقائي للبحث العام</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .demo-section {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+        }
+
+        .step-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-right: 4px solid #007bff;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .step-description {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .behavior-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .behavior-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .behavior-title {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .old-behavior {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .new-behavior {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+
+        .feature-icon.good {
+            background: #28a745;
+        }
+
+        .feature-icon.bad {
+            background: #dc3545;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .highlight h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .code-example {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+
+        .function-name {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .comment {
+            color: #28a745;
+            font-style: italic;
+        }
+
+        /* تجاوب للجوال */
+        @media (max-width: 768px) {
+            .behavior-comparison {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-magic"></i> المسح التلقائي للبحث العام</h1>
+            <p>سلوك تلقائي لمسح البحث العام عند التنقل بين المدن والعقارات</p>
+        </div>
+
+        <div class="content">
+            <!-- وصف الميزة الجديدة -->
+            <div class="demo-section">
+                <h3><i class="fas fa-star"></i> الميزة الجديدة: المسح التلقائي</h3>
+                
+                <div class="highlight">
+                    <h4>🎯 الهدف من الميزة:</h4>
+                    <p>عندما يبحث المستخدم في "بحث في جميع البيانات" ثم ينقر على مدينة أو عقار مختلف، يتم مسح البحث العام تلقائياً لإظهار جميع بيانات المدينة/العقار الجديد بدون فلترة.</p>
+                </div>
+
+                <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #bee5eb;">
+                    <h4 style="color: #0c5460; margin-bottom: 10px;">✨ السلوك الجديد:</h4>
+                    <ul style="color: #0c5460; margin: 0; padding-right: 20px;">
+                        <li>النقر على مدينة مختلفة → مسح البحث العام تلقائياً</li>
+                        <li>النقر على عقار مختلف → مسح البحث العام تلقائياً</li>
+                        <li>إظهار جميع بيانات المدينة/العقار الجديد</li>
+                        <li>لا يحتاج المستخدم للنقر على "مسح" يدوياً</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- مقارنة السلوك -->
+            <div class="behavior-comparison">
+                <div class="behavior-card">
+                    <div class="behavior-title old-behavior">❌ السلوك السابق</div>
+                    
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            البحث العام يبقى نشطاً عند التنقل
+                        </li>
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            النتائج تبقى مفلترة في المدينة الجديدة
+                        </li>
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            المستخدم يحتاج لمسح البحث يدوياً
+                        </li>
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            قد لا يرى جميع بيانات المدينة الجديدة
+                        </li>
+                        <li>
+                            <span class="feature-icon bad">✗</span>
+                            تجربة مستخدم مربكة
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="behavior-card">
+                    <div class="behavior-title new-behavior">✅ السلوك الجديد</div>
+                    
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            مسح البحث العام تلقائياً عند التنقل
+                        </li>
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            إظهار جميع بيانات المدينة/العقار الجديد
+                        </li>
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            لا يحتاج تدخل من المستخدم
+                        </li>
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            رؤية شاملة للبيانات الجديدة
+                        </li>
+                        <li>
+                            <span class="feature-icon good">✓</span>
+                            تجربة مستخدم سلسة وبديهية
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- خطوات الاختبار -->
+            <div class="demo-section">
+                <h3><i class="fas fa-clipboard-list"></i> خطوات اختبار الميزة الجديدة</h3>
+                
+                <div class="step-card">
+                    <span class="step-number">1</span>
+                    <div class="step-title">افتح التطبيق الرئيسي</div>
+                    <div class="step-description">
+                        اذهب إلى index.html وانتظر تحميل البيانات بالكامل
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <span class="step-number">2</span>
+                    <div class="step-title">قم بالبحث في البيانات العامة</div>
+                    <div class="step-description">
+                        اكتب أي كلمة في حقل "بحث في جميع البيانات" وانقر "بحث" - ستظهر النتائج المفلترة
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <span class="step-number">3</span>
+                    <div class="step-title">انقر على مدينة مختلفة</div>
+                    <div class="step-description">
+                        انقر على أي مدينة من أزرار المدن - يجب أن يتم مسح البحث العام تلقائياً وإظهار جميع بيانات المدينة الجديدة
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <span class="step-number">4</span>
+                    <div class="step-title">كرر الاختبار مع العقارات</div>
+                    <div class="step-description">
+                        ابحث مرة أخرى، ثم انقر على عقار مختلف من القائمة الجانبية - يجب أن يتم مسح البحث العام تلقائياً
+                    </div>
+                </div>
+
+                <div class="step-card">
+                    <span class="step-number">5</span>
+                    <div class="step-title">تحقق من النتائج</div>
+                    <div class="step-description">
+                        تأكد أن حقل البحث العام أصبح فارغاً وأن جميع بيانات المدينة/العقار الجديد ظاهرة بدون فلترة
+                    </div>
+                </div>
+            </div>
+
+            <!-- التفاصيل التقنية -->
+            <div class="demo-section">
+                <h3><i class="fas fa-code"></i> التفاصيل التقنية</h3>
+                
+                <h4>🔧 الدوال المحدثة:</h4>
+                
+                <div class="code-example">
+<span class="comment">// دالة جديدة للمسح التلقائي</span>
+<span class="function-name">function clearGlobalSearchOnNavigation()</span> {
+    <span class="comment">// التحقق من وجود بحث نشط</span>
+    if (!searchState.global || searchState.global.trim() === '') {
+        return; <span class="comment">// لا يوجد بحث نشط</span>
+    }
+    
+    <span class="comment">// مسح النص والحالة</span>
+    searchInput.value = '';
+    searchState.global = '';
+    searchState.isSearchActive = false;
+}
+                </div>
+
+                <div class="code-example">
+<span class="comment">// تحديث دالة selectCountry</span>
+<span class="function-name">function selectCountry(country)</span> {
+    <span class="comment">// مسح البحث العام تلقائياً</span>
+    <span class="function-name">clearGlobalSearchOnNavigation();</span>
+    
+    <span class="comment">// باقي منطق اختيار المدينة...</span>
+}
+                </div>
+
+                <div class="code-example">
+<span class="comment">// تحديث دالة selectProperty</span>
+<span class="function-name">function selectProperty(propertyName)</span> {
+    <span class="comment">// مسح البحث العام تلقائياً</span>
+    <span class="function-name">clearGlobalSearchOnNavigation();</span>
+    
+    <span class="comment">// باقي منطق اختيار العقار...</span>
+}
+                </div>
+            </div>
+
+            <!-- أدوات الاختبار -->
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 30px;">
+                <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+                <button class="btn btn-primary" onclick="openMainApp()">
+                    <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+                </button>
+                <button class="btn btn-success" onclick="showTestScenarios()">
+                    <i class="fas fa-list-check"></i> سيناريوهات الاختبار
+                </button>
+                <button class="btn btn-info" onclick="showExpectedResults()">
+                    <i class="fas fa-bullseye"></i> النتائج المتوقعة
+                </button>
+                <button class="btn btn-warning" onclick="showTroubleshooting()">
+                    <i class="fas fa-wrench"></i> استكشاف الأخطاء
+                </button>
+                <div id="testResults" class="results"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            const results = document.getElementById('testResults');
+            results.textContent = '🏠 فتح التطبيق الرئيسي...\n';
+            
+            window.open('index.html', '_blank');
+            
+            results.textContent += '✅ تم فتح التطبيق الرئيسي في نافذة جديدة\n';
+            results.textContent += '🔍 اختبر الميزة الجديدة للمسح التلقائي\n';
+            results.textContent += '📋 اتبع خطوات الاختبار المفصلة\n';
+        }
+
+        function showTestScenarios() {
+            const results = document.getElementById('testResults');
+            results.textContent = `📋 سيناريوهات اختبار المسح التلقائي:
+
+🔸 السيناريو 1: البحث ثم تغيير المدينة
+   1. ابحث عن "أحمد" في البحث العام
+   2. لاحظ ظهور النتائج المفلترة
+   3. انقر على مدينة مختلفة (مثل "جدة")
+   4. تحقق من مسح البحث تلقائياً
+   5. تأكد من ظهور جميع بيانات جدة
+
+🔸 السيناريو 2: البحث ثم تغيير العقار
+   1. ابحث عن "شقة" في البحث العام
+   2. لاحظ ظهور النتائج المفلترة
+   3. انقر على عقار مختلف من القائمة الجانبية
+   4. تحقق من مسح البحث تلقائياً
+   5. تأكد من ظهور جميع بيانات العقار الجديد
+
+🔸 السيناريو 3: البحث ثم النقر على "الكل"
+   1. ابحث عن أي كلمة في البحث العام
+   2. انقر على زر "الكل" في المدن
+   3. تحقق من مسح البحث تلقائياً
+   4. تأكد من ظهور جميع البيانات
+
+🔸 السيناريو 4: بدون بحث نشط
+   1. تأكد من عدم وجود بحث في الحقل العام
+   2. انقر على مدينة أو عقار
+   3. تحقق من عدم حدوث أي تغيير غير مرغوب
+   4. تأكد من عمل التنقل بشكل طبيعي
+
+🔸 السيناريو 5: البحث في العقارات منفصل
+   1. ابحث في البحث العام
+   2. ابحث في بحث العقارات (القائمة الجانبية)
+   3. انقر على مدينة مختلفة
+   4. تحقق من مسح البحث العام فقط
+   5. تأكد من بقاء بحث العقارات كما هو
+`;
+        }
+
+        function showExpectedResults() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🎯 النتائج المتوقعة للمسح التلقائي:
+
+✅ عند النقر على مدينة مختلفة:
+   - حقل البحث العام يصبح فارغاً تلقائياً
+   - searchState.global يتم مسحه
+   - searchState.isSearchActive يصبح false
+   - تظهر جميع بيانات المدينة الجديدة
+   - لا تظهر مؤشرات بصرية للمسح (تلقائي)
+
+✅ عند النقر على عقار مختلف:
+   - حقل البحث العام يصبح فارغاً تلقائياً
+   - searchState.global يتم مسحه
+   - searchState.isSearchActive يصبح false
+   - تظهر جميع بيانات العقار الجديد
+   - بحث العقارات يبقى كما هو (منفصل)
+
+✅ عند عدم وجود بحث نشط:
+   - لا يحدث أي مسح (لا يوجد شيء لمسحه)
+   - التنقل يعمل بشكل طبيعي
+   - لا تأثير على الأداء
+
+✅ الوظائف الأخرى:
+   - بحث العقارات يبقى منفصلاً ومستقلاً
+   - زر "مسح" اليدوي يعمل بنفس الطريقة
+   - جميع الوظائف الأخرى تعمل بشكل طبيعي
+   - حفظ واستعادة الحالة يعمل بشكل صحيح
+
+✅ تجربة المستخدم:
+   - سلوك بديهي ومتوقع
+   - لا يحتاج تدخل يدوي
+   - رؤية شاملة للبيانات الجديدة
+   - تنقل سلس بين المدن والعقارات
+
+✅ الأداء:
+   - لا تأثير سلبي على الأداء
+   - مسح سريع وفوري
+   - لا تأخير في التنقل
+   - استهلاك ذاكرة محسن
+`;
+        }
+
+        function showTroubleshooting() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🔧 استكشاف أخطاء المسح التلقائي:
+
+❌ البحث لا يتم مسحه تلقائياً:
+   🔍 تحقق من استدعاء clearGlobalSearchOnNavigation()
+   🔍 افحص وجود الدالة في script.js
+   🔍 تأكد من تحديث selectCountry و selectProperty
+   🔍 افحص console للأخطاء
+
+❌ البحث يتم مسحه في الأوقات الخاطئة:
+   🔍 تحقق من شروط الدالة clearGlobalSearchOnNavigation
+   🔍 افحص متغير searchState.global
+   🔍 تأكد من عدم استدعاء الدالة في أماكن خاطئة
+
+❌ بحث العقارات يتأثر:
+   🔍 تحقق من أن المسح يؤثر على البحث العام فقط
+   🔍 افحص متغير searchState.property
+   🔍 تأكد من عدم تداخل الدوال
+
+❌ الأداء بطيء:
+   🔍 تحقق من عدم استدعاء renderData() مرتين
+   🔍 افحص عدم وجود حلقات لا نهائية
+   🔍 تأكد من كفاءة الدالة الجديدة
+
+❌ حفظ الحالة لا يعمل:
+   🔍 تحقق من تحديث saveAppState()
+   🔍 افحص استعادة الحالة بعد المسح
+   🔍 تأكد من تزامن العمليات
+
+🛠️ أدوات التشخيص:
+   • افتح Developer Tools (F12)
+   • Console: ابحث عن رسائل تبدأ بـ 🔄
+   • تحقق من قيم searchState في Console
+   • افحص استدعاءات clearGlobalSearchOnNavigation
+   • راقب تغييرات DOM في حقل البحث
+
+💡 نصائح للاختبار:
+   • امسح cache المتصفح قبل الاختبار
+   • اختبر على متصفحات مختلفة
+   • جرب سيناريوهات متنوعة
+   • تحقق من عمل الميزة مع البيانات الفعلية
+   • اختبر على الجوال والكمبيوتر
+`;
+        }
+
+        // تهيئة تلقائية
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 صفحة اختبار المسح التلقائي جاهزة');
+            console.log('🔄 الميزة الجديدة:');
+            console.log('   • مسح البحث العام تلقائياً عند التنقل');
+            console.log('   • تحديث selectCountry و selectProperty');
+            console.log('   • دالة clearGlobalSearchOnNavigation جديدة');
+            console.log('   • تجربة مستخدم محسنة وبديهية');
+        });
+    </script>
+</body>
+</html>

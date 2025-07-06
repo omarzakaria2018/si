@@ -483,7 +483,15 @@
 
   <main>
     <div id="searchSection">
-      <input type="text" id="globalSearch" placeholder="بحث في جميع البيانات...">
+      <div class="global-search-container">
+        <input type="text" id="globalSearch" placeholder="بحث في جميع البيانات...">
+        <button class="search-btn global-search-btn" onclick="performGlobalSearch()" title="بحث">
+          <i class="fas fa-search"></i>
+        </button>
+        <button class="clear-btn global-clear-btn" onclick="clearGlobalSearch()" title="مسح">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
     </div>
     <div id="totalContainer"></div>
 

@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام البحث المحسن</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .feature-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .demo-section {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .search-demo {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .search-input-demo {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input-demo:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+            outline: none;
+        }
+
+        .search-buttons-demo {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .search-btn-demo {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .clear-btn-demo {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .search-btn-demo:hover, .clear-btn-demo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .before {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .after {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            background: #28a745;
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .highlight h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .problem-demo {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .solution-demo {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .step-indicator {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 25px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-search"></i> نظام البحث المحسن</h1>
+            <p>حل شامل لمشاكل الأداء والتفاعل في البحث</p>
+        </div>
+
+        <div class="content">
+            <!-- المشاكل المحلولة -->
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3><i class="fas fa-tachometer-alt"></i> تحسين الأداء</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            إلغاء البحث التلقائي المسبب للبطء
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            البحث يبدأ بالنقر على زر أو Enter فقط
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            تحسين استجابة الكتابة في حقول البحث
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3><i class="fas fa-mouse-pointer"></i> تحسين التفاعل</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            أزرار "بحث" و "مسح" واضحة ومتاحة
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            الحفاظ على نتائج البحث عند النقر على العقارات
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            مؤشرات بصرية لحالة البحث
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3><i class="fas fa-memory"></i> إدارة الحالة</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            حفظ حالة البحث أثناء التنقل
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            استعادة نتائج البحث تلقائياً
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            فصل حالة البحث العام عن بحث العقارات
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h3><i class="fas fa-mobile-alt"></i> تجربة محسنة</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            تصميم متجاوب للجوال والكمبيوتر
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            تأثيرات بصرية سلسة
+                        </li>
+                        <li>
+                            <span class="feature-icon">✓</span>
+                            رسائل واضحة لنتائج البحث
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- عرض توضيحي للواجهة الجديدة -->
+            <div class="demo-section">
+                <h3>عرض توضيحي للواجهة المحسنة</h3>
+                
+                <div class="search-demo">
+                    <h4><i class="fas fa-globe"></i> البحث العام</h4>
+                    <input type="text" class="search-input-demo" placeholder="بحث في جميع البيانات..." id="globalSearchDemo">
+                    <div class="search-buttons-demo">
+                        <button class="search-btn-demo" onclick="demoGlobalSearch()">
+                            <i class="fas fa-search"></i> بحث
+                        </button>
+                        <button class="clear-btn-demo" onclick="demoClearGlobal()">
+                            <i class="fas fa-times"></i> مسح
+                        </button>
+                    </div>
+                </div>
+
+                <div class="search-demo">
+                    <h4><i class="fas fa-building"></i> بحث العقارات</h4>
+                    <input type="text" class="search-input-demo" placeholder="بحث في العقارات..." id="propertySearchDemo">
+                    <div class="search-buttons-demo">
+                        <button class="search-btn-demo" onclick="demoPropertySearch()">
+                            <i class="fas fa-search"></i> بحث
+                        </button>
+                        <button class="clear-btn-demo" onclick="demoClearProperty()">
+                            <i class="fas fa-times"></i> مسح
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- مقارنة قبل وبعد -->
+            <div class="feature-card">
+                <h3><i class="fas fa-balance-scale"></i> مقارنة قبل وبعد التحسين</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>الجانب</th>
+                            <th class="before">النسخة السابقة ❌</th>
+                            <th class="after">النسخة المحسنة ✅</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>البحث التلقائي</strong></td>
+                            <td class="before">يبحث مع كل حرف (بطء وتأخير)</td>
+                            <td class="after">يبحث عند النقر أو Enter فقط</td>
+                        </tr>
+                        <tr>
+                            <td><strong>أزرار التحكم</strong></td>
+                            <td class="before">لا توجد أزرار واضحة</td>
+                            <td class="after">أزرار "بحث" و "مسح" مرئية</td>
+                        </tr>
+                        <tr>
+                            <td><strong>حفظ النتائج</strong></td>
+                            <td class="before">تختفي عند النقر على عقار</td>
+                            <td class="after">تبقى محفوظة أثناء التنقل</td>
+                        </tr>
+                        <tr>
+                            <td><strong>المؤشرات البصرية</strong></td>
+                            <td class="before">لا توجد مؤشرات واضحة</td>
+                            <td class="after">مؤشرات لحالة البحث والنتائج</td>
+                        </tr>
+                        <tr>
+                            <td><strong>الأداء</strong></td>
+                            <td class="before">بطء أثناء الكتابة</td>
+                            <td class="after">استجابة سريعة ومحسنة</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- خطوات الاختبار -->
+            <div class="feature-card">
+                <h3><i class="fas fa-clipboard-list"></i> خطوات اختبار النظام المحسن</h3>
+
+                <div class="highlight">
+                    <h4>⚠️ متطلبات الاختبار</h4>
+                    <p>تأكد من وجود بيانات عقارات في التطبيق لاختبار البحث بشكل فعال</p>
+                </div>
+
+                <ol style="list-style: decimal; padding-right: 20px;">
+                    <li style="margin-bottom: 15px;">
+                        <span class="step-indicator">1</span>
+                        <strong>افتح التطبيق الرئيسي</strong><br>
+                        <small>اذهب إلى index.html وانتظر تحميل البيانات</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <span class="step-indicator">2</span>
+                        <strong>اختبر البحث العام الجديد</strong><br>
+                        <small>لاحظ وجود أزرار "بحث" و "مسح" تحت حقل البحث العام</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <span class="step-indicator">3</span>
+                        <strong>اختبر عدم وجود البحث التلقائي</strong><br>
+                        <small>اكتب في حقل البحث - لن يحدث شيء حتى تنقر "بحث"</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <span class="step-indicator">4</span>
+                        <strong>اختبر البحث بالنقر والـ Enter</strong><br>
+                        <small>جرب البحث بالنقر على زر "بحث" وبالضغط على Enter</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <span class="step-indicator">5</span>
+                        <strong>اختبر بحث العقارات المحسن</strong><br>
+                        <small>افتح القائمة الجانبية ولاحظ أزرار البحث في قسم العقارات</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <span class="step-indicator">6</span>
+                        <strong>اختبر الحفاظ على نتائج البحث</strong><br>
+                        <small>ابحث عن عقار، ثم انقر عليه - يجب أن تبقى نتائج البحث ظاهرة</small>
+                    </li>
+                    <li style="margin-bottom: 15px;">
+                        <span class="step-indicator">7</span>
+                        <strong>اختبر أزرار المسح</strong><br>
+                        <small>استخدم أزرار "مسح" للعودة للعرض الافتراضي</small>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- المشاكل المحلولة -->
+            <div class="feature-card">
+                <h3><i class="fas fa-bug"></i> المشاكل المحلولة</h3>
+
+                <div class="problem-demo">
+                    <h4>❌ المشكلة الأولى: البطء أثناء الكتابة</h4>
+                    <p><strong>الوصف:</strong> البحث التلقائي يسبب بطء وتأخير عند كتابة كل حرف</p>
+                    <p><strong>التأثير:</strong> تجربة مستخدم سيئة وأداء ضعيف</p>
+                </div>
+
+                <div class="solution-demo">
+                    <h4>✅ الحل: إلغاء البحث التلقائي</h4>
+                    <p><strong>التطبيق:</strong> البحث يبدأ فقط عند النقر على زر "بحث" أو الضغط على Enter</p>
+                    <p><strong>النتيجة:</strong> استجابة سريعة وأداء محسن</p>
+                </div>
+
+                <div class="problem-demo">
+                    <h4>❌ المشكلة الثانية: اختفاء نتائج البحث</h4>
+                    <p><strong>الوصف:</strong> عند النقر على عقار من نتائج البحث، تختفي النتائج وتعود جميع العقارات</p>
+                    <p><strong>التأثير:</strong> فقدان السياق وصعوبة في التنقل</p>
+                </div>
+
+                <div class="solution-demo">
+                    <h4>✅ الحل: حفظ حالة البحث</h4>
+                    <p><strong>التطبيق:</strong> نظام إدارة حالة متقدم يحفظ نتائج البحث أثناء التنقل</p>
+                    <p><strong>النتيجة:</strong> الحفاظ على السياق وتجربة تنقل سلسة</p>
+                </div>
+
+                <div class="problem-demo">
+                    <h4>❌ المشكلة الثالثة: عدم وضوح التحكم</h4>
+                    <p><strong>الوصف:</strong> لا توجد أزرار واضحة للبحث أو المسح</p>
+                    <p><strong>التأثير:</strong> عدم وضوح كيفية التحكم في البحث</p>
+                </div>
+
+                <div class="solution-demo">
+                    <h4>✅ الحل: واجهة تحكم واضحة</h4>
+                    <p><strong>التطبيق:</strong> أزرار "بحث" و "مسح" مرئية مع تصميم متناسق</p>
+                    <p><strong>النتيجة:</strong> تحكم واضح وسهل الاستخدام</p>
+                </div>
+            </div>
+
+            <!-- أدوات الاختبار -->
+            <div class="feature-card">
+                <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+                <button class="btn btn-primary" onclick="openMainApp()">
+                    <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+                </button>
+                <button class="btn btn-success" onclick="showTestInstructions()">
+                    <i class="fas fa-list-check"></i> تعليمات مفصلة
+                </button>
+                <button class="btn btn-warning" onclick="showExpectedResults()">
+                    <i class="fas fa-bullseye"></i> النتائج المتوقعة
+                </button>
+                <button class="btn btn-info" onclick="showTroubleshooting()">
+                    <i class="fas fa-wrench"></i> استكشاف الأخطاء
+                </button>
+                <div id="testResults" class="results"></div>
+            </div>
+
+            <!-- النتائج المتوقعة -->
+            <div class="feature-card">
+                <h3><i class="fas fa-check-circle"></i> النتائج المتوقعة</h3>
+
+                <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #c3e6cb;">
+                    <h4 style="color: #155724; margin-bottom: 10px;">✅ البحث العام</h4>
+                    <ul style="color: #155724; margin: 0; padding-right: 20px;">
+                        <li>أزرار "بحث" و "مسح" ظاهرة تحت حقل البحث</li>
+                        <li>لا يحدث بحث تلقائي أثناء الكتابة</li>
+                        <li>البحث يعمل بالنقر على "بحث" أو Enter</li>
+                        <li>زر "مسح" يعيد العرض للحالة الافتراضية</li>
+                        <li>مؤشرات بصرية لحالة البحث</li>
+                    </ul>
+                </div>
+
+                <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #bee5eb;">
+                    <h4 style="color: #0c5460; margin-bottom: 10px;">✅ بحث العقارات</h4>
+                    <ul style="color: #0c5460; margin: 0; padding-right: 20px;">
+                        <li>أزرار "بحث" و "مسح" في القائمة الجانبية</li>
+                        <li>الحفاظ على نتائج البحث عند النقر على عقار</li>
+                        <li>رسائل واضحة لعدد النتائج</li>
+                        <li>استعادة حالة البحث تلقائياً</li>
+                        <li>عدم تداخل مع وظائف السايدبار</li>
+                    </ul>
+                </div>
+
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #ffeaa7;">
+                    <h4 style="color: #856404; margin-bottom: 10px;">⚡ الأداء</h4>
+                    <ul style="color: #856404; margin: 0; padding-right: 20px;">
+                        <li>استجابة سريعة عند الكتابة (لا يوجد تأخير)</li>
+                        <li>بحث فوري عند النقر أو Enter</li>
+                        <li>تحديث سلس للنتائج</li>
+                        <li>عدم تجمد الواجهة أثناء البحث</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function demoGlobalSearch() {
+            const input = document.getElementById('globalSearchDemo');
+            const searchTerm = input.value.trim();
+
+            if (!searchTerm) {
+                alert('⚠️ يرجى إدخال كلمة للبحث');
+                return;
+            }
+
+            // محاكاة البحث
+            input.style.borderColor = '#28a745';
+            input.style.boxShadow = '0 0 0 3px rgba(40,167,69,0.25)';
+
+            setTimeout(() => {
+                alert(`🔍 تم البحث عن: "${searchTerm}"\n\n✅ الميزات الجديدة:\n• لا يوجد بحث تلقائي\n• البحث يبدأ عند النقر فقط\n• أداء محسن`);
+                input.style.borderColor = '#dee2e6';
+                input.style.boxShadow = 'none';
+            }, 500);
+        }
+
+        function demoClearGlobal() {
+            const input = document.getElementById('globalSearchDemo');
+            input.value = '';
+            input.style.borderColor = '#6c757d';
+            input.style.boxShadow = '0 0 0 3px rgba(108,117,125,0.25)';
+
+            setTimeout(() => {
+                alert('🧹 تم مسح البحث العام\n\n✅ النتائج:\n• عودة للعرض الافتراضي\n• مسح جميع الفلاتر\n• استعادة البيانات الأصلية');
+                input.style.borderColor = '#dee2e6';
+                input.style.boxShadow = 'none';
+            }, 300);
+        }
+
+        function demoPropertySearch() {
+            const input = document.getElementById('propertySearchDemo');
+            const searchTerm = input.value.trim();
+
+            if (!searchTerm) {
+                alert('⚠️ يرجى إدخال اسم عقار للبحث');
+                return;
+            }
+
+            // محاكاة البحث
+            input.style.borderColor = '#28a745';
+            input.style.boxShadow = '0 0 0 3px rgba(40,167,69,0.25)';
+
+            setTimeout(() => {
+                alert(`🏢 تم البحث في العقارات: "${searchTerm}"\n\n✅ الميزات الجديدة:\n• الحفاظ على النتائج عند النقر\n• مؤشرات عدد النتائج\n• استعادة البحث تلقائياً`);
+                input.style.borderColor = '#dee2e6';
+                input.style.boxShadow = 'none';
+            }, 500);
+        }
+
+        function demoClearProperty() {
+            const input = document.getElementById('propertySearchDemo');
+            input.value = '';
+            input.style.borderColor = '#6c757d';
+            input.style.boxShadow = '0 0 0 3px rgba(108,117,125,0.25)';
+
+            setTimeout(() => {
+                alert('🧹 تم مسح بحث العقارات\n\n✅ النتائج:\n• إظهار جميع العقارات\n• إزالة رسائل البحث\n• عودة للحالة الافتراضية');
+                input.style.borderColor = '#dee2e6';
+                input.style.boxShadow = 'none';
+            }, 300);
+        }
+
+        function openMainApp() {
+            const results = document.getElementById('testResults');
+            results.textContent = '🏠 فتح التطبيق الرئيسي...\n';
+
+            window.open('index.html', '_blank');
+
+            results.textContent += '✅ تم فتح التطبيق الرئيسي في نافذة جديدة\n';
+            results.textContent += '🔍 ابحث عن أزرار البحث الجديدة\n';
+            results.textContent += '📋 اتبع خطوات الاختبار المفصلة\n';
+        }
+
+        function showTestInstructions() {
+            const results = document.getElementById('testResults');
+            results.textContent = `📋 تعليمات الاختبار المفصلة:
+
+🔸 الخطوة 1: فحص البحث العام
+   - افتح التطبيق الرئيسي (index.html)
+   - ابحث عن حقل "بحث في جميع البيانات"
+   - تحقق من وجود زرين "بحث" و "مسح" تحت الحقل
+
+🔸 الخطوة 2: اختبار عدم البحث التلقائي
+   - اكتب أي نص في حقل البحث العام
+   - تأكد أن لا شيء يحدث أثناء الكتابة
+   - لا يجب أن تتغير النتائج تلقائياً
+
+🔸 الخطوة 3: اختبار البحث بالنقر
+   - اكتب كلمة بحث (مثل اسم مستأجر أو رقم وحدة)
+   - انقر على زر "بحث"
+   - تحقق من ظهور النتائج المفلترة
+
+🔸 الخطوة 4: اختبار البحث بـ Enter
+   - امسح البحث السابق
+   - اكتب كلمة جديدة
+   - اضغط Enter
+   - تحقق من عمل البحث
+
+🔸 الخطوة 5: اختبار زر المسح
+   - انقر على زر "مسح"
+   - تحقق من عودة جميع البيانات للظهور
+   - تحقق من مسح نص البحث
+
+🔸 الخطوة 6: اختبار بحث العقارات
+   - افتح القائمة الجانبية (العقارات)
+   - ابحث عن أزرار البحث في قسم العقارات
+   - اختبر البحث في أسماء العقارات
+
+🔸 الخطوة 7: اختبار الحفاظ على النتائج
+   - ابحث عن عقار معين
+   - انقر على أحد العقارات من النتائج
+   - تحقق من بقاء نتائج البحث ظاهرة
+   - تحقق من بقاء نص البحث في الحقل
+
+🔸 الخطوة 8: اختبار الأداء
+   - اكتب نص طويل في حقل البحث
+   - لاحظ عدم وجود تأخير أو بطء
+   - تحقق من سرعة الاستجابة
+`;
+        }
+
+        function showExpectedResults() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🎯 النتائج المتوقعة بالتفصيل:
+
+✅ البحث العام المحسن:
+   - حقل البحث: "بحث في جميع البيانات..."
+   - أزرار: "بحث" (أزرق) و "مسح" (رمادي)
+   - سلوك: لا يبحث تلقائياً أثناء الكتابة
+   - تفعيل: بالنقر على "بحث" أو Enter فقط
+   - مسح: زر "مسح" يعيد العرض الافتراضي
+
+✅ بحث العقارات المحسن:
+   - موقع: في القائمة الجانبية تحت "العقارات"
+   - أزرار: "بحث" و "مسح" تحت حقل البحث
+   - سلوك: فلترة فورية للعقارات
+   - حفظ: الحفاظ على النتائج عند النقر على عقار
+   - استعادة: عودة نص البحث بعد التنقل
+
+✅ المؤشرات البصرية:
+   - رسائل عدد النتائج في بحث العقارات
+   - تأثيرات بصرية عند التمرير على الأزرار
+   - مؤشرات حالة البحث (نجح/فشل)
+   - تغيير ألوان الحدود عند التركيز
+
+✅ الأداء المحسن:
+   - استجابة فورية عند الكتابة (لا تأخير)
+   - بحث سريع عند النقر أو Enter
+   - عدم تجمد الواجهة أثناء البحث
+   - ذاكرة محسنة لحالة البحث
+
+✅ التوافق:
+   - يعمل على الكمبيوتر والجوال
+   - متوافق مع جميع المتصفحات الحديثة
+   - لا يتداخل مع الوظائف الموجودة
+   - يحافظ على تصميم الواجهة الأصلي
+`;
+        }
+
+        function showTroubleshooting() {
+            const results = document.getElementById('testResults');
+            results.textContent = `🔧 استكشاف الأخطاء وحلها:
+
+❌ لا تظهر أزرار البحث:
+   🔍 تحقق من تحميل ملف script.js بالكامل
+   🔍 افتح Developer Tools وابحث عن أخطاء JavaScript
+   🔍 تأكد من استدعاء دالة initializeEnhancedSearch()
+   🔍 تحقق من وجود عناصر globalSearch و propertySearch
+
+❌ البحث لا يعمل بالنقر:
+   🔍 تحقق من ربط الأحداث بالأزرار
+   🔍 افحص دوال performGlobalSearch و performPropertySearch
+   🔍 تأكد من تحديث متغير searchState
+   🔍 تحقق من استدعاء renderData() بعد البحث
+
+❌ البحث التلقائي ما زال يعمل:
+   🔍 تأكد من إزالة مستمع 'input' القديم
+   🔍 تحقق من تحديث دالة initGlobalSearch
+   🔍 افحص عدم وجود استدعاءات renderData في أحداث input
+   🔍 تأكد من استخدام getGlobalSearchTerm() في renderData
+
+❌ نتائج البحث تختفي عند النقر:
+   🔍 تحقق من دالة restorePropertySearchState
+   🔍 افحص حفظ searchState.property
+   🔍 تأكد من استدعاء restorePropertySearchState في selectProperty
+   🔍 تحقق من تحديث initPropertyList
+
+❌ أزرار المسح لا تعمل:
+   🔍 تحقق من دوال clearGlobalSearch و clearPropertySearch
+   🔍 افحص مسح searchState
+   🔍 تأكد من استدعاء renderData بعد المسح
+   🔍 تحقق من إزالة رسائل البحث
+
+❌ الأداء ما زال بطيء:
+   🔍 تأكد من عدم وجود مستمعات input متعددة
+   🔍 افحص عدم استدعاء renderData في حلقات
+   🔍 تحقق من تحسين دوال البحث
+   🔍 افحص عدم وجود تسريبات في الذاكرة
+
+🛠️ أدوات التشخيص:
+   • افتح Developer Tools (F12)
+   • Console: ابحث عن رسائل تبدأ بـ 🔍
+   • Elements: افحص وجود .search-buttons-container
+   • Network: تحقق من تحميل جميع الملفات
+   • Performance: افحص أداء البحث
+
+💡 نصائح للاختبار:
+   • امسح cache المتصفح إذا لم تظهر التحديثات
+   • اختبر على متصفحات مختلفة
+   • جرب البحث بكلمات مختلفة
+   • اختبر على الجوال والكمبيوتر
+   • تحقق من عمل البحث مع البيانات الفعلية
+`;
+        }
+
+        // تهيئة تلقائية
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 صفحة اختبار نظام البحث المحسن جاهزة');
+            console.log('🔍 النظام الجديد يتضمن:');
+            console.log('   • إلغاء البحث التلقائي المسبب للبطء');
+            console.log('   • أزرار بحث ومسح واضحة');
+            console.log('   • حفظ حالة البحث أثناء التنقل');
+            console.log('   • أداء محسن وتجربة أفضل');
+        });
+    </script>
+</body>
+</html>
