@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تحسينات البحث</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .test-section {
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .test-section h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 450px;
+            margin: 15px auto;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            background: #fff;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .search-btn {
+            padding: 12px 20px;
+            background: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+        }
+
+        .search-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .clear-search-btn {
+            padding: 12px;
+            background: #e53e3e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+        }
+
+        .clear-search-btn:hover {
+            background: #c53030;
+            transform: translateY(-2px);
+        }
+
+        .results {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            border: 1px solid #e2e8f0;
+            min-height: 100px;
+            white-space: pre-line;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #2d3748;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .old-method {
+            border-left: 4px solid #e53e3e;
+        }
+
+        .new-method {
+            border-left: 4px solid #38a169;
+        }
+
+        .status {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .status.old {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .status.new {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        @media (max-width: 768px) {
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .search-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-rocket"></i> اختبار تحسينات البحث</h1>
+            <p>مقارنة بين الطريقة القديمة والجديدة للبحث</p>
+        </div>
+
+        <div class="comparison">
+            <!-- الطريقة القديمة -->
+            <div class="test-section old-method">
+                <h3><i class="fas fa-exclamation-triangle"></i> الطريقة القديمة (بحث فوري)</h3>
+                <p>البحث يحدث مع كل حرف تكتبه - يسبب لاج</p>
+                <div class="status old">❌ بحث فوري مع كل حرف</div>
+                
+                <div class="search-container">
+                    <input type="text" 
+                           class="search-input" 
+                           id="oldSearch"
+                           placeholder="اكتب هنا لتجربة البحث القديم..."
+                           oninput="handleOldSearch(this.value)">
+                </div>
+                
+                <div class="results" id="oldResults"></div>
+            </div>
+
+            <!-- الطريقة الجديدة -->
+            <div class="test-section new-method">
+                <h3><i class="fas fa-check-circle"></i> الطريقة الجديدة (بحث بزر)</h3>
+                <p>البحث يحدث عند الضغط على الزر أو Enter - أداء أفضل</p>
+                <div class="status new">✅ بحث عند الطلب فقط</div>
+                
+                <div class="search-container">
+                    <input type="text" 
+                           class="search-input" 
+                           id="newSearch"
+                           placeholder="اكتب هنا واضغط بحث..."
+                           onkeypress="if(event.key==='Enter') handleNewSearch()">
+                    <button class="search-btn" onclick="handleNewSearch()">
+                        <i class="fas fa-search"></i>
+                        بحث
+                    </button>
+                    <button class="clear-search-btn" id="clearBtn" onclick="clearNewSearch()" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="results" id="newResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // محاكاة بيانات للبحث
+        const mockData = [
+            'أحمد محمد علي - الوحدة 101 - عقد رقم 12345',
+            'سارة أحمد خالد - الوحدة 102 - عقد رقم 12346', 
+            'محمد علي حسن - الوحدة 103 - عقد رقم 12347',
+            'فاطمة خالد سعد - الوحدة 201 - عقد رقم 12348',
+            'عبدالله سعد محمد - الوحدة 202 - عقد رقم 12349',
+            'نورا حسن علي - الوحدة 203 - عقد رقم 12350',
+            'يوسف محمد أحمد - الوحدة 301 - عقد رقم 12351',
+            'مريم علي خالد - الوحدة 302 - عقد رقم 12352'
+        ];
+
+        let searchCount = 0;
+
+        // الطريقة القديمة - بحث فوري
+        function handleOldSearch(query) {
+            searchCount++;
+            const results = document.getElementById('oldResults');
+            
+            if (query.length === 0) {
+                results.textContent = '';
+                return;
+            }
+
+            // محاكاة تأخير البحث
+            setTimeout(() => {
+                performSearch(query, 'old', searchCount);
+            }, 50);
+        }
+
+        // الطريقة الجديدة - بحث بزر
+        function handleNewSearch() {
+            const input = document.getElementById('newSearch');
+            const query = input.value.trim();
+            const clearBtn = document.getElementById('clearBtn');
+            
+            if (query.length === 0) {
+                alert('يرجى إدخال نص للبحث');
+                return;
+            }
+
+            searchCount++;
+            clearBtn.style.display = 'flex';
+            performSearch(query, 'new', searchCount);
+        }
+
+        // مسح البحث الجديد
+        function clearNewSearch() {
+            const input = document.getElementById('newSearch');
+            const results = document.getElementById('newResults');
+            const clearBtn = document.getElementById('clearBtn');
+            
+            input.value = '';
+            results.textContent = '';
+            clearBtn.style.display = 'none';
+        }
+
+        // تنفيذ البحث
+        function performSearch(query, type, count) {
+            const results = document.getElementById(type + 'Results');
+            
+            // البحث في البيانات
+            const searchResults = mockData.filter(item => 
+                item.toLowerCase().includes(query.toLowerCase())
+            );
+
+            // عرض النتائج
+            results.textContent = `🔍 البحث رقم ${count} عن: "${query}"\n`;
+            results.textContent += `📊 النتائج: ${searchResults.length} عنصر\n`;
+            results.textContent += `⏰ الوقت: ${new Date().toLocaleTimeString('ar-SA')}\n\n`;
+            
+            if (searchResults.length > 0) {
+                results.textContent += searchResults.join('\n');
+            } else {
+                results.textContent += 'لا توجد نتائج';
+            }
+        }
+
+        // إظهار إحصائيات الأداء
+        setInterval(() => {
+            console.log(`📊 إجمالي عمليات البحث: ${searchCount}`);
+        }, 5000);
+    </script>
+</body>
+</html>

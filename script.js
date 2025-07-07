@@ -10,6 +10,7 @@ let activeFilters = {
     property: '',
     status: '',
     contractType: '',
+    propertyType: '',
     dateFilter: '',
     startDate: '',
     endDate: '',
@@ -85,6 +86,14 @@ function updateActiveFiltersDisplay() {
             type: 'contractType',
             label: `نوع العقد: ${activeFilters.contractType}`,
             value: activeFilters.contractType
+        });
+    }
+
+    if (activeFilters.propertyType) {
+        filters.push({
+            type: 'propertyType',
+            label: `نوع العقار: ${activeFilters.propertyType}`,
+            value: activeFilters.propertyType
         });
     }
 
@@ -242,6 +251,13 @@ function removeFilter(type, value) {
             activeFilters.contractType = '';
             contractTypeFilter = null; // إعادة تعيين المتغير الأصلي أيضاً
             updateContractTypeButtonsState();
+            break;
+
+        case 'propertyType':
+            // إزالة فلتر نوع العقار
+            activeFilters.propertyType = '';
+            propertyTypeFilter = null; // إعادة تعيين المتغير الأصلي أيضاً
+            updatePropertyTypeButtonsState();
             break;
 
         case 'dateFilter':
@@ -588,6 +604,19 @@ function updateContractTypeButtonsState() {
     });
 }
 
+function updatePropertyTypeButtonsState() {
+    const propertyTypeButtons = document.querySelectorAll('.property-type-btn, #propertyTypeFilterBtn');
+    propertyTypeButtons.forEach(btn => {
+        if (activeFilters.propertyType) {
+            btn.style.background = '#28a745';
+            btn.style.color = 'white';
+        } else {
+            btn.style.background = '';
+            btn.style.color = '';
+        }
+    });
+}
+
 function updateDateFilterButtonsState() {
     const dateButtons = document.querySelectorAll('.date-filter-btn, #dateFilterBtn');
     dateButtons.forEach(btn => {
@@ -686,6 +715,8 @@ function updateGenericFilterButtons() {
             isActive = filterStatus && filterStatus !== 'الكل';
         } else if (btnText.includes('عقد') || btnText.includes('contract') || btnId.includes('contract')) {
             isActive = activeFilters.contractType && activeFilters.contractType !== '';
+        } else if (btnText.includes('نوع العقار') || btnText.includes('property-type') || btnId.includes('property-type')) {
+            isActive = activeFilters.propertyType && activeFilters.propertyType !== '';
         } else if (btnText.includes('تاريخ') || btnText.includes('date') || btnId.includes('date')) {
             isActive = activeFilters.dateFilter || activeFilters.startDate || activeFilters.endDate;
         } else if (btnText.includes('شهر') || btnText.includes('month') || btnId.includes('month')) {
@@ -723,6 +754,7 @@ function clearAllFilters() {
         property: '',
         status: '',
         contractType: '',
+        propertyType: '',
         dateFilter: '',
         startDate: '',
         endDate: '',
@@ -2000,6 +2032,29 @@ function updateDeveloperModeButton() {
 
 // تحميل البيانات عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', function() {
+    // إظهار شاشة التحميل البلورية
+    console.log('🔮 إظهار شاشة التحميل البلورية');
+
+    // التحقق من وجود مستخدم محفوظ لتحديد نوع الشاشة
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            currentUser = userData.username;
+
+            // فحص نوع المستخدم
+            const isLimitedUser = userData.role === 'limited' ||
+                                (users[userData.username] && users[userData.username].role === 'limited');
+
+            console.log(`👤 نوع المستخدم: ${isLimitedUser ? 'محدود' : 'عادي'}`);
+        } catch (error) {
+            console.warn('خطأ في قراءة بيانات المستخدم:', error);
+        }
+    }
+
+    // إظهار شاشة التحميل البلورية
+    showCrystalLoading();
+
     // مسح حقول البحث عند تحميل الصفحة
     setTimeout(() => {
         clearAllSearchFields();
@@ -2343,6 +2398,13 @@ function initMobileMenu() {
         document.getElementById('menuOverlay').classList.remove('active');
         document.body.style.overflow = '';
         document.getElementById('contractTypeFilterBtn').click();
+    });
+
+    document.getElementById('mobile-property-type-btn').addEventListener('click', function() {
+        document.getElementById('mobileMenu').classList.remove('active');
+        document.getElementById('menuOverlay').classList.remove('active');
+        document.body.style.overflow = '';
+        showPropertyTypeFilter();
     });
     
     document.getElementById('mobile-date-filter-btn').addEventListener('click', function() {
@@ -3166,6 +3228,17 @@ function initGlobalSearch() {
         }
     });
 
+    // إضافة مستمع لمراقبة مسح النص يدوياً
+    searchInput.addEventListener('input', function(e) {
+        const currentValue = e.target.value.trim();
+
+        // إذا تم مسح النص يدوياً وكان هناك بحث نشط
+        if (currentValue === '' && searchState.isSearchActive) {
+            console.log('🔄 تم اكتشاف مسح النص يدوياً - تطبيق إعادة تعيين شاملة');
+            clearGlobalSearch();
+        }
+    });
+
     // التأكد من ربط الأحداث بالأزرار الموجودة في HTML
     const searchBtn = document.querySelector('.global-search-btn');
     const clearBtn = document.querySelector('.global-clear-btn');
@@ -3180,7 +3253,7 @@ function initGlobalSearch() {
         clearBtn.setAttribute('data-initialized', 'true');
     }
 
-    console.log('✅ تم تهيئة البحث العام المحسن مع التخطيط الأفقي');
+    console.log('✅ تم تهيئة البحث العام المحسن مع التخطيط الأفقي ومراقبة المسح اليدوي');
 }
 
 // إضافة أزرار البحث والمسح (محدثة للتخطيط الجديد)
@@ -3225,25 +3298,129 @@ function performGlobalSearch() {
     }
 }
 
-// مسح البحث العام
+// مسح البحث العام مع إعادة تعيين جميع الفلاتر
 function clearGlobalSearch() {
+    console.log('🧹 مسح البحث العام وإعادة تعيين جميع الفلاتر...');
+
     const searchInput = document.getElementById('globalSearch');
-    if (!searchInput) return;
+    const clearButton = document.getElementById('clearSearchButton');
 
-    console.log('🧹 مسح البحث العام');
+    // مسح حقل البحث وإخفاء زر المسح
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    if (clearButton) {
+        clearButton.style.display = 'none';
+    }
 
-    // مسح النص
-    searchInput.value = '';
-
-    // مسح حالة البحث
+    // مسح حالة البحث العام
     searchState.global = '';
     searchState.isSearchActive = false;
 
+    // إعادة تعيين جميع متغيرات الفلاتر
+    currentCountry = null;
+    currentProperty = null;
+    filterStatus = null;
+
+    // إعادة تعيين جميع الفلاتر النشطة
+    activeFilters = {
+        city: '',
+        property: '',
+        status: '',
+        contractType: '',
+        propertyType: '',
+        dateFilter: '',
+        startDate: '',
+        endDate: '',
+        nearExpiry: false,
+        monthFilter: '',
+        multiProperty: [],
+        owner: ''
+    };
+
+    // إعادة تعيين واجهة المستخدم - إزالة جميع الأزرار النشطة
+    const countryButtons = document.querySelectorAll('.country-btn, .city-btn');
+    countryButtons.forEach(btn => btn.classList.remove('active'));
+
+    const propertyButtons = document.querySelectorAll('.property-btn');
+    propertyButtons.forEach(btn => btn.classList.remove('active'));
+
+    const filterButtons = document.querySelectorAll('.filter-btn, .status-btn');
+    filterButtons.forEach(btn => btn.classList.remove('active'));
+
+    // مسح فلاتر الجداول إذا كانت موجودة
+    if (window.tableFilterSystem) {
+        const tables = ['trackingLogsTable', 'propertiesTable', 'unitsTable'];
+        tables.forEach(tableId => {
+            if (document.getElementById(tableId)) {
+                window.tableFilterSystem.clearAllFilters(tableId);
+                window.tableFilterSystem.clearSearch(tableId);
+            }
+        });
+    }
+
+    // مسح عرض الفلاتر النشطة
+    const desktopList = document.getElementById('activeFiltersList');
+    const mobileList = document.getElementById('activeFiltersListMobile');
+    if (desktopList) desktopList.innerHTML = '';
+    if (mobileList) mobileList.innerHTML = '';
+
+    // إخفاء أزرار مسح الكل
+    const clearBtns = document.querySelectorAll('.clear-all-filters-btn');
+    clearBtns.forEach(btn => btn.style.display = 'none');
+
+    // إخفاء زر الفلاتر للهاتف
+    const mobileFilterBtn = document.getElementById('mobileFiltersBtn');
+    if (mobileFilterBtn) {
+        mobileFilterBtn.classList.remove('has-filters');
+    }
+
+    // تحديث عرض اسم العقار في الجوالات
+    if (typeof updateMobilePropertyName === 'function') {
+        updateMobilePropertyName();
+    }
+
     // إعادة عرض جميع البيانات
-    renderData();
+    if (typeof renderData === 'function') {
+        renderData();
+    } else {
+        displayProperties(properties);
+    }
+
+    // تحديث عرض الفلاتر النشطة
+    if (typeof updateActiveFiltersDisplay === 'function') {
+        updateActiveFiltersDisplay();
+    }
+
+    // تحديث الإحصائيات
+    if (typeof updateTotals === 'function') {
+        updateTotals();
+    }
+
+    // حفظ الحالة الجديدة
+    if (typeof saveAppState === 'function') {
+        saveAppState();
+    }
+
+    // تحديث إضافي بعد تأخير قصير لضمان تحديث جميع العناصر
+    setTimeout(() => {
+        if (typeof renderData === 'function') {
+            renderData();
+        }
+        if (typeof updateTotals === 'function') {
+            updateTotals();
+        }
+        if (typeof updateActiveFiltersDisplay === 'function') {
+            updateActiveFiltersDisplay();
+        }
+    }, 100);
+
+    console.log('✅ تم مسح البحث العام وإعادة تعيين جميع الفلاتر');
 
     // إظهار مؤشر المسح
-    showSearchIndicator(searchInput, 'تم مسح البحث', 'info');
+    if (searchInput) {
+        showSearchIndicator(searchInput, 'تم مسح البحث وإعادة تعيين جميع الفلاتر', 'success');
+    }
 }
 
 // مسح البحث العام تلقائياً عند التنقل (بدون مؤشرات بصرية)
@@ -4113,6 +4290,11 @@ function renderData() {
   // تصفية البيانات حسب نوع العقد
   if (contractTypeFilter) {
     filteredData = filteredData.filter(property => property['نوع العقد'] === contractTypeFilter);
+  }
+
+  // تصفية البيانات حسب نوع العقار
+  if (propertyTypeFilter) {
+    filteredData = filteredData.filter(property => property['نوع العقار'] === propertyTypeFilter);
   }
   
   // إضافة مؤشر العقار المحدد قبل عرض البيانات
@@ -5017,6 +5199,11 @@ function renderCards(data) {
                     <span class="card-label">رقم العقد:</span>
                     <span class="card-value">${property['رقم العقد'] || ''}</span>
                 </div>
+                ${property['نوع العقار'] ? `
+                <div class="card-row property-type-row">
+                    <span class="card-label"><i class="fas fa-tag"></i> نوع العقار:</span>
+                    <span class="card-value property-type-badge property-type-${property['نوع العقار']?.toLowerCase()?.replace('أ', 'ا')}">${property['نوع العقار']}</span>
+                </div>` : ''}
                 <div class="card-row">
                     <span class="card-label">تاريخ البداية:</span>
                     <span class="card-value" style="${startColor} padding:4px 8px; border-radius:4px;">
@@ -18314,7 +18501,21 @@ function showMultiUnitEditModal(relatedUnits, primaryUnit) {
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <!-- حقل فارغ للتوازن -->
+                                    <label>نوع العقار:</label>
+                                    <select name="نوع العقار" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="">-- اختر نوع العقار --</option>
+                                        <option value="مستودع" ${primaryUnit['نوع العقار'] === 'مستودع' ? 'selected' : ''}>مستودع</option>
+                                        <option value="مصنع" ${primaryUnit['نوع العقار'] === 'مصنع' ? 'selected' : ''}>مصنع</option>
+                                        <option value="شقة" ${primaryUnit['نوع العقار'] === 'شقة' ? 'selected' : ''}>شقة</option>
+                                        <option value="غرفة" ${primaryUnit['نوع العقار'] === 'غرفة' ? 'selected' : ''}>غرفة</option>
+                                        <option value="معرض" ${primaryUnit['نوع العقار'] === 'معرض' ? 'selected' : ''}>معرض</option>
+                                        <option value="محل" ${primaryUnit['نوع العقار'] === 'محل' ? 'selected' : ''}>محل</option>
+                                        <option value="حوش" ${primaryUnit['نوع العقار'] === 'حوش' ? 'selected' : ''}>حوش</option>
+                                        <option value="أرض" ${primaryUnit['نوع العقار'] === 'أرض' ? 'selected' : ''}>أرض</option>
+                                        <option value="عمارة" ${primaryUnit['نوع العقار'] === 'عمارة' ? 'selected' : ''}>عمارة</option>
+                                        <option value="مكتب" ${primaryUnit['نوع العقار'] === 'مكتب' ? 'selected' : ''}>مكتب</option>
+                                    </select>
+                                    <small class="field-note">اختر نوع العقار لتصنيف أفضل</small>
                                 </div>
                             </div>
                         </div>
@@ -20969,7 +21170,21 @@ function showSingleUnitEditModal(property, contractNumber, propertyName, unitNum
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <!-- حقل فارغ للتوازن -->
+                                    <label>نوع العقار:</label>
+                                    <select name="نوع العقار" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                        <option value="">-- اختر نوع العقار --</option>
+                                        <option value="مستودع" ${property['نوع العقار'] === 'مستودع' ? 'selected' : ''}>مستودع</option>
+                                        <option value="مصنع" ${property['نوع العقار'] === 'مصنع' ? 'selected' : ''}>مصنع</option>
+                                        <option value="شقة" ${property['نوع العقار'] === 'شقة' ? 'selected' : ''}>شقة</option>
+                                        <option value="غرفة" ${property['نوع العقار'] === 'غرفة' ? 'selected' : ''}>غرفة</option>
+                                        <option value="معرض" ${property['نوع العقار'] === 'معرض' ? 'selected' : ''}>معرض</option>
+                                        <option value="محل" ${property['نوع العقار'] === 'محل' ? 'selected' : ''}>محل</option>
+                                        <option value="حوش" ${property['نوع العقار'] === 'حوش' ? 'selected' : ''}>حوش</option>
+                                        <option value="أرض" ${property['نوع العقار'] === 'أرض' ? 'selected' : ''}>أرض</option>
+                                        <option value="عمارة" ${property['نوع العقار'] === 'عمارة' ? 'selected' : ''}>عمارة</option>
+                                        <option value="مكتب" ${property['نوع العقار'] === 'مكتب' ? 'selected' : ''}>مكتب</option>
+                                    </select>
+                                    <small class="field-note">اختر نوع العقار لتصنيف أفضل</small>
                                 </div>
                             </div>
                         </div>
@@ -27592,6 +27807,71 @@ function showContractTypeFilterFromDropdown() {
             oldBtn.click();
         }
     }
+}
+
+// متغير فلتر نوع العقار
+let propertyTypeFilter = null;
+
+// نافذة فلتر نوع العقار
+function showPropertyTypeFilter() {
+    // التحقق من وجود نافذة مفتوحة وإغلاقها إذا كانت موجودة
+    const existingModal = document.querySelector('.modal-overlay');
+    if (existingModal) {
+        closeModal();
+        return;
+    }
+
+    let html = `
+    <div class="modal-overlay" style="display:flex;">
+      <div class="modal-box">
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3><i class="fas fa-tag"></i> فلتر نوع العقار</h3>
+        <div class="property-type-filter">
+          <button onclick="setPropertyTypeFilter(null)" class="filter-btn${!propertyTypeFilter ? ' active' : ''}">الكل</button>
+          <button onclick="setPropertyTypeFilter('مستودع')" class="filter-btn${propertyTypeFilter === 'مستودع' ? ' active' : ''}">مستودع</button>
+          <button onclick="setPropertyTypeFilter('مصنع')" class="filter-btn${propertyTypeFilter === 'مصنع' ? ' active' : ''}">مصنع</button>
+          <button onclick="setPropertyTypeFilter('شقة')" class="filter-btn${propertyTypeFilter === 'شقة' ? ' active' : ''}">شقة</button>
+          <button onclick="setPropertyTypeFilter('غرفة')" class="filter-btn${propertyTypeFilter === 'غرفة' ? ' active' : ''}">غرفة</button>
+          <button onclick="setPropertyTypeFilter('معرض')" class="filter-btn${propertyTypeFilter === 'معرض' ? ' active' : ''}">معرض</button>
+          <button onclick="setPropertyTypeFilter('محل')" class="filter-btn${propertyTypeFilter === 'محل' ? ' active' : ''}">محل</button>
+          <button onclick="setPropertyTypeFilter('حوش')" class="filter-btn${propertyTypeFilter === 'حوش' ? ' active' : ''}">حوش</button>
+          <button onclick="setPropertyTypeFilter('أرض')" class="filter-btn${propertyTypeFilter === 'أرض' ? ' active' : ''}">أرض</button>
+          <button onclick="setPropertyTypeFilter('عمارة')" class="filter-btn${propertyTypeFilter === 'عمارة' ? ' active' : ''}">عمارة</button>
+          <button onclick="setPropertyTypeFilter('مكتب')" class="filter-btn${propertyTypeFilter === 'مكتب' ? ' active' : ''}">مكتب</button>
+        </div>
+      </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+}
+
+// تعيين فلتر نوع العقار
+function setPropertyTypeFilter(type) {
+    propertyTypeFilter = type;
+
+    // تحديث activeFilters أيضاً للفلاتر النشطة
+    activeFilters.propertyType = type || '';
+
+    // إعادة عرض البيانات
+    renderData();
+    closeModal();
+
+    // تحديث عرض الفلاتر النشطة
+    updateActiveFiltersDisplay();
+
+    // تحديث حالة أزرار الفلاتر
+    updateAllFilterButtonsState();
+    updatePropertyTypeButtonsState();
+
+    console.log(`🏷️ تم تطبيق فلتر نوع العقار: ${type || 'الكل'}`);
+}
+
+// دالة لاستدعاء فلتر نوع العقار من القائمة المنسدلة
+function showPropertyTypeFilterFromDropdown() {
+    showPropertyTypeFilter();
 }
 
 function showOwnerFilterFromDropdown() {
@@ -35924,8 +36204,13 @@ function updateSyncProgress(progressModal, status, percentage) {
     }
 }
 
-// إظهار خطأ المزامنة مع إمكانية إعادة المحاولة
+// إظهار خطأ المزامنة مع إمكانية إعادة المحاولة - معطل
 function showSyncError(error, canRetry = true) {
+    // تم تعطيل عرض رسالة خطأ المزامنة
+    console.log('🔇 تم تعطيل عرض رسالة خطأ المزامنة:', error.message || 'خطأ غير معروف');
+    return;
+
+    /* الكود الأصلي معطل
     const errorModal = document.createElement('div');
     errorModal.className = 'modal-overlay';
     errorModal.style.display = 'flex';
@@ -35967,6 +36252,7 @@ function showSyncError(error, canRetry = true) {
 
     // حفظ مرجع للنافذة
     window.currentSyncErrorModal = errorModal;
+    */
 }
 
 // إعادة محاولة المزامنة
@@ -40969,6 +41255,10 @@ function resetFiltersToDefault() {
         contractTypeFilter = null;
     }
 
+    if (typeof propertyTypeFilter !== 'undefined') {
+        propertyTypeFilter = null;
+    }
+
     if (typeof multiFilterSelectedCity !== 'undefined') {
         multiFilterSelectedCity = null;
     }
@@ -45737,54 +46027,8 @@ window.resetFiltersToDefault = resetFiltersToDefault;
 window.quickUnitLinkingTest = quickUnitLinkingTest;
 window.fixUnitLinkingIssues = fixUnitLinkingIssues;
 
-// إضافة مستمع لتحميل الصفحة لإظهار شاشة التحميل
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 بدء تحميل التطبيق...');
-
-    // إظهار شاشة التحميل عند تحميل الصفحة
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        console.log('🔮 إظهار شاشة التحميل عند إعادة تحميل الصفحة');
-
-        try {
-            const userData = JSON.parse(savedUser);
-            console.log('📋 بيانات المستخدم المحفوظة:', userData);
-
-            // تعيين المستخدم الحالي مؤقتاً لتحديد نوع الشاشة
-            currentUser = userData.username;
-
-            // فحص نوع المستخدم
-            const isLimitedUser = userData.role === 'limited' ||
-                                (users[userData.username] && users[userData.username].role === 'limited');
-
-            console.log('🔍 فحص نوع المستخدم:', {
-                username: userData.username,
-                role: userData.role,
-                isLimitedUser: isLimitedUser,
-                usersData: users[userData.username]
-            });
-
-            if (isLimitedUser) {
-                console.log('👤 مستخدم محدود - إظهار شاشة التحميل الهادئة عند إعادة التحميل');
-                console.log('🔮 سيتم استدعاء showCrystalLoading() للمستخدم المحدود');
-            } else {
-                console.log('👑 مستخدم عادي - إظهار شاشة التحميل العادية عند إعادة التحميل');
-            }
-        } catch (error) {
-            console.error('خطأ في قراءة بيانات المستخدم:', error);
-            // في حالة الخطأ، فحص اسم المستخدم مباشرة
-            if (savedUser.includes('sa12345')) {
-                console.log('👤 اكتشاف مستخدم محدود من النص المحفوظ');
-                currentUser = 'sa12345';
-            }
-        }
-
-        showCrystalLoading();
-    }
-
-    // تم نقل checkAuthentication() إلى مستمع DOMContentLoaded الأول
-    // لتجنب التكرار
-});
+// تم حذف مستمع شاشة التحميل المتأخر لتجنب التأخير
+// شاشة التحميل تظهر الآن فوراً من المستمع الرئيسي
 
 
 

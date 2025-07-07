@@ -49,7 +49,8 @@ function convertPropertyToSupabaseFormat(jsonProperty) {
         tenth_installment_amount: parseFloat(jsonProperty['مبلغ القسط العاشر']) || null,
 
         installment_end_date: parseDate(jsonProperty['تاريخ نهاية القسط']) || null,
-        contract_type: jsonProperty['نوع العقد'] || null
+        contract_type: jsonProperty['نوع العقد'] || null,
+        "نوع العقار": jsonProperty['نوع العقار'] || null
     };
 }
 
@@ -246,6 +247,13 @@ async function loadAndDisplayProperties() {
     }
 }
 
+// Alias function for compatibility with other parts of the system
+async function loadDataFromSupabase() {
+    console.log('🔄 إعادة تحميل البيانات من Supabase...');
+    await loadAndDisplayProperties();
+    console.log('✅ تم تحميل البيانات بنجاح');
+}
+
 // Convert Supabase format back to original format for compatibility
 function convertSupabaseToOriginalFormat(supabaseProperty) {
     return {
@@ -295,6 +303,7 @@ function convertSupabaseToOriginalFormat(supabaseProperty) {
 
         'تاريخ نهاية القسط': formatDateForDisplay(supabaseProperty.installment_end_date),
         'نوع العقد': supabaseProperty.contract_type,
+        'نوع العقار': supabaseProperty['نوع العقار'],
         // Add Supabase-specific fields for internal use
         _supabase_id: supabaseProperty.id,
         _created_at: supabaseProperty.created_at,

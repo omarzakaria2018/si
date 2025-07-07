@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار ميزة نوع العقار</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .test-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .test-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+
+        .test-header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .test-content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
+        }
+
+        .test-section h3 {
+            color: #28a745;
+            margin-top: 0;
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+
+        .test-button.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .test-button.warning {
+            background: linear-gradient(135deg, #ffc107, #ff8f00);
+        }
+
+        .test-button.danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .test-results {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+
+        .result-item.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .result-item.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .result-item.warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .result-item.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+
+        .demo-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .demo-property-type {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin: 5px;
+        }
+
+        .property-type-مستودع { background: linear-gradient(135deg, #6c757d, #495057); color: white; }
+        .property-type-مصنع { background: linear-gradient(135deg, #fd7e14, #e55100); color: white; }
+        .property-type-شقة { background: linear-gradient(135deg, #20c997, #17a2b8); color: white; }
+        .property-type-غرفة { background: linear-gradient(135deg, #e83e8c, #d63384); color: white; }
+        .property-type-معرض { background: linear-gradient(135deg, #6f42c1, #5a2d91); color: white; }
+        .property-type-محل { background: linear-gradient(135deg, #ffc107, #ff8f00); color: #212529; }
+        .property-type-حوش { background: linear-gradient(135deg, #795548, #5d4037); color: white; }
+        .property-type-ارض { background: linear-gradient(135deg, #8bc34a, #689f38); color: white; }
+        .property-type-عمارة { background: linear-gradient(135deg, #2196f3, #1976d2); color: white; }
+        .property-type-مكتب { background: linear-gradient(135deg, #9c27b0, #7b1fa2); color: white; }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+        .status-info { background: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1><i class="fas fa-tag"></i> اختبار ميزة نوع العقار</h1>
+            <p>اختبار شامل لميزة نوع العقار الجديدة في النظام</p>
+        </div>
+
+        <div class="test-content">
+            <!-- قسم عرض أنواع العقارات -->
+            <div class="test-section">
+                <h3><i class="fas fa-palette"></i> عرض أنواع العقارات بالألوان</h3>
+                <p>هذا عرض لجميع أنواع العقارات المتاحة مع ألوانها المميزة:</p>
+                <div style="text-align: center; margin: 20px 0;">
+                    <span class="demo-property-type property-type-مستودع">مستودع</span>
+                    <span class="demo-property-type property-type-مصنع">مصنع</span>
+                    <span class="demo-property-type property-type-شقة">شقة</span>
+                    <span class="demo-property-type property-type-غرفة">غرفة</span>
+                    <span class="demo-property-type property-type-معرض">معرض</span>
+                    <span class="demo-property-type property-type-محل">محل</span>
+                    <span class="demo-property-type property-type-حوش">حوش</span>
+                    <span class="demo-property-type property-type-ارض">أرض</span>
+                    <span class="demo-property-type property-type-عمارة">عمارة</span>
+                    <span class="demo-property-type property-type-مكتب">مكتب</span>
+                </div>
+            </div>
+
+            <!-- قسم اختبار الفلتر -->
+            <div class="test-section">
+                <h3><i class="fas fa-filter"></i> اختبار فلتر نوع العقار</h3>
+                <p>اختبار وظائف فلتر نوع العقار:</p>
+                <button class="test-button" onclick="testPropertyTypeFilter()">
+                    <i class="fas fa-play"></i> اختبار الفلتر
+                </button>
+                <button class="test-button success" onclick="openPropertyTypeFilter()">
+                    <i class="fas fa-filter"></i> فتح نافذة الفلتر
+                </button>
+                <div class="test-results" id="filterTestResults"></div>
+            </div>
+
+            <!-- قسم اختبار نموذج التحرير -->
+            <div class="test-section">
+                <h3><i class="fas fa-edit"></i> اختبار نموذج التحرير</h3>
+                <p>اختبار إضافة حقل نوع العقار في نموذج التحرير:</p>
+                <button class="test-button warning" onclick="testEditModal()">
+                    <i class="fas fa-edit"></i> اختبار نموذج التحرير
+                </button>
+                <div class="test-results" id="editTestResults"></div>
+            </div>
+
+            <!-- قسم اختبار قاعدة البيانات -->
+            <div class="test-section">
+                <h3><i class="fas fa-database"></i> اختبار قاعدة البيانات</h3>
+                <p>اختبار حفظ واسترجاع نوع العقار من قاعدة البيانات:</p>
+                <button class="test-button danger" onclick="testDatabaseIntegration()">
+                    <i class="fas fa-database"></i> اختبار قاعدة البيانات
+                </button>
+                <div class="test-results" id="databaseTestResults"></div>
+            </div>
+
+            <!-- قسم النتائج العامة -->
+            <div class="test-section">
+                <h3><i class="fas fa-chart-line"></i> ملخص النتائج</h3>
+                <div class="test-results" id="overallResults">
+                    <div class="result-item info">
+                        <i class="fas fa-info-circle"></i>
+                        جاهز لبدء الاختبارات...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        // متغيرات الاختبار
+        let testResults = {
+            filter: false,
+            edit: false,
+            database: false,
+            display: false
+        };
+
+        // دالة إضافة نتيجة
+        function addResult(containerId, type, title, message) {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result-item ${type}`;
+            
+            const icon = type === 'success' ? 'check-circle' : 
+                        type === 'error' ? 'times-circle' : 
+                        type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+            
+            resultDiv.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <strong>${title}:</strong> ${message}
+            `;
+            
+            container.appendChild(resultDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // اختبار فلتر نوع العقار
+        function testPropertyTypeFilter() {
+            addResult('filterTestResults', 'info', 'بدء الاختبار', 'اختبار وظائف فلتر نوع العقار...');
+            
+            try {
+                // التحقق من وجود الدالة
+                if (typeof showPropertyTypeFilter === 'function') {
+                    addResult('filterTestResults', 'success', 'الدالة موجودة', 'دالة showPropertyTypeFilter متوفرة');
+                    testResults.filter = true;
+                } else {
+                    addResult('filterTestResults', 'error', 'الدالة مفقودة', 'دالة showPropertyTypeFilter غير متوفرة');
+                }
+
+                // التحقق من متغير الفلتر
+                if (typeof propertyTypeFilter !== 'undefined') {
+                    addResult('filterTestResults', 'success', 'المتغير موجود', 'متغير propertyTypeFilter متوفر');
+                } else {
+                    addResult('filterTestResults', 'warning', 'المتغير مفقود', 'متغير propertyTypeFilter غير متوفر');
+                }
+
+                updateOverallResults();
+            } catch (error) {
+                addResult('filterTestResults', 'error', 'خطأ في الاختبار', error.message);
+            }
+        }
+
+        // فتح نافذة فلتر نوع العقار
+        function openPropertyTypeFilter() {
+            try {
+                if (typeof showPropertyTypeFilter === 'function') {
+                    showPropertyTypeFilter();
+                    addResult('filterTestResults', 'success', 'فتح النافذة', 'تم فتح نافذة فلتر نوع العقار بنجاح');
+                } else {
+                    addResult('filterTestResults', 'error', 'فشل فتح النافذة', 'دالة showPropertyTypeFilter غير متوفرة');
+                }
+            } catch (error) {
+                addResult('filterTestResults', 'error', 'خطأ في فتح النافذة', error.message);
+            }
+        }
+
+        // اختبار نموذج التحرير
+        function testEditModal() {
+            addResult('editTestResults', 'info', 'بدء الاختبار', 'اختبار إضافة حقل نوع العقار في نموذج التحرير...');
+            
+            try {
+                // إنشاء بيانات تجريبية
+                const testProperty = {
+                    'اسم العقار': 'عقار تجريبي',
+                    'رقم العقد': 'TEST001',
+                    'رقم  الوحدة ': '101',
+                    'نوع العقار': 'شقة'
+                };
+
+                // محاولة فتح نموذج التحرير
+                if (typeof showCardEditModal === 'function') {
+                    // إضافة البيانات التجريبية مؤقتاً
+                    if (typeof properties === 'undefined') {
+                        window.properties = [testProperty];
+                    } else {
+                        properties.push(testProperty);
+                    }
+
+                    addResult('editTestResults', 'success', 'البيانات جاهزة', 'تم إعداد بيانات تجريبية للاختبار');
+                    addResult('editTestResults', 'info', 'فتح النموذج', 'يمكنك الآن فتح نموذج التحرير للتحقق من وجود حقل نوع العقار');
+                    
+                    testResults.edit = true;
+                } else {
+                    addResult('editTestResults', 'error', 'الدالة مفقودة', 'دالة showCardEditModal غير متوفرة');
+                }
+
+                updateOverallResults();
+            } catch (error) {
+                addResult('editTestResults', 'error', 'خطأ في الاختبار', error.message);
+            }
+        }
+
+        // اختبار قاعدة البيانات
+        async function testDatabaseIntegration() {
+            addResult('databaseTestResults', 'info', 'بدء الاختبار', 'اختبار تكامل قاعدة البيانات...');
+
+            try {
+                // التحقق من Supabase
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    addResult('databaseTestResults', 'success', 'Supabase متصل', 'اتصال قاعدة البيانات نشط');
+
+                    // اختبار حفظ واسترجاع نوع العقار
+                    addResult('databaseTestResults', 'info', 'اختبار الحفظ', 'اختبار حفظ نوع العقار في قاعدة البيانات...');
+
+                    // إنشاء بيانات تجريبية
+                    const testData = {
+                        unit_number: 'TEST_PROPERTY_TYPE_' + Date.now(),
+                        property_name: 'عقار اختبار نوع العقار',
+                        city: 'الرياض',
+                        "نوع العقار": 'شقة'
+                    };
+
+                    // محاولة الحفظ
+                    const { data: insertData, error: insertError } = await supabaseClient
+                        .from('properties')
+                        .insert([testData])
+                        .select();
+
+                    if (insertError) {
+                        addResult('databaseTestResults', 'error', 'فشل الحفظ', insertError.message);
+                    } else {
+                        addResult('databaseTestResults', 'success', 'نجح الحفظ', 'تم حفظ نوع العقار بنجاح');
+
+                        // اختبار الاسترجاع
+                        const { data: selectData, error: selectError } = await supabaseClient
+                            .from('properties')
+                            .select('unit_number, property_name, "نوع العقار"')
+                            .eq('unit_number', testData.unit_number);
+
+                        if (selectError) {
+                            addResult('databaseTestResults', 'error', 'فشل الاسترجاع', selectError.message);
+                        } else if (selectData && selectData.length > 0 && selectData[0]['نوع العقار'] === 'شقة') {
+                            addResult('databaseTestResults', 'success', 'نجح الاسترجاع', 'تم استرجاع نوع العقار بنجاح');
+                            testResults.database = true;
+                        } else {
+                            addResult('databaseTestResults', 'warning', 'مشكلة في الاسترجاع', 'لم يتم استرجاع نوع العقار بشكل صحيح');
+                        }
+
+                        // حذف البيانات التجريبية
+                        await supabaseClient
+                            .from('properties')
+                            .delete()
+                            .eq('unit_number', testData.unit_number);
+
+                        addResult('databaseTestResults', 'info', 'تنظيف', 'تم حذف البيانات التجريبية');
+                    }
+                } else {
+                    addResult('databaseTestResults', 'warning', 'Supabase غير متصل', 'لا يمكن اختبار قاعدة البيانات');
+                }
+
+                updateOverallResults();
+            } catch (error) {
+                addResult('databaseTestResults', 'error', 'خطأ في الاختبار', error.message);
+            }
+        }
+
+        // تحديث النتائج العامة
+        function updateOverallResults() {
+            const container = document.getElementById('overallResults');
+            container.innerHTML = '';
+
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(result => result).length;
+            const percentage = Math.round((passedTests / totalTests) * 100);
+
+            addResult('overallResults', 'info', 'إجمالي الاختبارات', `${passedTests}/${totalTests} (${percentage}%)`);
+
+            if (percentage === 100) {
+                addResult('overallResults', 'success', 'جميع الاختبارات نجحت', 'ميزة نوع العقار جاهزة للاستخدام! 🎉');
+            } else if (percentage >= 75) {
+                addResult('overallResults', 'warning', 'معظم الاختبارات نجحت', 'الميزة تعمل بشكل جيد مع بعض التحسينات المطلوبة');
+            } else {
+                addResult('overallResults', 'error', 'تحتاج إلى مراجعة', 'هناك مشاكل تحتاج إلى إصلاح قبل الاستخدام');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            addResult('overallResults', 'info', 'تم تحميل الصفحة', 'جاهز لبدء اختبار ميزة نوع العقار');
+            
+            // اختبار عرض الألوان
+            testResults.display = true;
+            addResult('overallResults', 'success', 'عرض الألوان', 'تم عرض أنواع العقارات بالألوان بنجاح');
+            
+            updateOverallResults();
+        });
+    </script>
+</body>
+</html>

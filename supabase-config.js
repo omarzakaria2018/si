@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS properties (
     "تاريخ نهاية العقد" DATE,
     "عدد الاقساط" INTEGER,
     "نوع العقد" TEXT,
+    "نوع العقار" TEXT,
     "رقم السجل العقاري" TEXT,
     "مساحة الصك" NUMERIC,
     "رقم الصك" TEXT,
@@ -158,6 +159,9 @@ CREATE TABLE IF NOT EXISTS activity_log (
     user_id TEXT DEFAULT 'system',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- إضافة عمود نوع العقار للجداول الموجودة (إذا لم يكن موجوداً)
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS "نوع العقار" TEXT;
 
 -- تفعيل Row Level Security
 ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
@@ -1131,7 +1135,8 @@ function convertPropertyToSupabaseFormat(jsonProperty) {
         tenth_installment_amount: parseFloat(jsonProperty['مبلغ القسط العاشر']) || null,
 
         installment_end_date: parseDate(jsonProperty['تاريخ نهاية القسط']) || null,
-        contract_type: jsonProperty['نوع العقد'] || null
+        contract_type: jsonProperty['نوع العقد'] || null,
+        "نوع العقار": jsonProperty['نوع العقار'] || null
     };
 }
 
