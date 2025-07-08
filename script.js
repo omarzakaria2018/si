@@ -18511,6 +18511,9 @@ function showMultiUnitEditModal(relatedUnits, primaryUnit) {
                                         <option value="معرض" ${primaryUnit['نوع العقار'] === 'معرض' ? 'selected' : ''}>معرض</option>
                                         <option value="محل" ${primaryUnit['نوع العقار'] === 'محل' ? 'selected' : ''}>محل</option>
                                         <option value="حوش" ${primaryUnit['نوع العقار'] === 'حوش' ? 'selected' : ''}>حوش</option>
+                                        <option value="مزرعة" ${primaryUnit['نوع العقار'] === 'مزرعة' ? 'selected' : ''}>مزرعة</option>
+                                        <option value="فلة" ${primaryUnit['نوع العقار'] === 'فلة' ? 'selected' : ''}>فلة</option>
+                                        <option value="ورشة" ${primaryUnit['نوع العقار'] === 'ورشة' ? 'selected' : ''}>ورشة</option>
                                         <option value="أرض" ${primaryUnit['نوع العقار'] === 'أرض' ? 'selected' : ''}>أرض</option>
                                         <option value="عمارة" ${primaryUnit['نوع العقار'] === 'عمارة' ? 'selected' : ''}>عمارة</option>
                                         <option value="مكتب" ${primaryUnit['نوع العقار'] === 'مكتب' ? 'selected' : ''}>مكتب</option>
@@ -21180,6 +21183,9 @@ function showSingleUnitEditModal(property, contractNumber, propertyName, unitNum
                                         <option value="معرض" ${property['نوع العقار'] === 'معرض' ? 'selected' : ''}>معرض</option>
                                         <option value="محل" ${property['نوع العقار'] === 'محل' ? 'selected' : ''}>محل</option>
                                         <option value="حوش" ${property['نوع العقار'] === 'حوش' ? 'selected' : ''}>حوش</option>
+                                        <option value="ورشة" ${property['نوع العقار'] === 'ورشة' ? 'selected' : ''}>ورشة</option>
+                                        <option value="فلة" ${property['نوع العقار'] === 'فلة' ? 'selected' : ''}>فلة</option>
+                                        <option value="مزرعة" ${property['نوع العقار'] === 'مزرعة' ? 'selected' : ''}>مزرعة</option>
                                         <option value="أرض" ${property['نوع العقار'] === 'أرض' ? 'selected' : ''}>أرض</option>
                                         <option value="عمارة" ${property['نوع العقار'] === 'عمارة' ? 'selected' : ''}>عمارة</option>
                                         <option value="مكتب" ${property['نوع العقار'] === 'مكتب' ? 'selected' : ''}>مكتب</option>
@@ -27835,6 +27841,9 @@ function showPropertyTypeFilter() {
           <button onclick="setPropertyTypeFilter('معرض')" class="filter-btn${propertyTypeFilter === 'معرض' ? ' active' : ''}">معرض</button>
           <button onclick="setPropertyTypeFilter('محل')" class="filter-btn${propertyTypeFilter === 'محل' ? ' active' : ''}">محل</button>
           <button onclick="setPropertyTypeFilter('حوش')" class="filter-btn${propertyTypeFilter === 'حوش' ? ' active' : ''}">حوش</button>
+          <button onclick="setPropertyTypeFilter('مزرعة')" class="filter-btn${propertyTypeFilter === 'مزرعة' ? ' active' : ''}">مزرعة</button>
+          <button onclick="setPropertyTypeFilter('فلة')" class="filter-btn${propertyTypeFilter === 'فلة' ? ' active' : ''}">فلة</button>
+          <button onclick="setPropertyTypeFilter('ورشة')" class="filter-btn${propertyTypeFilter === 'ورشة' ? ' active' : ''}">ورشة</button>
           <button onclick="setPropertyTypeFilter('أرض')" class="filter-btn${propertyTypeFilter === 'أرض' ? ' active' : ''}">أرض</button>
           <button onclick="setPropertyTypeFilter('عمارة')" class="filter-btn${propertyTypeFilter === 'عمارة' ? ' active' : ''}">عمارة</button>
           <button onclick="setPropertyTypeFilter('مكتب')" class="filter-btn${propertyTypeFilter === 'مكتب' ? ' active' : ''}">مكتب</button>
