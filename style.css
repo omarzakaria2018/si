@@ -12300,47 +12300,59 @@ a[href^="http"] {
 }
 
 .property-type-مصنع {
-    background: linear-gradient(135deg, #fd7e14, #e55100);
+    background: linear-gradient(135deg, #eaa368bf, #dfb198);
     color: white;
 }
 
 .property-type-شقة {
-    background: linear-gradient(135deg, #20c997, #17a2b8);
+    background: linear-gradient(135deg, #94dcc7, #88d7e4);
     color: white;
 }
 
 .property-type-غرفة {
-    background: linear-gradient(135deg, #e83e8c, #d63384);
+    background: linear-gradient(135deg, #e9c8d7, #e291b9);
     color: white;
 }
 
 .property-type-معرض {
-    background: linear-gradient(135deg, #6f42c1, #5a2d91);
+    background: linear-gradient(135deg, #bcacda, #c3a9e2);
     color: white;
 }
 
 .property-type-محل {
-    background: linear-gradient(135deg, #ffc107, #ff8f00);
+    background: linear-gradient(135deg, #ffc107eb, #ebbb7fa6);
     color: #212529;
 }
 
 .property-type-حوش {
-    background: linear-gradient(135deg, #795548, #5d4037);
+    background: linear-gradient(135deg, #d7aa9a, #e6c9c0);
+    color: white;
+}
+.property-type-ورشة {
+    background: linear-gradient(135deg, #abace2c4, #e4dedc91);
+    color: white;
+}
+.property-type-مزرعة {
+    background: linear-gradient(135deg, #2cff03c4, #94deb691);
     color: white;
 }
 
+.property-type-فلة {
+    background: linear-gradient(135deg, #d7aa9a, #e6c9c0);
+    color: white;
+}
 .property-type-ارض {
-    background: linear-gradient(135deg, #8bc34a, #689f38);
+    background: linear-gradient(135deg, #b8d09b, #bbe19b);
     color: white;
 }
 
 .property-type-عمارة {
-    background: linear-gradient(135deg, #2196f3, #1976d2);
+    background: linear-gradient(135deg, #b7ccdd, #92b1d0);
     color: white;
 }
 
 .property-type-مكتب {
-    background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+    background: linear-gradient(135deg, #e1bfe7, #e9c3f9);
     color: white;
 }
 
@@ -21497,7 +21509,7 @@ body.limited-user .restricted-dropdown-item::before {
     padding: 12px;
     border: 1px solid #ced4da;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 17.5px;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
