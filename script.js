@@ -1,4 +1,5 @@
 let properties = [];
+let filteredProperties = []; // البيانات المفلترة الحالية للتصدير
 let currentView = 'cards';
 let currentCountry = null;
 let currentProperty = null;
@@ -2711,6 +2712,9 @@ function initializeApp() {
     // تهيئة الـ sidebar
     initializeSidebar();
 
+    // تحديث نص أزرار التصدير
+    updateExportButtonsText();
+
     console.log('✅ تم تهيئة التطبيق بنجاح');
 
     // إضافة زر إخفاء السايدبار
@@ -3289,11 +3293,18 @@ function performGlobalSearch() {
     // تنفيذ البحث
     renderData();
 
-    // إظهار مؤشر البحث
+    // إظهار مؤشر البحث مع معلومات البحث المتعدد
     if (searchTerm) {
+        const searchTerms = searchTerm.split('//').map(term => term.trim()).filter(term => term.length > 0);
+        const isMultiSearch = searchTerms.length > 1;
+
         showSearchIndicator(searchInput, 'جاري البحث...');
         setTimeout(() => {
-            showSearchIndicator(searchInput, `تم العثور على النتائج`, 'success');
+            if (isMultiSearch) {
+                showSearchIndicator(searchInput, `تم البحث عن ${searchTerms.length} مصطلحات مختلفة`, 'success');
+            } else {
+                showSearchIndicator(searchInput, `تم العثور على النتائج`, 'success');
+            }
         }, 500);
     }
 }
@@ -4277,14 +4288,46 @@ function renderData() {
     });
   }
   
-  // تصفية البيانات حسب البحث العام المحسن
+  // تصفية البيانات حسب البحث العام المحسن (يدعم البحث المتعدد بـ //)
   const searchTerm = getGlobalSearchTerm().toLowerCase();
   if (searchTerm) {
+    // تقسيم مصطلح البحث إلى مصطلحات متعددة باستخدام // كفاصل
+    const searchTerms = searchTerm.split('//').map(term => term.trim()).filter(term => term.length > 0);
+
+    if (searchTerms.length > 1) {
+      console.log(`🔍 البحث المتعدد (OR): ${searchTerms.length} مصطلحات:`, searchTerms);
+    }
+
+    // تسجيل المصطلحات التي تحتوي على تواريخ
+    const dateTerms = searchTerms.filter(term => isDateSearchTerm(term));
+    if (dateTerms.length > 0) {
+      console.log(`📅 مصطلحات التاريخ المرنة:`, dateTerms);
+    }
+
     filteredData = filteredData.filter(property => {
-      return Object.values(property).some(value =>
-        value && value.toString().toLowerCase().includes(searchTerm)
-      );
+      // يجب أن تحتوي الخاصية على أي من المصطلحات (OR logic)
+      return searchTerms.some(term => {
+        return Object.values(property).some(value => {
+          if (!value) return false;
+
+          const valueStr = value.toString().toLowerCase();
+
+          // البحث العادي
+          if (valueStr.includes(term)) {
+            return true;
+          }
+
+          // البحث المرن للتواريخ
+          if (isDateSearchTerm(term)) {
+            return matchesDateFlexibly(valueStr, term);
+          }
+
+          return false;
+        });
+      });
     });
+
+    console.log(`📊 نتائج البحث: ${filteredData.length} من أصل ${properties.length} سجل`);
   }
   
   // تصفية البيانات حسب نوع العقد
@@ -4297,6 +4340,12 @@ function renderData() {
     filteredData = filteredData.filter(property => property['نوع العقار'] === propertyTypeFilter);
   }
   
+  // حفظ البيانات المفلترة للتصدير
+  filteredProperties = [...filteredData];
+
+  // تحديث نص أزرار التصدير
+  updateExportButtonsText();
+
   // إضافة مؤشر العقار المحدد قبل عرض البيانات
   addSelectedPropertyIndicator();
 
@@ -4313,6 +4362,52 @@ function renderData() {
   
   // تحديث عدادات القائمة المتنقلة
   updateMobileMenuCounts(filteredData);
+}
+
+// دالة للتحقق من كون المصطلح تاريخ
+function isDateSearchTerm(term) {
+  // التحقق من وجود أرقام وشرطة مائلة
+  return /\d+\/\d+\/\d+/.test(term) || /\d+\/\d+/.test(term);
+}
+
+// دالة للبحث المرن في التواريخ
+function matchesDateFlexibly(valueStr, searchTerm) {
+  // تنظيف مصطلح البحث
+  const cleanSearchTerm = searchTerm.trim();
+
+  // إذا كان البحث يحتوي على تاريخ كامل (يوم/شهر/سنة)
+  if (/^\d+\/\d+\/\d+$/.test(cleanSearchTerm)) {
+    const searchParts = cleanSearchTerm.split('/');
+    const searchDay = parseInt(searchParts[0]);
+    const searchMonth = parseInt(searchParts[1]);
+    const searchYear = parseInt(searchParts[2]);
+
+    // تكوين صيغ مختلفة للتاريخ للمقارنة
+    const dateFormats = [
+      `${searchDay}/${searchMonth}/${searchYear}`,           // 1/5/2025
+      `${searchDay.toString().padStart(2, '0')}/${searchMonth.toString().padStart(2, '0')}/${searchYear}`, // 01/05/2025
+      `${searchDay}/${searchMonth.toString().padStart(2, '0')}/${searchYear}`,  // 1/05/2025
+      `${searchDay.toString().padStart(2, '0')}/${searchMonth}/${searchYear}`,  // 01/5/2025
+    ];
+
+    return dateFormats.some(format => valueStr.includes(format));
+  }
+
+  // إذا كان البحث يحتوي على شهر/سنة فقط
+  if (/^\d+\/\d+$/.test(cleanSearchTerm)) {
+    const searchParts = cleanSearchTerm.split('/');
+    const searchMonth = parseInt(searchParts[0]);
+    const searchYear = parseInt(searchParts[1]);
+
+    const monthYearFormats = [
+      `/${searchMonth}/${searchYear}`,                        // /5/2025
+      `/${searchMonth.toString().padStart(2, '0')}/${searchYear}`, // /05/2025
+    ];
+
+    return monthYearFormats.some(format => valueStr.includes(format));
+  }
+
+  return false;
 }
 
 // تحديث عدادات القائمة المتنقلة
@@ -4361,6 +4456,8 @@ function renderTotals(data) {
 
     // تجميع العقود الفريدة حسب رقم العقد
     const uniqueContracts = {};
+    // تجميع العقود الفريدة لحساب الحالات (عقد واحد = مستأجر واحد)
+    const uniqueContractStatuses = {};
 
     data.forEach(property => {
         // للوحدات الفارغة
@@ -4372,22 +4469,34 @@ function renderTotals(data) {
         // استخدم رقم العقد كمفتاح فريد
         const contractKey = property['رقم العقد'];
 
-        // حساب الحالات أولاً لتحديد ما إذا كان العقد نشطاً
-        const status = calculateStatus(property);
-        if (status.final === 'جاري') {
-            countActive++;
-        } else if (status.final === 'منتهى') {
-            countExpired++;
-        } else if (status.final === 'على وشك') {
-            countPending++;
+        // تأكد من وجود رقم عقد صحيح
+        if (!contractKey || contractKey.toString().trim() === '') {
+            return;
+        }
+
+        // حساب الحالات للعقود الفريدة فقط (عقد واحد = مستأجر واحد)
+        if (!uniqueContractStatuses[contractKey]) {
+            const status = calculateStatus(property);
+            uniqueContractStatuses[contractKey] = status.final;
+
+            if (status.final === 'جاري') {
+                countActive++;
+            } else if (status.final === 'منتهى') {
+                countExpired++;
+            } else if (status.final === 'على وشك') {
+                countPending++;
+            }
         }
 
         // إذا لم يتم معالجة هذا العقد من قبل
         if (!uniqueContracts[contractKey]) {
             uniqueContracts[contractKey] = true;
+
+            // حساب عدد المستأجرين (جميع العقود بغض النظر عن الحالة)
             tenantsCount++;
 
-            // حساب الإجمالي فقط للعقود الجارية وعلى وشك الانتهاء (استبعاد المنتهية)
+            // حساب الإجمالي المالي فقط للعقود النشطة (جاري + على وشك)
+            const status = calculateStatus(property);
             if (status.final === 'جاري' || status.final === 'على وشك') {
                 const smartTotal = calculateSmartTotal(property);
                 const totalAmount = smartTotal.amount;
@@ -4415,6 +4524,15 @@ function renderTotals(data) {
     const taxableBase = totalCommercial / 1.15;
     const vat = taxableBase * 0.15;
     const afterTaxCommercial = taxableBase + vat;
+
+    // تشخيص للتحقق من صحة الأرقام
+    console.log('📊 تشخيص الإحصائيات:');
+    console.log(`   عدد المستأجرين: ${tenantsCount}`);
+    console.log(`   الجاري: ${countActive}`);
+    console.log(`   على وشك: ${countPending}`);
+    console.log(`   المنتهي: ${countExpired}`);
+    console.log(`   المجموع: ${countActive + countPending + countExpired}`);
+    console.log(`   الفرق: ${tenantsCount - (countActive + countPending + countExpired)}`);
 
     // إنشاء 3 بطاقات إحصائيات للشاشات الكبيرة
     if (window.innerWidth > 900) {
@@ -4449,22 +4567,25 @@ function renderTotals(data) {
         statusCard.className = 'total-card';
         statusCard.innerHTML = `
             <h3><i class="fas fa-chart-pie"></i> حالات العقود</h3>
+            <div style="font-size: 11px; color: #6c757d; margin-bottom: 8px; text-align: center;">
+                <i class="fas fa-info-circle"></i> العدد الحالي يشمل: الجاري + على وشك الانتهاء
+            </div>
             <div class="stat-grid">
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #28a745;">${countActive + countPending}</div>
+                    <div class="stat-label">الحالي</div>
+                </div>
                 <div class="stat-item">
                     <div class="stat-value" style="color: #28a745;">${countActive}</div>
                     <div class="stat-label">الجاري</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" style="color: #dc3545;">${countExpired}</div>
-                    <div class="stat-label">المنتهي</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" style="color: #fd7e14;">${countPending}</div>
                     <div class="stat-label">على وشك</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value" style="color: #6c757d;">${countEmpty}</div>
-                    <div class="stat-label">فارغ</div>
+                    <div class="stat-value" style="color: #dc3545;">${countExpired}</div>
+                    <div class="stat-label">المنتهي</div>
                 </div>
             </div>
         `;
@@ -4506,7 +4627,8 @@ function renderTotals(data) {
         addTotalItem(container, 'عدد الوحدات', totalUnits, 'units-stat');
         addTotalItem(container, 'عدد المستأجرين', tenantsCount, 'tenants-stat');
         addTotalItem(container, 'عدد الوحدات الفارغة', `<i class=\"fas fa-minus-circle\"></i> ${countEmpty}`, 'empty-stat clickable-empty-units');
-        addTotalItem(container, 'الجاري', activeCount, 'active-stat');
+        addTotalItem(container, 'الحالي (جاري + على وشك)', `<i class=\"fas fa-users\" style=\"color:#28a745;\"></i> ${countActive + countPending}`, 'current-stat');
+        addTotalItem(container, 'الجاري', countActive, 'active-stat');
         addTotalItem(container, 'المنتهي', countExpired, 'expired-stat');
         addTotalItem(container, 'على وشك', countPending, 'pending-stat');
         addTotalItem(container, 'إجمالي تجاري قبل الضريبة', `<i class=\"fas fa-cash-register\" style=\"color:#2a4b9b;\"></i> ${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'taxable-base-stat');
@@ -4601,12 +4723,14 @@ function renderMobileTotals(data) {
     container.innerHTML = '';
 
     // حساب نفس الإحصائيات كما في الشاشة الكبيرة
-    let countEmpty = 0, countExpired = 0, countPending = 0;
+    let countEmpty = 0, countExpired = 0, countPending = 0, countActive = 0;
     let totalCommercial = 0, totalResidential = 0;
     let tenantsCount = 0;
 
     // تجميع العقود الفريدة
     const uniqueContracts = {};
+    // تجميع العقود الفريدة لحساب الحالات (عقد واحد = مستأجر واحد)
+    const uniqueContractStatuses = {};
 
     data.forEach(property => {
         if (!property['اسم المستأجر'] || property['اسم المستأجر'].toString().trim() === '') {
@@ -4614,22 +4738,34 @@ function renderMobileTotals(data) {
             return;
         }
 
-        // حساب الحالات أولاً لتحديد ما إذا كان العقد نشطاً
-        const status = calculateStatus(property);
-        if (status.final === 'جاري') {
-            // لا نحتاج لزيادة العداد هنا لأنه يتم حسابه في activeCount
-        } else if (status.final === 'منتهى') {
-            countExpired++;
-        } else if (status.final === 'على وشك') {
-            countPending++;
+        // استخدم رقم العقد كمفتاح فريد
+        const contractKey = property['رقم العقد'];
+
+        // تأكد من وجود رقم عقد صحيح
+        if (!contractKey || contractKey.toString().trim() === '') {
+            return;
         }
 
-        const contractKey = property['رقم العقد'];
+        // حساب الحالات للعقود الفريدة فقط (عقد واحد = مستأجر واحد)
+        if (!uniqueContractStatuses[contractKey]) {
+            const status = calculateStatus(property);
+            uniqueContractStatuses[contractKey] = status.final;
+
+            if (status.final === 'جاري') {
+                countActive++;
+            } else if (status.final === 'منتهى') {
+                countExpired++;
+            } else if (status.final === 'على وشك') {
+                countPending++;
+            }
+        }
+
         if (!uniqueContracts[contractKey]) {
             uniqueContracts[contractKey] = true;
             tenantsCount++;
 
             // حساب الإجمالي فقط للعقود الجارية وعلى وشك الانتهاء (استبعاد المنتهية)
+            const status = calculateStatus(property);
             if (status.final === 'جاري' || status.final === 'على وشك') {
                 const smartTotal = calculateSmartTotal(property);
                 const totalAmount = smartTotal.amount;
@@ -4662,7 +4798,8 @@ function renderMobileTotals(data) {
     addTotalItem(container, 'عدد الوحدات', totalUnits, 'units-stat');
     addTotalItem(container, 'عدد المستأجرين', tenantsCount, 'tenants-stat');
     addTotalItem(container, 'عدد الوحدات الفارغة', `<i class="fas fa-minus-circle"></i> ${countEmpty}`, 'empty-stat clickable-empty-units');
-    addTotalItem(container, 'الجاري', activeCount, 'active-stat');
+    addTotalItem(container, 'الحالي (جاري + على وشك)', `<i class="fas fa-users" style="color:#28a745;"></i> ${countActive + countPending}`, 'current-stat');
+    addTotalItem(container, 'الجاري', countActive, 'active-stat');
     addTotalItem(container, 'المنتهي', countExpired, 'expired-stat');
     addTotalItem(container, 'على وشك', countPending, 'pending-stat');
     addTotalItem(container, 'إجمالي تجاري قبل الضريبة', `<i class="fas fa-cash-register" style="color:#2a4b9b;"></i> ${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'taxable-base-stat');
@@ -7025,8 +7162,13 @@ function showPropertyDetailsByKey(contractNumber, propertyName) {
     showPropertyDetails(properties.indexOf(prop));
 }
 function exportToExcel() {
+    // استخدام البيانات المفلترة الحالية بدلاً من جميع البيانات
+    const dataToExport = filteredProperties.length > 0 ? filteredProperties : properties;
+
+    console.log(`📊 تصدير Excel: ${dataToExport.length} سجل من أصل ${properties.length} سجل`);
+
     // نسخ البيانات مباشرة بدون تنسيق التواريخ
-    const formattedData = properties.map(property => {
+    const formattedData = dataToExport.map(property => {
         // نسخ كل الحقول كما هي
         return { ...property };
     });
@@ -7084,10 +7226,52 @@ function exportToExcel() {
 
     // تحديد اسم الملف والتاريخ
     const now = new Date();
-    const fileName = `بيانات_العقارات_${now.getFullYear()}_${now.getMonth()+1}_${now.getDate()}.xlsx`;
+    const isFiltered = filteredProperties.length > 0 && filteredProperties.length < properties.length;
+    const filterSuffix = isFiltered ? '_مفلتر' : '';
+    const fileName = `بيانات_العقارات${filterSuffix}_${now.getFullYear()}_${now.getMonth()+1}_${now.getDate()}.xlsx`;
 
     // تصدير الملف
     XLSX.writeFile(wb, fileName);
+
+    // إظهار رسالة تأكيد
+    const message = isFiltered
+        ? `✅ تم تصدير ${dataToExport.length} سجل مفلتر من أصل ${properties.length} سجل`
+        : `✅ تم تصدير جميع السجلات (${dataToExport.length} سجل)`;
+
+    console.log(message);
+
+    // إظهار إشعار للمستخدم
+    if (typeof showToast === 'function') {
+        showToast(message, 'success');
+    }
+}
+
+// تحديث نص أزرار التصدير حسب حالة الفلترة
+function updateExportButtonsText() {
+    const isFiltered = filteredProperties.length > 0 && filteredProperties.length < properties.length;
+    const exportText = isFiltered
+        ? `تصدير Excel (${filteredProperties.length} مفلتر)`
+        : `تصدير Excel (${properties.length} سجل)`;
+
+    // تحديث الأزرار في الواجهة
+    const exportButtons = [
+        document.getElementById('exportExcel'),
+        document.querySelector('[onclick*="exportToExcel"]')
+    ];
+
+    exportButtons.forEach(button => {
+        if (button) {
+            // الحفاظ على الأيقونة وتحديث النص
+            const icon = button.querySelector('i');
+            if (icon) {
+                button.innerHTML = icon.outerHTML + ' ' + exportText;
+            } else {
+                button.innerHTML = '<i class="fas fa-file-excel"></i> ' + exportText;
+            }
+        }
+    });
+
+    console.log(`📊 تحديث أزرار التصدير: ${exportText}`);
 }
 
 // المرفقات للعقارات
