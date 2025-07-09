@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار زر المسح</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        /* نسخ CSS البحث من الملف الأصلي */
+        .global-search-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 15px 0;
+        }
+
+        #globalSearch {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        #globalSearch:focus {
+            background: white;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+        }
+
+        .global-search-btn, .global-clear-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .global-search-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+        }
+
+        .global-search-btn:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,123,255,0.4);
+        }
+
+        .global-clear-btn {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            box-shadow: 0 2px 4px rgba(108,117,125,0.3);
+            display: flex; /* ظاهر في جميع الشاشات */
+        }
+
+        .global-clear-btn:hover {
+            background: linear-gradient(135deg, #5a6268, #495057);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 12px rgba(108,117,125,0.4);
+        }
+
+        .global-search-btn:active, .global-clear-btn:active {
+            transform: translateY(0);
+        }
+
+        /* تحسينات للجوال */
+        @media (max-width: 768px) {
+            .global-search-container {
+                gap: 8px;
+                padding: 8px;
+            }
+
+            #globalSearch {
+                font-size: 16px;
+                padding: 14px 18px;
+                min-height: 46px;
+                min-width: 250px;
+                flex: 3;
+            }
+
+            .global-search-btn, .global-clear-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 11px;
+            }
+        }
+
+        .test-result {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .test-result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .device-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .test-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-times-circle"></i> اختبار زر المسح</h1>
+            <p>التأكد من ظهور زر المسح في جميع أحجام الشاشات</p>
+        </div>
+
+        <div class="content">
+            <!-- معلومات الجهاز -->
+            <div class="device-info" id="deviceInfo">
+                جاري تحميل معلومات الجهاز...
+            </div>
+
+            <!-- واجهة البحث -->
+            <h3>واجهة البحث:</h3>
+            <div class="global-search-container">
+                <input type="text" id="globalSearch" placeholder="(/// للبحث الهرمي، // للبحث المتعدد)">
+                <button class="global-search-btn" onclick="performSearch()" title="بحث">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button class="global-clear-btn" onclick="clearSearch()" title="مسح">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- اختبارات -->
+            <h3>اختبارات:</h3>
+            <button class="test-btn" onclick="testButtonVisibility()">
+                <i class="fas fa-eye"></i> اختبار ظهور الأزرار
+            </button>
+            
+            <button class="test-btn" onclick="testButtonSizes()">
+                <i class="fas fa-ruler"></i> اختبار أحجام الأزرار
+            </button>
+            
+            <button class="test-btn" onclick="testResponsive()">
+                <i class="fas fa-mobile-alt"></i> اختبار الاستجابة
+            </button>
+
+            <div id="testResults"></div>
+        </div>
+    </div>
+
+    <script>
+        // عرض معلومات الجهاز
+        function displayDeviceInfo() {
+            const deviceInfo = document.getElementById('deviceInfo');
+            const info = `
+عرض الشاشة: ${window.innerWidth} × ${window.innerHeight}
+نوع الجهاز: ${window.innerWidth <= 768 ? 'جوال' : window.innerWidth <= 992 ? 'تابلت' : 'سطح المكتب'}
+User Agent: ${navigator.userAgent.substring(0, 100)}...
+            `;
+            deviceInfo.textContent = info;
+        }
+
+        window.addEventListener('resize', displayDeviceInfo);
+        displayDeviceInfo();
+
+        function performSearch() {
+            const searchInput = document.getElementById('globalSearch');
+            const searchTerm = searchInput.value.trim();
+            
+            if (searchTerm) {
+                showResult(`تم البحث عن: "${searchTerm}"`, 'success');
+            } else {
+                showResult('يرجى إدخال مصطلح البحث', 'error');
+            }
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('globalSearch');
+            searchInput.value = '';
+            showResult('تم مسح البحث', 'success');
+        }
+
+        function showResult(message, type = 'success') {
+            const resultsDiv = document.getElementById('testResults');
+            const className = type === 'error' ? 'test-result error' : 'test-result';
+            resultsDiv.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        function testButtonVisibility() {
+            const searchBtn = document.querySelector('.global-search-btn');
+            const clearBtn = document.querySelector('.global-clear-btn');
+            
+            const searchVisible = window.getComputedStyle(searchBtn).display !== 'none';
+            const clearVisible = window.getComputedStyle(clearBtn).display !== 'none';
+            
+            let result = '<h4>نتائج اختبار الظهور:</h4>';
+            result += `<p>✅ زر البحث ظاهر: ${searchVisible ? 'نجح' : 'فشل'}</p>`;
+            result += `<p>✅ زر المسح ظاهر: ${clearVisible ? 'نجح' : 'فشل'}</p>`;
+            
+            if (searchVisible && clearVisible) {
+                result += '<p><strong>🎉 جميع الأزرار ظاهرة بشكل صحيح!</strong></p>';
+            }
+            
+            showResult(result);
+        }
+
+        function testButtonSizes() {
+            const searchBtn = document.querySelector('.global-search-btn');
+            const clearBtn = document.querySelector('.global-clear-btn');
+            
+            const searchRect = searchBtn.getBoundingClientRect();
+            const clearRect = clearBtn.getBoundingClientRect();
+            
+            let result = '<h4>نتائج اختبار الأحجام:</h4>';
+            result += `<p>زر البحث: ${Math.round(searchRect.width)} × ${Math.round(searchRect.height)} بكسل</p>`;
+            result += `<p>زر المسح: ${Math.round(clearRect.width)} × ${Math.round(clearRect.height)} بكسل</p>`;
+            
+            const expectedSize = window.innerWidth <= 768 ? 28 : 32;
+            const searchSizeOk = Math.abs(searchRect.width - expectedSize) <= 2;
+            const clearSizeOk = Math.abs(clearRect.width - expectedSize) <= 2;
+            
+            result += `<p>✅ حجم زر البحث صحيح: ${searchSizeOk ? 'نجح' : 'فشل'}</p>`;
+            result += `<p>✅ حجم زر المسح صحيح: ${clearSizeOk ? 'نجح' : 'فشل'}</p>`;
+            result += `<p>الحجم المتوقع: ${expectedSize} بكسل</p>`;
+            
+            showResult(result);
+        }
+
+        function testResponsive() {
+            const width = window.innerWidth;
+            let result = '<h4>نتائج اختبار الاستجابة:</h4>';
+            result += `<p>عرض الشاشة الحالي: ${width}px</p>`;
+            
+            if (width <= 768) {
+                result += '<p>✅ وضع الجوال: أزرار صغيرة (28×28)</p>';
+            } else if (width <= 992) {
+                result += '<p>✅ وضع التابلت: أزرار متوسطة (30×30)</p>';
+            } else {
+                result += '<p>✅ وضع سطح المكتب: أزرار عادية (32×32)</p>';
+            }
+            
+            result += '<p><strong>💡 جرب تغيير حجم النافذة ثم اضغط الاختبار مرة أخرى</strong></p>';
+            
+            showResult(result);
+        }
+
+        // اختبار تلقائي عند تحميل الصفحة
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                testButtonVisibility();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار البحث في الحالة المحسوبة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #007bff;
+        }
+
+        .test-section h3 {
+            color: #007bff;
+            margin-top: 0;
+            font-size: 1.4em;
+        }
+
+        .search-demo {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+        }
+
+        .search-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin: 5px;
+        }
+
+        .search-btn:hover {
+            background: #0056b3;
+        }
+
+        .results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .property-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .property-card h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-expired {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .code {
+            background: #f1f3f4;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-search"></i> اختبار البحث في الحالة المحسوبة</h1>
+            <p>اختبار البحث عن "على وشك" في العقود التي تعتمد على تاريخ نهاية القسط</p>
+        </div>
+
+        <div class="content">
+            <!-- شرح المشكلة -->
+            <div class="test-section">
+                <h3><i class="fas fa-info-circle"></i> وصف المشكلة والحل</h3>
+                <p><strong>المشكلة:</strong> العقود "على وشك الانتهاء" التي تعتمد على <span class="code">تاريخ نهاية القسط</span> لا تظهر في البحث النصي، رغم ظهورها في الإحصائيات وفلتر الحالة.</p>
+                <p><strong>السبب:</strong> البحث كان يبحث فقط في البيانات المخزنة، لكن حالة "على وشك" محسوبة ديناميكياً.</p>
+                <p><strong>الحل:</strong> إضافة دالة <span class="code">searchInPropertyData()</span> تبحث في البيانات المخزنة والحالة المحسوبة معاً.</p>
+            </div>
+
+            <!-- بيانات الاختبار -->
+            <div class="test-section">
+                <h3><i class="fas fa-database"></i> بيانات الاختبار</h3>
+                <div id="testDataDisplay"></div>
+            </div>
+
+            <!-- اختبار البحث -->
+            <div class="test-section">
+                <h3><i class="fas fa-search"></i> اختبار البحث</h3>
+                
+                <div class="search-demo">
+                    <h4>البحث العادي</h4>
+                    <input type="text" class="search-input" id="normalSearch" 
+                           placeholder="جرب البحث عن: على وشك، وشك، فعال، منتهي">
+                    <button class="search-btn" onclick="testNormalSearch()">
+                        <i class="fas fa-search"></i> بحث عادي
+                    </button>
+                    <div class="results" id="normalResults">
+                        اكتب مصطلح البحث واضغط على زر البحث...
+                    </div>
+                </div>
+
+                <div class="search-demo">
+                    <h4>البحث الهرمي</h4>
+                    <input type="text" class="search-input" id="hierarchicalSearch" 
+                           placeholder="جرب: الادارة القديمة///وشك، مجمع///فعال">
+                    <button class="search-btn" onclick="testHierarchicalSearch()">
+                        <i class="fas fa-layer-group"></i> بحث هرمي
+                    </button>
+                    <div class="results" id="hierarchicalResults">
+                        اكتب مصطلحات البحث مفصولة بـ "///" واضغط على زر البحث...
+                    </div>
+                </div>
+
+                <div class="search-demo">
+                    <h4>اختبارات سريعة</h4>
+                    <button class="search-btn" onclick="quickTest('على وشك')">على وشك</button>
+                    <button class="search-btn" onclick="quickTest('وشك')">وشك</button>
+                    <button class="search-btn" onclick="quickTest('فعال')">فعال</button>
+                    <button class="search-btn" onclick="quickTest('منتهي')">منتهي</button>
+                    <div class="results" id="quickResults">
+                        اضغط على أي زر للاختبار السريع...
+                    </div>
+                </div>
+            </div>
+
+            <!-- ملخص النتائج -->
+            <div class="test-section">
+                <h3><i class="fas fa-chart-bar"></i> ملخص النتائج</h3>
+                <div id="summaryResults">
+                    قم بتشغيل الاختبارات لرؤية الملخص...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // نسخ الدوال المطلوبة من script.js
+        
+        // تطبيع النص العربي
+        function normalizeArabicText(text) {
+            if (!text) return '';
+            return text
+                .replace(/أ|إ|آ/g, 'ا')
+                .replace(/ة/g, 'ه')
+                .replace(/ي/g, 'ى')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+        }
+
+        // تحليل التاريخ
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            
+            dateStr = dateStr.toString().trim();
+            
+            if (dateStr.includes('(') && dateStr.includes(')')) {
+                const numericPart = dateStr.split('(')[0].trim();
+                if (numericPart) {
+                    dateStr = numericPart;
+                }
+            }
+            
+            if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+                const parts = dateStr.split('/');
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]) - 1;
+                const year = parseInt(parts[2]);
+                return new Date(year, month, day);
+            }
+            
+            return null;
+        }
+
+        // دالة حساب الحالة
+        function calculateStatus(property) {
+            if (!property['اسم المستأجر'] || !property['المالك']) {
+                return { final: 'فارغ', display: 'فارغ', isInstallmentEnded: false };
+            }
+
+            const today = new Date();
+
+            // التحقق من تاريخ نهاية القسط
+            if (property['تاريخ نهاية القسط']) {
+                const installmentEndDate = parseDate(property['تاريخ نهاية القسط']);
+                if (installmentEndDate) {
+                    const diffDays = Math.floor((installmentEndDate - today) / (1000 * 60 * 60 * 24));
+                    const remainingInstallments = property['عدد الاقساط المتبقية'] ? Number(property['عدد الاقساط المتبقية']) : 0;
+                    
+                    if (diffDays < 0) {
+                        return {
+                            final: 'منتهى',
+                            display: `أقساط منتهية منذ ${Math.abs(diffDays)} يوم`,
+                            isInstallmentEnded: true
+                        };
+                    } else if (diffDays <= 60) {
+                        return {
+                            final: 'على وشك',
+                            display: `أقساط على وشك الانتهاء بعد ${diffDays} يوم`,
+                            isInstallmentEnded: false,
+                            isPending: true
+                        };
+                    } else {
+                        return {
+                            final: 'جاري',
+                            display: 'فعال',
+                            isInstallmentEnded: false
+                        };
+                    }
+                }
+            }
+
+            // التحقق من تاريخ النهاية
+            if (property['تاريخ النهاية']) {
+                const contractDate = parseDate(property['تاريخ النهاية']);
+                if (contractDate) {
+                    const diffDays = Math.floor((contractDate - today) / (1000 * 60 * 60 * 24));
+                    if (diffDays < 0) {
+                        return { final: 'منتهى', display: `منتهي منذ ${Math.abs(diffDays)} يوم`, isInstallmentEnded: false };
+                    } else if (diffDays <= 60) {
+                        return { final: 'على وشك', display: `سينتهي بعد ${diffDays} يوم`, isInstallmentEnded: false };
+                    } else {
+                        return { final: 'جاري', display: 'فعال', isInstallmentEnded: false };
+                    }
+                }
+            }
+
+            return { final: 'جاري', display: 'فعال', isInstallmentEnded: false };
+        }
+
+        // دالة البحث في البيانات والحالة المحسوبة
+        function searchInPropertyData(property, searchTerm) {
+            const normalizedSearchTerm = normalizeArabicText(searchTerm);
+            
+            // البحث في البيانات المخزنة
+            const foundInData = Object.values(property).some(value => {
+                if (!value) return false;
+                const normalizedValue = normalizeArabicText(value.toString());
+                return normalizedValue.includes(normalizedSearchTerm);
+            });
+            
+            if (foundInData) return true;
+            
+            // البحث في الحالة المحسوبة
+            const status = calculateStatus(property);
+            const statusSearchText = `${status.final} ${status.display}`;
+            const normalizedStatusText = normalizeArabicText(statusSearchText);
+            
+            if (normalizedStatusText.includes(normalizedSearchTerm)) {
+                console.log(`🔍 وجد في الحالة المحسوبة: "${searchTerm}" في "${statusSearchText}"`);
+                return true;
+            }
+            
+            return false;
+        }
+
+        // بيانات الاختبار
+        const testData = [
+            {
+                "اسم العقار": "الادارة القديمة",
+                "اسم المستأجر": "شركة ريوغ الجبال للتجارة",
+                "المالك": "أبو خالد",
+                "تاريخ نهاية القسط": "31/03/2025",
+                "رقم العقد": "STRU010006"
+            },
+            {
+                "اسم العقار": "مجمع تجاري",
+                "اسم المستأجر": "شركة النور",
+                "المالك": "أبو محمد",
+                "تاريخ النهاية": "15/04/2025"
+            },
+            {
+                "اسم العقار": "برج سكني",
+                "اسم المستأجر": "عائلة أحمد",
+                "المالك": "أبو سعد",
+                "تاريخ نهاية القسط": "10/01/2024"
+            },
+            {
+                "اسم العقار": "الادارة القديمة",
+                "اسم المستأجر": "شركة التطوير",
+                "المالك": "أبو خالد",
+                "تاريخ النهاية": "20/12/2025"
+            }
+        ];
+
+        // عرض بيانات الاختبار
+        function displayTestData() {
+            const container = document.getElementById('testDataDisplay');
+            let html = '';
+            
+            testData.forEach((property, index) => {
+                const status = calculateStatus(property);
+                const statusClass = status.final === 'على وشك' ? 'status-pending' : 
+                                  status.final === 'جاري' ? 'status-active' : 'status-expired';
+                
+                html += `
+                    <div class="property-card">
+                        <h4>${property['اسم العقار']} - ${property['اسم المستأجر']}</h4>
+                        <p><strong>الحالة المحسوبة:</strong> <span class="status-badge ${statusClass}">${status.final}</span></p>
+                        <p><strong>الوصف:</strong> ${status.display}</p>
+                        <p><strong>تاريخ نهاية القسط:</strong> ${property['تاريخ نهاية القسط'] || 'غير محدد'}</p>
+                        <p><strong>تاريخ النهاية:</strong> ${property['تاريخ النهاية'] || 'غير محدد'}</p>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // اختبار البحث العادي
+        function testNormalSearch() {
+            const searchInput = document.getElementById('normalSearch');
+            const resultsDiv = document.getElementById('normalResults');
+            const searchTerm = searchInput.value.trim();
+
+            if (!searchTerm) {
+                resultsDiv.textContent = '⚠️ يرجى إدخال مصطلح البحث';
+                return;
+            }
+
+            const results = testData.filter(property => searchInPropertyData(property, searchTerm));
+            
+            let output = `🔍 البحث العادي عن: "${searchTerm}"\n`;
+            output += `📊 النتائج: ${results.length} من أصل ${testData.length} سجل\n\n`;
+            
+            if (results.length > 0) {
+                output += '📋 السجلات المطابقة:\n';
+                results.forEach((property, index) => {
+                    const status = calculateStatus(property);
+                    output += `${index + 1}. ${property['اسم العقار']} - ${property['اسم المستأجر']}\n`;
+                    output += `   الحالة: ${status.final} - ${status.display}\n\n`;
+                });
+            } else {
+                output += '❌ لا توجد نتائج مطابقة';
+            }
+
+            resultsDiv.textContent = output;
+        }
+
+        // اختبار البحث الهرمي
+        function testHierarchicalSearch() {
+            const searchInput = document.getElementById('hierarchicalSearch');
+            const resultsDiv = document.getElementById('hierarchicalResults');
+            const searchTerm = searchInput.value.trim();
+
+            if (!searchTerm) {
+                resultsDiv.textContent = '⚠️ يرجى إدخال مصطلحات البحث';
+                return;
+            }
+
+            const searchTerms = searchTerm.split('///').map(term => term.trim()).filter(term => term.length > 0);
+            
+            if (searchTerms.length < 2) {
+                resultsDiv.textContent = '⚠️ البحث الهرمي يتطلب مصطلحين على الأقل مفصولين بـ "///"';
+                return;
+            }
+
+            let currentResults = [...testData];
+            let output = `🔍 البحث الهرمي: ${searchTerms.join(' ← ')}\n\n`;
+            
+            for (let i = 0; i < searchTerms.length; i++) {
+                const term = searchTerms[i];
+                output += `🔍 المستوى ${i + 1}: البحث عن "${term}" في ${currentResults.length} سجل\n`;
+                
+                currentResults = currentResults.filter(property => searchInPropertyData(property, term));
+                
+                output += `📊 نتائج المستوى ${i + 1}: ${currentResults.length} سجل\n`;
+                
+                if (currentResults.length === 0) {
+                    output += `⚠️ لا توجد نتائج في المستوى ${i + 1}، توقف البحث\n`;
+                    break;
+                }
+            }
+            
+            output += `\n🎯 النتائج النهائية: ${currentResults.length} سجل\n\n`;
+            
+            if (currentResults.length > 0) {
+                output += '📋 السجلات المطابقة:\n';
+                currentResults.forEach((property, index) => {
+                    const status = calculateStatus(property);
+                    output += `${index + 1}. ${property['اسم العقار']} - ${property['اسم المستأجر']}\n`;
+                    output += `   الحالة: ${status.final} - ${status.display}\n\n`;
+                });
+            }
+
+            resultsDiv.textContent = output;
+        }
+
+        // اختبار سريع
+        function quickTest(searchTerm) {
+            const resultsDiv = document.getElementById('quickResults');
+            const results = testData.filter(property => searchInPropertyData(property, searchTerm));
+            
+            let output = `⚡ اختبار سريع: "${searchTerm}"\n`;
+            output += `📊 النتائج: ${results.length} من أصل ${testData.length} سجل\n\n`;
+            
+            if (results.length > 0) {
+                results.forEach((property, index) => {
+                    const status = calculateStatus(property);
+                    output += `${index + 1}. ${property['اسم العقار']} - ${status.final}\n`;
+                });
+            } else {
+                output += '❌ لا توجد نتائج';
+            }
+
+            resultsDiv.textContent = output;
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            displayTestData();
+            
+            // إضافة مستمعات Enter
+            document.getElementById('normalSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') testNormalSearch();
+            });
+            
+            document.getElementById('hierarchicalSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') testHierarchicalSearch();
+            });
+        });
+    </script>
+</body>
+</html>

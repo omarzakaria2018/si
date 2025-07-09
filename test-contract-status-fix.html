@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح حالة العقود</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #007bff;
+        }
+
+        .test-section h3 {
+            color: #007bff;
+            margin-top: 0;
+            font-size: 1.4em;
+        }
+
+        .test-case {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .test-case h4 {
+            color: #495057;
+            margin-top: 0;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+
+        .property-data {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .result {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .result.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .result.pending {
+            background: #fff7ed;
+            color: #ea580c;
+            border: 1px solid #fed7aa;
+        }
+
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .test-btn:hover {
+            background: #0056b3;
+        }
+
+        .code {
+            background: #f1f3f4;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-bug"></i> اختبار إصلاح حالة العقود</h1>
+            <p>اختبار المشكلة: البحث الهرمي لا يجد العقود "على وشك" التي لها تاريخ نهاية القسط فقط</p>
+        </div>
+
+        <div class="content">
+            <!-- شرح المشكلة -->
+            <div class="test-section">
+                <h3><i class="fas fa-exclamation-triangle"></i> وصف المشكلة</h3>
+                <p>كانت المشكلة في دالة <span class="code">calculateStatus</span> حيث كانت تتطلب وجود <span class="code">عدد الاقساط المتبقية</span> و <span class="code">تاريخ نهاية القسط</span> معاً للتحقق من حالة "على وشك".</p>
+                <p>بعض العقود لها <span class="code">تاريخ نهاية القسط</span> فقط بدون <span class="code">عدد الاقساط المتبقية</span>، مما يجعلها لا تظهر في البحث الهرمي عند البحث عن "وشك".</p>
+            </div>
+
+            <!-- اختبار الحالات -->
+            <div class="test-section">
+                <h3><i class="fas fa-flask"></i> اختبار الحالات المختلفة</h3>
+                
+                <!-- حالة 1: عقد له تاريخ نهاية قسط فقط -->
+                <div class="test-case">
+                    <h4>الحالة 1: عقد له تاريخ نهاية قسط فقط (بدون عدد أقساط متبقية)</h4>
+                    <div class="property-data" id="case1Data">
+                        {
+                            "اسم العقار": "الادارة القديمة",
+                            "اسم المستأجر": "شركة اختبار",
+                            "المالك": "مالك اختبار",
+                            "تاريخ نهاية القسط": "31/03/2025",
+                            "عدد الاقساط المتبقية": null
+                        }
+                    </div>
+                    <button class="test-btn" onclick="testCase1()">اختبار الحالة 1</button>
+                    <div id="case1Result"></div>
+                </div>
+
+                <!-- حالة 2: عقد له تاريخ نهاية قسط وعدد أقساط متبقية -->
+                <div class="test-case">
+                    <h4>الحالة 2: عقد له تاريخ نهاية قسط وعدد أقساط متبقية</h4>
+                    <div class="property-data" id="case2Data">
+                        {
+                            "اسم العقار": "الادارة القديمة",
+                            "اسم المستأجر": "شركة اختبار 2",
+                            "المالك": "مالك اختبار",
+                            "تاريخ نهاية القسط": "31/03/2025",
+                            "عدد الاقساط المتبقية": "3"
+                        }
+                    </div>
+                    <button class="test-btn" onclick="testCase2()">اختبار الحالة 2</button>
+                    <div id="case2Result"></div>
+                </div>
+
+                <!-- حالة 3: عقد له تاريخ نهاية عقد فقط -->
+                <div class="test-case">
+                    <h4>الحالة 3: عقد له تاريخ نهاية عقد فقط (بدون أقساط)</h4>
+                    <div class="property-data" id="case3Data">
+                        {
+                            "اسم العقار": "الادارة القديمة",
+                            "اسم المستأجر": "شركة اختبار 3",
+                            "المالك": "مالك اختبار",
+                            "تاريخ النهاية": "31/03/2025"
+                        }
+                    </div>
+                    <button class="test-btn" onclick="testCase3()">اختبار الحالة 3</button>
+                    <div id="case3Result"></div>
+                </div>
+            </div>
+
+            <!-- اختبار البحث الهرمي -->
+            <div class="test-section">
+                <h3><i class="fas fa-search"></i> اختبار البحث الهرمي</h3>
+                <p>اختبار البحث الهرمي: <span class="code">الادارة القديمة///وشك</span></p>
+                <button class="test-btn" onclick="testHierarchicalSearch()">اختبار البحث الهرمي</button>
+                <div id="hierarchicalResult"></div>
+            </div>
+
+            <!-- ملخص النتائج -->
+            <div class="test-section">
+                <h3><i class="fas fa-chart-bar"></i> ملخص النتائج</h3>
+                <div id="summaryResult">
+                    اضغط على أزرار الاختبار لرؤية النتائج...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // نسخ الدوال المطلوبة من script.js
+        
+        // تطبيع النص العربي
+        function normalizeArabicText(text) {
+            if (!text) return '';
+            return text
+                .replace(/أ|إ|آ/g, 'ا')
+                .replace(/ة/g, 'ه')
+                .replace(/ي/g, 'ى')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+        }
+
+        // تحليل التاريخ
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            
+            // تنظيف النص
+            dateStr = dateStr.toString().trim();
+            
+            // إزالة النص العربي إذا كان موجوداً
+            if (dateStr.includes('(') && dateStr.includes(')')) {
+                const numericPart = dateStr.split('(')[0].trim();
+                if (numericPart) {
+                    dateStr = numericPart;
+                }
+            }
+            
+            // تحويل التاريخ من dd/mm/yyyy إلى Date object
+            if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+                const parts = dateStr.split('/');
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]) - 1; // JavaScript months are 0-based
+                const year = parseInt(parts[2]);
+                return new Date(year, month, day);
+            }
+            
+            return null;
+        }
+
+        // دالة حساب الحالة المحدثة
+        function calculateStatus(property) {
+            if (!property['اسم المستأجر'] || !property['المالك']) {
+                return { final: 'فارغ', display: 'فارغ', isInstallmentEnded: false };
+            }
+
+            const today = new Date();
+
+            // أولاً: التحقق من تاريخ نهاية القسط (سواء كان هناك أقساط متبقية أم لا)
+            if (property['تاريخ نهاية القسط']) {
+                const installmentEndDate = parseDate(property['تاريخ نهاية القسط']);
+                if (installmentEndDate) {
+                    const diffDays = Math.floor((installmentEndDate - today) / (1000 * 60 * 60 * 24));
+                    const remainingInstallments = property['عدد الاقساط المتبقية'] ? Number(property['عدد الاقساط المتبقية']) : 0;
+                    
+                    if (diffDays < 0) {
+                        // منتهي
+                        if (remainingInstallments > 0) {
+                            return {
+                                final: 'منتهى',
+                                display: `أقساط منتهية منذ ${Math.abs(diffDays)} يوم (بحاجة لإضافة باقي الأقساط: ${remainingInstallments})`,
+                                isInstallmentEnded: true
+                            };
+                        } else {
+                            return {
+                                final: 'منتهى',
+                                display: `أقساط منتهية منذ ${Math.abs(diffDays)} يوم`,
+                                isInstallmentEnded: true
+                            };
+                        }
+                    } else if (diffDays <= 60) {
+                        // على وشك
+                        if (remainingInstallments > 0) {
+                            return {
+                                final: 'على وشك',
+                                display: `أقساط على وشك الانتهاء بعد ${diffDays} يوم (متبقي ${remainingInstallments} أقساط)`,
+                                isInstallmentEnded: false,
+                                isPending: true
+                            };
+                        } else {
+                            return {
+                                final: 'على وشك',
+                                display: `أقساط على وشك الانتهاء بعد ${diffDays} يوم`,
+                                isInstallmentEnded: false,
+                                isPending: true
+                            };
+                        }
+                    } else {
+                        // جاري
+                        if (remainingInstallments > 0) {
+                            return {
+                                final: 'جاري',
+                                display: `فعال (متبقي ${remainingInstallments} أقساط)`,
+                                isInstallmentEnded: false
+                            };
+                        } else {
+                            return {
+                                final: 'جاري',
+                                display: 'فعال',
+                                isInstallmentEnded: false
+                            };
+                        }
+                    }
+                }
+            }
+
+            // إذا لم يوجد أقساط، استخدم تاريخ النهاية
+            if (property['تاريخ النهاية']) {
+                const contractDate = parseDate(property['تاريخ النهاية']);
+                if (contractDate) {
+                    const diffDays = Math.floor((contractDate - today) / (1000 * 60 * 60 * 24));
+                    if (diffDays < 0) {
+                        return { final: 'منتهى', display: `منتهي منذ ${Math.abs(diffDays)} يوم`, isInstallmentEnded: false };
+                    } else if (diffDays <= 60) {
+                        return { final: 'على وشك', display: `سينتهي بعد ${diffDays} يوم`, isInstallmentEnded: false };
+                    } else {
+                        return { final: 'جاري', display: 'فعال', isInstallmentEnded: false };
+                    }
+                }
+            }
+
+            return { final: 'جاري', display: 'فعال', isInstallmentEnded: false };
+        }
+
+        // بيانات الاختبار
+        const testData = [
+            {
+                "اسم العقار": "الادارة القديمة",
+                "اسم المستأجر": "شركة اختبار 1",
+                "المالك": "مالك اختبار",
+                "تاريخ نهاية القسط": "31/03/2025",
+                "عدد الاقساط المتبقية": null
+            },
+            {
+                "اسم العقار": "الادارة القديمة",
+                "اسم المستأجر": "شركة اختبار 2",
+                "المالك": "مالك اختبار",
+                "تاريخ نهاية القسط": "31/03/2025",
+                "عدد الاقساط المتبقية": "3"
+            },
+            {
+                "اسم العقار": "الادارة القديمة",
+                "اسم المستأجر": "شركة اختبار 3",
+                "المالك": "مالك اختبار",
+                "تاريخ النهاية": "31/03/2025"
+            }
+        ];
+
+        let testResults = {};
+
+        function testCase1() {
+            const property = testData[0];
+            const status = calculateStatus(property);
+            const resultDiv = document.getElementById('case1Result');
+            
+            const isCorrect = status.final === 'على وشك' && status.display.includes('وشك');
+            testResults.case1 = isCorrect;
+            
+            resultDiv.innerHTML = `
+                <div class="result ${isCorrect ? 'success' : 'error'}">
+                    <strong>النتيجة:</strong> ${status.final}<br>
+                    <strong>الوصف:</strong> ${status.display}<br>
+                    <strong>الاختبار:</strong> ${isCorrect ? '✅ نجح' : '❌ فشل'}<br>
+                    <strong>يحتوي على "وشك":</strong> ${status.display.includes('وشك') ? '✅ نعم' : '❌ لا'}
+                </div>
+            `;
+            
+            updateSummary();
+        }
+
+        function testCase2() {
+            const property = testData[1];
+            const status = calculateStatus(property);
+            const resultDiv = document.getElementById('case2Result');
+            
+            const isCorrect = status.final === 'على وشك' && status.display.includes('وشك');
+            testResults.case2 = isCorrect;
+            
+            resultDiv.innerHTML = `
+                <div class="result ${isCorrect ? 'success' : 'error'}">
+                    <strong>النتيجة:</strong> ${status.final}<br>
+                    <strong>الوصف:</strong> ${status.display}<br>
+                    <strong>الاختبار:</strong> ${isCorrect ? '✅ نجح' : '❌ فشل'}<br>
+                    <strong>يحتوي على "وشك":</strong> ${status.display.includes('وشك') ? '✅ نعم' : '❌ لا'}
+                </div>
+            `;
+            
+            updateSummary();
+        }
+
+        function testCase3() {
+            const property = testData[2];
+            const status = calculateStatus(property);
+            const resultDiv = document.getElementById('case3Result');
+            
+            const isCorrect = status.final === 'على وشك' && status.display.includes('وشك');
+            testResults.case3 = isCorrect;
+            
+            resultDiv.innerHTML = `
+                <div class="result ${isCorrect ? 'success' : 'error'}">
+                    <strong>النتيجة:</strong> ${status.final}<br>
+                    <strong>الوصف:</strong> ${status.display}<br>
+                    <strong>الاختبار:</strong> ${isCorrect ? '✅ نجح' : '❌ فشل'}<br>
+                    <strong>يحتوي على "وشك":</strong> ${status.display.includes('وشك') ? '✅ نعم' : '❌ لا'}
+                </div>
+            `;
+            
+            updateSummary();
+        }
+
+        function testHierarchicalSearch() {
+            const searchTerms = ['الادارة القديمة', 'وشك'];
+            let currentResults = [...testData];
+            
+            let searchLog = `🔍 البحث الهرمي: ${searchTerms.join(' ← ')}\n\n`;
+            
+            for (let i = 0; i < searchTerms.length; i++) {
+                const term = normalizeArabicText(searchTerms[i]);
+                searchLog += `🔍 المستوى ${i + 1}: البحث عن "${term}" في ${currentResults.length} سجل\n`;
+                
+                currentResults = currentResults.filter(property => {
+                    // البحث في جميع القيم
+                    const found = Object.values(property).some(value => {
+                        if (!value) return false;
+                        const normalizedValue = normalizeArabicText(value.toString());
+                        return normalizedValue.includes(term);
+                    });
+                    
+                    // إذا كان البحث عن "وشك"، تحقق أيضاً من حالة العقد
+                    if (term === 'وشك') {
+                        const status = calculateStatus(property);
+                        const statusFound = normalizeArabicText(status.final).includes(term) || 
+                                          normalizeArabicText(status.display).includes(term);
+                        return found || statusFound;
+                    }
+                    
+                    return found;
+                });
+                
+                searchLog += `📊 نتائج المستوى ${i + 1}: ${currentResults.length} سجل\n`;
+                
+                if (currentResults.length === 0) {
+                    searchLog += `⚠️ لا توجد نتائج في المستوى ${i + 1}، توقف البحث\n`;
+                    break;
+                }
+            }
+            
+            searchLog += `\n🎯 النتائج النهائية: ${currentResults.length} سجل\n\n`;
+            
+            if (currentResults.length > 0) {
+                searchLog += '📋 السجلات المطابقة:\n';
+                currentResults.forEach((item, index) => {
+                    const status = calculateStatus(item);
+                    searchLog += `${index + 1}. ${item['اسم المستأجر']} - ${status.final} - ${status.display}\n`;
+                });
+            }
+            
+            const isCorrect = currentResults.length > 0;
+            testResults.hierarchical = isCorrect;
+            
+            const resultDiv = document.getElementById('hierarchicalResult');
+            resultDiv.innerHTML = `
+                <div class="result ${isCorrect ? 'success' : 'error'}">
+                    <strong>نتيجة البحث الهرمي:</strong> ${isCorrect ? '✅ نجح' : '❌ فشل'}<br>
+                    <strong>عدد النتائج:</strong> ${currentResults.length}<br><br>
+                    <pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; white-space: pre-wrap;">${searchLog}</pre>
+                </div>
+            `;
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summaryDiv = document.getElementById('summaryResult');
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(result => result).length;
+            
+            if (totalTests === 0) return;
+            
+            const allPassed = passedTests === totalTests;
+            
+            summaryDiv.innerHTML = `
+                <div class="result ${allPassed ? 'success' : 'warning'}">
+                    <strong>إجمالي الاختبارات:</strong> ${totalTests}<br>
+                    <strong>الاختبارات الناجحة:</strong> ${passedTests}<br>
+                    <strong>معدل النجاح:</strong> ${Math.round((passedTests / totalTests) * 100)}%<br>
+                    <strong>الحالة:</strong> ${allPassed ? '✅ جميع الاختبارات نجحت!' : '⚠️ بعض الاختبارات فشلت'}
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

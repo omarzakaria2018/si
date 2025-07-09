@@ -3216,6 +3216,53 @@ let searchState = {
     isSearchActive: false
 };
 
+// تطبيع النص العربي للبحث المتقدم
+function normalizeArabicText(text) {
+    if (!text) return '';
+    return text
+        .replace(/أ|إ|آ/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/ي/g, 'ى')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+}
+
+// دالة للبحث في الحالة المحسوبة والبيانات المخزنة
+function searchInPropertyData(property, searchTerm) {
+    const normalizedSearchTerm = normalizeArabicText(searchTerm);
+
+    // البحث في البيانات المخزنة
+    const foundInData = Object.values(property).some(value => {
+        if (!value) return false;
+        const normalizedValue = normalizeArabicText(value.toString());
+        return normalizedValue.includes(normalizedSearchTerm);
+    });
+
+    if (foundInData) return true;
+
+    // البحث في الحالة المحسوبة
+    const status = calculateStatus(property);
+    const statusSearchText = `${status.final} ${status.display}`;
+    const normalizedStatusText = normalizeArabicText(statusSearchText);
+
+    if (normalizedStatusText.includes(normalizedSearchTerm)) {
+        console.log(`🔍 وجد في الحالة المحسوبة: "${searchTerm}" في "${statusSearchText}"`);
+        return true;
+    }
+
+    // البحث المرن للتواريخ
+    if (isDateSearchTerm(normalizedSearchTerm)) {
+        return Object.values(property).some(value => {
+            if (!value) return false;
+            const normalizedValue = normalizeArabicText(value.toString());
+            return matchesDateFlexibly(normalizedValue, normalizedSearchTerm);
+        });
+    }
+
+    return false;
+}
+
 // تهيئة البحث العام المحسن مع التخطيط الأفقي
 function initGlobalSearch() {
     const searchInput = document.getElementById('globalSearch');
@@ -3314,14 +3361,11 @@ function clearGlobalSearch() {
     console.log('🧹 مسح البحث العام وإعادة تعيين جميع الفلاتر...');
 
     const searchInput = document.getElementById('globalSearch');
-    const clearButton = document.getElementById('clearSearchButton');
+    const clearButton = document.querySelector('.global-clear-btn');
 
-    // مسح حقل البحث وإخفاء زر المسح
+    // مسح حقل البحث
     if (searchInput) {
         searchInput.value = '';
-    }
-    if (clearButton) {
-        clearButton.style.display = 'none';
     }
 
     // مسح حالة البحث العام
@@ -4288,46 +4332,66 @@ function renderData() {
     });
   }
   
-  // تصفية البيانات حسب البحث العام المحسن (يدعم البحث المتعدد بـ //)
+  // تصفية البيانات حسب البحث العام المحسن (يدعم البحث الهرمي بـ ///)
   const searchTerm = getGlobalSearchTerm().toLowerCase();
   if (searchTerm) {
-    // تقسيم مصطلح البحث إلى مصطلحات متعددة باستخدام // كفاصل
-    const searchTerms = searchTerm.split('//').map(term => term.trim()).filter(term => term.length > 0);
+    // تحديد نوع البحث بناءً على الفاصل المستخدم
+    const isHierarchicalSearch = searchTerm.includes('///');
+    const isMultiSearch = searchTerm.includes('//') && !isHierarchicalSearch;
 
-    if (searchTerms.length > 1) {
+    if (isHierarchicalSearch) {
+      // البحث الهرمي/المتداخل باستخدام ///
+      const searchTerms = searchTerm.split('///').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
+
+      console.log(`🔍 البحث الهرمي: ${searchTerms.length} مستويات:`, searchTerms);
+
+      // تطبيق البحث الهرمي - كل مصطلح يصفي نتائج المصطلح السابق
+      let currentResults = filteredData;
+
+      for (let i = 0; i < searchTerms.length; i++) {
+        const term = searchTerms[i];
+        console.log(`🔍 المستوى ${i + 1}: البحث عن "${term}" في ${currentResults.length} سجل`);
+
+        currentResults = currentResults.filter(property => {
+          return searchInPropertyData(property, term);
+        });
+
+        console.log(`📊 نتائج المستوى ${i + 1}: ${currentResults.length} سجل`);
+
+        // إذا لم تعد هناك نتائج، توقف عن البحث
+        if (currentResults.length === 0) {
+          console.log(`⚠️ لا توجد نتائج في المستوى ${i + 1}، توقف البحث`);
+          break;
+        }
+      }
+
+      filteredData = currentResults;
+      console.log(`🎯 النتائج النهائية للبحث الهرمي: ${filteredData.length} سجل`);
+
+    } else if (isMultiSearch) {
+      // البحث المتعدد القديم باستخدام // (OR logic)
+      const searchTerms = searchTerm.split('//').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
+
       console.log(`🔍 البحث المتعدد (OR): ${searchTerms.length} مصطلحات:`, searchTerms);
-    }
 
-    // تسجيل المصطلحات التي تحتوي على تواريخ
-    const dateTerms = searchTerms.filter(term => isDateSearchTerm(term));
-    if (dateTerms.length > 0) {
-      console.log(`📅 مصطلحات التاريخ المرنة:`, dateTerms);
-    }
-
-    filteredData = filteredData.filter(property => {
-      // يجب أن تحتوي الخاصية على أي من المصطلحات (OR logic)
-      return searchTerms.some(term => {
-        return Object.values(property).some(value => {
-          if (!value) return false;
-
-          const valueStr = value.toString().toLowerCase();
-
-          // البحث العادي
-          if (valueStr.includes(term)) {
-            return true;
-          }
-
-          // البحث المرن للتواريخ
-          if (isDateSearchTerm(term)) {
-            return matchesDateFlexibly(valueStr, term);
-          }
-
-          return false;
+      filteredData = filteredData.filter(property => {
+        return searchTerms.some(term => {
+          return searchInPropertyData(property, term);
         });
       });
-    });
 
-    console.log(`📊 نتائج البحث: ${filteredData.length} من أصل ${properties.length} سجل`);
+      console.log(`📊 نتائج البحث المتعدد: ${filteredData.length} سجل`);
+
+    } else {
+      // البحث العادي (مصطلح واحد)
+      const normalizedSearchTerm = normalizeArabicText(searchTerm);
+
+      filteredData = filteredData.filter(property => {
+        return searchInPropertyData(property, normalizedSearchTerm);
+      });
+
+      console.log(`📊 نتائج البحث العادي: ${filteredData.length} سجل`);
+    }
   }
   
   // تصفية البيانات حسب نوع العقد
@@ -4957,33 +5021,60 @@ function calculateStatus(property) {
 
     const today = new Date();
 
-    // إذا كان عدد الأقساط المتبقية > 0 أو غير فارغ، اعتمد على تاريخ نهاية القسط
-    if (property['عدد الاقساط المتبقية'] && Number(property['عدد الاقساط المتبقية']) > 0 && property['تاريخ نهاية القسط']) {
+    // أولاً: التحقق من تاريخ نهاية القسط (سواء كان هناك أقساط متبقية أم لا)
+    if (property['تاريخ نهاية القسط']) {
         const installmentEndDate = parseDate(property['تاريخ نهاية القسط']);
         if (installmentEndDate) {
             const diffDays = Math.floor((installmentEndDate - today) / (1000 * 60 * 60 * 24));
+            const remainingInstallments = property['عدد الاقساط المتبقية'] ? Number(property['عدد الاقساط المتبقية']) : 0;
+
             if (diffDays < 0) {
                 // منتهي - لون موف
-                return {
-                    final: 'منتهى',
-                    display: `أقساط منتهية منذ ${Math.abs(diffDays)} يوم <span class="need-more-installments">بحاجة لإضافة باقي الأقساط (${property['عدد الاقساط المتبقية']})</span>`,
-                    isInstallmentEnded: true
-                };
+                if (remainingInstallments > 0) {
+                    return {
+                        final: 'منتهى',
+                        display: `أقساط منتهية منذ ${Math.abs(diffDays)} يوم <span class="need-more-installments">بحاجة لإضافة باقي الأقساط (${remainingInstallments})</span>`,
+                        isInstallmentEnded: true
+                    };
+                } else {
+                    return {
+                        final: 'منتهى',
+                        display: `أقساط منتهية منذ ${Math.abs(diffDays)} يوم`,
+                        isInstallmentEnded: true
+                    };
+                }
             } else if (diffDays <= 60) {
                 // على وشك - تدرج برتقالي/أزرق
-                return {
-                    final: 'على وشك',
-                    display: `أقساط على وشك الانتهاء بعد ${diffDays} يوم (متبقي ${property['عدد الاقساط المتبقية']} أقساط)`,
-                    isInstallmentEnded: false,
-                    isPending: true
-                };
+                if (remainingInstallments > 0) {
+                    return {
+                        final: 'على وشك',
+                        display: `أقساط على وشك الانتهاء بعد ${diffDays} يوم (متبقي ${remainingInstallments} أقساط)`,
+                        isInstallmentEnded: false,
+                        isPending: true
+                    };
+                } else {
+                    return {
+                        final: 'على وشك',
+                        display: `أقساط على وشك الانتهاء بعد ${diffDays} يوم`,
+                        isInstallmentEnded: false,
+                        isPending: true
+                    };
+                }
             } else {
                 // جاري
-                return {
-                    final: 'جاري',
-                    display: `فعال (متبقي ${property['عدد الاقساط المتبقية']} أقساط)`,
-                    isInstallmentEnded: false
-                };
+                if (remainingInstallments > 0) {
+                    return {
+                        final: 'جاري',
+                        display: `فعال (متبقي ${remainingInstallments} أقساط)`,
+                        isInstallmentEnded: false
+                    };
+                } else {
+                    return {
+                        final: 'جاري',
+                        display: 'فعال',
+                        isInstallmentEnded: false
+                    };
+                }
             }
         }
     }

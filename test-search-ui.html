@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار واجهة البحث</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #007bff;
+        }
+
+        .test-section h3 {
+            color: #007bff;
+            margin-top: 0;
+            font-size: 1.4em;
+        }
+
+        /* نسخ CSS البحث من الملف الأصلي */
+        .global-search-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 15px 0;
+        }
+
+        #globalSearch {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        #globalSearch:focus {
+            background: white;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+        }
+
+        .global-search-btn, .global-clear-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .global-search-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+        }
+
+        .global-search-btn:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,123,255,0.4);
+        }
+
+        .global-clear-btn {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            box-shadow: 0 2px 4px rgba(108,117,125,0.3);
+            display: none; /* مخفي بشكل افتراضي */
+        }
+
+        .global-clear-btn:hover {
+            background: linear-gradient(135deg, #5a6268, #495057);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 12px rgba(108,117,125,0.4);
+        }
+
+        .global-search-btn:active, .global-clear-btn:active {
+            transform: translateY(0);
+        }
+
+        /* تحسينات للجوال */
+        @media (max-width: 768px) {
+            .global-search-container {
+                gap: 8px;
+                padding: 8px;
+            }
+
+            #globalSearch {
+                font-size: 16px; /* منع التكبير في iOS */
+                padding: 14px 18px;
+                min-height: 46px;
+                min-width: 250px;
+                flex: 3;
+            }
+
+            .global-search-btn, .global-clear-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 11px;
+            }
+            
+            /* ضمان ظهور زر الإلغاء في الشاشات الصغيرة عند الحاجة */
+            .global-clear-btn[style*="flex"] {
+                display: flex !important;
+            }
+        }
+
+        .device-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+
+        .test-result {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .test-result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .code {
+            background: #f1f3f4;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-search"></i> اختبار واجهة البحث</h1>
+            <p>اختبار النص التوضيحي وزر الإلغاء في جميع أحجام الشاشات</p>
+        </div>
+
+        <div class="content">
+            <!-- معلومات الجهاز -->
+            <div class="test-section">
+                <h3><i class="fas fa-mobile-alt"></i> معلومات الجهاز</h3>
+                <div class="device-info" id="deviceInfo">
+                    جاري تحميل معلومات الجهاز...
+                </div>
+            </div>
+
+            <!-- التعليمات -->
+            <div class="test-section">
+                <h3><i class="fas fa-info-circle"></i> التعليمات</h3>
+                <div class="instructions">
+                    <p><strong>اختبر الميزات التالية:</strong></p>
+                    <ul>
+                        <li>النص التوضيحي الجديد: <span class="code">/// للبحث الهرمي، // للبحث المتعدد</span></li>
+                        <li>زر الإلغاء يظهر عند الكتابة ويختفي عند المسح</li>
+                        <li>زر الإلغاء يعمل في جميع أحجام الشاشات (كبيرة وصغيرة)</li>
+                        <li>جرب تغيير حجم النافذة لاختبار الاستجابة</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- واجهة البحث -->
+            <div class="test-section">
+                <h3><i class="fas fa-search"></i> واجهة البحث</h3>
+                
+                <div class="global-search-container">
+                    <input type="text" id="globalSearch" placeholder="بحث في جميع البيانات... (/// للبحث الهرمي، // للبحث المتعدد)">
+                    <button class="global-search-btn" onclick="performSearch()" title="بحث">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="global-clear-btn" onclick="clearSearch()" title="مسح">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div id="searchResults" class="test-result" style="display: none;">
+                    نتائج البحث ستظهر هنا...
+                </div>
+            </div>
+
+            <!-- اختبارات تلقائية -->
+            <div class="test-section">
+                <h3><i class="fas fa-cogs"></i> اختبارات تلقائية</h3>
+                
+                <button onclick="testClearButtonVisibility()" class="global-search-btn" style="width: auto; padding: 10px 20px; margin: 5px;">
+                    اختبار ظهور زر الإلغاء
+                </button>
+                
+                <button onclick="testResponsiveDesign()" class="global-search-btn" style="width: auto; padding: 10px 20px; margin: 5px;">
+                    اختبار التصميم المتجاوب
+                </button>
+                
+                <button onclick="testPlaceholderText()" class="global-search-btn" style="width: auto; padding: 10px 20px; margin: 5px;">
+                    اختبار النص التوضيحي
+                </button>
+
+                <div id="testResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // عرض معلومات الجهاز
+        function displayDeviceInfo() {
+            const deviceInfo = document.getElementById('deviceInfo');
+            const info = `
+عرض الشاشة: ${window.innerWidth} × ${window.innerHeight}
+نوع الجهاز: ${window.innerWidth <= 768 ? 'جوال' : window.innerWidth <= 992 ? 'تابلت' : 'سطح المكتب'}
+User Agent: ${navigator.userAgent}
+            `;
+            deviceInfo.textContent = info;
+        }
+
+        // تحديث معلومات الجهاز عند تغيير حجم النافذة
+        window.addEventListener('resize', displayDeviceInfo);
+        displayDeviceInfo();
+
+        // إعداد مستمعات الأحداث للبحث
+        const searchInput = document.getElementById('globalSearch');
+        const clearBtn = document.querySelector('.global-clear-btn');
+
+        // إظهار/إخفاء زر المسح عند الكتابة
+        searchInput.addEventListener('input', function(e) {
+            const currentValue = e.target.value.trim();
+            
+            if (clearBtn) {
+                clearBtn.style.display = currentValue ? 'flex' : 'none';
+            }
+            
+            // إظهار النتائج
+            const resultsDiv = document.getElementById('searchResults');
+            if (currentValue) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.textContent = `جاري البحث عن: "${currentValue}"`;
+                resultsDiv.className = 'test-result';
+            } else {
+                resultsDiv.style.display = 'none';
+            }
+        });
+
+        // البحث عند الضغط على Enter
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+
+        function performSearch() {
+            const searchTerm = searchInput.value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (searchTerm) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.className = 'test-result';
+                
+                // تحليل نوع البحث
+                if (searchTerm.includes('///')) {
+                    const terms = searchTerm.split('///').map(t => t.trim()).filter(t => t);
+                    resultsDiv.innerHTML = `
+                        <strong>🔍 بحث هرمي:</strong><br>
+                        المصطلحات: ${terms.join(' ← ')}<br>
+                        عدد المستويات: ${terms.length}
+                    `;
+                } else if (searchTerm.includes('//')) {
+                    const terms = searchTerm.split('//').map(t => t.trim()).filter(t => t);
+                    resultsDiv.innerHTML = `
+                        <strong>🔍 بحث متعدد:</strong><br>
+                        المصطلحات: ${terms.join(' أو ')}<br>
+                        عدد المصطلحات: ${terms.length}
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <strong>🔍 بحث عادي:</strong><br>
+                        المصطلح: "${searchTerm}"
+                    `;
+                }
+            }
+        }
+
+        function clearSearch() {
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            document.getElementById('searchResults').style.display = 'none';
+        }
+
+        // اختبارات تلقائية
+        function testClearButtonVisibility() {
+            const testResults = document.getElementById('testResults');
+            let results = '<h4>نتائج اختبار زر الإلغاء:</h4>';
+            
+            // اختبار 1: زر مخفي بشكل افتراضي
+            const isHiddenByDefault = window.getComputedStyle(clearBtn).display === 'none';
+            results += `<p>✅ الزر مخفي بشكل افتراضي: ${isHiddenByDefault ? 'نجح' : 'فشل'}</p>`;
+            
+            // اختبار 2: إظهار الزر عند الكتابة
+            searchInput.value = 'اختبار';
+            searchInput.dispatchEvent(new Event('input'));
+            const isVisibleWithText = window.getComputedStyle(clearBtn).display === 'flex';
+            results += `<p>✅ الزر يظهر عند الكتابة: ${isVisibleWithText ? 'نجح' : 'فشل'}</p>`;
+            
+            // اختبار 3: إخفاء الزر عند المسح
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('input'));
+            const isHiddenAfterClear = window.getComputedStyle(clearBtn).display === 'none';
+            results += `<p>✅ الزر يختفي عند المسح: ${isHiddenAfterClear ? 'نجح' : 'فشل'}</p>`;
+            
+            testResults.innerHTML = `<div class="test-result">${results}</div>`;
+        }
+
+        function testResponsiveDesign() {
+            const testResults = document.getElementById('testResults');
+            const currentWidth = window.innerWidth;
+            
+            let results = '<h4>نتائج اختبار التصميم المتجاوب:</h4>';
+            results += `<p>عرض الشاشة الحالي: ${currentWidth}px</p>`;
+            
+            if (currentWidth <= 768) {
+                results += '<p>✅ وضع الجوال: الأزرار صغيرة والنص كبير</p>';
+            } else if (currentWidth <= 992) {
+                results += '<p>✅ وضع التابلت: أحجام متوسطة</p>';
+            } else {
+                results += '<p>✅ وضع سطح المكتب: أحجام عادية</p>';
+            }
+            
+            testResults.innerHTML = `<div class="test-result">${results}</div>`;
+        }
+
+        function testPlaceholderText() {
+            const testResults = document.getElementById('testResults');
+            const placeholder = searchInput.placeholder;
+            
+            let results = '<h4>نتائج اختبار النص التوضيحي:</h4>';
+            results += `<p>النص الحالي: "${placeholder}"</p>`;
+            
+            const hasHierarchical = placeholder.includes('///');
+            const hasMultiple = placeholder.includes('//');
+            
+            results += `<p>✅ يحتوي على رمز البحث الهرمي (///): ${hasHierarchical ? 'نجح' : 'فشل'}</p>`;
+            results += `<p>✅ يحتوي على رمز البحث المتعدد (//): ${hasMultiple ? 'نجح' : 'فشل'}</p>`;
+            
+            testResults.innerHTML = `<div class="test-result">${results}</div>`;
+        }
+    </script>
+</body>
+</html>
