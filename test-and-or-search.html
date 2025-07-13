@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار البحث بـ AND و OR</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .comparison-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+        }
+
+        .comparison-card.or {
+            border-color: #007bff;
+        }
+
+        .comparison-card.and {
+            border-color: #28a745;
+        }
+
+        .comparison-card h3 {
+            margin: 0 0 20px 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .comparison-card.or h3 {
+            color: #007bff;
+        }
+
+        .comparison-card.and h3 {
+            color: #28a745;
+        }
+
+        .example-section {
+            margin-bottom: 25px;
+        }
+
+        .example-query {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+            font-weight: 600;
+        }
+
+        .comparison-card.and .example-query {
+            border-left-color: #28a745;
+        }
+
+        .explanation {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #b3d9ff;
+        }
+
+        .comparison-card.and .explanation {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #ced4da;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .search-btn.and {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .search-btn.clear {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .result-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .vs-section {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+            padding: 20px;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 30px;
+            border-radius: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .vs-section {
+                margin: 20px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-balance-scale"></i> الفرق بين البحث بـ OR و AND</h1>
+            <p>فهم الفرق بين "أو" و "و" في البحث المتقدم</p>
+        </div>
+
+        <div class="comparison-grid">
+            <!-- البحث بـ OR -->
+            <div class="comparison-card or">
+                <h3><i class="fas fa-plus-circle"></i> البحث بـ OR (أو)</h3>
+                
+                <div class="example-section">
+                    <h4>الرمز المستخدم: <span class="highlight">//</span></h4>
+                    <div class="example-query">منتهي//فارغ</div>
+                    <div class="explanation">
+                        <strong>المعنى:</strong> ابحث عن العقارات المنتهية <strong>أو</strong> الفارغة<br>
+                        <strong>النتيجة:</strong> جميع العقارات المنتهية + جميع العقارات الفارغة
+                    </div>
+                </div>
+
+                <div class="example-section">
+                    <h4>مثال هرمي مع OR:</h4>
+                    <div class="example-query">ضريبي///الرياض///منتهي//فارغ</div>
+                    <div class="explanation">
+                        1. ابحث عن العقارات الضريبية<br>
+                        2. من النتائج، ابحث في الرياض<br>
+                        3. من النتائج، ابحث عن المنتهية <strong>أو</strong> الفارغة
+                    </div>
+                </div>
+
+                <div class="example-section">
+                    <h4>أمثلة أخرى:</h4>
+                    <div class="example-query">فعال//نشط//ساري</div>
+                    <div class="example-query">سكني//تجاري</div>
+                    <div class="example-query">الرياض//جدة//الدمام</div>
+                </div>
+            </div>
+
+            <!-- البحث بـ AND -->
+            <div class="comparison-card and">
+                <h3><i class="fas fa-check-double"></i> البحث بـ AND (و)</h3>
+                
+                <div class="example-section">
+                    <h4>الرمز المستخدم: <span class="highlight">&&</span></h4>
+                    <div class="example-query">منتهي&&فارغ</div>
+                    <div class="explanation">
+                        <strong>المعنى:</strong> ابحث عن العقارات المنتهية <strong>و</strong> الفارغة معاً<br>
+                        <strong>النتيجة:</strong> العقارات التي تحقق الشرطين معاً فقط
+                    </div>
+                </div>
+
+                <div class="example-section">
+                    <h4>AND في المستوى الأخير:</h4>
+                    <div class="example-query">ضريبي///الرياض///منتهي//فارغ</div>
+                    <div class="explanation">
+                        1. ابحث عن العقارات الضريبية<br>
+                        2. من النتائج، ابحث في الرياض<br>
+                        3. من النتائج، ابحث عن المنتهية <strong>و</strong> الفارغة معاً
+                    </div>
+                </div>
+
+                <div class="example-section">
+                    <h4>أمثلة أخرى:</h4>
+                    <div class="example-query">ضريبي&&سكني</div>
+                    <div class="example-query">فعال&&الرياض</div>
+                    <div class="example-query">منتهي&&شاغر&&سكني</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="vs-section">
+            <i class="fas fa-arrows-alt-h"></i> VS <i class="fas fa-arrows-alt-h"></i>
+        </div>
+
+        <!-- قسم الاختبار -->
+        <div class="test-section">
+            <h3><i class="fas fa-flask"></i> جرب بنفسك</h3>
+            
+            <input type="text" class="search-input" id="testInput" 
+                   placeholder="أدخل استعلام البحث لتجربة الفرق...">
+            
+            <div>
+                <button class="search-btn" onclick="testQuery('or')">
+                    <i class="fas fa-search"></i> اختبار OR
+                </button>
+                <button class="search-btn and" onclick="testQuery('and')">
+                    <i class="fas fa-search"></i> اختبار AND
+                </button>
+                <button class="search-btn clear" onclick="clearTest()">
+                    <i class="fas fa-times"></i> مسح
+                </button>
+            </div>
+
+            <div>
+                <button class="search-btn" onclick="useExample('منتهي//فارغ')">
+                    مثال OR: منتهي//فارغ
+                </button>
+                <button class="search-btn and" onclick="useExample('منتهي&&فارغ')">
+                    مثال AND: منتهي&&فارغ
+                </button>
+            </div>
+
+            <div id="testResults" class="results" style="display: none;">
+                <!-- النتائج ستظهر هنا -->
+            </div>
+        </div>
+    </div>
+
+    <!-- تحميل الملفات -->
+    <script src="advanced-search-system.js"></script>
+
+    <script>
+        // بيانات تجريبية للاختبار
+        const testData = [
+            {
+                'اسم العقار': 'مجمع شمس',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': 'A101',
+                'اسم المستأجر': '',
+                'نوع العقد': 'ضريبي',
+                'تاريخ نهاية العقد': '2023/12/01' // منتهي
+            },
+            {
+                'اسم العقار': 'مجمع النور',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': 'B202',
+                'اسم المستأجر': 'أحمد محمد',
+                'نوع العقد': 'سكني',
+                'تاريخ نهاية العقد': '2023/11/01' // منتهي
+            },
+            {
+                'اسم العقار': 'برج التجارة',
+                'المدينة': 'جدة',
+                'رقم  الوحدة ': 'C303',
+                'اسم المستأجر': '',
+                'نوع العقد': 'تجاري',
+                'تاريخ نهاية العقد': '' // فارغ
+            },
+            {
+                'اسم العقار': 'مجمع الورود',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': 'D404',
+                'اسم المستأجر': 'شركة الأعمال',
+                'نوع العقد': 'ضريبي',
+                'تاريخ نهاية العقد': '2025/06/01' // فعال
+            }
+        ];
+
+        function testQuery(type) {
+            const input = document.getElementById('testInput');
+            const query = input.value.trim();
+            
+            if (!query) {
+                alert('يرجى إدخال استعلام البحث');
+                return;
+            }
+
+            console.log(`🧪 اختبار ${type.toUpperCase()}: "${query}"`);
+            
+            let results;
+            if (type === 'or') {
+                // تحويل && إلى // للاختبار
+                const orQuery = query.replace(/&&/g, '//');
+                results = performAdvancedSearch(orQuery, testData);
+            } else {
+                // تحويل // إلى && للاختبار
+                const andQuery = query.replace(/\/\//g, '&&');
+                results = performAdvancedSearch(andQuery, testData);
+            }
+            
+            displayResults(results, query, type);
+        }
+
+        function displayResults(results, query, type) {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.style.display = 'block';
+            
+            const typeLabel = type === 'or' ? 'OR (أو)' : 'AND (و)';
+            const typeColor = type === 'or' ? '#007bff' : '#28a745';
+            
+            resultsDiv.innerHTML = `
+                <h4 style="color: ${typeColor};">
+                    <i class="fas fa-${type === 'or' ? 'plus-circle' : 'check-double'}"></i>
+                    نتائج البحث بـ ${typeLabel}: "${query}"
+                </h4>
+                <p><strong>عدد النتائج:</strong> ${results.length}</p>
+                ${results.length > 0 ? 
+                    results.map(item => `
+                        <div class="result-item">
+                            <strong>${item['اسم العقار']} - ${item['رقم  الوحدة ']}</strong><br>
+                            المدينة: ${item['المدينة']}<br>
+                            المستأجر: ${item['اسم المستأجر'] || 'فارغ'}<br>
+                            نوع العقد: ${item['نوع العقد']}<br>
+                            تاريخ النهاية: ${item['تاريخ نهاية العقد'] || 'غير محدد'}
+                        </div>
+                    `).join('') 
+                    : '<p style="color: #6c757d;">لا توجد نتائج تطابق الاستعلام</p>'
+                }
+            `;
+        }
+
+        function useExample(query) {
+            document.getElementById('testInput').value = query;
+        }
+
+        function clearTest() {
+            document.getElementById('testInput').value = '';
+            document.getElementById('testResults').style.display = 'none';
+        }
+
+        // رسالة ترحيب
+        window.addEventListener('load', function() {
+            console.log('🎯 مرحباً بك في اختبار الفرق بين OR و AND!');
+            console.log('💡 جرب الأمثلة المختلفة لفهم الفرق');
+            console.log('📊 البيانات التجريبية تحتوي على 4 عقارات للاختبار');
+        });
+    </script>
+</body>
+</html>

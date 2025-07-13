@@ -4332,65 +4332,65 @@ function renderData() {
     });
   }
   
-  // تصفية البيانات حسب البحث العام المحسن (يدعم البحث الهرمي بـ ///)
-  const searchTerm = getGlobalSearchTerm().toLowerCase();
-  if (searchTerm) {
-    // تحديد نوع البحث بناءً على الفاصل المستخدم
-    const isHierarchicalSearch = searchTerm.includes('///');
-    const isMultiSearch = searchTerm.includes('//') && !isHierarchicalSearch;
+  // تصفية البيانات حسب البحث العام المتقدم (يدعم البحث الهرمي والمتعدد والمرادفات)
+  const searchTerm = getGlobalSearchTerm();
+  if (searchTerm && searchTerm.trim()) {
+    console.log(`🔍 بدء البحث المتقدم: "${searchTerm}"`);
 
-    if (isHierarchicalSearch) {
-      // البحث الهرمي/المتداخل باستخدام ///
-      const searchTerms = searchTerm.split('///').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
-
-      console.log(`🔍 البحث الهرمي: ${searchTerms.length} مستويات:`, searchTerms);
-
-      // تطبيق البحث الهرمي - كل مصطلح يصفي نتائج المصطلح السابق
-      let currentResults = filteredData;
-
-      for (let i = 0; i < searchTerms.length; i++) {
-        const term = searchTerms[i];
-        console.log(`🔍 المستوى ${i + 1}: البحث عن "${term}" في ${currentResults.length} سجل`);
-
-        currentResults = currentResults.filter(property => {
-          return searchInPropertyData(property, term);
-        });
-
-        console.log(`📊 نتائج المستوى ${i + 1}: ${currentResults.length} سجل`);
-
-        // إذا لم تعد هناك نتائج، توقف عن البحث
-        if (currentResults.length === 0) {
-          console.log(`⚠️ لا توجد نتائج في المستوى ${i + 1}، توقف البحث`);
-          break;
-        }
-      }
-
-      filteredData = currentResults;
-      console.log(`🎯 النتائج النهائية للبحث الهرمي: ${filteredData.length} سجل`);
-
-    } else if (isMultiSearch) {
-      // البحث المتعدد القديم باستخدام // (OR logic)
-      const searchTerms = searchTerm.split('//').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
-
-      console.log(`🔍 البحث المتعدد (OR): ${searchTerms.length} مصطلحات:`, searchTerms);
-
-      filteredData = filteredData.filter(property => {
-        return searchTerms.some(term => {
-          return searchInPropertyData(property, term);
-        });
-      });
-
-      console.log(`📊 نتائج البحث المتعدد: ${filteredData.length} سجل`);
-
+    // استخدام نظام البحث المتقدم الجديد
+    if (typeof performAdvancedSearch === 'function') {
+      filteredData = performAdvancedSearch(searchTerm, filteredData);
+      console.log(`🎯 نتائج البحث المتقدم النهائية: ${filteredData.length} سجل`);
     } else {
-      // البحث العادي (مصطلح واحد)
-      const normalizedSearchTerm = normalizeArabicText(searchTerm);
+      // النظام القديم كحل احتياطي
+      const searchTermLower = searchTerm.toLowerCase();
+      const isHierarchicalSearch = searchTermLower.includes('///');
+      const isMultiSearch = searchTermLower.includes('//') && !isHierarchicalSearch;
 
-      filteredData = filteredData.filter(property => {
-        return searchInPropertyData(property, normalizedSearchTerm);
-      });
+      if (isHierarchicalSearch) {
+        // البحث الهرمي
+        const searchTerms = searchTermLower.split('///').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
+        console.log(`🔍 البحث الهرمي (النظام القديم): ${searchTerms.length} مستويات:`, searchTerms);
 
-      console.log(`📊 نتائج البحث العادي: ${filteredData.length} سجل`);
+        let currentResults = filteredData;
+        for (let i = 0; i < searchTerms.length; i++) {
+          const term = searchTerms[i];
+          console.log(`🔍 المستوى ${i + 1}: البحث عن "${term}" في ${currentResults.length} سجل`);
+
+          currentResults = currentResults.filter(property => {
+            return searchInPropertyData(property, term);
+          });
+
+          console.log(`📊 نتائج المستوى ${i + 1}: ${currentResults.length} سجل`);
+
+          if (currentResults.length === 0) {
+            console.log(`⚠️ لا توجد نتائج في المستوى ${i + 1}، توقف البحث`);
+            break;
+          }
+        }
+        filteredData = currentResults;
+
+      } else if (isMultiSearch) {
+        // البحث المتعدد
+        const searchTerms = searchTermLower.split('//').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
+        console.log(`🔍 البحث المتعدد (النظام القديم): ${searchTerms.length} مصطلحات:`, searchTerms);
+
+        filteredData = filteredData.filter(property => {
+          return searchTerms.some(term => {
+            return searchInPropertyData(property, term);
+          });
+        });
+
+        console.log(`📊 نتائج البحث المتعدد: ${filteredData.length} سجل`);
+
+      } else {
+        // البحث العادي
+        const normalizedSearchTerm = normalizeArabicText(searchTermLower);
+        filteredData = filteredData.filter(property => {
+          return searchInPropertyData(property, normalizedSearchTerm);
+        });
+        console.log(`📊 نتائج البحث العادي: ${filteredData.length} سجل`);
+      }
     }
   }
   
