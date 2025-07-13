@@ -50,7 +50,10 @@ function convertPropertyToSupabaseFormat(jsonProperty) {
 
         installment_end_date: parseDate(jsonProperty['تاريخ نهاية القسط']) || null,
         contract_type: jsonProperty['نوع العقد'] || null,
-        "نوع العقار": jsonProperty['نوع العقار'] || null
+        "نوع العقار": jsonProperty['نوع العقار'] || null,
+
+        // إضافة ملاحظات الوحدة
+        unit_notes: jsonProperty['ملاحظات الوحدة'] || ''
     };
 }
 
@@ -304,6 +307,10 @@ function convertSupabaseToOriginalFormat(supabaseProperty) {
         'تاريخ نهاية القسط': formatDateForDisplay(supabaseProperty.installment_end_date),
         'نوع العقد': supabaseProperty.contract_type,
         'نوع العقار': supabaseProperty['نوع العقار'],
+
+        // إضافة ملاحظات الوحدة
+        'ملاحظات الوحدة': supabaseProperty.unit_notes || '',
+
         // Add Supabase-specific fields for internal use
         _supabase_id: supabaseProperty.id,
         _created_at: supabaseProperty.created_at,

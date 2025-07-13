@@ -1136,8 +1136,86 @@ function convertPropertyToSupabaseFormat(jsonProperty) {
 
         installment_end_date: parseDate(jsonProperty['تاريخ نهاية القسط']) || null,
         contract_type: jsonProperty['نوع العقد'] || null,
-        "نوع العقار": jsonProperty['نوع العقار'] || null
+        "نوع العقار": jsonProperty['نوع العقار'] || null,
+
+        // إضافة ملاحظات الوحدة
+        unit_notes: jsonProperty['ملاحظات الوحدة'] || ''
     };
+}
+
+// Convert Supabase property data to local JSON format
+function convertSupabaseToLocal(supabaseProperty) {
+    return {
+        'رقم  الوحدة ': supabaseProperty.unit_number || '',
+        'المدينة': supabaseProperty.city || '',
+        'اسم العقار': supabaseProperty.property_name || '',
+        'موقع العقار': supabaseProperty.property_location || '',
+        'الارتفاع': supabaseProperty.height || '',
+        'رقم الصك': supabaseProperty.deed_number || '',
+        'السجل العيني ': supabaseProperty.real_estate_registry || '',
+        'مساحةالصك': supabaseProperty.deed_area || '',
+        'المالك': supabaseProperty.owner || '',
+        'اسم المستأجر': supabaseProperty.tenant_name || '',
+        'رقم جوال المستأجر': supabaseProperty.tenant_phone || '',
+        'رقم جوال إضافي': supabaseProperty.tenant_phone_2 || '',
+        'رقم العقد': supabaseProperty.contract_number || '',
+        'قيمة  الايجار ': supabaseProperty.rent_value || '',
+        'المساحة': supabaseProperty.area || '',
+        'تاريخ البداية': formatDateForLocal(supabaseProperty.start_date) || '',
+        'تاريخ النهاية': formatDateForLocal(supabaseProperty.end_date) || '',
+        'الاجمالى': supabaseProperty.total_amount || '',
+        'رقم حساب الكهرباء': supabaseProperty.electricity_account || '',
+        'عدد الاقساط المتبقية': supabaseProperty.remaining_installments || '',
+        'عدد الاقساط': supabaseProperty.installment_count || '',
+
+        // الأقساط
+        'تاريخ القسط الاول': formatDateForLocal(supabaseProperty.first_installment_date) || '',
+        'مبلغ القسط الاول': supabaseProperty.first_installment_amount || '',
+        'تاريخ القسط الثاني': formatDateForLocal(supabaseProperty.second_installment_date) || '',
+        'مبلغ القسط الثاني': supabaseProperty.second_installment_amount || '',
+        'تاريخ القسط الثالث': formatDateForLocal(supabaseProperty.third_installment_date) || '',
+        'مبلغ القسط الثالث': supabaseProperty.third_installment_amount || '',
+        'تاريخ القسط الرابع': formatDateForLocal(supabaseProperty.fourth_installment_date) || '',
+        'مبلغ القسط الرابع': supabaseProperty.fourth_installment_amount || '',
+        'تاريخ القسط الخامس': formatDateForLocal(supabaseProperty.fifth_installment_date) || '',
+        'مبلغ القسط الخامس': supabaseProperty.fifth_installment_amount || '',
+        'تاريخ القسط السادس': formatDateForLocal(supabaseProperty.sixth_installment_date) || '',
+        'مبلغ القسط السادس': supabaseProperty.sixth_installment_amount || '',
+        'تاريخ القسط السابع': formatDateForLocal(supabaseProperty.seventh_installment_date) || '',
+        'مبلغ القسط السابع': supabaseProperty.seventh_installment_amount || '',
+        'تاريخ القسط الثامن': formatDateForLocal(supabaseProperty.eighth_installment_date) || '',
+        'مبلغ القسط الثامن': supabaseProperty.eighth_installment_amount || '',
+        'تاريخ القسط التاسع': formatDateForLocal(supabaseProperty.ninth_installment_date) || '',
+        'مبلغ القسط التاسع': supabaseProperty.ninth_installment_amount || '',
+        'تاريخ القسط العاشر': formatDateForLocal(supabaseProperty.tenth_installment_date) || '',
+        'مبلغ القسط العاشر': supabaseProperty.tenth_installment_amount || '',
+
+        'تاريخ نهاية القسط': formatDateForLocal(supabaseProperty.installment_end_date) || '',
+        'نوع العقد': supabaseProperty.contract_type || '',
+        'نوع العقار': supabaseProperty['نوع العقار'] || '',
+
+        // إضافة ملاحظات الوحدة
+        'ملاحظات الوحدة': supabaseProperty.unit_notes || ''
+    };
+}
+
+// Format date from Supabase (YYYY-MM-DD) to local format (DD/MM/YYYY)
+function formatDateForLocal(dateStr) {
+    if (!dateStr) return '';
+
+    try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+
+        return `${day}/${month}/${year}`;
+    } catch (error) {
+        console.warn('خطأ في تحويل التاريخ:', dateStr, error);
+        return '';
+    }
 }
 
 // Parse date function - Fixed to return proper format for Supabase

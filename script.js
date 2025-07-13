@@ -5433,6 +5433,10 @@ function renderCards(data) {
                     <span class="card-value property-type-badge property-type-${property['نوع العقار']?.toLowerCase()?.replace('أ', 'ا')}">${property['نوع العقار']}</span>
                 </div>` : ''}
                 <div class="card-row">
+                    <span class="card-label"><i class="fas fa-sticky-note"></i> 📝 ملاحظات:</span>
+                    <span class="card-value" style="color: #dc3545; font-weight: 500;">${property['ملاحظات الوحدة'] || ''}</span>
+                </div>
+                <div class="card-row">
                     <span class="card-label">تاريخ البداية:</span>
                     <span class="card-value" style="${startColor} padding:4px 8px; border-radius:4px;">
                         ${formatArabicDate(property['تاريخ البداية']) || ''}
@@ -18931,6 +18935,18 @@ function showMultiUnitEditModal(relatedUnits, primaryUnit) {
                             </div>
                         </div>
 
+                        <!-- قسم الملاحظات والتعليقات -->
+                        <div class="edit-section">
+                            <h3><i class="fas fa-sticky-note"></i> ملاحظات وتعليقات البطاقة</h3>
+                            <div class="form-row">
+                                <div class="form-group full-width">
+                                    <label>ملاحظات عامة:</label>
+                                    <textarea name="notes" rows="4" placeholder="أضف ملاحظات أو تعليقات عامة حول هذه البطاقة...">${primaryUnit['notes'] || ''}</textarea>
+                                    <small class="field-note">يمكنك إضافة أي ملاحظات أو تعليقات مهمة حول هذه البطاقة</small>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- ربط الوحدات -->
                         <div class="edit-section">
                             <h3><i class="fas fa-link"></i> ربط الوحدات</h3>
@@ -21601,6 +21617,18 @@ function showSingleUnitEditModal(property, contractNumber, propertyName, unitNum
                             </div>
                         </div>
 
+                        <!-- قسم الملاحظات والتعليقات -->
+                        <div class="edit-section">
+                            <h3><i class="fas fa-sticky-note"></i> ملاحظات وتعليقات البطاقة</h3>
+                            <div class="form-row">
+                                <div class="form-group full-width">
+                                    <label>ملاحظات عامة:</label>
+                                    <textarea name="notes" rows="4" placeholder="أضف ملاحظات أو تعليقات عامة حول هذه البطاقة...">${property['notes'] || ''}</textarea>
+                                    <small class="field-note">يمكنك إضافة أي ملاحظات أو تعليقات مهمة حول هذه البطاقة</small>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="edit-section">
                             <h3><i class="fas fa-link"></i> ربط الوحدات</h3>
                             <div class="units-linking-section">
@@ -22049,8 +22077,18 @@ async function savePropertyEdit(event) {
             value = parseInt(value) || 0;
         }
 
+        // معالجة خاصة لملاحظات الوحدة
+        if (key === 'ملاحظات الوحدة') {
+            console.log(`📝 معالجة ملاحظات الوحدة:`);
+            console.log(`   القيمة الأصلية: "${originalData[key]}"`);
+            console.log(`   القيمة الجديدة: "${value}"`);
+
+            // حفظ ملاحظات الوحدة (حتى لو كانت فارغة)
+            updatedProperty[key] = value || '';
+            console.log(`   ✅ تم حفظ ملاحظات الوحدة: "${updatedProperty[key]}"`);
+        }
         // معالجة محسنة للحقول - استبدال القديم بالجديد
-        if (value === '' || value === null || value === undefined) {
+        else if (value === '' || value === null || value === undefined) {
             // للحقول النصية، احفظ القيمة الفارغة (استبدال القديم بفارغ)
             if (typeof updatedProperty[key] === 'string' || key.includes('رقم') || key.includes('اسم') || key.includes('موقع') || key.includes('المالك') || key.includes('السجل')) {
                 updatedProperty[key] = value || '';
