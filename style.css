@@ -554,9 +554,40 @@ aside.active {
     box-shadow: 0 0 0 3px rgba(0,123,255,0.15), 0 4px 12px rgba(0,0,0,0.15);
 }
 
+/* حاوية حقل البحث مع المؤشر */
+.search-input-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+/* مؤشر التحميل */
+.search-loading-indicator {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #007bff;
+    font-size: 14px;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.search-loading-indicator i {
+    animation: spin 1s linear infinite;
+}
+
+/* تأثير الدوران */
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
 #globalSearch {
-    flex: 2;
-    padding: 16px 20px;
+    width: 100%;
+    padding: 16px 45px 16px 20px; /* إضافة مساحة للمؤشر على اليمين */
     border: none;
     border-radius: 8px;
     font-size: 18px;
@@ -635,10 +666,14 @@ aside.active {
 
     #globalSearch {
         font-size: 16px; /* منع التكبير في iOS */
-        padding: 14px 18px;
+        padding: 14px 40px 14px 18px; /* مساحة للمؤشر على الجوال */
         min-height: 46px;
         min-width: 250px;
-        flex: 3;
+    }
+
+    .search-loading-indicator {
+        right: 10px; /* تقليل المسافة على الجوال */
+        font-size: 12px;
     }
 
     .global-search-btn, .global-clear-btn {

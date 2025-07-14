@@ -3348,6 +3348,171 @@ function testNewSearchSyntax() {
     console.log('\n📊 تحقق من النتائج في الواجهة');
 }
 
+// دالة اختبار المرادفات الجديدة
+function testPropertyTypeSynonyms() {
+    console.log('🧪 اختبار مرادفات أنواع العقارات...');
+
+    if (!window.allData || window.allData.length === 0) {
+        console.log('❌ لا توجد بيانات للاختبار');
+        return;
+    }
+
+    const synonymTests = [
+        // اختبار المرادفات
+        { original: 'محل', synonyms: ['المحلات', 'محلات'] },
+        { original: 'مستودع', synonyms: ['مستودعات', 'المستودعات'] },
+        { original: 'شقة', synonyms: ['الشقق', 'شقق'] },
+        { original: 'مصنع', synonyms: ['مصانع', 'المصانع'] },
+        { original: 'فلة', synonyms: ['الفلل', 'فلل', 'فيلا', 'فيلات'] },
+        { original: 'عمارة', synonyms: ['العمائر', 'عمائر'] },
+        { original: 'معرض', synonyms: ['معارض', 'المعارض'] },
+        { original: 'مكتب', synonyms: ['المكاتب', 'مكاتب'] },
+        { original: 'ورشة', synonyms: ['ورشه', 'الورش', 'ورش'] },
+        { original: 'مزرعة', synonyms: ['مزرعه', 'المزارع', 'مزارع'] },
+        { original: 'منتهي', synonyms: ['المنتهي'] }
+    ];
+
+    console.log('🔍 اختبار البحث بالمرادفات:');
+
+    synonymTests.forEach(test => {
+        console.log(`\n📋 اختبار "${test.original}" ومرادفاتها:`);
+
+        // البحث بالكلمة الأصلية
+        document.getElementById('globalSearch').value = test.original;
+        performGlobalSearch();
+        console.log(`   ✅ تم البحث بـ "${test.original}"`);
+
+        // البحث بالمرادفات
+        test.synonyms.forEach(synonym => {
+            document.getElementById('globalSearch').value = synonym;
+            performGlobalSearch();
+            console.log(`   ✅ تم البحث بـ "${synonym}"`);
+        });
+    });
+
+    console.log('\n📝 ملاحظة: يجب أن تحصل على نفس النتائج عند البحث بالكلمة الأصلية أو مرادفاتها');
+    console.log('📊 تحقق من النتائج في الواجهة');
+}
+
+// دالة اختبار مؤشر التحميل
+function testSearchLoadingIndicator() {
+    console.log('🧪 اختبار مؤشر التحميل...');
+
+    const searchInput = document.getElementById('globalSearch');
+    if (!searchInput) {
+        console.log('❌ حقل البحث غير موجود');
+        return;
+    }
+
+    console.log('🔄 اختبار إظهار المؤشر...');
+    showSearchLoadingIndicator();
+
+    setTimeout(() => {
+        console.log('✅ اختبار إخفاء المؤشر...');
+        hideSearchLoadingIndicator();
+        console.log('📝 تم اختبار المؤشر بنجاح');
+    }, 2000);
+
+    console.log('⏱️ سيتم إخفاء المؤشر خلال ثانيتين...');
+}
+
+// دالة اختبار البحث مع المؤشر
+function testSearchWithLoadingIndicator() {
+    console.log('🧪 اختبار البحث مع مؤشر التحميل...');
+
+    if (!window.allData || window.allData.length === 0) {
+        console.log('❌ لا توجد بيانات للاختبار');
+        return;
+    }
+
+    const testQueries = ['فعال', 'الرياض//فعال', 'منتهي+فارغ'];
+    let currentIndex = 0;
+
+    function runNextTest() {
+        if (currentIndex >= testQueries.length) {
+            console.log('✅ تم الانتهاء من جميع اختبارات البحث مع المؤشر');
+            return;
+        }
+
+        const query = testQueries[currentIndex];
+        console.log(`\n🔍 اختبار ${currentIndex + 1}: "${query}"`);
+
+        // تعيين النص في حقل البحث
+        const searchInput = document.getElementById('globalSearch');
+        if (searchInput) {
+            searchInput.value = query;
+
+            // تنفيذ البحث (سيظهر المؤشر تلقائياً)
+            performGlobalSearch();
+
+            // الانتقال للاختبار التالي بعد 3 ثوان
+            setTimeout(() => {
+                currentIndex++;
+                runNextTest();
+            }, 3000);
+        }
+    }
+
+    runNextTest();
+    console.log('📝 راقب المؤشر أثناء تنفيذ الاختبارات...');
+}
+
+// دالة لعرض معلومات مؤشر التحميل
+function showLoadingIndicatorInfo() {
+    console.log(`
+🔄 معلومات مؤشر التحميل:
+
+📍 الموقع: داخل حقل البحث العام (على اليمين)
+🎨 التصميم: أيقونة دائرية دوارة باللون الأزرق
+⚡ التفعيل: يظهر تلقائياً عند بدء البحث
+🎯 الإخفاء: يختفي تلقائياً عند انتهاء البحث
+
+🧪 دوال الاختبار المتاحة:
+   • testSearchLoadingIndicator() - اختبار المؤشر فقط
+   • testSearchWithLoadingIndicator() - اختبار البحث مع المؤشر
+   • showSearchLoadingIndicator() - إظهار المؤشر يدوياً
+   • hideSearchLoadingIndicator() - إخفاء المؤشر يدوياً
+
+💡 الميزات:
+   ✅ يعمل مع البحث العادي والمتقدم
+   ✅ متجاوب مع الشاشات الصغيرة
+   ✅ لا يتداخل مع النص المكتوب
+   ✅ تأثير دوران سلس
+   ✅ يظهر/يختفي تلقائياً
+    `);
+}
+
+// دالة لعرض جميع المرادفات المتاحة
+function showAllSynonyms() {
+    console.log(`
+🔍 دليل المرادفات المتاحة في البحث:
+
+📊 حالات العقود:
+   • فعال: نشط، ساري، جاري، الحالي، على وشك، وشك
+   • منتهي: المنتهي، انتهى، مكتمل
+   • فارغ: شاغر، خالي، متاح
+
+🏢 أنواع العقارات:
+   • محل: المحلات، محلات
+   • مستودع: مستودعات، المستودعات
+   • شقة: الشقق، شقق
+   • مصنع: مصانع، المصانع
+   • فلة: الفلل، فلل، فيلا، فيلات، الفيلات
+   • عمارة: العمائر، عمائر
+   • معرض: معارض، المعارض
+   • مكتب: المكاتب، مكاتب
+   • ورشة: ورشه، الورش، ورش
+   • مزرعة: مزرعه، المزارع، مزارع
+
+🏷️ أنواع العقود:
+   • ضريبي: ضريبية، مع ضريبة، بضريبة
+   • سكني: سكنية، سكن
+   • تجاري: تجارية، تجارى
+
+💡 مثال: يمكنك البحث عن "محل" أو "المحلات" أو "محلات" وستحصل على نفس النتائج
+    `);
+}
+
 // تهيئة البحث العام المحسن مع التخطيط الأفقي
 function initGlobalSearch() {
     const searchInput = document.getElementById('globalSearch');
@@ -3410,6 +3575,21 @@ function addSearchButtons(inputId) {
     }
 }
 
+// دوال إدارة مؤشر التحميل
+function showSearchLoadingIndicator() {
+    const indicator = document.getElementById('searchLoadingIndicator');
+    if (indicator) {
+        indicator.style.display = 'block';
+    }
+}
+
+function hideSearchLoadingIndicator() {
+    const indicator = document.getElementById('searchLoadingIndicator');
+    if (indicator) {
+        indicator.style.display = 'none';
+    }
+}
+
 // تنفيذ البحث العام
 function performGlobalSearch() {
     const searchInput = document.getElementById('globalSearch');
@@ -3418,27 +3598,39 @@ function performGlobalSearch() {
     const searchTerm = searchInput.value.trim();
     console.log('🔍 تنفيذ البحث العام:', searchTerm);
 
+    // إظهار مؤشر التحميل
+    showSearchLoadingIndicator();
+
     // حفظ حالة البحث
     searchState.global = searchTerm;
     searchState.isSearchActive = searchTerm.length > 0;
 
-    // تنفيذ البحث
-    renderData();
+    // تنفيذ البحث مع تأخير قصير لإظهار المؤشر
+    setTimeout(() => {
+        try {
+            renderData();
 
-    // إظهار مؤشر البحث مع معلومات البحث المتعدد
-    if (searchTerm) {
-        const searchTerms = searchTerm.split('//').map(term => term.trim()).filter(term => term.length > 0);
-        const isMultiSearch = searchTerms.length > 1;
+            // إخفاء مؤشر التحميل بعد انتهاء البحث
+            hideSearchLoadingIndicator();
 
-        showSearchIndicator(searchInput, 'جاري البحث...');
-        setTimeout(() => {
-            if (isMultiSearch) {
-                showSearchIndicator(searchInput, `تم البحث عن ${searchTerms.length} مصطلحات مختلفة`, 'success');
-            } else {
-                showSearchIndicator(searchInput, `تم العثور على النتائج`, 'success');
+            // إظهار رسالة نجاح البحث
+            if (searchTerm) {
+                const searchTerms = searchTerm.split('//').map(term => term.trim()).filter(term => term.length > 0);
+                const isMultiSearch = searchTerms.length > 1;
+
+                if (typeof showSearchIndicator === 'function') {
+                    if (isMultiSearch) {
+                        showSearchIndicator(searchInput, `تم البحث عن ${searchTerms.length} مصطلحات مختلفة`, 'success');
+                    } else {
+                        showSearchIndicator(searchInput, `تم العثور على النتائج`, 'success');
+                    }
+                }
             }
-        }, 500);
-    }
+        } catch (error) {
+            console.error('❌ خطأ في البحث:', error);
+            hideSearchLoadingIndicator();
+        }
+    }, 100); // تأخير قصير لإظهار المؤشر
 }
 
 // مسح البحث العام مع إعادة تعيين جميع الفلاتر
@@ -3447,6 +3639,9 @@ function clearGlobalSearch() {
 
     const searchInput = document.getElementById('globalSearch');
     const clearButton = document.querySelector('.global-clear-btn');
+
+    // إخفاء مؤشر التحميل
+    hideSearchLoadingIndicator();
 
     // مسح حقل البحث
     if (searchInput) {

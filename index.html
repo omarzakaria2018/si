@@ -503,7 +503,12 @@
   <main>
     <div id="searchSection">
       <div class="global-search-container">
-        <input type="text" id="globalSearch" placeholder="(// للبحث الهرمي، + للبحث المتعدد)">
+        <div class="search-input-wrapper">
+          <input type="text" id="globalSearch" placeholder="(// للبحث الهرمي، + للبحث المتعدد)">
+          <div class="search-loading-indicator" id="searchLoadingIndicator" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+        </div>
         <button class="search-btn global-search-btn" onclick="performGlobalSearch()" title="بحث">
           <i class="fas fa-search"></i>
         </button>
