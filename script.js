@@ -3230,6 +3230,12 @@ function normalizeArabicText(text) {
 
 // دالة للبحث في الحالة المحسوبة والبيانات المخزنة
 function searchInPropertyData(property, searchTerm) {
+    // استخدام النظام المتقدم إذا كان متاحاً
+    if (typeof advancedSearchInProperty === 'function') {
+        return advancedSearchInProperty(property, searchTerm);
+    }
+
+    // النظام القديم كبديل
     const normalizedSearchTerm = normalizeArabicText(searchTerm);
 
     // البحث في البيانات المخزنة
@@ -3261,6 +3267,85 @@ function searchInPropertyData(property, searchTerm) {
     }
 
     return false;
+}
+
+// دالة اختبار البحث في السجل العيني
+function testRegistrySearchInScript() {
+    console.log('🧪 اختبار البحث في السجل العيني من script.js...');
+
+    if (!window.allData || window.allData.length === 0) {
+        console.log('❌ لا توجد بيانات للاختبار');
+        return;
+    }
+
+    // البحث عن عقارات تحتوي على السجل العيني
+    const propertiesWithRegistry = window.allData.filter(p =>
+        p['السجل العيني '] && p['السجل العيني '].toString().trim() !== ''
+    );
+
+    console.log(`📊 عدد العقارات التي تحتوي على السجل العيني: ${propertiesWithRegistry.length}`);
+
+    if (propertiesWithRegistry.length > 0) {
+        const firstRegistry = propertiesWithRegistry[0]['السجل العيني '].toString().trim();
+        console.log(`🔍 اختبار البحث برقم السجل العيني: "${firstRegistry}"`);
+
+        // محاكاة البحث
+        document.getElementById('globalSearch').value = firstRegistry;
+        performGlobalSearch();
+
+        console.log('✅ تم تنفيذ البحث - تحقق من النتائج في الواجهة');
+    } else {
+        console.log('⚠️ لا توجد عقارات تحتوي على السجل العيني');
+    }
+}
+
+// دالة لعرض أمثلة البحث الجديدة
+function showNewSearchExamples() {
+    console.log(`
+🔍 أمثلة البحث الجديدة:
+
+📋 البحث الهرمي (استخدم //):
+   الرياض//شمس//ضريبي//فعال
+   ضريبي//الرياض//منتهي+فارغ
+
+🔗 البحث المتعدد OR (استخدم +):
+   فعال+وشك
+   منتهي+فارغ
+   نشط+ساري+جاري
+
+💡 أمثلة مختلطة:
+   الرياض//نشط+فارغ (الرياض ثم النشطة أو الفارغة)
+   سكني//الرياض//منتهي+فارغ (سكني في الرياض ثم المنتهية أو الفارغة)
+
+📝 ملاحظة: تم تغيير الرموز:
+   - /// أصبح //
+   - // أصبح +
+    `);
+}
+
+// دالة اختبار سريعة للبحث الجديد
+function testNewSearchSyntax() {
+    console.log('🧪 اختبار صيغة البحث الجديدة...');
+
+    if (!window.allData || window.allData.length === 0) {
+        console.log('❌ لا توجد بيانات للاختبار');
+        return;
+    }
+
+    const testQueries = [
+        'فعال+وشك',
+        'الرياض//فعال',
+        'منتهي+فارغ'
+    ];
+
+    testQueries.forEach(query => {
+        console.log(`\n🔍 اختبار: "${query}"`);
+        document.getElementById('globalSearch').value = query;
+        performGlobalSearch();
+        console.log(`✅ تم تنفيذ البحث`);
+    });
+
+    console.log('\n📊 تحقق من النتائج في الواجهة');
 }
 
 // تهيئة البحث العام المحسن مع التخطيط الأفقي
@@ -4344,12 +4429,12 @@ function renderData() {
     } else {
       // النظام القديم كحل احتياطي
       const searchTermLower = searchTerm.toLowerCase();
-      const isHierarchicalSearch = searchTermLower.includes('///');
-      const isMultiSearch = searchTermLower.includes('//') && !isHierarchicalSearch;
+      const isHierarchicalSearch = searchTermLower.includes('//');
+      const isMultiSearch = searchTermLower.includes('+') && !isHierarchicalSearch;
 
       if (isHierarchicalSearch) {
-        // البحث الهرمي
-        const searchTerms = searchTermLower.split('///').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
+        // البحث الهرمي (كان ///)
+        const searchTerms = searchTermLower.split('//').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
         console.log(`🔍 البحث الهرمي (النظام القديم): ${searchTerms.length} مستويات:`, searchTerms);
 
         let currentResults = filteredData;
@@ -4371,8 +4456,8 @@ function renderData() {
         filteredData = currentResults;
 
       } else if (isMultiSearch) {
-        // البحث المتعدد
-        const searchTerms = searchTermLower.split('//').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
+        // البحث المتعدد (كان //)
+        const searchTerms = searchTermLower.split('+').map(term => normalizeArabicText(term.trim())).filter(term => term.length > 0);
         console.log(`🔍 البحث المتعدد (النظام القديم): ${searchTerms.length} مصطلحات:`, searchTerms);
 
         filteredData = filteredData.filter(property => {

@@ -62,20 +62,27 @@ function findSynonymMatch(searchTerm, targetText) {
     return false;
 }
 
+// دالة لتنظيف أسماء الحقول
+function cleanFieldName(fieldName) {
+    return fieldName ? fieldName.toString().trim() : '';
+}
+
 // دالة البحث المتقدمة في بيانات العقار
 function advancedSearchInProperty(property, searchTerm) {
     if (!property || !searchTerm) return false;
-    
+
     const normalizedSearchTerm = normalizeArabicTextAdvanced(searchTerm);
-    
+
     // البحث في جميع حقول العقار
     const searchableFields = [
         'اسم العقار', 'المدينة', 'رقم  الوحدة ', 'اسم المستأجر',
         'رقم جوال المستأجر', 'رقم جوال إضافي', 'رقم العقد',
         'نوع العقد', 'نوع العقار', 'المالك', 'رقم الصك',
+        'السجل العيني ', 'رقم السجل العقاري', 'مساحةالصك',
+        'موقع العقار', 'رقم حساب الكهرباء', 'الارتفاع',
         'ملاحظات الوحدة', 'notes'
     ];
-    
+
     // البحث في الحقول العادية
     for (const field of searchableFields) {
         if (property[field]) {
@@ -84,7 +91,18 @@ function advancedSearchInProperty(property, searchTerm) {
             }
         }
     }
-    
+
+    // البحث في جميع قيم الخصائص (للتأكد من عدم تفويت أي حقل)
+    for (const [key, value] of Object.entries(property)) {
+        if (value && (typeof value === 'string' || typeof value === 'number')) {
+            const stringValue = value.toString().trim();
+            if (stringValue && findSynonymMatch(searchTerm, stringValue)) {
+                console.log(`🔍 وجد في الحقل "${key}": "${stringValue}"`);
+                return true;
+            }
+        }
+    }
+
     // البحث في الحالة المحسوبة
     if (typeof calculateStatus === 'function') {
         const status = calculateStatus(property);
@@ -93,7 +111,7 @@ function advancedSearchInProperty(property, searchTerm) {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -111,9 +129,9 @@ function performHierarchicalSearchAdvanced(searchTerms, data) {
 
         const previousCount = currentResults.length;
 
-        // إذا كان هذا المستوى يحتوي على //، استخدم OR logic
-        if (term.includes('//')) {
-            const orTerms = term.split('//').map(t => t.trim()).filter(t => t.length > 0);
+        // إذا كان هذا المستوى يحتوي على +، استخدم OR logic (كان //)
+        if (term.includes('+')) {
+            const orTerms = term.split('+').map(t => t.trim()).filter(t => t.length > 0);
             console.log(`🔗 المستوى ${i + 1} يحتوي على ${orTerms.length} خيارات OR:`, orTerms);
 
             currentResults = currentResults.filter(property => {
@@ -252,9 +270,9 @@ function performAdvancedSearch(searchQuery, data) {
     // تحديد نوع البحث وتنفيذه
     let results;
 
-    if (query.includes('///')) {
-        // بحث هرمي - معالجة خاصة للمستوى الأخير
-        const terms = query.split('///').map(term => term.trim()).filter(term => term.length > 0);
+    if (query.includes('//')) {
+        // بحث هرمي - معالجة خاصة للمستوى الأخير (كان ///)
+        const terms = query.split('//').map(term => term.trim()).filter(term => term.length > 0);
         results = performHierarchicalSearchAdvanced(terms, data);
 
         // إضافة معلومات إضافية للنتائج
@@ -273,9 +291,9 @@ function performAdvancedSearch(searchQuery, data) {
 
         console.log(`🎯 البحث AND اكتمل: ${results.length} نتيجة`);
 
-    } else if (query.includes('//')) {
-        // بحث متعدد (OR)
-        const terms = query.split('//').map(term => term.trim()).filter(term => term.length > 0);
+    } else if (query.includes('+')) {
+        // بحث متعدد (OR) (كان //)
+        const terms = query.split('+').map(term => term.trim()).filter(term => term.length > 0);
         results = performMultiSearch(terms, data);
 
         console.log(`🎯 البحث المتعدد (OR) اكتمل: ${results.length} نتيجة`);
@@ -294,23 +312,23 @@ function showSearchExamples() {
     const examples = [
         {
             type: 'هرمي',
-            query: 'الرياض///شمس///ضريبي///فعال',
+            query: 'الرياض//شمس//ضريبي//فعال',
             description: 'البحث عن العقارات في الرياض، ثم في مجمع شمس، ثم الضريبية، ثم الفعالة'
         },
         {
             type: 'هرمي مع OR',
-            query: 'الرياض///نشط//فارغ',
+            query: 'الرياض//نشط+فارغ',
             description: 'البحث في الرياض، ثم عرض العقارات النشطة أو الفارغة (كلاهما)'
         },
         {
             type: 'هرمي مع OR',
-            query: 'ضريبي///الرياض///شمس///منتهي//فارغ',
+            query: 'ضريبي//الرياض//شمس//منتهي+فارغ',
             description: 'البحث عن العقارات الضريبية في الرياض في شمس، ثم عرض المنتهية أو الفارغة'
         },
         {
             type: 'متعدد (OR)',
-            query: 'فعال//وشك///ضريبي',
-            description: 'البحث عن العقارات الفعالة أو على وشك الانتهاء، بشرط أن تكون ضريبية'
+            query: 'فعال+وشك',
+            description: 'البحث عن العقارات الفعالة أو على وشك الانتهاء'
         },
         {
             type: 'AND صريح',
@@ -319,7 +337,7 @@ function showSearchExamples() {
         },
         {
             type: 'مختلط OR',
-            query: 'سكني///الرياض///منتهي//فارغ',
+            query: 'سكني//الرياض//منتهي+فارغ',
             description: 'البحث عن العقارات السكنية في الرياض، ثم عرض المنتهية أو الفارغة'
         },
         {
@@ -342,22 +360,73 @@ function testAdvancedSearch() {
         console.log('❌ لا توجد بيانات للاختبار');
         return;
     }
-    
+
     console.log('🧪 اختبار نظام البحث المتقدم...');
-    
+
     const testQueries = [
-        'الرياض///ضريبي///فعال',
-        'فعال//وشك',
+        'الرياض//ضريبي//فعال',
+        'فعال+وشك',
         'نشط',
-        'منتهي//فارغ',
-        'سكني///الرياض'
+        'منتهي+فارغ',
+        'سكني//الرياض'
     ];
-    
+
     testQueries.forEach(query => {
         console.log(`\n🔍 اختبار: "${query}"`);
         const results = performAdvancedSearch(query, window.properties);
         console.log(`📊 النتائج: ${results.length} عقار`);
     });
+}
+
+// دالة اختبار البحث في السجل العيني
+function testRegistrySearch() {
+    if (!window.properties || window.properties.length === 0) {
+        console.log('❌ لا توجد بيانات للاختبار');
+        return;
+    }
+
+    console.log('🧪 اختبار البحث في السجل العيني...');
+
+    // البحث عن عقارات تحتوي على السجل العيني
+    const propertiesWithRegistry = window.properties.filter(p =>
+        p['السجل العيني '] && p['السجل العيني '].toString().trim() !== ''
+    );
+
+    console.log(`📊 عدد العقارات التي تحتوي على السجل العيني: ${propertiesWithRegistry.length}`);
+
+    if (propertiesWithRegistry.length > 0) {
+        // اختبار البحث بأول رقم سجل عيني
+        const firstRegistry = propertiesWithRegistry[0]['السجل العيني '].toString().trim();
+        console.log(`🔍 اختبار البحث برقم السجل العيني: "${firstRegistry}"`);
+
+        const results = performAdvancedSearch(firstRegistry, window.properties);
+        console.log(`📊 النتائج: ${results.length} عقار`);
+
+        if (results.length > 0) {
+            console.log('✅ البحث في السجل العيني يعمل بشكل صحيح');
+            results.forEach((result, index) => {
+                console.log(`   ${index + 1}. ${result['اسم العقار']} - ${result['رقم  الوحدة ']} - السجل: ${result['السجل العيني ']}`);
+            });
+        } else {
+            console.log('❌ البحث في السجل العيني لا يعمل');
+
+            // تشخيص المشكلة
+            console.log('🔧 تشخيص المشكلة...');
+            const testProperty = propertiesWithRegistry[0];
+            console.log('📋 بيانات العقار الأول:', {
+                'اسم العقار': testProperty['اسم العقار'],
+                'رقم الوحدة': testProperty['رقم  الوحدة '],
+                'السجل العيني': testProperty['السجل العيني '],
+                'نوع البيانات': typeof testProperty['السجل العيني ']
+            });
+
+            // اختبار البحث المباشر
+            const directMatch = advancedSearchInProperty(testProperty, firstRegistry);
+            console.log(`🔍 البحث المباشر: ${directMatch ? '✅ نجح' : '❌ فشل'}`);
+        }
+    } else {
+        console.log('⚠️ لا توجد عقارات تحتوي على السجل العيني');
+    }
 }
 
 // تصدير الدوال للاستخدام العام
