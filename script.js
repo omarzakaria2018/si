@@ -3542,19 +3542,241 @@ function initGlobalSearch() {
 
     // التأكد من ربط الأحداث بالأزرار الموجودة في HTML
     const searchBtn = document.querySelector('.global-search-btn');
-    const clearBtn = document.querySelector('.global-clear-btn');
+    const cancelBtn = document.querySelector('.global-cancel-btn');
 
     if (searchBtn && !searchBtn.hasAttribute('data-initialized')) {
         searchBtn.addEventListener('click', performGlobalSearch);
         searchBtn.setAttribute('data-initialized', 'true');
     }
 
-    if (clearBtn && !clearBtn.hasAttribute('data-initialized')) {
-        clearBtn.addEventListener('click', clearGlobalSearch);
-        clearBtn.setAttribute('data-initialized', 'true');
+    if (cancelBtn && !cancelBtn.hasAttribute('data-initialized')) {
+        cancelBtn.addEventListener('click', cancelGlobalSearchWithLoading);
+        cancelBtn.setAttribute('data-initialized', 'true');
     }
 
     console.log('✅ تم تهيئة البحث العام المحسن مع التخطيط الأفقي ومراقبة المسح اليدوي');
+}
+
+// ===== ATTACHMENTS SEARCH FUNCTIONS =====
+
+// Initialize attachments search functionality
+function initAttachmentsSearch(propertyKey) {
+    const searchInput = document.getElementById(`attachmentsSearch_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const clearBtn = document.querySelector(`.attachments-clear-btn[onclick*="${propertyKey}"]`);
+
+    if (!searchInput) return;
+
+    // Add input event listener for showing/hiding clear button
+    searchInput.addEventListener('input', function(e) {
+        const currentValue = e.target.value.trim();
+
+        if (clearBtn) {
+            clearBtn.style.display = currentValue ? 'flex' : 'none';
+        }
+
+        // Auto-search as user types (with debounce)
+        clearTimeout(window.attachmentsSearchTimeout);
+        window.attachmentsSearchTimeout = setTimeout(() => {
+            performAttachmentsSearch(propertyKey);
+        }, 300);
+    });
+
+    // Add Enter key support
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performAttachmentsSearch(propertyKey);
+        }
+    });
+
+    console.log(`✅ تم تهيئة البحث في المرفقات: ${propertyKey}`);
+}
+
+// Perform attachments search
+function performAttachmentsSearch(propertyKey) {
+    const searchInput = document.getElementById(`attachmentsSearch_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const attachmentsList = document.getElementById(`propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+
+    if (!searchInput || !attachmentsList) return;
+
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    const attachmentItems = attachmentsList.querySelectorAll('.attachment-item');
+
+    console.log(`🔍 البحث في المرفقات: "${searchTerm}"`);
+
+    let visibleCount = 0;
+
+    attachmentItems.forEach(item => {
+        const fileName = item.querySelector('.attachment-name')?.textContent?.toLowerCase() || '';
+        const fileNotes = item.querySelector('.file-notes')?.title?.toLowerCase() || '';
+        const isVisible = !searchTerm || fileName.includes(searchTerm) || fileNotes.includes(searchTerm);
+
+        item.style.display = isVisible ? 'flex' : 'none';
+        if (isVisible) visibleCount++;
+    });
+
+    // Show search results summary
+    showAttachmentsSearchResults(attachmentsList, searchTerm, visibleCount, attachmentItems.length);
+}
+
+// Clear attachments search with loading state
+function clearAttachmentsSearchWithLoading(propertyKey) {
+    console.log(`🧹 مسح البحث في المرفقات: ${propertyKey}`);
+
+    const searchInput = document.getElementById(`attachmentsSearch_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const clearButton = document.querySelector(`.attachments-clear-btn[onclick*="${propertyKey}"]`);
+
+    if (!searchInput || !clearButton) return;
+
+    // Show loading state
+    clearButton.disabled = true;
+    const originalContent = clearButton.innerHTML;
+    clearButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري المسح...</span>';
+
+    setTimeout(() => {
+        try {
+            // Clear search
+            searchInput.value = '';
+            clearButton.style.display = 'none';
+
+            // Show all attachments
+            performAttachmentsSearch(propertyKey);
+
+            console.log('✅ تم مسح البحث في المرفقات');
+        } catch (error) {
+            console.error('❌ خطأ في مسح البحث:', error);
+        } finally {
+            // Restore button
+            clearButton.disabled = false;
+            clearButton.innerHTML = originalContent;
+        }
+    }, 200);
+}
+
+// Show search results summary
+function showAttachmentsSearchResults(container, searchTerm, visibleCount, totalCount) {
+    // Remove existing summary
+    const existingSummary = container.querySelector('.search-results-summary');
+    if (existingSummary) {
+        existingSummary.remove();
+    }
+
+    if (searchTerm) {
+        const summary = document.createElement('div');
+        summary.className = 'search-results-summary';
+        summary.style.cssText = `
+            padding: 10px;
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #1976d2;
+            font-size: 14px;
+        `;
+        summary.innerHTML = `
+            <i class="fas fa-search"></i>
+            نتائج البحث عن "<strong>${searchTerm}</strong>": ${visibleCount} من ${totalCount} مرفق
+        `;
+
+        container.insertBefore(summary, container.firstChild);
+    }
+}
+
+// ===== CARD ATTACHMENTS SEARCH FUNCTIONS =====
+
+// Initialize card attachments search functionality
+function initCardAttachmentsSearch(cardKey) {
+    const searchInput = document.getElementById(`cardAttachmentsSearch_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const clearBtn = document.querySelector(`.attachments-clear-btn[onclick*="${cardKey}"]`);
+
+    if (!searchInput) return;
+
+    // Add input event listener for showing/hiding clear button
+    searchInput.addEventListener('input', function(e) {
+        const currentValue = e.target.value.trim();
+
+        if (clearBtn) {
+            clearBtn.style.display = currentValue ? 'flex' : 'none';
+        }
+
+        // Auto-search as user types (with debounce)
+        clearTimeout(window.cardAttachmentsSearchTimeout);
+        window.cardAttachmentsSearchTimeout = setTimeout(() => {
+            performCardAttachmentsSearch(cardKey);
+        }, 300);
+    });
+
+    // Add Enter key support
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performCardAttachmentsSearch(cardKey);
+        }
+    });
+
+    console.log(`✅ تم تهيئة البحث في مرفقات البطاقة: ${cardKey}`);
+}
+
+// Perform card attachments search
+function performCardAttachmentsSearch(cardKey) {
+    const searchInput = document.getElementById(`cardAttachmentsSearch_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const attachmentsList = document.getElementById(`cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+
+    if (!searchInput || !attachmentsList) return;
+
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    const attachmentItems = attachmentsList.querySelectorAll('.attachment-item');
+
+    console.log(`🔍 البحث في مرفقات البطاقة: "${searchTerm}"`);
+
+    let visibleCount = 0;
+
+    attachmentItems.forEach(item => {
+        const fileName = item.querySelector('.attachment-name')?.textContent?.toLowerCase() || '';
+        const fileNotes = item.querySelector('.file-notes')?.title?.toLowerCase() || '';
+        const isVisible = !searchTerm || fileName.includes(searchTerm) || fileNotes.includes(searchTerm);
+
+        item.style.display = isVisible ? 'flex' : 'none';
+        if (isVisible) visibleCount++;
+    });
+
+    // Show search results summary
+    showAttachmentsSearchResults(attachmentsList, searchTerm, visibleCount, attachmentItems.length);
+}
+
+// Clear card attachments search with loading state
+function clearCardAttachmentsSearchWithLoading(cardKey) {
+    console.log(`🧹 مسح البحث في مرفقات البطاقة: ${cardKey}`);
+
+    const searchInput = document.getElementById(`cardAttachmentsSearch_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const clearButton = document.querySelector(`.attachments-clear-btn[onclick*="${cardKey}"]`);
+
+    if (!searchInput || !clearButton) return;
+
+    // Show loading state
+    clearButton.disabled = true;
+    const originalContent = clearButton.innerHTML;
+    clearButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري المسح...</span>';
+
+    setTimeout(() => {
+        try {
+            // Clear search
+            searchInput.value = '';
+            clearButton.style.display = 'none';
+
+            // Show all attachments
+            performCardAttachmentsSearch(cardKey);
+
+            console.log('✅ تم مسح البحث في مرفقات البطاقة');
+        } catch (error) {
+            console.error('❌ خطأ في مسح البحث:', error);
+        } finally {
+            // Restore button
+            clearButton.disabled = false;
+            clearButton.innerHTML = originalContent;
+        }
+    }, 200);
 }
 
 // إضافة أزرار البحث والمسح (محدثة للتخطيط الجديد)
@@ -3601,6 +3823,15 @@ function performGlobalSearch() {
     // إظهار مؤشر التحميل
     showSearchLoadingIndicator();
 
+    // إظهار زر الإلغاء إذا كان هناك بحث نشط
+    const cancelBtn = document.querySelector('.global-cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.style.display = searchTerm ? 'flex' : 'none';
+        // التأكد من أن الزر في حالته الطبيعية
+        cancelBtn.disabled = false;
+        cancelBtn.innerHTML = '<i class="fas fa-times"></i><span class="btn-text">إلغاء</span>';
+    }
+
     // حفظ حالة البحث
     searchState.global = searchTerm;
     searchState.isSearchActive = searchTerm.length > 0;
@@ -3638,7 +3869,7 @@ function clearGlobalSearch() {
     console.log('🧹 مسح البحث العام وإعادة تعيين جميع الفلاتر...');
 
     const searchInput = document.getElementById('globalSearch');
-    const clearButton = document.querySelector('.global-clear-btn');
+    const cancelButton = document.querySelector('.global-cancel-btn');
 
     // إخفاء مؤشر التحميل
     hideSearchLoadingIndicator();
@@ -3646,6 +3877,11 @@ function clearGlobalSearch() {
     // مسح حقل البحث
     if (searchInput) {
         searchInput.value = '';
+    }
+
+    // إخفاء زر الإلغاء
+    if (cancelButton) {
+        cancelButton.style.display = 'none';
     }
 
     // مسح حالة البحث العام
@@ -3758,6 +3994,109 @@ function clearGlobalSearch() {
     }
 }
 
+// مسح البحث العام مع حالة التحميل (للزر الخارجي)
+function clearGlobalSearchWithLoading() {
+    console.log('🧹 مسح البحث العام مع مؤشر التحميل...');
+
+    const searchInput = document.getElementById('globalSearch');
+    const cancelButton = document.querySelector('.global-cancel-btn');
+    const loadingIndicator = document.getElementById('searchLoadingIndicator');
+
+    if (!searchInput || !cancelButton) return;
+
+    // إظهار مؤشر التحميل وتعطيل الزر
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'block';
+    }
+
+    // تعطيل الزر وإظهار حالة التحميل
+    cancelButton.disabled = true;
+    const originalContent = cancelButton.innerHTML;
+    cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري المسح...</span>';
+
+    // تأخير قصير لإظهار التحميل
+    setTimeout(() => {
+        try {
+            // تنفيذ المسح
+            clearGlobalSearch();
+
+            // إخفاء زر الإلغاء
+            if (cancelButton) {
+                cancelButton.style.display = 'none';
+            }
+
+            console.log('✅ تم مسح البحث بنجاح');
+        } catch (error) {
+            console.error('❌ خطأ في مسح البحث:', error);
+        } finally {
+            // إعادة تفعيل الزر وإخفاء مؤشر التحميل
+            cancelButton.disabled = false;
+            cancelButton.innerHTML = originalContent;
+
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+    }, 300);
+}
+
+// إلغاء البحث العام مع حالة التحميل (زر الإلغاء)
+function cancelGlobalSearchWithLoading() {
+    console.log('🚫 إلغاء البحث العام مع مؤشر التحميل...');
+
+    const searchInput = document.getElementById('globalSearch');
+    const cancelButton = document.querySelector('.global-cancel-btn');
+    const loadingIndicator = document.getElementById('searchLoadingIndicator');
+
+    if (!searchInput || !cancelButton) return;
+
+    // Show loading state
+    cancelButton.disabled = true;
+    const originalContent = cancelButton.innerHTML;
+    cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري الإلغاء...</span>';
+
+    // Show loading indicator
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'block';
+    }
+
+    setTimeout(() => {
+        try {
+            // Cancel search and reset to show all data
+            searchInput.value = '';
+
+            // Reset search state
+            searchState.global = '';
+            searchState.isSearchActive = false;
+
+            // Hide cancel button
+            cancelButton.style.display = 'none';
+
+            // Reset all filters and show all data
+            resetAllFilters();
+            renderData();
+
+            console.log('✅ تم إلغاء البحث بنجاح');
+
+            // Show success indicator
+            if (searchInput) {
+                showSearchIndicator(searchInput, 'تم إلغاء البحث وإعادة عرض جميع البيانات', 'info');
+            }
+        } catch (error) {
+            console.error('❌ خطأ في إلغاء البحث:', error);
+        } finally {
+            // Restore button
+            cancelButton.disabled = false;
+            cancelButton.innerHTML = originalContent;
+
+            // Hide loading indicator
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+    }, 400);
+}
+
 // مسح البحث العام تلقائياً عند التنقل (بدون مؤشرات بصرية)
 function clearGlobalSearchOnNavigation() {
     const searchInput = document.getElementById('globalSearch');
@@ -3850,6 +4189,37 @@ function clearPropertySearch() {
 
     // إظهار مؤشر المسح
     showSearchIndicator(searchInput, 'تم مسح البحث', 'info');
+}
+
+// مسح البحث في العقارات مع حالة التحميل (للزر الخارجي)
+function clearPropertySearchWithLoading() {
+    console.log('🧹 مسح البحث في العقارات مع مؤشر التحميل...');
+
+    const searchInput = document.getElementById('propertySearch');
+    const clearButton = document.querySelector('.property-clear-btn');
+
+    if (!searchInput || !clearButton) return;
+
+    // تعطيل الزر وإظهار حالة التحميل
+    clearButton.disabled = true;
+    const originalContent = clearButton.innerHTML;
+    clearButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    // تأخير قصير لإظهار التحميل
+    setTimeout(() => {
+        try {
+            // تنفيذ المسح
+            clearPropertySearch();
+
+            console.log('✅ تم مسح البحث في العقارات بنجاح');
+        } catch (error) {
+            console.error('❌ خطأ في مسح البحث في العقارات:', error);
+        } finally {
+            // إعادة تفعيل الزر
+            clearButton.disabled = false;
+            clearButton.innerHTML = originalContent;
+        }
+    }, 200);
 }
 
 // إظهار مؤشر البحث
@@ -4059,6 +4429,14 @@ function initAutoPropertySearch() {
     // إضافة البحث التلقائي أثناء الكتابة
     let searchTimeout;
     searchInput.addEventListener('input', function(e) {
+        const currentValue = e.target.value.trim();
+        const clearBtn = document.querySelector('.property-clear-btn');
+
+        // إظهار/إخفاء زر المسح بناءً على وجود نص
+        if (clearBtn) {
+            clearBtn.style.display = currentValue ? 'flex' : 'none';
+        }
+
         // إلغاء البحث السابق إذا كان المستخدم ما زال يكتب
         clearTimeout(searchTimeout);
 
@@ -8011,6 +8389,22 @@ function showAttachmentsModal(city, propertyName) {
                         <div class="attachments-main-section">
                             <div class="attachments-header">
                                 <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
+                                <!-- Search Controls Outside Container -->
+                                <div class="attachments-search-controls">
+                                    <div class="attachments-search-container">
+                                        <input type="text" id="attachmentsSearch_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" placeholder="بحث في المرفقات..." class="attachments-search-input">
+                                    </div>
+                                    <div class="attachments-search-actions">
+                                        <button class="search-btn attachments-search-btn" onclick="performAttachmentsSearch('${propertyKey}')" title="بحث">
+                                            <i class="fas fa-search"></i>
+                                            <span class="btn-text">بحث</span>
+                                        </button>
+                                        <button class="clear-btn attachments-clear-btn" onclick="clearAttachmentsSearchWithLoading('${propertyKey}')" title="مسح" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                            <span class="btn-text">مسح</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <div id="propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list scrollable-attachments">
                                 <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
@@ -8089,6 +8483,11 @@ function showAttachmentsModal(city, propertyName) {
             }
 
             console.log('✅ تم عرض المرفقات في النافذة مع تحسينات الجوال');
+
+            // Initialize search functionality
+            setTimeout(() => {
+                initAttachmentsSearch(propertyKey);
+            }, 200);
         } else {
             console.error('❌ لم يتم العثور على حاوية قائمة المرفقات');
         }
@@ -17839,6 +18238,22 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                         <div class="attachments-main-section">
                             <div class="attachments-header">
                                 <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
+                                <!-- Search Controls Outside Container -->
+                                <div class="attachments-search-controls">
+                                    <div class="attachments-search-container">
+                                        <input type="text" id="cardAttachmentsSearch_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" placeholder="بحث في المرفقات..." class="attachments-search-input">
+                                    </div>
+                                    <div class="attachments-search-actions">
+                                        <button class="search-btn attachments-search-btn" onclick="performCardAttachmentsSearch('${cardKey}')" title="بحث">
+                                            <i class="fas fa-search"></i>
+                                            <span class="btn-text">بحث</span>
+                                        </button>
+                                        <button class="clear-btn attachments-clear-btn" onclick="clearCardAttachmentsSearchWithLoading('${cardKey}')" title="مسح" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                            <span class="btn-text">مسح</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list scrollable-attachments">
                                 <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
@@ -17917,6 +18332,11 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
             }
 
             console.log('✅ تم عرض المرفقات في النافذة مع تحسينات الجوال');
+
+            // Initialize search functionality
+            setTimeout(() => {
+                initCardAttachmentsSearch(cardKey);
+            }, 200);
         } else {
             console.error('❌ لم يتم العثور على حاوية قائمة المرفقات');
         }
@@ -33588,7 +34008,11 @@ async function showChangeTrackingModal() {
                 </div>
                 <div class="filter-group">
                     <label>البحث:</label>
-                    <input type="text" id="trackingSearch" placeholder="بحث في الوحدات، العقارات، أو المستأجرين (يشمل الوحدات المرتبطة)..." oninput="handleTrackingSearch()">
+                    <input type="text" id="trackingSearch" placeholder="بحث في الوحدات، العقارات، أو المستأجرين (يشمل الوحدات المرتبطة)..."
+                           oninput="return handleTrackingSearch(event)"
+                           onkeydown="if(event.key==='Enter') { event.preventDefault(); return false; }"
+                           onsubmit="return false"
+                           autocomplete="off">
                 </div>
 
                 <!-- فلتر جديد: إخفاء/إظهار عمليات تعديل البيانات -->
@@ -33679,6 +34103,14 @@ async function showChangeTrackingModal() {
     // تأخير قصير للتأكد من تحميل DOM
     setTimeout(() => {
         toggleTrackingView(preferredView);
+
+        // تطبيق التنسيقات بقوة على حقل البحث
+        setTimeout(() => {
+            forceSearchFieldStyling();
+        }, 100);
+
+        // إعداد مراقب DOM لحقل البحث
+        setupSearchFieldObserver();
     }, 200);
 
     console.log('✅ تم عرض سجلات التتبع في القسم الرئيسي');
@@ -39912,10 +40344,32 @@ function addTrackingTableCounter(totalCount) {
 // متغير لحفظ مؤقت البحث
 let searchTimeout = null;
 
-// معالج البحث المحسن مع debouncing
-function handleTrackingSearch() {
+// معالج البحث المحسن مع debouncing وحماية شاملة
+function handleTrackingSearch(event) {
+    // منع إعادة تحميل الصفحة إذا كان الحدث من نموذج
+    if (event && event.preventDefault) {
+        event.preventDefault();
+    }
+    if (event && event.stopPropagation) {
+        event.stopPropagation();
+    }
+
     const searchInput = document.getElementById('trackingSearch');
-    if (!searchInput) return;
+    if (!searchInput) {
+        console.warn('⚠️ لم يتم العثور على حقل البحث');
+        // محاولة إصلاح حقل البحث
+        setTimeout(() => {
+            fixMissingSearchField();
+        }, 100);
+        return false;
+    }
+
+    // تأكيد التنسيقات في كل مرة
+    forceSearchFieldStyling();
+
+    // حفظ قيمة البحث فوراً
+    const searchValue = searchInput.value;
+    preserveSearchState();
 
     // إلغاء البحث السابق إذا كان موجوداً
     if (searchTimeout) {
@@ -39927,37 +40381,97 @@ function handleTrackingSearch() {
 
     // تأخير البحث لـ 300ms بعد توقف الكتابة
     searchTimeout = setTimeout(() => {
-        const searchTerm = searchInput.value.trim();
-        console.log(`🔍 تنفيذ البحث: "${searchTerm}"`);
+        try {
+            const currentSearchInput = document.getElementById('trackingSearch');
+            if (!currentSearchInput) {
+                console.error('❌ حقل البحث اختفى أثناء البحث!');
+                fixMissingSearchField();
+                return;
+            }
 
-        // تنفيذ البحث الفعلي
-        executeTrackingSearch(searchTerm);
+            const searchTerm = currentSearchInput.value.trim();
+            console.log(`🔍 تنفيذ البحث: "${searchTerm}"`);
 
-        // إزالة مؤشر البحث
-        searchInput.classList.remove('searching');
+            // تنفيذ البحث الفعلي بدون إعادة تحميل الصفحة
+            executeTrackingSearch(searchTerm);
 
-        // إضافة مؤشر النجاح مؤقتاً
-        if (searchTerm) {
-            searchInput.style.borderColor = '#28a745';
+            // التحقق من وجود حقل البحث بعد البحث
             setTimeout(() => {
-                searchInput.style.borderColor = '';
-            }, 1000);
+                const searchInputAfterSearch = document.getElementById('trackingSearch');
+                if (searchInputAfterSearch) {
+                    searchInputAfterSearch.classList.remove('searching');
+
+                    // إضافة مؤشر النجاح مؤقتاً
+                    if (searchTerm) {
+                        searchInputAfterSearch.style.borderColor = '#28a745';
+                        setTimeout(() => {
+                            if (searchInputAfterSearch) {
+                                searchInputAfterSearch.style.borderColor = '';
+                            }
+                        }, 1000);
+                    }
+                } else {
+                    console.error('❌ حقل البحث اختفى بعد البحث!');
+                    fixMissingSearchField();
+                }
+            }, 100);
+
+        } catch (error) {
+            console.error('❌ خطأ في البحث:', error);
+            const currentSearchInput = document.getElementById('trackingSearch');
+            if (currentSearchInput) {
+                currentSearchInput.classList.remove('searching');
+                currentSearchInput.style.borderColor = '#dc3545';
+                setTimeout(() => {
+                    if (currentSearchInput) {
+                        currentSearchInput.style.borderColor = '';
+                    }
+                }, 2000);
+            }
         }
     }, 300); // تأخير 300ms
+
+    return false; // منع إرسال النموذج
 }
 
 // تنفيذ البحث الفعلي في سجلات التتبع
 function executeTrackingSearch(searchTerm) {
-    // تحديد نوع العرض الحالي
-    const tableContainer = document.getElementById('trackingLogsTable');
-    const isTableView = tableContainer && tableContainer.style.display !== 'none';
+    try {
+        console.log(`🔍 تنفيذ البحث: "${searchTerm}"`);
 
-    if (isTableView) {
-        // تطبيق البحث على الجدول
-        applySearchToTable(searchTerm);
-    } else {
-        // تطبيق البحث على البطاقات (الطريقة الأصلية)
-        filterTrackingLogs();
+        // التأكد من وجود حقل البحث قبل المتابعة
+        const searchInput = document.getElementById('trackingSearch');
+        if (!searchInput) {
+            console.warn('⚠️ حقل البحث غير موجود، إيقاف البحث');
+            return;
+        }
+
+        // تحديد نوع العرض الحالي
+        const tableContainer = document.getElementById('trackingLogsTable');
+        const isTableView = tableContainer && tableContainer.style.display !== 'none';
+
+        if (isTableView) {
+            // تطبيق البحث على الجدول
+            console.log('📊 تطبيق البحث على عرض الجدول');
+            applySearchToTable(searchTerm);
+        } else {
+            // تطبيق البحث على البطاقات (الطريقة الأصلية)
+            console.log('📋 تطبيق البحث على عرض البطاقات');
+            filterTrackingLogs();
+        }
+
+        // التأكد من أن حقل البحث ما زال موجوداً بعد البحث
+        setTimeout(() => {
+            const searchInputAfter = document.getElementById('trackingSearch');
+            if (!searchInputAfter) {
+                console.error('❌ حقل البحث اختفى بعد البحث!');
+                showToast('حدث خطأ في حقل البحث', 'error');
+            }
+        }, 100);
+
+    } catch (error) {
+        console.error('❌ خطأ في تنفيذ البحث:', error);
+        showToast('حدث خطأ أثناء البحث', 'error');
     }
 }
 
@@ -40014,6 +40528,171 @@ function clearTrackingSearch() {
 
         showToast('تم مسح البحث', 'info');
     }
+}
+
+// حفظ حالة حقل البحث قبل إعادة التحميل
+function preserveSearchState() {
+    const searchInput = document.getElementById('trackingSearch');
+    if (searchInput && searchInput.value) {
+        sessionStorage.setItem('trackingSearchValue', searchInput.value);
+    }
+}
+
+// استعادة حالة حقل البحث بعد إعادة التحميل
+function restoreSearchState() {
+    const savedValue = sessionStorage.getItem('trackingSearchValue');
+    if (savedValue) {
+        const searchInput = document.getElementById('trackingSearch');
+        if (searchInput) {
+            searchInput.value = savedValue;
+            sessionStorage.removeItem('trackingSearchValue');
+        }
+    }
+}
+
+// إصلاح حقل البحث إذا اختفى
+function fixMissingSearchField() {
+    const searchInput = document.getElementById('trackingSearch');
+    if (!searchInput) {
+        console.log('🔧 محاولة إصلاح حقل البحث المفقود...');
+
+        // البحث عن حاوية الفلاتر
+        const filtersContainer = document.querySelector('.tracking-filters');
+        if (filtersContainer) {
+            // البحث عن مجموعة البحث
+            const searchGroup = Array.from(filtersContainer.querySelectorAll('.filter-group'))
+                .find(group => group.querySelector('label')?.textContent?.includes('البحث'));
+
+            if (searchGroup && !searchGroup.querySelector('#trackingSearch')) {
+                // إعادة إنشاء حقل البحث
+                const searchHTML = `
+                    <input type="text" id="trackingSearch" placeholder="بحث في الوحدات، العقارات، أو المستأجرين (يشمل الوحدات المرتبطة)..."
+                           oninput="return handleTrackingSearch(event)"
+                           onkeydown="if(event.key==='Enter') { event.preventDefault(); return false; }"
+                           onsubmit="return false"
+                           autocomplete="off">
+                `;
+                searchGroup.insertAdjacentHTML('beforeend', searchHTML);
+
+                // استعادة القيمة المحفوظة
+                restoreSearchState();
+
+                // تطبيق التنسيقات بقوة
+                forceSearchFieldStyling();
+
+                // إعداد مراقب DOM للحقل الجديد
+                setupSearchFieldObserver();
+
+                console.log('✅ تم إصلاح حقل البحث');
+                showToast('تم إصلاح حقل البحث', 'success');
+                return true;
+            }
+        }
+    } else {
+        // إذا كان الحقل موجوداً، تأكد من التنسيقات
+        forceSearchFieldStyling();
+    }
+    return false;
+}
+
+// تطبيق التنسيقات بقوة على حقل البحث
+function forceSearchFieldStyling() {
+    const searchInput = document.getElementById('trackingSearch');
+    if (!searchInput) return;
+
+    console.log('🎨 تطبيق التنسيقات بقوة على حقل البحث...');
+
+    // تطبيق الأنماط مباشرة عبر JavaScript
+    const styles = {
+        'width': '100%',
+        'padding': '12px 16px',
+        'border': '2px solid #007bff',
+        'border-radius': '8px',
+        'font-size': '16px',
+        'font-family': "'Cairo', 'Tajawal', sans-serif",
+        'background': '#ffffff',
+        'background-color': '#ffffff',
+        'color': '#212529',
+        'direction': 'rtl',
+        'text-align': 'right',
+        'outline': 'none',
+        'box-shadow': '0 2px 4px rgba(0, 123, 255, 0.15)',
+        'font-weight': '500',
+        'line-height': '1.5',
+        'transition': 'all 0.3s ease',
+        'opacity': '1',
+        'visibility': 'visible',
+        'display': 'block',
+        'box-sizing': 'border-box'
+    };
+
+    // تطبيق كل نمط
+    Object.entries(styles).forEach(([property, value]) => {
+        searchInput.style.setProperty(property, value, 'important');
+    });
+
+    // تطبيق أنماط خاصة للنص
+    searchInput.style.setProperty('-webkit-text-fill-color', '#212529', 'important');
+    searchInput.style.setProperty('text-rendering', 'optimizeLegibility', 'important');
+    searchInput.style.setProperty('-webkit-font-smoothing', 'antialiased', 'important');
+
+    // إضافة معالجات الأحداث للحفاظ على التنسيقات
+    searchInput.addEventListener('focus', function() {
+        this.style.setProperty('color', '#212529', 'important');
+        this.style.setProperty('background', '#ffffff', 'important');
+        this.style.setProperty('border-color', '#0056b3', 'important');
+        this.style.setProperty('box-shadow', '0 0 0 3px rgba(0, 123, 255, 0.25), 0 4px 8px rgba(0, 123, 255, 0.2)', 'important');
+    });
+
+    searchInput.addEventListener('blur', function() {
+        this.style.setProperty('color', '#212529', 'important');
+        this.style.setProperty('background', '#ffffff', 'important');
+        this.style.setProperty('border-color', '#007bff', 'important');
+        this.style.setProperty('box-shadow', '0 2px 4px rgba(0, 123, 255, 0.15)', 'important');
+    });
+
+    searchInput.addEventListener('input', function() {
+        this.style.setProperty('color', '#212529', 'important');
+        this.style.setProperty('background', '#ffffff', 'important');
+    });
+
+    console.log('✅ تم تطبيق التنسيقات بقوة');
+}
+
+// إعداد مراقب DOM لحقل البحث
+function setupSearchFieldObserver() {
+    const searchInput = document.getElementById('trackingSearch');
+    if (!searchInput) return;
+
+    // إنشاء مراقب DOM
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList') {
+                // التحقق من إزالة حقل البحث
+                mutation.removedNodes.forEach((node) => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const removedSearchInput = node.querySelector('#trackingSearch') ||
+                                                 (node.id === 'trackingSearch' ? node : null);
+                        if (removedSearchInput) {
+                            console.warn('⚠️ تم اكتشاف إزالة حقل البحث!');
+                            setTimeout(() => {
+                                fixMissingSearchField();
+                            }, 50);
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // مراقبة التغييرات في الحاوية الرئيسية
+    const trackingContainer = document.querySelector('.tracking-main-view') || document.body;
+    observer.observe(trackingContainer, {
+        childList: true,
+        subtree: true
+    });
+
+    console.log('👁️ تم إعداد مراقب DOM لحقل البحث');
 }
 
 // تبديل عرض سجلات التتبع بين الجدول والبطاقات
@@ -40297,6 +40976,14 @@ function clearTrackingLogsCache() {
 async function filterTrackingLogs() {
     console.log('🔍 بدء فلترة سجلات التتبع...');
 
+    // تشخيص حالة حقل البحث قبل الفلترة
+    const searchInputBefore = document.getElementById('trackingSearch');
+    console.log('🔍 حالة حقل البحث قبل الفلترة:', {
+        exists: !!searchInputBefore,
+        value: searchInputBefore?.value || 'غير موجود',
+        visible: searchInputBefore ? window.getComputedStyle(searchInputBefore).display !== 'none' : false
+    });
+
     const dateFilter = document.getElementById('trackingDateFilter')?.value;
     const monthFilter = document.getElementById('trackingMonthFilter')?.value;
     const operationType = document.getElementById('trackingOperationType')?.value;
@@ -40432,10 +41119,37 @@ async function filterTrackingLogs() {
 
     console.log(`✅ تم العثور على ${filteredLogs.length} سجل بعد الفلترة`);
 
-    // تحديث العرض
+    // تحديث العرض - حقول البحث منفصلة عن النتائج
     const container = document.getElementById('trackingLogsContainer');
     if (container) {
+        console.log('📦 تحديث محتوى النتائج...');
+
+        // تحديث النتائج فقط - حقول البحث في مكان منفصل
         container.innerHTML = renderTrackingLogs(filteredLogs);
+
+        // حفظ السجلات الحالية للاستخدام في الجدول
+        window.currentTrackingLogs = filteredLogs;
+
+        // تشخيص حالة حقل البحث بعد التحديث
+        setTimeout(() => {
+            const searchInputAfter = document.getElementById('trackingSearch');
+            console.log('🔍 حالة حقل البحث بعد الفلترة:', {
+                exists: !!searchInputAfter,
+                value: searchInputAfter?.value || 'غير موجود',
+                visible: searchInputAfter ? window.getComputedStyle(searchInputAfter).display !== 'none' : false,
+                parent: searchInputAfter?.parentElement?.className || 'لا يوجد والد'
+            });
+
+            if (!searchInputAfter) {
+                console.error('❌ حقل البحث اختفى بعد الفلترة!');
+
+                // محاولة إصلاح حقل البحث
+                const fixed = fixMissingSearchField();
+                if (!fixed) {
+                    showToast('حقل البحث اختفى - يرجى إعادة تحميل الصفحة', 'error');
+                }
+            }
+        }, 50);
     }
 
     // تحديث إحصائيات الفلترة

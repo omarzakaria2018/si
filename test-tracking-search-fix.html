@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح حقل البحث في سجلات التتبع</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+            direction: rtl;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tracking-filters {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        #trackingSearch {
+            width: 100% !important;
+            padding: 12px 16px !important;
+            border: 2px solid #007bff !important;
+            border-radius: 8px !important;
+            font-size: 16px !important;
+            font-family: 'Cairo', 'Tajawal', sans-serif !important;
+            background: #ffffff !important;
+            color: #212529 !important;
+            transition: all 0.3s ease !important;
+            direction: rtl !important;
+            text-align: right !important;
+            outline: none !important;
+            box-shadow: 0 2px 4px rgba(0, 123, 255, 0.15) !important;
+            font-weight: 500 !important;
+            line-height: 1.5 !important;
+        }
+
+        #trackingSearch:focus {
+            border-color: #0056b3 !important;
+            background: #ffffff !important;
+            color: #212529 !important;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25), 0 4px 8px rgba(0, 123, 255, 0.2) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        #trackingSearch.searching {
+            border-color: #ffc107 !important;
+            background: #ffffff !important;
+            color: #212529 !important;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25) !important;
+        }
+
+        #trackingSearch::placeholder {
+            color: #6c757d !important;
+            font-style: italic !important;
+            opacity: 1 !important;
+            font-weight: 400 !important;
+        }
+        
+        .test-buttons {
+            margin: 20px 0;
+        }
+        
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            min-height: 100px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .log-entry {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><i class="fas fa-bug"></i> اختبار إصلاح حقل البحث في سجلات التتبع</h1>
+        
+        <div class="tracking-filters">
+            <div class="filter-group">
+                <label>البحث:</label>
+                <input type="text" id="trackingSearch" placeholder="بحث في الوحدات، العقارات، أو المستأجرين..." 
+                       oninput="return handleTrackingSearch(event)" 
+                       onkeydown="if(event.key==='Enter') { event.preventDefault(); return false; }"
+                       onsubmit="return false"
+                       autocomplete="off">
+            </div>
+        </div>
+        
+        <div class="test-buttons">
+            <button class="test-btn" onclick="testSearchField()">
+                <i class="fas fa-search"></i> اختبار حقل البحث
+            </button>
+            <button class="test-btn" onclick="simulateFilter()">
+                <i class="fas fa-filter"></i> محاكاة الفلترة
+            </button>
+            <button class="test-btn" onclick="checkSearchField()">
+                <i class="fas fa-check"></i> فحص حقل البحث
+            </button>
+            <button class="test-btn" onclick="fixSearchField()">
+                <i class="fas fa-wrench"></i> إصلاح حقل البحث
+            </button>
+            <button class="test-btn" onclick="forceSearchFieldStyling()">
+                <i class="fas fa-paint-brush"></i> تطبيق التنسيقات
+            </button>
+            <button class="test-btn" onclick="clearResults()">
+                <i class="fas fa-eraser"></i> مسح النتائج
+            </button>
+        </div>
+        
+        <div class="results" id="results">
+            <div class="status info">جاهز للاختبار...</div>
+        </div>
+    </div>
+
+    <script>
+        let searchTimeout = null;
+        
+        // محاكاة البيانات التجريبية
+        const sampleLogs = [
+            { id: 1, unitNumber: '101', propertyName: 'عمارة النور', city: 'الرياض', tenantName: 'أحمد محمد' },
+            { id: 2, unitNumber: '102', propertyName: 'عمارة النور', city: 'الرياض', tenantName: 'فاطمة علي' },
+            { id: 3, unitNumber: '201', propertyName: 'برج السلام', city: 'جدة', tenantName: 'محمد أحمد' }
+        ];
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            results.innerHTML += `<div class="status ${type}">[${timestamp}] ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function handleTrackingSearch(event) {
+            if (event && event.preventDefault) {
+                event.preventDefault();
+            }
+
+            const searchInput = document.getElementById('trackingSearch');
+            if (!searchInput) {
+                addResult('⚠️ لم يتم العثور على حقل البحث', 'warning');
+                return false;
+            }
+
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            searchInput.classList.add('searching');
+            addResult(`🔍 بدء البحث: "${searchInput.value}"`, 'info');
+
+            searchTimeout = setTimeout(() => {
+                try {
+                    const searchTerm = searchInput.value.trim();
+                    
+                    // محاكاة البحث
+                    const results = sampleLogs.filter(log => 
+                        log.unitNumber.includes(searchTerm) ||
+                        log.propertyName.includes(searchTerm) ||
+                        log.tenantName.includes(searchTerm)
+                    );
+                    
+                    addResult(`✅ تم العثور على ${results.length} نتيجة`, 'success');
+                    
+                    const currentSearchInput = document.getElementById('trackingSearch');
+                    if (currentSearchInput) {
+                        currentSearchInput.classList.remove('searching');
+                        currentSearchInput.style.borderColor = '#28a745';
+                        setTimeout(() => {
+                            if (currentSearchInput) {
+                                currentSearchInput.style.borderColor = '';
+                            }
+                        }, 1000);
+                    }
+                } catch (error) {
+                    addResult(`❌ خطأ في البحث: ${error.message}`, 'error');
+                }
+            }, 300);
+
+            return false;
+        }
+        
+        function testSearchField() {
+            const searchInput = document.getElementById('trackingSearch');
+            if (searchInput) {
+                searchInput.value = 'اختبار';
+                handleTrackingSearch();
+                addResult('✅ تم اختبار حقل البحث بنجاح', 'success');
+            } else {
+                addResult('❌ حقل البحث غير موجود', 'error');
+            }
+        }
+        
+        function simulateFilter() {
+            addResult('🔄 محاكاة عملية الفلترة...', 'info');
+            
+            // محاكاة تحديث المحتوى (هذا ما يحدث في الكود الأصلي)
+            const container = document.querySelector('.results');
+            const searchInput = document.getElementById('trackingSearch');
+            const searchValue = searchInput ? searchInput.value : '';
+            
+            // حفظ القيمة
+            if (searchValue) {
+                sessionStorage.setItem('trackingSearchValue', searchValue);
+            }
+            
+            // محاكاة تحديث المحتوى
+            setTimeout(() => {
+                // فحص حقل البحث بعد التحديث
+                const searchInputAfter = document.getElementById('trackingSearch');
+                if (searchInputAfter) {
+                    // استعادة القيمة
+                    const savedValue = sessionStorage.getItem('trackingSearchValue');
+                    if (savedValue) {
+                        searchInputAfter.value = savedValue;
+                        sessionStorage.removeItem('trackingSearchValue');
+                    }
+                    addResult('✅ حقل البحث ما زال موجوداً بعد الفلترة', 'success');
+                } else {
+                    addResult('❌ حقل البحث اختفى بعد الفلترة!', 'error');
+                }
+            }, 100);
+        }
+        
+        function checkSearchField() {
+            const searchInput = document.getElementById('trackingSearch');
+            addResult('🔍 فحص حقل البحث:', 'info');
+            addResult(`- موجود: ${!!searchInput}`, searchInput ? 'success' : 'error');
+            
+            if (searchInput) {
+                addResult(`- القيمة: "${searchInput.value}"`, 'info');
+                addResult(`- مرئي: ${window.getComputedStyle(searchInput).display !== 'none'}`, 'info');
+                addResult(`- الوالد: ${searchInput.parentElement?.className || 'لا يوجد'}`, 'info');
+            }
+        }
+        
+        function fixSearchField() {
+            const searchInput = document.getElementById('trackingSearch');
+            if (!searchInput) {
+                addResult('🔧 محاولة إصلاح حقل البحث...', 'warning');
+
+                const filtersContainer = document.querySelector('.tracking-filters');
+                if (filtersContainer) {
+                    const searchGroup = filtersContainer.querySelector('.filter-group');
+                    if (searchGroup && !searchGroup.querySelector('#trackingSearch')) {
+                        const searchHTML = `
+                            <input type="text" id="trackingSearch" placeholder="بحث في الوحدات، العقارات، أو المستأجرين..."
+                                   oninput="return handleTrackingSearch(event)"
+                                   onkeydown="if(event.key==='Enter') { event.preventDefault(); return false; }"
+                                   onsubmit="return false"
+                                   autocomplete="off">
+                        `;
+                        searchGroup.insertAdjacentHTML('beforeend', searchHTML);
+
+                        // تطبيق التنسيقات بقوة
+                        forceSearchFieldStyling();
+
+                        addResult('✅ تم إصلاح حقل البحث مع التنسيقات', 'success');
+                        return;
+                    }
+                }
+                addResult('❌ فشل في إصلاح حقل البحث', 'error');
+            } else {
+                // تطبيق التنسيقات على الحقل الموجود
+                forceSearchFieldStyling();
+                addResult('✅ تم تطبيق التنسيقات على حقل البحث الموجود', 'success');
+            }
+        }
+
+        function forceSearchFieldStyling() {
+            const searchInput = document.getElementById('trackingSearch');
+            if (!searchInput) return;
+
+            addResult('🎨 تطبيق التنسيقات بقوة...', 'info');
+
+            // تطبيق الأنماط مباشرة
+            const styles = {
+                'width': '100%',
+                'padding': '12px 16px',
+                'border': '2px solid #007bff',
+                'border-radius': '8px',
+                'font-size': '16px',
+                'font-family': "'Cairo', 'Tajawal', sans-serif",
+                'background': '#ffffff',
+                'background-color': '#ffffff',
+                'color': '#212529',
+                'direction': 'rtl',
+                'text-align': 'right',
+                'outline': 'none',
+                'box-shadow': '0 2px 4px rgba(0, 123, 255, 0.15)',
+                'font-weight': '500',
+                'line-height': '1.5',
+                'opacity': '1',
+                'visibility': 'visible'
+            };
+
+            Object.entries(styles).forEach(([property, value]) => {
+                searchInput.style.setProperty(property, value, 'important');
+            });
+
+            addResult('✅ تم تطبيق التنسيقات بنجاح', 'success');
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '<div class="status info">تم مسح النتائج...</div>';
+        }
+    </script>
+</body>
+</html>

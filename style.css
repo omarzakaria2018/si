@@ -429,6 +429,8 @@ aside.active {
     touch-action: manipulation; /* منع التداخل مع اللمس */
 }
 
+
+
 .property-clear-btn {
     position: absolute;
     left: 8px;
@@ -452,6 +454,17 @@ aside.active {
 .property-clear-btn:hover {
     background: #c82333;
     transform: translateY(-50%) scale(1.1);
+}
+
+.property-clear-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: translateY(-50%);
+}
+
+.property-clear-btn:disabled:hover {
+    background: #dc3545;
+    transform: translateY(-50%);
 }
 
 /* أنماط أزرار البحث المحسن */
@@ -536,9 +549,16 @@ aside.active {
     margin-bottom: 20px;
 }
 
+/* New Layout Structure */
+.search-controls-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 100%;
+}
+
 .global-search-container {
     display: flex;
-    gap: 12px;
     align-items: center;
     background: white;
     padding: 10px;
@@ -546,7 +566,15 @@ aside.active {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     border: 2px solid #e9ecef;
     transition: all 0.3s ease;
-    max-width: 100%;
+    flex: 1;
+}
+
+.search-actions-container {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    padding: 0 10px;
 }
 
 .global-search-container:focus-within {
@@ -560,6 +588,8 @@ aside.active {
     flex: 1;
     display: flex;
     align-items: center;
+    min-width: 600px; /* Double the width for large screens */
+    width: 100%;
 }
 
 /* مؤشر التحميل */
@@ -579,6 +609,8 @@ aside.active {
     animation: spin 1s linear infinite;
 }
 
+
+
 /* تأثير الدوران */
 @keyframes spin {
     0% { transform: translateY(-50%) rotate(0deg); }
@@ -595,7 +627,7 @@ aside.active {
     transition: all 0.3s ease;
     outline: none;
     min-height: 50px;
-    min-width: 300px;
+    min-width: 600px; /* Double the width for large screens */
 }
 
 #globalSearch:focus {
@@ -603,18 +635,21 @@ aside.active {
     box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
 }
 
-.global-search-btn, .global-clear-btn {
-    width: 32px;
-    height: 32px;
+.global-search-btn, .global-cancel-btn {
+    min-width: 120px;
+    height: 44px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 600;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
     flex-shrink: 0;
+    padding: 0 20px;
 }
 
 .global-search-btn {
@@ -625,25 +660,171 @@ aside.active {
 
 .global-search-btn:hover {
     background: linear-gradient(135deg, #0056b3, #004085);
-    transform: translateY(-2px) scale(1.05);
+    transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0,123,255,0.4);
 }
 
-.global-clear-btn {
+
+
+.global-cancel-btn {
     background: linear-gradient(135deg, #6c757d, #5a6268);
     color: white;
     box-shadow: 0 2px 4px rgba(108,117,125,0.3);
-    display: flex; /* ظاهر في جميع الشاشات */
 }
 
-.global-clear-btn:hover {
+.global-cancel-btn:hover {
     background: linear-gradient(135deg, #5a6268, #495057);
-    transform: translateY(-2px) scale(1.05);
+    transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(108,117,125,0.4);
 }
 
-.global-search-btn:active, .global-clear-btn:active {
+.global-search-btn:active, .global-cancel-btn:active {
     transform: translateY(0);
+}
+
+.global-search-btn:disabled, .global-cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.global-search-btn:disabled:hover, .global-cancel-btn:disabled:hover {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-text {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Attachments Search Controls */
+.attachments-search-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.attachments-search-container {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.attachments-search-container:focus-within {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.attachments-search-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    background: transparent;
+    outline: none;
+    min-width: 200px;
+}
+
+.attachments-search-input::placeholder {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.attachments-search-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.attachments-search-btn, .attachments-clear-btn {
+    min-width: 100px;
+    height: 40px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 16px;
+}
+
+.attachments-search-btn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+}
+
+.attachments-search-btn:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,123,255,0.4);
+}
+
+.attachments-clear-btn {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+    box-shadow: 0 2px 4px rgba(108,117,125,0.3);
+}
+
+.attachments-clear-btn:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108,117,125,0.4);
+}
+
+.attachments-search-btn:disabled, .attachments-clear-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.attachments-search-btn:disabled:hover, .attachments-clear-btn:disabled:hover {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* تحسينات للشاشات المتوسطة (أجهزة لوحية) */
+@media (min-width: 769px) and (max-width: 992px) {
+    .search-input-wrapper {
+        min-width: 450px; /* Intermediate width for tablets */
+    }
+
+    #globalSearch {
+        min-width: 450px;
+        font-size: 17px;
+        padding: 15px 42px 15px 19px;
+        min-height: 48px;
+    }
+
+    .global-search-container {
+        gap: 10px;
+        padding: 9px;
+    }
+
+    .search-actions-container {
+        gap: 10px;
+    }
+
+    .global-search-btn, .global-cancel-btn {
+        min-width: 110px;
+        height: 42px;
+        font-size: 14px;
+    }
 }
 
 /* تحسينات للجوال */
@@ -659,16 +840,30 @@ aside.active {
     }
 
     /* تحسينات البحث العام للجوال */
+    .search-controls-wrapper {
+        gap: 12px;
+        width: 100%;
+        padding: 0 15px;
+    }
+
     .global-search-container {
         gap: 8px;
-        padding: 8px;
+        padding: 10px;
+        width: 100%;
+        border-radius: 10px;
+    }
+
+    .search-input-wrapper {
+        min-width: 100%; /* Full width on mobile */
+        width: 100%;
     }
 
     #globalSearch {
         font-size: 16px; /* منع التكبير في iOS */
         padding: 14px 40px 14px 18px; /* مساحة للمؤشر على الجوال */
         min-height: 46px;
-        min-width: 250px;
+        min-width: 100%; /* Full width on mobile */
+        width: 100%;
     }
 
     .search-loading-indicator {
@@ -676,11 +871,386 @@ aside.active {
         font-size: 12px;
     }
 
-    .global-search-btn, .global-clear-btn {
-        width: 28px;
-        height: 28px;
+    .search-actions-container {
+        flex-direction: row;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .global-search-btn, .global-cancel-btn {
+        min-width: 90px;
+        max-width: 120px;
+        height: 36px;
+        font-size: 13px;
+        padding: 0 12px;
+        flex: 1;
+    }
+
+    .global-search-btn .btn-text,
+    .global-cancel-btn .btn-text {
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    /* تحسينات إضافية للأزرار في الجوال */
+    .global-search-btn {
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,123,255,0.3);
+    }
+
+    .global-cancel-btn {
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(108,117,125,0.3);
+    }
+
+    .global-search-btn:hover,
+    .global-cancel-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .global-search-btn:active,
+    .global-cancel-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* تحسين الأيقونات في الأزرار للجوال */
+    .global-search-btn i,
+    .global-cancel-btn i {
+        font-size: 12px;
+        margin-left: 4px;
+    }
+
+    /* تحسين المسافة بين الأيقونة والنص */
+    .global-search-btn,
+    .global-cancel-btn {
+        gap: 4px;
+    }
+}
+
+/* تحسينات للشاشات الصغيرة جداً */
+@media (max-width: 480px) {
+    .search-controls-wrapper {
+        padding: 0 10px;
+    }
+
+    .global-search-btn, .global-cancel-btn {
+        min-width: 80px;
+        max-width: 100px;
+        height: 34px;
+        font-size: 12px;
+        padding: 0 8px;
+    }
+
+    .global-search-btn .btn-text,
+    .global-cancel-btn .btn-text {
+        font-size: 12px;
+    }
+
+    .global-search-btn i,
+    .global-cancel-btn i {
         font-size: 11px;
     }
+
+    .btn-text {
+        font-size: 14px;
+    }
+
+/* تحسينات لحقل البحث في سجلات التتبع */
+#trackingSearch {
+    width: 100% !important;
+    padding: 12px 16px !important;
+    border: 2px solid #007bff !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    font-family: 'Cairo', 'Tajawal', sans-serif !important;
+    background: #ffffff !important;
+    color: #212529 !important;
+    transition: all 0.3s ease !important;
+    direction: rtl !important;
+    text-align: right !important;
+    outline: none !important;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.15) !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+}
+
+#trackingSearch:focus {
+    border-color: #0056b3 !important;
+    background: #ffffff !important;
+    color: #212529 !important;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25), 0 4px 8px rgba(0, 123, 255, 0.2) !important;
+    transform: translateY(-1px) !important;
+}
+
+#trackingSearch.searching {
+    border-color: #ffc107 !important;
+    background: #ffffff !important;
+    color: #212529 !important;
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25) !important;
+}
+
+#trackingSearch::placeholder {
+    color: #6c757d !important;
+    font-style: italic !important;
+    opacity: 1 !important;
+    font-weight: 400 !important;
+}
+
+#trackingSearch:hover {
+    border-color: #0056b3 !important;
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.2) !important;
+}
+
+/* تنسيقات إضافية لحاوية البحث في سجلات التتبع */
+.tracking-filters .filter-group {
+    margin-bottom: 15px !important;
+}
+
+.tracking-filters .filter-group label {
+    display: block !important;
+    margin-bottom: 8px !important;
+    font-weight: 600 !important;
+    color: #495057 !important;
+    font-size: 14px !important;
+    font-family: 'Cairo', 'Tajawal', sans-serif !important;
+}
+
+.tracking-filters {
+    background: #f8f9fa !important;
+    padding: 20px !important;
+    border-radius: 12px !important;
+    border: 1px solid #dee2e6 !important;
+    margin-bottom: 20px !important;
+}
+
+/* تحسينات للشاشات الصغيرة - حقل البحث */
+@media (max-width: 768px) {
+    #trackingSearch {
+        font-size: 16px !important; /* منع التكبير في iOS */
+        padding: 14px 16px !important;
+        border-width: 2px !important;
+    }
+
+    .tracking-filters {
+        padding: 15px !important;
+        margin-bottom: 15px !important;
+    }
+
+    .tracking-filters .filter-group label {
+        font-size: 15px !important;
+        margin-bottom: 6px !important;
+    }
+}
+
+/* حالات خاصة لحقل البحث في سجلات التتبع */
+#trackingSearch:disabled {
+    background: #e9ecef !important;
+    color: #6c757d !important;
+    border-color: #ced4da !important;
+    cursor: not-allowed !important;
+}
+
+#trackingSearch:invalid {
+    border-color: #dc3545 !important;
+    background: #ffffff !important;
+    color: #212529 !important;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25) !important;
+}
+
+#trackingSearch.success {
+    border-color: #28a745 !important;
+    background: #ffffff !important;
+    color: #212529 !important;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.25) !important;
+}
+
+#trackingSearch.error {
+    border-color: #dc3545 !important;
+    background: #ffffff !important;
+    color: #212529 !important;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25) !important;
+}
+
+/* تأكيد أن النص مرئي في جميع الحالات */
+#trackingSearch,
+#trackingSearch:focus,
+#trackingSearch:hover,
+#trackingSearch:active,
+#trackingSearch.searching,
+#trackingSearch.success,
+#trackingSearch.error {
+    color: #212529 !important;
+    background: #ffffff !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* تنسيق خاص للنص المدخل */
+#trackingSearch:not(:placeholder-shown) {
+    font-weight: 600 !important;
+    color: #495057 !important;
+}
+
+/* إصلاحات خاصة للمتصفحات المختلفة */
+#trackingSearch {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    -webkit-text-fill-color: #212529 !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    text-rendering: optimizeLegibility !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* إصلاح خاص لـ Safari */
+#trackingSearch::-webkit-input-placeholder {
+    color: #6c757d !important;
+    opacity: 1 !important;
+}
+
+#trackingSearch::-moz-placeholder {
+    color: #6c757d !important;
+    opacity: 1 !important;
+}
+
+#trackingSearch:-ms-input-placeholder {
+    color: #6c757d !important;
+    opacity: 1 !important;
+}
+
+#trackingSearch::placeholder {
+    color: #6c757d !important;
+    opacity: 1 !important;
+}
+
+/* تأكيد إضافي للرؤية */
+.tracking-filters input#trackingSearch {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border: 2px solid #007bff !important;
+    z-index: 1 !important;
+    position: relative !important;
+}
+
+/* تنسيقات إضافية لضمان الوضوح في جميع الحالات */
+.modal-content #trackingSearch,
+.main-content #trackingSearch,
+.tracking-main-view #trackingSearch {
+    background: #ffffff !important;
+    color: #212529 !important;
+    border: 2px solid #007bff !important;
+    font-size: 16px !important;
+    font-weight: 500 !important;
+}
+
+/* إصلاح خاص للنص في حالة التركيز */
+#trackingSearch:focus,
+#trackingSearch:focus-visible,
+#trackingSearch:focus-within {
+    color: #212529 !important;
+    background: #ffffff !important;
+    -webkit-text-fill-color: #212529 !important;
+}
+
+/* إصلاح خاص للنص أثناء الكتابة */
+#trackingSearch:not(:placeholder-shown):focus {
+    color: #495057 !important;
+    font-weight: 600 !important;
+    background: #ffffff !important;
+}
+
+/* تنسيق خاص للحاوية الرئيسية */
+.tracking-filters {
+    background: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+
+.tracking-filters .filter-group {
+    margin-bottom: 15px !important;
+    position: relative !important;
+}
+
+.tracking-filters .filter-group:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* حماية إضافية ضد الثيمات والأنماط المتضاربة */
+#trackingSearch {
+    /* إعادة تعيين جميع الخصائص المحتملة */
+    all: unset !important;
+
+    /* تطبيق التنسيقات المطلوبة */
+    display: block !important;
+    width: 100% !important;
+    padding: 12px 16px !important;
+    border: 2px solid #007bff !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+    font-family: 'Cairo', 'Tajawal', sans-serif !important;
+    background: #ffffff !important;
+    color: #212529 !important;
+    direction: rtl !important;
+    text-align: right !important;
+    box-sizing: border-box !important;
+    transition: all 0.3s ease !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.15) !important;
+}
+
+/* تأكيد النص المرئي في جميع المتصفحات */
+#trackingSearch,
+#trackingSearch * {
+    color: #212529 !important;
+    background-color: transparent !important;
+    text-shadow: none !important;
+    filter: none !important;
+}
+
+/* إصلاح خاص للمتصفحات القديمة */
+@supports not (all: unset) {
+    #trackingSearch {
+        background: #ffffff !important;
+        color: #212529 !important;
+        border: 2px solid #007bff !important;
+        font-size: 16px !important;
+        padding: 12px 16px !important;
+    }
+}
+
+    /* Attachments Search Mobile Styles */
+    .attachments-search-controls {
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .attachments-search-input {
+        font-size: 16px; /* منع التكبير في iOS */
+        padding: 14px 16px;
+        min-width: 100%;
+    }
+
+    .attachments-search-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .attachments-search-btn, .attachments-clear-btn {
+        min-width: 100%;
+        height: 44px;
+        font-size: 14px;
+    }
+
+
 }
 
 /* تحسينات للشاشات المتوسطة */
@@ -828,7 +1398,7 @@ main.with-sidebar {
   padding: 10px 25px;
   border: 1px solid #d1d5db;
   border-radius: 10px;
-  font-size: 1.1rem;
+  font-size: 1.8rem;
   background: #fff;
   box-shadow: 0 2px 8px rgba(42,75,155,0.04);
   transition: border 0.2s, box-shadow 0.2s;

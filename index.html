@@ -493,7 +493,7 @@
     </div>
     <div class="property-search-container">
       <input type="text" id="propertySearch" placeholder="بحث في العقارات...">
-      <button class="property-clear-btn" onclick="clearPropertySearch()" title="مسح البحث" style="display: none;">
+      <button class="property-clear-btn" onclick="clearPropertySearchWithLoading()" title="مسح البحث" style="display: none;">
         <i class="fas fa-times"></i>
       </button>
     </div>
@@ -502,19 +502,26 @@
 
   <main>
     <div id="searchSection">
-      <div class="global-search-container">
-        <div class="search-input-wrapper">
-          <input type="text" id="globalSearch" placeholder="(// للبحث الهرمي، + للبحث المتعدد)">
-          <div class="search-loading-indicator" id="searchLoadingIndicator" style="display: none;">
-            <i class="fas fa-spinner fa-spin"></i>
+      <!-- Search Controls Outside Container -->
+      <div class="search-controls-wrapper">
+        <div class="global-search-container">
+          <div class="search-input-wrapper">
+            <input type="text" id="globalSearch" placeholder="(// للبحث الهرمي، + للبحث المتعدد)">
+            <div class="search-loading-indicator" id="searchLoadingIndicator" style="display: none;">
+              <i class="fas fa-spinner fa-spin"></i>
+            </div>
           </div>
         </div>
-        <button class="search-btn global-search-btn" onclick="performGlobalSearch()" title="بحث">
-          <i class="fas fa-search"></i>
-        </button>
-        <button class="clear-btn global-clear-btn" onclick="clearGlobalSearch()" title="مسح">
-          <i class="fas fa-times"></i>
-        </button>
+        <div class="search-actions-container">
+          <button class="search-btn global-search-btn" onclick="performGlobalSearch()" title="بحث">
+            <i class="fas fa-search"></i>
+            <span class="btn-text">بحث</span>
+          </button>
+          <button class="cancel-btn global-cancel-btn" onclick="cancelGlobalSearchWithLoading()" title="إلغاء البحث" style="display: none;">
+            <i class="fas fa-times"></i>
+            <span class="btn-text">إلغاء</span>
+          </button>
+        </div>
       </div>
     </div>
     <div id="totalContainer"></div>
