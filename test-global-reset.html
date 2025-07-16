@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>اختبار إعادة التعيين الشاملة للبحث العام</title>
+    <title>اختبار مسح البحث العام مع الاحتفاظ بالفلاتر</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
@@ -239,7 +239,7 @@
 </head>
 <body>
     <div class="test-container">
-        <h1><i class="fas fa-undo"></i> اختبار إعادة التعيين الشاملة للبحث العام</h1>
+        <h1><i class="fas fa-search-minus"></i> اختبار مسح البحث العام مع الاحتفاظ بالفلاتر</h1>
         
         <!-- محاكاة البحث العام -->
         <div class="search-controls-wrapper">
@@ -308,14 +308,17 @@
             <button class="test-btn" onclick="applyRandomFilters()">
                 <i class="fas fa-filter"></i> تطبيق فلاتر عشوائية
             </button>
-            <button class="test-btn success" onclick="testComprehensiveReset()">
-                <i class="fas fa-undo"></i> اختبار إعادة التعيين الشاملة
+            <button class="test-btn success" onclick="testSearchClearOnly()">
+                <i class="fas fa-search-minus"></i> اختبار مسح البحث فقط
             </button>
             <button class="test-btn" onclick="checkCurrentState()">
                 <i class="fas fa-info-circle"></i> فحص الحالة الحالية
             </button>
-            <button class="test-btn" onclick="simulateProblem()">
-                <i class="fas fa-bug"></i> محاكاة المشكلة
+            <button class="test-btn" onclick="testManualClear()">
+                <i class="fas fa-hand-paper"></i> اختبار المسح اليدوي
+            </button>
+            <button class="test-btn" onclick="compareBehavior()">
+                <i class="fas fa-balance-scale"></i> مقارنة السلوك
             </button>
             <button class="test-btn danger" onclick="clearResults()">
                 <i class="fas fa-eraser"></i> مسح النتائج
@@ -355,7 +358,7 @@
 
         <!-- نتائج الاختبار -->
         <div class="results" id="results">
-            <div class="status info">جاهز لاختبار إعادة التعيين الشاملة...</div>
+            <div class="status info">جاهز لاختبار مسح البحث مع الاحتفاظ بالفلاتر...</div>
         </div>
     </div>
 
@@ -446,21 +449,23 @@
         }
 
         function cancelGlobalSearchWithLoading() {
-            addResult('🚫 بدء إعادة التعيين الشاملة...', 'warning');
+            addResult('🚫 مسح البحث العام فقط (الاحتفاظ بالفلاتر)...', 'warning');
 
             const cancelButton = document.querySelector('.global-cancel-btn');
             if (cancelButton) {
                 cancelButton.disabled = true;
-                cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري إعادة التعيين...</span>';
+                cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري المسح...</span>';
             }
 
             setTimeout(() => {
-                // محاكاة إعادة التعيين الشاملة
+                // محاكاة مسح البحث فقط مع الاحتفاظ بالفلاتر
                 document.getElementById('globalSearch').value = '';
-                document.getElementById('cityFilter').selectedIndex = 0;
-                document.getElementById('propertyFilter').selectedIndex = 0;
-                document.getElementById('statusFilter').selectedIndex = 0;
-                document.getElementById('dateFilter').value = '';
+
+                // الاحتفاظ بالفلاتر الحالية (لا نغيرها)
+                const currentCityFilter = document.getElementById('cityFilter').value;
+                const currentPropertyFilter = document.getElementById('propertyFilter').value;
+                const currentStatusFilter = document.getElementById('statusFilter').value;
+                const currentDateFilter = document.getElementById('dateFilter').value;
 
                 if (cancelButton) {
                     cancelButton.style.display = 'none';
@@ -473,43 +478,48 @@
 
                 updateStateDisplay();
 
-                addResult('✅ تم مسح البحث العام', 'success');
-                addResult('✅ تم إعادة تعيين جميع الفلاتر إلى "الكل"', 'success');
+                addResult('✅ تم مسح البحث العام فقط', 'success');
+                addResult(`✅ تم الاحتفاظ بفلتر المدينة: ${currentCityFilter || 'الكل'}`, 'info');
+                addResult(`✅ تم الاحتفاظ بفلتر العقار: ${currentPropertyFilter || 'الكل'}`, 'info');
+                addResult(`✅ تم الاحتفاظ بفلتر الحالة: ${currentStatusFilter || 'الكل'}`, 'info');
+                addResult(`✅ تم الاحتفاظ بفلتر التاريخ: ${currentDateFilter || 'غير محدد'}`, 'info');
 
-                // محاكاة إعادة تحميل البيانات (هذا ما كان مفقوداً!)
+                // محاكاة إعادة تحميل البيانات حسب الفلاتر الموجودة
                 setTimeout(() => {
-                    addResult('🔄 إعادة تحميل البيانات لعرض الكل...', 'info');
+                    addResult('🔄 إعادة تحميل البيانات حسب الفلاتر الحالية...', 'info');
 
-                    // محاكاة تنفيذ بحث فارغ لعرض جميع البيانات
+                    // محاكاة تنفيذ بحث فارغ (سيعرض البيانات حسب الفلاتر)
                     performGlobalSearch();
 
-                    addResult('✅ تم إعادة عرض جميع البيانات (النشط وغير النشط)', 'success');
+                    addResult('✅ تم عرض البيانات حسب الفلاتر المحددة', 'success');
                     addResult('✅ تم إخفاء زر الإلغاء', 'success');
-                    addResult('🎉 تم إعادة التطبيق إلى الحالة الأولية بنجاح!', 'success');
-                    addResult('📊 الآن يظهر الكل بدلاً من النشط فقط', 'info');
+                    addResult('🎉 تم مسح البحث مع الاحتفاظ بالفلاتر!', 'success');
+                    addResult('📊 الآن يظهر البيانات حسب الفلاتر الموجودة (مثل المسح اليدوي)', 'info');
+                    addResult('✅ زر الإلغاء يعمل بنفس طريقة المسح اليدوي', 'success');
 
                 }, 300);
 
             }, 1000);
         }
 
-        function testComprehensiveReset() {
-            addResult('🧪 بدء اختبار إعادة التعيين الشاملة...', 'info');
-            
+        function testSearchClearOnly() {
+            addResult('🧪 بدء اختبار مسح البحث فقط مع الاحتفاظ بالفلاتر...', 'info');
+
             // تطبيق بعض القيم أولاً
             document.getElementById('globalSearch').value = 'اختبار البحث';
             document.getElementById('cityFilter').value = 'riyadh';
             document.getElementById('propertyFilter').value = 'prop1';
             document.getElementById('statusFilter').value = 'occupied';
             document.getElementById('dateFilter').value = '2024-01-15';
-            
+
             handleGlobalSearchInput();
             updateStateDisplay();
-            
-            addResult('📝 تم تطبيق قيم اختبارية', 'info');
-            
+
+            addResult('📝 تم تطبيق بحث وفلاتر اختبارية', 'info');
+            addResult('📋 الحالة قبل المسح: بحث + فلاتر متعددة', 'info');
+
             setTimeout(() => {
-                addResult('🔄 تنفيذ إعادة التعيين الشاملة...', 'warning');
+                addResult('🔄 تنفيذ مسح البحث فقط (الاحتفاظ بالفلاتر)...', 'warning');
                 cancelGlobalSearchWithLoading();
             }, 1000);
         }
@@ -578,6 +588,74 @@
             }, 2000);
         }
 
+        function testManualClear() {
+            addResult('🧪 اختبار المسح اليدوي...', 'info');
+
+            // تطبيق بحث وفلاتر
+            document.getElementById('globalSearch').value = 'نشط';
+            document.getElementById('cityFilter').value = 'riyadh';
+            document.getElementById('statusFilter').value = 'occupied';
+
+            handleGlobalSearchInput();
+            updateStateDisplay();
+
+            addResult('📝 تم تطبيق بحث "نشط" + فلاتر', 'info');
+
+            setTimeout(() => {
+                addResult('✋ محاكاة المسح اليدوي للنص...', 'warning');
+
+                // محاكاة المسح اليدوي
+                document.getElementById('globalSearch').value = '';
+                handleGlobalSearchInput();
+
+                // محاكاة تنفيذ renderData
+                setTimeout(() => {
+                    updateStateDisplay();
+                    addResult('✅ تم المسح اليدوي - الفلاتر محفوظة', 'success');
+                    addResult('📊 النتيجة: يظهر البيانات حسب الفلاتر فقط', 'info');
+                }, 300);
+
+            }, 1500);
+        }
+
+        function compareBehavior() {
+            addResult('🔍 مقارنة سلوك المسح اليدوي مع زر الإلغاء...', 'info');
+
+            // إعداد الحالة الأولية
+            document.getElementById('globalSearch').value = 'نشط';
+            document.getElementById('cityFilter').value = 'jeddah';
+            document.getElementById('statusFilter').value = 'vacant';
+
+            handleGlobalSearchInput();
+            updateStateDisplay();
+
+            addResult('📋 الحالة الأولية: بحث "نشط" + مدينة "جدة" + حالة "شاغر"', 'info');
+
+            setTimeout(() => {
+                addResult('🔄 الآن سنختبر زر الإلغاء...', 'warning');
+                addResult('🎯 المتوقع: نفس نتيجة المسح اليدوي', 'info');
+
+                setTimeout(() => {
+                    cancelGlobalSearchWithLoading();
+
+                    setTimeout(() => {
+                        const finalCity = document.getElementById('cityFilter').value;
+                        const finalStatus = document.getElementById('statusFilter').value;
+                        const finalSearch = document.getElementById('globalSearch').value;
+
+                        addResult('📊 النتيجة النهائية:', 'info');
+                        addResult(`• البحث: ${finalSearch || 'فارغ'} ✅`, 'success');
+                        addResult(`• المدينة: ${finalCity || 'الكل'} ${finalCity === 'jeddah' ? '✅' : '❌'}`, finalCity === 'jeddah' ? 'success' : 'error');
+                        addResult(`• الحالة: ${finalStatus || 'الكل'} ${finalStatus === 'vacant' ? '✅' : '❌'}`, finalStatus === 'vacant' ? 'success' : 'error');
+
+                        const isCorrect = !finalSearch && finalCity === 'jeddah' && finalStatus === 'vacant';
+                        addResult(`🎯 النتيجة: ${isCorrect ? 'صحيح - يعمل مثل المسح اليدوي' : 'خطأ - لا يعمل مثل المسح اليدوي'}`, isCorrect ? 'success' : 'error');
+
+                    }, 2000);
+                }, 1000);
+            }, 1500);
+        }
+
         function clearResults() {
             document.getElementById('results').innerHTML = '<div class="status info">تم مسح النتائج...</div>';
         }
@@ -585,7 +663,7 @@
         // تحديث الحالة عند تحميل الصفحة
         document.addEventListener('DOMContentLoaded', function() {
             updateStateDisplay();
-            addResult('✅ تم تحميل صفحة اختبار إعادة التعيين الشاملة', 'success');
+            addResult('✅ تم تحميل صفحة اختبار مسح البحث مع الاحتفاظ بالفلاتر', 'success');
         });
 
         // مراقبة تغييرات الفلاتر

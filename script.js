@@ -3723,8 +3723,8 @@ function initGlobalSearch() {
 
         // إذا تم مسح النص يدوياً وكان هناك بحث نشط
         if (currentValue === '' && searchState.isSearchActive) {
-            console.log('🔄 تم اكتشاف مسح النص يدوياً - تطبيق إعادة تعيين شاملة');
-            clearGlobalSearch();
+            console.log('🔄 تم اكتشاف مسح النص يدوياً - مسح البحث فقط مع الاحتفاظ بالفلاتر');
+            clearGlobalSearchOnly();
         }
     });
 
@@ -4228,20 +4228,19 @@ function clearGlobalSearchWithLoading() {
     }, 300);
 }
 
-// إلغاء البحث العام مع إعادة تعيين شاملة للتطبيق
+// إلغاء البحث العام فقط (مثل حذف النص يدوياً)
 function cancelGlobalSearchWithLoading() {
-    console.log('🚫 بدء إعادة التعيين الشاملة للتطبيق...');
+    console.log('🚫 إلغاء البحث العام فقط (مثل المسح اليدوي)...');
 
-    const searchInput = document.getElementById('globalSearch');
     const cancelButton = document.querySelector('.global-cancel-btn');
     const loadingIndicator = document.getElementById('searchLoadingIndicator');
 
-    if (!searchInput || !cancelButton) return;
+    if (!cancelButton) return;
 
-    // Show enhanced loading state
+    // Show loading state
     cancelButton.disabled = true;
     const originalContent = cancelButton.innerHTML;
-    cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري إعادة التعيين...</span>';
+    cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري المسح...</span>';
 
     // Show loading indicator
     if (loadingIndicator) {
@@ -4250,125 +4249,21 @@ function cancelGlobalSearchWithLoading() {
 
     setTimeout(() => {
         try {
-            console.log('🔄 تنفيذ إعادة التعيين الشاملة...');
+            // استخدام نفس الوظيفة المستخدمة للمسح اليدوي
+            clearGlobalSearchOnly();
 
-            // 1. مسح حقل البحث العام
-            searchInput.value = '';
-            console.log('✅ تم مسح حقل البحث العام');
-
-            // 2. إعادة تعيين حالة البحث العام
-            searchState.global = '';
-            searchState.isSearchActive = false;
-            console.log('✅ تم إعادة تعيين حالة البحث');
-
-            // 3. إخفاء زر الإلغاء
-            cancelButton.style.display = 'none';
-
-            // 4. إعادة تعيين جميع الفلاتر إلى الحالة الافتراضية
-            console.log('🔄 إعادة تعيين جميع الفلاتر...');
-            if (typeof resetFiltersToDefault === 'function') {
-                resetFiltersToDefault();
-            } else {
-                console.warn('⚠️ وظيفة resetFiltersToDefault غير موجودة');
+            // عرض رسالة تأكيد
+            const searchInput = document.getElementById('globalSearch');
+            if (searchInput) {
+                showSearchIndicator(searchInput, 'تم مسح البحث - عرض البيانات حسب الفلاتر الحالية', 'success');
             }
 
-            // 5. مسح جميع حقول البحث الأخرى
-            console.log('🔄 مسح جميع حقول البحث...');
-            if (typeof clearAllSearchFields === 'function') {
-                clearAllSearchFields();
-            } else {
-                console.warn('⚠️ وظيفة clearAllSearchFields غير موجودة');
-            }
-
-            // 6. إعادة تعيين حالة التطبيق العامة
-            console.log('🔄 إعادة تعيين حالة التطبيق...');
-            if (typeof resetAppState === 'function') {
-                resetAppState();
-            } else {
-                console.warn('⚠️ وظيفة resetAppState غير موجودة');
-            }
-
-            // 7. إعادة تحميل البيانات بالكامل وتنفيذ بحث فارغ
-            console.log('🔄 إعادة تحميل البيانات وتنفيذ بحث فارغ...');
-            setTimeout(() => {
-                // إعادة تحميل البيانات
-                if (typeof renderData === 'function') {
-                    renderData();
-                } else {
-                    console.warn('⚠️ وظيفة renderData غير موجودة');
-                }
-
-                // تحديث الإحصائيات
-                if (typeof updateTotalStats === 'function') {
-                    updateTotalStats();
-                } else {
-                    console.warn('⚠️ وظيفة updateTotalStats غير موجودة');
-                }
-
-                // إعادة تهيئة أزرار المدن والعقارات
-                if (typeof initCountryButtons === 'function') {
-                    initCountryButtons();
-                } else {
-                    console.warn('⚠️ وظيفة initCountryButtons غير موجودة');
-                }
-
-                if (typeof initPropertyList === 'function') {
-                    initPropertyList();
-                } else {
-                    console.warn('⚠️ وظيفة initPropertyList غير موجودة');
-                }
-
-                console.log('✅ تم إعادة التعيين الشاملة بنجاح');
-
-                // إجبار عرض جميع البيانات
-                setTimeout(() => {
-                    console.log('🔄 إجبار عرض جميع البيانات بعد إعادة التعيين...');
-
-                    // استخدام الوظيفة المخصصة لإجبار عرض جميع البيانات
-                    if (typeof forceShowAllData === 'function') {
-                        forceShowAllData();
-                    } else {
-                        // بديل: تنفيذ بحث فارغ
-                        if (typeof performGlobalSearch === 'function') {
-                            console.log('🔄 تنفيذ بحث فارغ كبديل...');
-                            performGlobalSearch();
-                        } else {
-                            // بديل أخير: تنفيذ renderData مرة أخرى
-                            if (typeof renderData === 'function') {
-                                console.log('🔄 تنفيذ renderData كبديل أخير...');
-                                renderData();
-                            }
-                        }
-                    }
-
-                    // تأكيد إضافي: تنفيذ بحث فارغ مرة أخرى للتأكد
-                    setTimeout(() => {
-                        console.log('🔄 تأكيد إضافي: تنفيذ بحث فارغ للتأكد من عرض جميع البيانات...');
-                        if (typeof performGlobalSearch === 'function') {
-                            performGlobalSearch();
-                        }
-                    }, 100);
-
-                    // عرض رسالة تأكيد شاملة للمستخدم
-                    setTimeout(() => {
-                        if (typeof showComprehensiveResetMessage === 'function') {
-                            showComprehensiveResetMessage();
-                        } else {
-                            console.warn('⚠️ وظيفة showComprehensiveResetMessage غير موجودة');
-                            // عرض رسالة بديلة
-                            if (typeof showToast === 'function') {
-                                showToast('تم إعادة تعيين التطبيق بالكامل وعرض جميع البيانات', 'success');
-                            }
-                        }
-                    }, 100);
-
-                }, 200);
-
-            }, 300);
+            // عرض toast notification
+            showToast('تم مسح البحث العام مع الاحتفاظ بالفلاتر الأخرى', 'success');
 
         } catch (error) {
-            console.error('❌ خطأ في إعادة التعيين الشاملة:', error);
-            showToast('حدث خطأ أثناء إعادة التعيين', 'error');
+            console.error('❌ خطأ في إلغاء البحث:', error);
+            showToast('حدث خطأ أثناء مسح البحث', 'error');
         } finally {
             // Restore button after delay
             setTimeout(() => {
@@ -4379,70 +4274,70 @@ function cancelGlobalSearchWithLoading() {
                 if (loadingIndicator) {
                     loadingIndicator.style.display = 'none';
                 }
-            }, 800);
+            }, 400);
         }
-    }, 500);
+    }, 300);
 }
 
-// عرض رسالة تأكيد شاملة للمستخدم
-function showComprehensiveResetMessage() {
+// مسح البحث العام فقط مع الاحتفاظ بالفلاتر (للمسح اليدوي)
+function clearGlobalSearchOnly() {
+    console.log('🧹 مسح البحث العام فقط مع الاحتفاظ بالفلاتر...');
+
+    const searchInput = document.getElementById('globalSearch');
+    const cancelButton = document.querySelector('.global-cancel-btn');
+
+    // إخفاء مؤشر التحميل
+    hideSearchLoadingIndicator();
+
+    // مسح حقل البحث
+    if (searchInput) {
+        searchInput.value = '';
+    }
+
+    // إخفاء زر الإلغاء
+    if (cancelButton) {
+        cancelButton.style.display = 'none';
+    }
+
+    // مسح حالة البحث العام فقط
+    searchState.global = '';
+    searchState.isSearchActive = false;
+
+    // تنفيذ renderData لعرض البيانات حسب الفلاتر الموجودة
+    setTimeout(() => {
+        if (typeof renderData === 'function') {
+            renderData();
+        }
+
+        console.log('✅ تم مسح البحث العام مع الاحتفاظ بالفلاتر');
+    }, 100);
+}
+
+// عرض رسالة تأكيد بسيطة لمسح البحث فقط
+function showSimpleSearchClearMessage() {
     const searchInput = document.getElementById('globalSearch');
 
     // عرض الرسالة في مؤشر البحث
     if (searchInput) {
-        showSearchIndicator(searchInput, 'تم إعادة تعيين التطبيق بالكامل - جميع البيانات معروضة الآن', 'success');
+        showSearchIndicator(searchInput, 'تم مسح البحث - عرض البيانات حسب الفلاتر الحالية', 'success');
     }
 
-    // عرض toast notification رئيسية
-    showToast('🔄 تم إعادة تعيين التطبيق بالكامل إلى الحالة الأولية', 'success');
+    // عرض toast notification بسيطة
+    showToast('تم مسح البحث العام مع الاحتفاظ بالفلاتر الأخرى', 'success');
 
-    // عرض رسائل تفصيلية متتالية
+    // تسجيل ملخص في وحدة التحكم
     setTimeout(() => {
-        showToast('✅ تم مسح البحث العام وجميع حقول البحث', 'info');
-    }, 1000);
-
-    setTimeout(() => {
-        showToast('✅ تم إعادة تعيين جميع الفلاتر إلى "الكل"', 'info');
-    }, 2000);
-
-    setTimeout(() => {
-        showToast('✅ تم إعادة عرض جميع البيانات (النشط وغير النشط)', 'info');
-    }, 3000);
-
-    setTimeout(() => {
-        showToast('🎉 التطبيق جاهز للاستخدام بالحالة الأولية', 'success');
-    }, 4000);
-
-    // تسجيل ملخص مفصل في وحدة التحكم
-    setTimeout(() => {
-        console.log('📋 ملخص إعادة التعيين الشاملة:', {
+        console.log('📋 ملخص مسح البحث العام:', {
             '🔍 البحث العام': 'تم المسح ✅',
-            '🔍 بحث العقارات': 'تم المسح ✅',
-            '🔍 بحث سجلات التتبع': 'تم المسح ✅',
-            '🔍 بحث المرفقات': 'تم المسح ✅',
-            '🏙️ فلتر المدن': 'تم إعادة التعيين للكل ✅',
-            '🏢 فلتر العقارات': 'تم إعادة التعيين للكل ✅',
-            '📊 فلتر الحالة': 'تم إعادة التعيين للكل ✅',
-            '📅 فلاتر التاريخ': 'تم إعادة التعيين ✅',
-            '📋 البيانات المعروضة': 'جميع البيانات ✅',
-            '🎛️ حالة التطبيق': 'أولية ✅'
+            '🏙️ فلتر المدن': 'محتفظ بالحالة الحالية ✅',
+            '🏢 فلتر العقارات': 'محتفظ بالحالة الحالية ✅',
+            '📊 فلتر الحالة': 'محتفظ بالحالة الحالية ✅',
+            '📅 فلاتر التاريخ': 'محتفظ بالحالة الحالية ✅',
+            '📋 البيانات المعروضة': 'حسب الفلاتر الحالية ✅'
         });
 
-        console.log('🎯 النتيجة: التطبيق عاد إلى الحالة الأولية تماماً كما لو لم يتم تطبيق أي بحث أو فلترة');
+        console.log('🎯 النتيجة: تم مسح البحث فقط مع الاحتفاظ بجميع الفلاتر الأخرى');
     }, 500);
-
-    // إحصائيات سريعة
-    setTimeout(() => {
-        const totalProperties = properties ? properties.length : 0;
-        const totalUnits = properties ? properties.reduce((sum, prop) => sum + (prop.units ? prop.units.length : 0), 0) : 0;
-
-        console.log('📊 إحصائيات البيانات المعروضة بعد إعادة التعيين:', {
-            'إجمالي العقارات': totalProperties,
-            'إجمالي الوحدات': totalUnits,
-            'الفلاتر النشطة': 'لا توجد',
-            'البحث النشط': 'لا يوجد'
-        });
-    }, 1000);
 }
 
 // مسح البحث العام تلقائياً عند التنقل (بدون مؤشرات بصرية)
