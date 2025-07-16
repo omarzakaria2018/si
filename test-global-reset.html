@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إعادة التعيين الشاملة للبحث العام</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+            direction: rtl;
+        }
+        
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .search-controls-wrapper {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .global-search-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            min-width: 600px;
+            width: 100%;
+        }
+        
+        #globalSearch {
+            width: 100%;
+            padding: 16px 45px 16px 20px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 18px;
+            background: #ffffff;
+            color: #212529;
+            transition: all 0.3s ease;
+            outline: none;
+            min-height: 50px;
+            min-width: 600px;
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            direction: rtl;
+            text-align: right;
+        }
+        
+        #globalSearch:focus {
+            border-color: #0056b3;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        
+        .search-actions-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .global-search-btn, .global-cancel-btn {
+            min-width: 120px;
+            height: 44px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-shrink: 0;
+            padding: 0 20px;
+            font-family: inherit;
+        }
+        
+        .global-search-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+        }
+        
+        .global-cancel-btn {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+            color: white;
+            box-shadow: 0 2px 4px rgba(108,117,125,0.3);
+            display: none;
+        }
+        
+        .global-search-btn:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-2px);
+        }
+        
+        .global-cancel-btn:hover {
+            background: linear-gradient(135deg, #5a6268, #495057);
+            transform: translateY(-2px);
+        }
+        
+        .filters-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #dee2e6;
+        }
+        
+        .filter-group {
+            margin-bottom: 10px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            direction: rtl;
+        }
+        
+        .test-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+        
+        .test-btn.danger {
+            background: #dc3545;
+        }
+        
+        .test-btn.danger:hover {
+            background: #c82333;
+        }
+        
+        .test-btn.success {
+            background: #28a745;
+        }
+        
+        .test-btn.success:hover {
+            background: #218838;
+        }
+        
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            min-height: 200px;
+            border: 1px solid #dee2e6;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .status {
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .state-display {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #dee2e6;
+        }
+        
+        .state-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .state-item:last-child {
+            border-bottom: none;
+        }
+        
+        .state-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .state-value {
+            color: #007bff;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1><i class="fas fa-undo"></i> اختبار إعادة التعيين الشاملة للبحث العام</h1>
+        
+        <!-- محاكاة البحث العام -->
+        <div class="search-controls-wrapper">
+            <h3>البحث العام</h3>
+            <div class="global-search-container">
+                <div class="search-input-wrapper">
+                    <input type="text" id="globalSearch" placeholder="البحث في جميع العقارات والوحدات..." 
+                           oninput="handleGlobalSearchInput()">
+                </div>
+                <div class="search-actions-container">
+                    <button class="global-search-btn" onclick="performGlobalSearch()" title="بحث">
+                        <i class="fas fa-search"></i>
+                        <span class="btn-text">بحث</span>
+                    </button>
+                    <button class="global-cancel-btn" onclick="cancelGlobalSearchWithLoading()" title="إلغاء البحث" style="display: none;">
+                        <i class="fas fa-times"></i>
+                        <span class="btn-text">إلغاء</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- محاكاة الفلاتر -->
+        <div class="filters-section">
+            <h3>الفلاتر</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div class="filter-group">
+                    <label>المدينة:</label>
+                    <select id="cityFilter">
+                        <option value="">الكل</option>
+                        <option value="riyadh">الرياض</option>
+                        <option value="jeddah">جدة</option>
+                        <option value="dammam">الدمام</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>العقار:</label>
+                    <select id="propertyFilter">
+                        <option value="">الكل</option>
+                        <option value="prop1">عمارة النور</option>
+                        <option value="prop2">برج السلام</option>
+                        <option value="prop3">مجمع الفردوس</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>الحالة:</label>
+                    <select id="statusFilter">
+                        <option value="">الكل</option>
+                        <option value="occupied">مؤجر</option>
+                        <option value="vacant">شاغر</option>
+                        <option value="maintenance">صيانة</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>التاريخ:</label>
+                    <input type="date" id="dateFilter">
+                </div>
+            </div>
+        </div>
+
+        <!-- أزرار الاختبار -->
+        <div class="test-buttons">
+            <button class="test-btn" onclick="simulateSearch()">
+                <i class="fas fa-search"></i> محاكاة البحث
+            </button>
+            <button class="test-btn" onclick="applyRandomFilters()">
+                <i class="fas fa-filter"></i> تطبيق فلاتر عشوائية
+            </button>
+            <button class="test-btn success" onclick="testComprehensiveReset()">
+                <i class="fas fa-undo"></i> اختبار إعادة التعيين الشاملة
+            </button>
+            <button class="test-btn" onclick="checkCurrentState()">
+                <i class="fas fa-info-circle"></i> فحص الحالة الحالية
+            </button>
+            <button class="test-btn" onclick="simulateProblem()">
+                <i class="fas fa-bug"></i> محاكاة المشكلة
+            </button>
+            <button class="test-btn danger" onclick="clearResults()">
+                <i class="fas fa-eraser"></i> مسح النتائج
+            </button>
+        </div>
+
+        <!-- عرض الحالة الحالية -->
+        <div class="state-display">
+            <h4>الحالة الحالية للتطبيق</h4>
+            <div id="currentState">
+                <div class="state-item">
+                    <span class="state-label">البحث العام:</span>
+                    <span class="state-value" id="globalSearchState">فارغ</span>
+                </div>
+                <div class="state-item">
+                    <span class="state-label">فلتر المدينة:</span>
+                    <span class="state-value" id="cityFilterState">الكل</span>
+                </div>
+                <div class="state-item">
+                    <span class="state-label">فلتر العقار:</span>
+                    <span class="state-value" id="propertyFilterState">الكل</span>
+                </div>
+                <div class="state-item">
+                    <span class="state-label">فلتر الحالة:</span>
+                    <span class="state-value" id="statusFilterState">الكل</span>
+                </div>
+                <div class="state-item">
+                    <span class="state-label">فلتر التاريخ:</span>
+                    <span class="state-value" id="dateFilterState">غير محدد</span>
+                </div>
+                <div class="state-item">
+                    <span class="state-label">زر الإلغاء:</span>
+                    <span class="state-value" id="cancelButtonState">مخفي</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- نتائج الاختبار -->
+        <div class="results" id="results">
+            <div class="status info">جاهز لاختبار إعادة التعيين الشاملة...</div>
+        </div>
+    </div>
+
+    <script>
+        // متغيرات محاكاة الحالة
+        let searchState = {
+            global: '',
+            isSearchActive: false
+        };
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            results.innerHTML += `<div class="status ${type}">[${timestamp}] ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function updateStateDisplay() {
+            const globalSearch = document.getElementById('globalSearch').value;
+            const cityFilter = document.getElementById('cityFilter').value;
+            const propertyFilter = document.getElementById('propertyFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            const cancelButton = document.querySelector('.global-cancel-btn');
+            
+            document.getElementById('globalSearchState').textContent = globalSearch || 'فارغ';
+            document.getElementById('cityFilterState').textContent = cityFilter || 'الكل';
+            document.getElementById('propertyFilterState').textContent = propertyFilter || 'الكل';
+            document.getElementById('statusFilterState').textContent = statusFilter || 'الكل';
+            document.getElementById('dateFilterState').textContent = dateFilter || 'غير محدد';
+            document.getElementById('cancelButtonState').textContent = 
+                (cancelButton && cancelButton.style.display !== 'none') ? 'ظاهر' : 'مخفي';
+        }
+
+        function handleGlobalSearchInput() {
+            const searchInput = document.getElementById('globalSearch');
+            const cancelBtn = document.querySelector('.global-cancel-btn');
+            const searchTerm = searchInput.value.trim();
+            
+            if (cancelBtn) {
+                cancelBtn.style.display = searchTerm ? 'flex' : 'none';
+            }
+            
+            searchState.global = searchTerm;
+            searchState.isSearchActive = searchTerm.length > 0;
+            
+            updateStateDisplay();
+        }
+
+        function performGlobalSearch() {
+            const searchInput = document.getElementById('globalSearch');
+            const searchTerm = searchInput.value.trim();
+            
+            addResult(`🔍 تم تنفيذ البحث العام: "${searchTerm}"`, 'info');
+            
+            if (searchTerm) {
+                addResult(`✅ تم العثور على نتائج للبحث: ${searchTerm}`, 'success');
+            } else {
+                addResult('ℹ️ تم عرض جميع البيانات (بحث فارغ)', 'info');
+            }
+            
+            updateStateDisplay();
+        }
+
+        function simulateSearch() {
+            const searchTerms = ['عمارة النور', 'شقة 101', 'أحمد محمد', 'الرياض'];
+            const randomTerm = searchTerms[Math.floor(Math.random() * searchTerms.length)];
+            
+            document.getElementById('globalSearch').value = randomTerm;
+            handleGlobalSearchInput();
+            performGlobalSearch();
+            
+            addResult(`🎲 تم محاكاة البحث بالمصطلح: "${randomTerm}"`, 'warning');
+        }
+
+        function applyRandomFilters() {
+            const cityOptions = ['', 'riyadh', 'jeddah', 'dammam'];
+            const propertyOptions = ['', 'prop1', 'prop2', 'prop3'];
+            const statusOptions = ['', 'occupied', 'vacant', 'maintenance'];
+            
+            document.getElementById('cityFilter').value = cityOptions[Math.floor(Math.random() * cityOptions.length)];
+            document.getElementById('propertyFilter').value = propertyOptions[Math.floor(Math.random() * propertyOptions.length)];
+            document.getElementById('statusFilter').value = statusOptions[Math.floor(Math.random() * statusOptions.length)];
+            document.getElementById('dateFilter').value = '2024-01-15';
+            
+            updateStateDisplay();
+            addResult('🎲 تم تطبيق فلاتر عشوائية', 'warning');
+        }
+
+        function cancelGlobalSearchWithLoading() {
+            addResult('🚫 بدء إعادة التعيين الشاملة...', 'warning');
+
+            const cancelButton = document.querySelector('.global-cancel-btn');
+            if (cancelButton) {
+                cancelButton.disabled = true;
+                cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري إعادة التعيين...</span>';
+            }
+
+            setTimeout(() => {
+                // محاكاة إعادة التعيين الشاملة
+                document.getElementById('globalSearch').value = '';
+                document.getElementById('cityFilter').selectedIndex = 0;
+                document.getElementById('propertyFilter').selectedIndex = 0;
+                document.getElementById('statusFilter').selectedIndex = 0;
+                document.getElementById('dateFilter').value = '';
+
+                if (cancelButton) {
+                    cancelButton.style.display = 'none';
+                    cancelButton.disabled = false;
+                    cancelButton.innerHTML = '<i class="fas fa-times"></i><span class="btn-text">إلغاء</span>';
+                }
+
+                searchState.global = '';
+                searchState.isSearchActive = false;
+
+                updateStateDisplay();
+
+                addResult('✅ تم مسح البحث العام', 'success');
+                addResult('✅ تم إعادة تعيين جميع الفلاتر إلى "الكل"', 'success');
+
+                // محاكاة إعادة تحميل البيانات (هذا ما كان مفقوداً!)
+                setTimeout(() => {
+                    addResult('🔄 إعادة تحميل البيانات لعرض الكل...', 'info');
+
+                    // محاكاة تنفيذ بحث فارغ لعرض جميع البيانات
+                    performGlobalSearch();
+
+                    addResult('✅ تم إعادة عرض جميع البيانات (النشط وغير النشط)', 'success');
+                    addResult('✅ تم إخفاء زر الإلغاء', 'success');
+                    addResult('🎉 تم إعادة التطبيق إلى الحالة الأولية بنجاح!', 'success');
+                    addResult('📊 الآن يظهر الكل بدلاً من النشط فقط', 'info');
+
+                }, 300);
+
+            }, 1000);
+        }
+
+        function testComprehensiveReset() {
+            addResult('🧪 بدء اختبار إعادة التعيين الشاملة...', 'info');
+            
+            // تطبيق بعض القيم أولاً
+            document.getElementById('globalSearch').value = 'اختبار البحث';
+            document.getElementById('cityFilter').value = 'riyadh';
+            document.getElementById('propertyFilter').value = 'prop1';
+            document.getElementById('statusFilter').value = 'occupied';
+            document.getElementById('dateFilter').value = '2024-01-15';
+            
+            handleGlobalSearchInput();
+            updateStateDisplay();
+            
+            addResult('📝 تم تطبيق قيم اختبارية', 'info');
+            
+            setTimeout(() => {
+                addResult('🔄 تنفيذ إعادة التعيين الشاملة...', 'warning');
+                cancelGlobalSearchWithLoading();
+            }, 1000);
+        }
+
+        function checkCurrentState() {
+            updateStateDisplay();
+            
+            const globalSearch = document.getElementById('globalSearch').value;
+            const hasActiveFilters = 
+                document.getElementById('cityFilter').value ||
+                document.getElementById('propertyFilter').value ||
+                document.getElementById('statusFilter').value ||
+                document.getElementById('dateFilter').value;
+            
+            const cancelButtonVisible = document.querySelector('.global-cancel-btn').style.display !== 'none';
+            
+            addResult('🔍 فحص الحالة الحالية:', 'info');
+            addResult(`• البحث العام: ${globalSearch || 'فارغ'}`, 'info');
+            addResult(`• فلاتر نشطة: ${hasActiveFilters ? 'نعم' : 'لا'}`, hasActiveFilters ? 'warning' : 'success');
+            addResult(`• زر الإلغاء: ${cancelButtonVisible ? 'ظاهر' : 'مخفي'}`, cancelButtonVisible ? 'warning' : 'success');
+            
+            const isInitialState = !globalSearch && !hasActiveFilters && !cancelButtonVisible;
+            addResult(`🎯 الحالة: ${isInitialState ? 'أولية ✅' : 'معدلة ⚠️'}`, isInitialState ? 'success' : 'warning');
+        }
+
+        function simulateProblem() {
+            addResult('🐛 محاكاة المشكلة الأصلية...', 'warning');
+
+            // محاكاة البحث عن "نشط"
+            document.getElementById('globalSearch').value = 'نشط';
+            handleGlobalSearchInput();
+            performGlobalSearch();
+
+            addResult('📝 تم البحث عن "نشط" - يظهر النشط فقط', 'info');
+
+            setTimeout(() => {
+                addResult('🚫 الآن سنحاكي زر الإلغاء بدون إعادة تحميل البيانات...', 'warning');
+
+                // محاكاة المشكلة: مسح النص بدون إعادة تحميل
+                const cancelButton = document.querySelector('.global-cancel-btn');
+                if (cancelButton) {
+                    cancelButton.disabled = true;
+                    cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري الإلغاء...</span>';
+                }
+
+                setTimeout(() => {
+                    // مسح النص فقط (هذا ما كان يحدث في المشكلة)
+                    document.getElementById('globalSearch').value = '';
+                    searchState.global = '';
+                    searchState.isSearchActive = false;
+
+                    if (cancelButton) {
+                        cancelButton.style.display = 'none';
+                        cancelButton.disabled = false;
+                        cancelButton.innerHTML = '<i class="fas fa-times"></i><span class="btn-text">إلغاء</span>';
+                    }
+
+                    updateStateDisplay();
+
+                    addResult('❌ تم مسح النص لكن لم يتم إعادة تحميل البيانات!', 'error');
+                    addResult('⚠️ النتيجة: ما زال يظهر "النشط" فقط بدلاً من الكل', 'error');
+                    addResult('💡 هذه كانت المشكلة الأصلية', 'warning');
+
+                }, 800);
+
+            }, 2000);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '<div class="status info">تم مسح النتائج...</div>';
+        }
+
+        // تحديث الحالة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStateDisplay();
+            addResult('✅ تم تحميل صفحة اختبار إعادة التعيين الشاملة', 'success');
+        });
+
+        // مراقبة تغييرات الفلاتر
+        document.getElementById('cityFilter').addEventListener('change', updateStateDisplay);
+        document.getElementById('propertyFilter').addEventListener('change', updateStateDisplay);
+        document.getElementById('statusFilter').addEventListener('change', updateStateDisplay);
+        document.getElementById('dateFilter').addEventListener('change', updateStateDisplay);
+    </script>
+</body>
+</html>

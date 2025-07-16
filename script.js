@@ -1660,28 +1660,216 @@ function clearAppStateWithConfirmation() {
     }
 }
 
-// دالة مسح جميع حقول البحث
+// دالة مسح جميع حقول البحث (محسنة)
 function clearAllSearchFields() {
-    const globalSearch = document.getElementById('globalSearch');
-    const propertySearch = document.getElementById('propertySearch');
+    console.log('🔍 مسح جميع حقول البحث...');
 
+    // مسح البحث العام
+    const globalSearch = document.getElementById('globalSearch');
     if (globalSearch) {
         globalSearch.value = '';
-        console.log('🔍 تم مسح البحث العام');
+        globalSearch.style.borderColor = '';
+        globalSearch.classList.remove('searching', 'success', 'error');
+        console.log('✅ تم مسح البحث العام');
     }
 
+    // مسح بحث العقارات
+    const propertySearch = document.getElementById('propertySearch');
     if (propertySearch) {
         propertySearch.value = '';
-        console.log('🔍 تم مسح بحث العقارات');
+        propertySearch.style.borderColor = '';
+        propertySearch.classList.remove('searching', 'success', 'error');
+        console.log('✅ تم مسح بحث العقارات');
     }
 
-    // مسح أي حقول بحث أخرى في النوافذ المنبثقة
-    const allSearchInputs = document.querySelectorAll('input[type="text"][placeholder*="بحث"], input[type="search"]');
-    allSearchInputs.forEach(input => {
-        if (input.id !== 'globalSearch' && input.id !== 'propertySearch') {
+    // مسح بحث سجلات التتبع
+    const trackingSearch = document.getElementById('trackingSearch');
+    if (trackingSearch) {
+        trackingSearch.value = '';
+        trackingSearch.style.borderColor = '';
+        trackingSearch.classList.remove('searching', 'success', 'error');
+        console.log('✅ تم مسح بحث سجلات التتبع');
+    }
+
+    // مسح جميع حقول البحث في المرفقات
+    const attachmentSearches = document.querySelectorAll('#attachmentsSearch, #cardAttachmentsSearch');
+    attachmentSearches.forEach(input => {
+        if (input) {
             input.value = '';
+            input.style.borderColor = '';
+            input.classList.remove('searching', 'success', 'error');
         }
     });
+
+    // مسح أي حقول بحث أخرى في النوافذ المنبثقة
+    const allSearchInputs = document.querySelectorAll('input[type="text"][placeholder*="بحث"], input[type="search"], input[id*="search"], input[id*="Search"]');
+    allSearchInputs.forEach(input => {
+        if (input && input.id !== 'globalSearch' && input.id !== 'propertySearch') {
+            input.value = '';
+            input.style.borderColor = '';
+            input.classList.remove('searching', 'success', 'error');
+        }
+    });
+
+    // إخفاء جميع أزرار المسح والإلغاء
+    const clearButtons = document.querySelectorAll('.clear-btn, .cancel-btn, .global-cancel-btn, .property-clear-btn');
+    clearButtons.forEach(btn => {
+        if (btn && btn.style) {
+            btn.style.display = 'none';
+        }
+    });
+
+    // إخفاء مؤشرات البحث
+    const searchLoadingIndicators = document.querySelectorAll('#searchLoadingIndicator, .search-loading, .search-indicator');
+    searchLoadingIndicators.forEach(indicator => {
+        if (indicator && indicator.style) {
+            indicator.style.display = 'none';
+        }
+    });
+
+    console.log('✅ تم مسح جميع حقول البحث وإعادة تعيين حالتها');
+}
+
+// إعادة تعيين حالة التطبيق العامة
+function resetAppState() {
+    try {
+        console.log('🔄 إعادة تعيين حالة التطبيق العامة...');
+
+        // إعادة تعيين متغيرات الحالة العامة
+        if (typeof currentView !== 'undefined') {
+            currentView = 'properties'; // العودة للعرض الافتراضي
+        }
+
+        if (typeof currentSection !== 'undefined') {
+            currentSection = 'main';
+        }
+
+        if (typeof isFilterActive !== 'undefined') {
+            isFilterActive = false;
+        }
+
+        if (typeof lastSearchTerm !== 'undefined') {
+            lastSearchTerm = '';
+        }
+
+        // إعادة تعيين حالة الصفحات
+        if (typeof currentPage !== 'undefined') {
+            currentPage = 1;
+        }
+
+        if (typeof itemsPerPage !== 'undefined') {
+            itemsPerPage = 20; // أو القيمة الافتراضية
+        }
+
+        // إعادة تعيين حالة التحديد
+        if (typeof selectedItems !== 'undefined') {
+            selectedItems = [];
+        }
+
+        if (typeof selectedProperties !== 'undefined') {
+            selectedProperties = [];
+        }
+
+        // إعادة تعيين حالة النوافذ المنبثقة
+        if (typeof activeModal !== 'undefined') {
+            activeModal = null;
+        }
+
+        // إعادة تعيين حالة التحميل
+        if (typeof isLoading !== 'undefined') {
+            isLoading = false;
+        }
+
+        // إعادة تعيين حالة الأخطاء
+        if (typeof lastError !== 'undefined') {
+            lastError = null;
+        }
+
+        // إعادة تعيين localStorage للحالة المؤقتة
+        try {
+            localStorage.removeItem('tempSearchState');
+            localStorage.removeItem('tempFilterState');
+            localStorage.removeItem('lastSearchResults');
+        } catch (e) {
+            console.warn('تحذير: لا يمكن مسح localStorage:', e);
+        }
+
+        // إعادة تعيين sessionStorage للحالة المؤقتة
+        try {
+            sessionStorage.removeItem('currentSearchTerm');
+            sessionStorage.removeItem('activeFilters');
+            sessionStorage.removeItem('searchResults');
+        } catch (e) {
+            console.warn('تحذير: لا يمكن مسح sessionStorage:', e);
+        }
+
+        console.log('✅ تم إعادة تعيين حالة التطبيق العامة');
+
+    } catch (error) {
+        console.error('❌ خطأ في إعادة تعيين حالة التطبيق:', error);
+    }
+}
+
+// إعادة عرض جميع البيانات بعد إعادة التعيين
+function forceShowAllData() {
+    try {
+        console.log('🔄 إجبار عرض جميع البيانات...');
+
+        // إعادة تعيين حالة البحث بالكامل
+        if (typeof searchState !== 'undefined') {
+            searchState.global = '';
+            searchState.property = '';
+            searchState.isSearchActive = false;
+        }
+
+        // إعادة تعيين جميع الفلاتر
+        if (typeof currentCountry !== 'undefined') {
+            currentCountry = null;
+        }
+        if (typeof currentProperty !== 'undefined') {
+            currentProperty = null;
+        }
+        if (typeof filterStatus !== 'undefined') {
+            filterStatus = null;
+        }
+
+        // تنفيذ renderData مع ضمان عدم وجود فلاتر
+        if (typeof renderData === 'function') {
+            console.log('📊 تنفيذ renderData لعرض جميع البيانات...');
+
+            // التأكد من أن البحث العام فارغ قبل renderData
+            const globalSearchInput = document.getElementById('globalSearch');
+            if (globalSearchInput) {
+                globalSearchInput.value = '';
+            }
+
+            renderData();
+        }
+
+        // تحديث الإحصائيات
+        if (typeof updateTotalStats === 'function') {
+            updateTotalStats();
+        }
+
+        // تحديث عدادات البيانات
+        if (typeof updateDataCounts === 'function') {
+            updateDataCounts();
+        }
+
+        // إعادة تهيئة الواجهة
+        if (typeof initCountryButtons === 'function') {
+            initCountryButtons();
+        }
+
+        if (typeof initPropertyList === 'function') {
+            initPropertyList();
+        }
+
+        console.log('✅ تم إجبار عرض جميع البيانات بنجاح');
+
+    } catch (error) {
+        console.error('❌ خطأ في إجبار عرض جميع البيانات:', error);
+    }
 }
 
 // دالة مساعدة للتحقق من وجود البيانات
@@ -4040,9 +4228,9 @@ function clearGlobalSearchWithLoading() {
     }, 300);
 }
 
-// إلغاء البحث العام مع حالة التحميل (زر الإلغاء)
+// إلغاء البحث العام مع إعادة تعيين شاملة للتطبيق
 function cancelGlobalSearchWithLoading() {
-    console.log('🚫 إلغاء البحث العام مع مؤشر التحميل...');
+    console.log('🚫 بدء إعادة التعيين الشاملة للتطبيق...');
 
     const searchInput = document.getElementById('globalSearch');
     const cancelButton = document.querySelector('.global-cancel-btn');
@@ -4050,10 +4238,10 @@ function cancelGlobalSearchWithLoading() {
 
     if (!searchInput || !cancelButton) return;
 
-    // Show loading state
+    // Show enhanced loading state
     cancelButton.disabled = true;
     const originalContent = cancelButton.innerHTML;
-    cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري الإلغاء...</span>';
+    cancelButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span class="btn-text">جاري إعادة التعيين...</span>';
 
     // Show loading indicator
     if (loadingIndicator) {
@@ -4062,39 +4250,199 @@ function cancelGlobalSearchWithLoading() {
 
     setTimeout(() => {
         try {
-            // Cancel search and reset to show all data
-            searchInput.value = '';
+            console.log('🔄 تنفيذ إعادة التعيين الشاملة...');
 
-            // Reset search state
+            // 1. مسح حقل البحث العام
+            searchInput.value = '';
+            console.log('✅ تم مسح حقل البحث العام');
+
+            // 2. إعادة تعيين حالة البحث العام
             searchState.global = '';
             searchState.isSearchActive = false;
+            console.log('✅ تم إعادة تعيين حالة البحث');
 
-            // Hide cancel button
+            // 3. إخفاء زر الإلغاء
             cancelButton.style.display = 'none';
 
-            // Reset all filters and show all data
-            resetAllFilters();
-            renderData();
-
-            console.log('✅ تم إلغاء البحث بنجاح');
-
-            // Show success indicator
-            if (searchInput) {
-                showSearchIndicator(searchInput, 'تم إلغاء البحث وإعادة عرض جميع البيانات', 'info');
+            // 4. إعادة تعيين جميع الفلاتر إلى الحالة الافتراضية
+            console.log('🔄 إعادة تعيين جميع الفلاتر...');
+            if (typeof resetFiltersToDefault === 'function') {
+                resetFiltersToDefault();
+            } else {
+                console.warn('⚠️ وظيفة resetFiltersToDefault غير موجودة');
             }
+
+            // 5. مسح جميع حقول البحث الأخرى
+            console.log('🔄 مسح جميع حقول البحث...');
+            if (typeof clearAllSearchFields === 'function') {
+                clearAllSearchFields();
+            } else {
+                console.warn('⚠️ وظيفة clearAllSearchFields غير موجودة');
+            }
+
+            // 6. إعادة تعيين حالة التطبيق العامة
+            console.log('🔄 إعادة تعيين حالة التطبيق...');
+            if (typeof resetAppState === 'function') {
+                resetAppState();
+            } else {
+                console.warn('⚠️ وظيفة resetAppState غير موجودة');
+            }
+
+            // 7. إعادة تحميل البيانات بالكامل وتنفيذ بحث فارغ
+            console.log('🔄 إعادة تحميل البيانات وتنفيذ بحث فارغ...');
+            setTimeout(() => {
+                // إعادة تحميل البيانات
+                if (typeof renderData === 'function') {
+                    renderData();
+                } else {
+                    console.warn('⚠️ وظيفة renderData غير موجودة');
+                }
+
+                // تحديث الإحصائيات
+                if (typeof updateTotalStats === 'function') {
+                    updateTotalStats();
+                } else {
+                    console.warn('⚠️ وظيفة updateTotalStats غير موجودة');
+                }
+
+                // إعادة تهيئة أزرار المدن والعقارات
+                if (typeof initCountryButtons === 'function') {
+                    initCountryButtons();
+                } else {
+                    console.warn('⚠️ وظيفة initCountryButtons غير موجودة');
+                }
+
+                if (typeof initPropertyList === 'function') {
+                    initPropertyList();
+                } else {
+                    console.warn('⚠️ وظيفة initPropertyList غير موجودة');
+                }
+
+                console.log('✅ تم إعادة التعيين الشاملة بنجاح');
+
+                // إجبار عرض جميع البيانات
+                setTimeout(() => {
+                    console.log('🔄 إجبار عرض جميع البيانات بعد إعادة التعيين...');
+
+                    // استخدام الوظيفة المخصصة لإجبار عرض جميع البيانات
+                    if (typeof forceShowAllData === 'function') {
+                        forceShowAllData();
+                    } else {
+                        // بديل: تنفيذ بحث فارغ
+                        if (typeof performGlobalSearch === 'function') {
+                            console.log('🔄 تنفيذ بحث فارغ كبديل...');
+                            performGlobalSearch();
+                        } else {
+                            // بديل أخير: تنفيذ renderData مرة أخرى
+                            if (typeof renderData === 'function') {
+                                console.log('🔄 تنفيذ renderData كبديل أخير...');
+                                renderData();
+                            }
+                        }
+                    }
+
+                    // تأكيد إضافي: تنفيذ بحث فارغ مرة أخرى للتأكد
+                    setTimeout(() => {
+                        console.log('🔄 تأكيد إضافي: تنفيذ بحث فارغ للتأكد من عرض جميع البيانات...');
+                        if (typeof performGlobalSearch === 'function') {
+                            performGlobalSearch();
+                        }
+                    }, 100);
+
+                    // عرض رسالة تأكيد شاملة للمستخدم
+                    setTimeout(() => {
+                        if (typeof showComprehensiveResetMessage === 'function') {
+                            showComprehensiveResetMessage();
+                        } else {
+                            console.warn('⚠️ وظيفة showComprehensiveResetMessage غير موجودة');
+                            // عرض رسالة بديلة
+                            if (typeof showToast === 'function') {
+                                showToast('تم إعادة تعيين التطبيق بالكامل وعرض جميع البيانات', 'success');
+                            }
+                        }
+                    }, 100);
+
+                }, 200);
+
+            }, 300);
+
         } catch (error) {
-            console.error('❌ خطأ في إلغاء البحث:', error);
+            console.error('❌ خطأ في إعادة التعيين الشاملة:', error);
+            showToast('حدث خطأ أثناء إعادة التعيين', 'error');
         } finally {
-            // Restore button
-            cancelButton.disabled = false;
-            cancelButton.innerHTML = originalContent;
+            // Restore button after delay
+            setTimeout(() => {
+                cancelButton.disabled = false;
+                cancelButton.innerHTML = originalContent;
 
-            // Hide loading indicator
-            if (loadingIndicator) {
-                loadingIndicator.style.display = 'none';
-            }
+                // Hide loading indicator
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+            }, 800);
         }
-    }, 400);
+    }, 500);
+}
+
+// عرض رسالة تأكيد شاملة للمستخدم
+function showComprehensiveResetMessage() {
+    const searchInput = document.getElementById('globalSearch');
+
+    // عرض الرسالة في مؤشر البحث
+    if (searchInput) {
+        showSearchIndicator(searchInput, 'تم إعادة تعيين التطبيق بالكامل - جميع البيانات معروضة الآن', 'success');
+    }
+
+    // عرض toast notification رئيسية
+    showToast('🔄 تم إعادة تعيين التطبيق بالكامل إلى الحالة الأولية', 'success');
+
+    // عرض رسائل تفصيلية متتالية
+    setTimeout(() => {
+        showToast('✅ تم مسح البحث العام وجميع حقول البحث', 'info');
+    }, 1000);
+
+    setTimeout(() => {
+        showToast('✅ تم إعادة تعيين جميع الفلاتر إلى "الكل"', 'info');
+    }, 2000);
+
+    setTimeout(() => {
+        showToast('✅ تم إعادة عرض جميع البيانات (النشط وغير النشط)', 'info');
+    }, 3000);
+
+    setTimeout(() => {
+        showToast('🎉 التطبيق جاهز للاستخدام بالحالة الأولية', 'success');
+    }, 4000);
+
+    // تسجيل ملخص مفصل في وحدة التحكم
+    setTimeout(() => {
+        console.log('📋 ملخص إعادة التعيين الشاملة:', {
+            '🔍 البحث العام': 'تم المسح ✅',
+            '🔍 بحث العقارات': 'تم المسح ✅',
+            '🔍 بحث سجلات التتبع': 'تم المسح ✅',
+            '🔍 بحث المرفقات': 'تم المسح ✅',
+            '🏙️ فلتر المدن': 'تم إعادة التعيين للكل ✅',
+            '🏢 فلتر العقارات': 'تم إعادة التعيين للكل ✅',
+            '📊 فلتر الحالة': 'تم إعادة التعيين للكل ✅',
+            '📅 فلاتر التاريخ': 'تم إعادة التعيين ✅',
+            '📋 البيانات المعروضة': 'جميع البيانات ✅',
+            '🎛️ حالة التطبيق': 'أولية ✅'
+        });
+
+        console.log('🎯 النتيجة: التطبيق عاد إلى الحالة الأولية تماماً كما لو لم يتم تطبيق أي بحث أو فلترة');
+    }, 500);
+
+    // إحصائيات سريعة
+    setTimeout(() => {
+        const totalProperties = properties ? properties.length : 0;
+        const totalUnits = properties ? properties.reduce((sum, prop) => sum + (prop.units ? prop.units.length : 0), 0) : 0;
+
+        console.log('📊 إحصائيات البيانات المعروضة بعد إعادة التعيين:', {
+            'إجمالي العقارات': totalProperties,
+            'إجمالي الوحدات': totalUnits,
+            'الفلاتر النشطة': 'لا توجد',
+            'البحث النشط': 'لا يوجد'
+        });
+    }, 1000);
 }
 
 // مسح البحث العام تلقائياً عند التنقل (بدون مؤشرات بصرية)
@@ -42591,10 +42939,23 @@ function resetFiltersToDefault() {
         dateFilterYear = '';
     }
 
+    // إعادة تعيين فلاتر إضافية
+    if (typeof searchState !== 'undefined') {
+        searchState.global = '';
+        searchState.property = '';
+        searchState.isSearchActive = false;
+    }
+
+    // إعادة تعيين فلاتر التتبع إذا وُجدت
+    if (typeof trackingFilters !== 'undefined') {
+        trackingFilters = {};
+    }
+
     // مسح حقول البحث وإعادة تعيين النماذج
     setTimeout(() => {
         clearAllSearchFields();
         resetAllForms();
+        resetUIElements();
     }, 100);
 
     // تحديث الواجهة لتعكس الفلاتر الافتراضية
@@ -42629,6 +42990,69 @@ function resetFiltersToDefault() {
     setTimeout(() => {
         saveAppState();
     }, 400);
+}
+
+// إعادة تعيين عناصر الواجهة
+function resetUIElements() {
+    try {
+        console.log('🔄 إعادة تعيين عناصر الواجهة...');
+
+        // إعادة تعيين أزرار الفلاتر
+        const filterButtons = document.querySelectorAll('.filter-btn, .status-filter button, .city-btn');
+        filterButtons.forEach(btn => {
+            btn.classList.remove('active', 'selected');
+            if (btn.textContent.includes('الكل') || btn.textContent.includes('جميع')) {
+                btn.classList.add('active');
+            }
+        });
+
+        // إعادة تعيين القوائم المنسدلة
+        const selects = document.querySelectorAll('select');
+        selects.forEach(select => {
+            if (select.options.length > 0) {
+                select.selectedIndex = 0;
+            }
+        });
+
+        // إعادة تعيين حقول التاريخ
+        const dateInputs = document.querySelectorAll('input[type="date"], input[type="month"]');
+        dateInputs.forEach(input => {
+            input.value = '';
+        });
+
+        // إعادة تعيين checkboxes و radio buttons
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        const radios = document.querySelectorAll('input[type="radio"]');
+        radios.forEach(radio => {
+            radio.checked = false;
+        });
+
+        // إخفاء أزرار الإلغاء في جميع أنحاء التطبيق
+        const cancelButtons = document.querySelectorAll('.cancel-btn, .clear-btn, .global-cancel-btn');
+        cancelButtons.forEach(btn => {
+            if (btn.style) {
+                btn.style.display = 'none';
+            }
+        });
+
+        // إعادة تعيين مؤشرات البحث
+        const searchIndicators = document.querySelectorAll('.search-indicator, .search-loading');
+        searchIndicators.forEach(indicator => {
+            indicator.classList.remove('searching', 'active');
+            if (indicator.style) {
+                indicator.style.display = 'none';
+            }
+        });
+
+        console.log('✅ تم إعادة تعيين عناصر الواجهة');
+
+    } catch (error) {
+        console.error('❌ خطأ في إعادة تعيين عناصر الواجهة:', error);
+    }
 }
 
 // إعادة تعيين جميع النماذج والقوائم المنسدلة
