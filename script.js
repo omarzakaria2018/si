@@ -8918,33 +8918,27 @@ function renderPropertyAttachmentsList(propertyKey, attachments) {
                     <div class="file-name-text" title="${fileName}">
                         ${fileName}
                     </div>
-                    <div class="file-meta-enhanced">
-                        <span><i class="fas fa-weight-hanging"></i> ${fileSize}</span>
-                        <span><i class="fas fa-calendar"></i> ${uploadDate}</span>
-                        <span title="${sourceText}">${sourceIcon}</span>
-                    </div>
                 </div>
                 <div class="attachment-actions-enhanced">
                     ${isCloudFile ?
-                        `<button class="btn-enhanced view-btn" onclick="viewAttachmentFromSupabase('${file.id}', '${file.file_url || file.url}', '${file.file_type || file.type}')" title="عرض">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn-enhanced download-btn" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
+                        `<button class="btn-enhanced download-btn" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
                             <i class="fas fa-download"></i>
+                            <span>تحميل</span>
                         </button>
                         ${canDelete ? `<button class="btn-enhanced delete-btn" onclick="deletePropertyAttachmentFromSupabase('${file.id}', '${propertyKey}')" title="حذف">
                             <i class="fas fa-trash"></i>
+                            <span>حذف</span>
                         </button>` : ''}` :
-                        `<button class="btn-enhanced view-btn" onclick="viewPropertyAttachment('${propertyKey}', ${index})" title="عرض">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn-enhanced download-btn" onclick="downloadPropertyAttachment('${propertyKey}', ${index})" title="تحميل">
+                        `<button class="btn-enhanced download-btn" onclick="downloadPropertyAttachment('${propertyKey}', ${index})" title="تحميل">
                             <i class="fas fa-download"></i>
+                            <span>تحميل</span>
                         </button>
                         ${canDelete ? `<button class="btn-enhanced delete-btn" onclick="deletePropertyAttachment('${propertyKey}', ${index})" title="حذف">
                             <i class="fas fa-trash"></i>
+                            <span>حذف</span>
                         </button>` : ''}`
                     }
+                </div>
                 </div>
             </div>
         `;
@@ -9036,35 +9030,27 @@ function renderMobilePropertyAttachmentsList(propertyKey, attachments) {
                     <div class="mobile-file-name" title="${fileName}">
                         ${fileName}
                     </div>
-                    <div class="mobile-file-meta">
-                        <span><i class="fas fa-weight-hanging"></i> ${fileSize}</span>
-                        <span><i class="fas fa-calendar"></i> ${uploadDate}</span>
-                        <span title="${sourceText}">${sourceIcon}</span>
+                    <!-- أزرار العمليات أسفل اسم الملف مباشرة -->
+                    <div class="mobile-file-actions" style="margin-top: 8px;">
+                        ${isCloudFile ?
+                            `<button class="mobile-action-btn download" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
+                                <i class="fas fa-download"></i>
+                                <span>تحميل</span>
+                            </button>
+                            ${canDelete ? `<button class="mobile-action-btn delete" onclick="deletePropertyAttachmentFromSupabase('${file.id}', '${propertyKey}')" title="حذف">
+                                <i class="fas fa-trash"></i>
+                                <span>حذف</span>
+                            </button>` : ''}` :
+                            `<button class="mobile-action-btn download" onclick="downloadPropertyAttachment('${propertyKey}', ${index})" title="تحميل">
+                                <i class="fas fa-download"></i>
+                                <span>تحميل</span>
+                            </button>
+                            ${canDelete ? `<button class="mobile-action-btn delete" onclick="deletePropertyAttachment('${propertyKey}', ${index})" title="حذف">
+                                <i class="fas fa-trash"></i>
+                                <span>حذف</span>
+                            </button>` : ''}`
+                        }
                     </div>
-                </div>
-
-                <!-- أزرار العمليات -->
-                <div class="mobile-file-actions">
-                    ${isCloudFile ?
-                        `<button class="mobile-action-btn view" onclick="viewAttachmentFromSupabase('${file.id}', '${file.file_url || file.url}', '${file.file_type || file.type}')" title="عرض">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="mobile-action-btn download" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        ${canDelete ? `<button class="mobile-action-btn delete" onclick="deletePropertyAttachmentFromSupabase('${file.id}', '${propertyKey}')" title="حذف">
-                            <i class="fas fa-trash"></i>
-                        </button>` : ''}` :
-                        `<button class="mobile-action-btn view" onclick="viewPropertyAttachment('${propertyKey}', ${index})" title="عرض">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="mobile-action-btn download" onclick="downloadPropertyAttachment('${propertyKey}', ${index})" title="تحميل">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        ${canDelete ? `<button class="mobile-action-btn delete" onclick="deletePropertyAttachment('${propertyKey}', ${index})" title="حذف">
-                            <i class="fas fa-trash"></i>
-                        </button>` : ''}`
-                    }
                 </div>
             </div>
         `;
@@ -19196,35 +19182,25 @@ function renderCardAttachmentsList(cardKey, attachments = null) {
             <div class="file-info-enhanced">
                 <div class="file-name-enhanced" title="${fileName}">
                     <span class="file-name-text">${fileName}</span>
-                    <span class="storage-indicator-enhanced" title="${storageTitle}">${storageIcon}</span>
-                </div>
-                <div class="file-meta-enhanced">
-                    <span class="file-size-enhanced"><i class="fas fa-weight-hanging"></i> ${fileSize}</span>
-                    <span class="file-date-enhanced"><i class="fas fa-calendar"></i> ${uploadDate}</span>
-                    ${(file.notes || file.description) ? `<span class="file-notes-enhanced" title="${file.notes || file.description}"><i class="fas fa-sticky-note"></i> ملاحظة</span>` : ''}
                 </div>
             </div>
             <div class="attachment-actions-enhanced">
                 ${isLocal ?
                     `<button onclick="downloadCardAttachment('${cardKey}', '${fileName}')" class="btn-enhanced btn-download" title="تحميل">
                         <i class="fas fa-download"></i>
-                        ${!isMobile ? '<span>تحميل</span>' : ''}
+                        <span>تحميل</span>
                     </button>
                     <button onclick="deleteCardAttachment('${cardKey}', '${fileName}')" class="btn-enhanced btn-delete" title="حذف">
                         <i class="fas fa-trash"></i>
-                        ${!isMobile ? '<span>حذف</span>' : ''}
+                        <span>حذف</span>
                     </button>` :
-                    `<button onclick="window.open('${file.file_url}', '_blank')" class="btn-enhanced btn-view" title="عرض">
-                        <i class="fas fa-eye"></i>
-                        ${!isMobile ? '<span>عرض</span>' : ''}
-                    </button>
-                    <button onclick="downloadAttachmentFromSupabase('${file.file_url}', '${fileName}')" class="btn-enhanced btn-download" title="تحميل">
+                    `<button onclick="downloadAttachmentFromSupabase('${file.file_url}', '${fileName}')" class="btn-enhanced btn-download" title="تحميل">
                         <i class="fas fa-download"></i>
-                        ${!isMobile ? '<span>تحميل</span>' : ''}
+                        <span>تحميل</span>
                     </button>
                     <button onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" class="btn-enhanced btn-delete" title="حذف">
                         <i class="fas fa-trash"></i>
-                        ${!isMobile ? '<span>حذف</span>' : ''}
+                        <span>حذف</span>
                     </button>`
                 }
             </div>
@@ -19273,35 +19249,27 @@ function renderMobileCardAttachmentsList(cardKey, attachments) {
                     <div class="mobile-file-name" title="${fileName}">
                         ${fileName}
                     </div>
-                    <div class="mobile-file-meta">
-                        <span><i class="fas fa-weight-hanging"></i> ${fileSize}</span>
-                        <span><i class="fas fa-calendar"></i> ${uploadDate}</span>
-                        <span title="${sourceText}">${sourceIcon}</span>
+                    <!-- أزرار العمليات أسفل اسم الملف مباشرة -->
+                    <div class="mobile-file-actions" style="margin-top: 8px;">
+                        ${isCloudFile ?
+                            `<button class="mobile-action-btn download" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
+                                <i class="fas fa-download"></i>
+                                <span>تحميل</span>
+                            </button>
+                            <button class="mobile-action-btn delete" onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" title="حذف">
+                                <i class="fas fa-trash"></i>
+                                <span>حذف</span>
+                            </button>` :
+                            `<button class="mobile-action-btn download" onclick="downloadCardAttachment('${cardKey}', ${index})" title="تحميل">
+                                <i class="fas fa-download"></i>
+                                <span>تحميل</span>
+                            </button>
+                            <button class="mobile-action-btn delete" onclick="deleteCardAttachment('${cardKey}', ${index})" title="حذف">
+                                <i class="fas fa-trash"></i>
+                                <span>حذف</span>
+                            </button>`
+                        }
                     </div>
-                </div>
-
-                <!-- أزرار العمليات -->
-                <div class="mobile-file-actions">
-                    ${isCloudFile ?
-                        `<button class="mobile-action-btn view" onclick="viewAttachmentFromSupabase('${file.id}', '${file.file_url || file.url}', '${file.file_type || file.type}')" title="عرض">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="mobile-action-btn download" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        <button class="mobile-action-btn delete" onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" title="حذف">
-                            <i class="fas fa-trash"></i>
-                        </button>` :
-                        `<button class="mobile-action-btn view" onclick="viewCardAttachment('${cardKey}', ${index})" title="عرض">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="mobile-action-btn download" onclick="downloadCardAttachment('${cardKey}', ${index})" title="تحميل">
-                            <i class="fas fa-download"></i>
-                        </button>
-                        <button class="mobile-action-btn delete" onclick="deleteCardAttachment('${cardKey}', ${index})" title="حذف">
-                            <i class="fas fa-trash"></i>
-                        </button>`
-                    }
                 </div>
             </div>
         `;
