@@ -2671,48 +2671,255 @@ tr:hover {
 
 /* ===== ENHANCED ATTACHMENTS MODAL DESIGN ===== */
 
-/* تحسين النافذة الأساسية */
+/* تحسين النافذة الأساسية - تصميم موحد ومحسن */
 .attachments-modal.enhanced {
-    max-width: 1200px;
-    width: 95%;
-    max-height: 90vh;
-    border-radius: 20px;
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+    max-width: 1000px;
+    width: 90%;
+    min-height: 400px;
+    max-height: 85vh;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 32px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    animation: modalSlideInEnhanced 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
+    animation: modalSlideInEnhanced 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border: 1px solid rgba(23, 162, 184, 0.1);
+    backdrop-filter: blur(8px);
     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    display: flex;
+    flex-direction: column;
 }
 
+/* تصميم الهيدر المحسن */
 .attachments-header.enhanced {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     color: white;
-    padding: 25px 30px;
+    padding: 20px 24px;
     position: relative;
     overflow: hidden;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.attachments-content.enhanced {
-    padding: 25px;
+.attachments-header.enhanced h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.card-info {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.info-item {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    backdrop-filter: blur(4px);
+}
+
+/* محتوى النافذة المحسن */
+.attachments-content.enhanced,
+.attachments-modal-content.enhanced-content {
+    flex: 1;
+    padding: 20px;
     overflow-y: auto;
-    max-height: calc(90vh - 180px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.upload-zone.enhanced {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+/* منطقة الرفع المحسنة */
+.upload-section.compact-upload {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border: 2px dashed #17a2b8;
     border-radius: 12px;
-    padding: 25px;
-    text-align: center;
-    cursor: pointer;
+    padding: 20px;
+    margin-bottom: 16px;
     transition: all 0.3s ease;
 }
 
-.upload-zone.enhanced:hover {
-    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-    border-color: #138496;
-    transform: translateY(-2px);
+.upload-area.enhanced-upload {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+.upload-dropzone {
+    text-align: center;
+    cursor: pointer;
+    padding: 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.upload-dropzone:hover {
+    background: rgba(23, 162, 184, 0.05);
+    transform: translateY(-1px);
+}
+
+.upload-dropzone i {
+    font-size: 2rem;
+    color: #17a2b8;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.upload-dropzone p {
+    margin: 8px 0 4px 0;
+    font-weight: 500;
+    color: #495057;
+}
+
+.upload-dropzone small {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+/* قائمة المرفقات المحسنة */
+.attachments-main-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.attachments-header {
+    margin-bottom: 12px;
+}
+
+.attachments-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.attachments-list.compact-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* تحسين عناصر المرفقات */
+.attachment-item {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.attachment-item:hover {
+    border-color: #17a2b8;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.1);
+    transform: translateY(-1px);
+}
+
+.attachment-item:last-child {
+    margin-bottom: 0;
+}
+
+/* تحسين الأزرار */
+.btn-primary, .btn-secondary {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+}
+
+.btn-secondary {
+    background: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+}
+
+.btn-secondary:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+/* تحسين زر الإغلاق */
+.close-modal.enhanced-close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: rgb(27, 26, 26);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.close-modal.enhanced-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* زر الإغلاق المحسن للجوال - في المنتصف */
+@media (max-width: 768px) {
+    .close-modal.enhanced-close-btn {
+        position: relative;
+        top: auto;
+        right: auto;
+        left: auto;
+        margin: 8px auto 0 auto;
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+        background: rgba(255, 255, 255, 0.15);
+        order: 2;
+    }
+
+    .close-modal.enhanced-close-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
+    }
+
+    /* تعديل ترتيب عناصر الهيدر للجوال */
+    .attachments-header.enhanced {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        position: relative;
+    }
 }
 
 .attachment-item.enhanced {
@@ -2800,18 +3007,737 @@ tr:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Mobile Optimizations */
+/* تحسينات الأجهزة المحمولة - محسنة */
 @media (max-width: 768px) {
     .attachments-modal.enhanced {
         width: 98%;
+        max-width: 98vw;
         max-height: 95vh;
         margin: 2.5vh auto;
-        border-radius: 16px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* تصغير الهيدر للجوال */
+    .attachments-header.enhanced {
+        padding: 12px 16px;
+        flex-shrink: 0;
+    }
+
+    .attachments-header.enhanced h2 {
+        font-size: 1.1rem;
+        margin: 0 0 6px 0;
+        font-weight: 600;
+    }
+
+    .card-info {
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .info-item {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+
+    /* تحسين المحتوى للجوال */
+    .attachments-content.enhanced,
+    .attachments-modal-content.enhanced-content {
+        flex: 1;
+        padding: 8px;
+        gap: 6px;
+        overflow-y: auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* ترتيب العناصر للجوال */
+    .attachments-main-section {
+        order: 3;
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* تصغير منطقة الرفع للجوال - محسنة أكثر */
+    .upload-section.compact-upload {
+        padding: 6px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        flex-shrink: 0;
+        order: 1;
+    }
+
+    .upload-dropzone {
+        padding: 6px;
+        border-radius: 4px;
+        min-height: 45px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .upload-dropzone i {
+        font-size: 1.1rem;
+        margin-bottom: 2px;
+    }
+
+    .upload-dropzone p {
+        margin: 2px 0 1px 0;
+        font-size: 0.75rem;
+        line-height: 1.2;
+    }
+
+    .upload-dropzone small {
+        font-size: 0.65rem;
+        margin-top: 1px;
+        opacity: 0.8;
+    }
+
+    /* تحسين قائمة المرفقات للجوال */
+    .attachments-main-section {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .attachments-header h3 {
+        font-size: 1rem;
+        margin-bottom: 8px;
+    }
+
+    .attachments-list.compact-list {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .attachment-item {
+        padding: 8px;
+        margin-bottom: 6px;
+        border-radius: 6px;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+    }
+
+    .attachment-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* تحسين الأزرار للجوال */
+    .btn-primary, .btn-secondary {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+    }
+
+    /* تحسين زر الإغلاق للجوال */
+    .close-modal.enhanced-close-btn {
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        font-size: 0.9rem;
+    }
+}
+
+/* تحسينات للشاشات الصغيرة جداً - مبسطة */
+@media (max-width: 480px) {
+    .attachments-modal.enhanced {
+        width: 100%;
+        max-width: 100vw;
+        max-height: 100vh;
+        margin: 0;
+        border-radius: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* هيدر مبسط للشاشات الصغيرة - فقط العنوان */
+    .attachments-header.enhanced {
+        padding: 16px;
+        text-align: center;
+        flex-shrink: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .attachments-header.enhanced h2 {
+        font-size: 1.1rem;
+        margin: 0;
+        color: white;
+    }
+
+    /* إخفاء معلومات البطاقة/العقار للشاشات الصغيرة */
+    .card-info {
+        display: none !important;
+    }
+
+    .info-item {
+        display: none !important;
+    }
+
+    /* إخفاء منطقة الرفع للشاشات الصغيرة */
+    .upload-section.compact-upload {
+        display: none !important;
+    }
+
+    .upload-dropzone {
+        display: none !important;
+    }
+
+    /* إخفاء زر الإغلاق التقليدي */
+    .close-modal.enhanced-close-btn {
+        display: none !important;
+    }
+
+    /* محتوى مبسط */
+    .attachments-content.enhanced,
+    .attachments-modal-content.enhanced-content {
+        flex: 1;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        overflow: hidden;
+    }
+
+    /* قسم المرفقات يأخذ المساحة الكاملة */
+    .attachments-main-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* عنوان المرفقات */
+    .attachments-header h3 {
+        font-size: 1.1rem;
+        margin-bottom: 16px;
+        text-align: center;
+        color: #333;
+        font-weight: 600;
+    }
+
+    /* قائمة المرفقات */
+    .attachments-list.compact-list {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+
+    .attachment-item {
+        padding: 16px;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .attachment-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* منطقة الأزرار في الأسفل */
+    .mobile-buttons-area {
+        display: flex !important;
+        gap: 12px;
+        padding: 16px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        flex-shrink: 0;
+    }
+
+    .mobile-buttons-area .btn {
+        flex: 1;
+        padding: 14px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+    .mobile-buttons-area .btn-upload {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .mobile-buttons-area .btn-upload:hover {
+        background: #138496;
+        transform: translateY(-1px);
+    }
+
+    .mobile-buttons-area .btn-cancel {
+        background: #6c757d;
+        color: white;
+    }
+
+    .mobile-buttons-area .btn-cancel:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+    }
+
+    /* إخفاء أي عناصر إضافية غير مرغوب فيها */
+    .card-details,
+    .property-details,
+    .drag-drop-area,
+    .upload-instructions,
+    .file-input-wrapper,
+    .modal-footer-actions,
+    .scroll-to-top-btn,
+    .upload-notes-sidebar,
+    .content-layout-new {
+        display: none !important;
+    }
+
+    /* إظهار منطقة الأزرار للشاشات الصغيرة فقط */
+    .mobile-buttons-area {
+        display: flex !important;
+    }
+
+    /* تحسين عرض قائمة المرفقات للشاشات الصغيرة */
+    .attachments-list.compact-list.scrollable-attachments {
+        background: white;
+        border-radius: 8px;
+        padding: 8px;
+        margin: 0;
+    }
+
+    /* تحسين عرض عنصر المرفق الواحد */
+    .attachment-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .attachment-item .file-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .attachment-item .file-actions {
+        flex-shrink: 0;
+        display: flex;
+        gap: 8px;
+    }
+
+    /* تحسين الأيقونات والنصوص */
+    .attachment-item i {
+        font-size: 1.2rem;
+        margin-left: 8px;
+    }
+
+    .attachment-item .file-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 4px;
+        word-break: break-word;
+    }
+
+    .attachment-item .file-details {
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    /* تحسين حالة عدم وجود مرفقات */
+    .no-attachments-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+
+    .no-attachments-state i {
+        font-size: 3rem;
+        color: #ddd;
+        margin-bottom: 16px;
+    }
+
+    .no-attachments-state p {
+        font-size: 1rem;
+        margin: 0;
+    }
+}
+
+/* تحسين التمرير */
+.attachments-list.compact-list.scrollable-attachments {
+    scrollbar-width: thin;
+    scrollbar-color: #17a2b8 #f1f3f4;
+}
+
+.attachments-list.compact-list.scrollable-attachments::-webkit-scrollbar {
+    width: 6px;
+}
+
+.attachments-list.compact-list.scrollable-attachments::-webkit-scrollbar-track {
+    background: #f1f3f4;
+    border-radius: 3px;
+}
+
+.attachments-list.compact-list.scrollable-attachments::-webkit-scrollbar-thumb {
+    background: #17a2b8;
+    border-radius: 3px;
+}
+
+.attachments-list.compact-list.scrollable-attachments::-webkit-scrollbar-thumb:hover {
+    background: #138496;
+}
+
+/* إصلاح مشكلة التمرير ومنع تحرك الخلفية */
+.modal-open {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.modal-open body {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* منع التمرير للخلفية عند فتح النافذة المنبثقة */
+.attachments-modal.enhanced {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.attachments-modal.enhanced .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+    touch-action: none;
+}
+
+/* تحسين التمرير للجوال */
+@media (max-width: 768px) {
+    .attachments-list.compact-list.scrollable-attachments::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .attachments-list.compact-list.scrollable-attachments::-webkit-scrollbar-track {
+        background: rgba(241, 243, 244, 0.5);
+    }
+
+    .attachments-list.compact-list.scrollable-attachments::-webkit-scrollbar-thumb {
+        background: rgba(23, 162, 184, 0.7);
+        border-radius: 2px;
+    }
+
+    /* تحسين التمرير للنافذة الكاملة على الجوال */
+    .attachments-modal-content.enhanced-content {
+        scrollbar-width: thin;
+        scrollbar-color: #17a2b8 transparent;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .attachments-modal-content.enhanced-content::-webkit-scrollbar {
+        width: 3px;
+    }
+
+    .attachments-modal-content.enhanced-content::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .attachments-modal-content.enhanced-content::-webkit-scrollbar-thumb {
+        background: rgba(23, 162, 184, 0.5);
+        border-radius: 2px;
+    }
+
+    /* منع التمرير للخلفية على الجوال */
+    .attachments-modal.enhanced {
+        touch-action: none;
+    }
+
+    .attachments-modal-content.enhanced-content {
+        touch-action: pan-y;
+    }
+}
+
+@media (max-width: 480px) {
+    .attachments-list.compact-list.scrollable-attachments::-webkit-scrollbar {
+        width: 2px;
+    }
+
+    .attachments-modal-content.enhanced-content::-webkit-scrollbar {
+        width: 2px;
+    }
+}
+
+/* تحسينات إضافية لاستغلال المساحة على الجوال */
+@media (max-width: 768px) {
+    /* إخفاء عناصر غير ضرورية على الجوال */
+    .attachments-header.enhanced::before,
+    .attachments-header.enhanced::after {
+        display: none;
+    }
+
+    /* تحسين توزيع المساحة */
+    .attachments-modal.enhanced {
+        padding: 0;
+    }
+
+    /* تحسين منطقة المحتوى */
+    .attachments-modal-content.enhanced-content {
+        border-radius: 0 0 12px 12px;
+    }
+
+    /* تحسين عرض المعلومات */
+    .card-info {
+        justify-content: center;
+        max-width: 100%;
+        overflow-x: auto;
+        padding: 0 4px;
+    }
+
+    /* تحسين الأزرار للمس */
+    .btn-primary, .btn-secondary {
+        min-height: 36px;
+        touch-action: manipulation;
+    }
+
+    /* تحسين عناصر المرفقات للمس */
+    .attachment-item {
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+
+    /* تحسين منطقة الرفع للمس */
+    .upload-dropzone {
+        min-height: 60px;
+        touch-action: manipulation;
+    }
+}
+
+/* تحسينات خاصة للشاشات العريضة القصيرة (landscape) */
+@media (max-width: 768px) and (orientation: landscape) {
+    .attachments-modal.enhanced {
+        max-height: 98vh;
+        margin: 1vh auto;
     }
 
     .attachments-header.enhanced {
-        padding: 20px;
+        padding: 8px 16px;
     }
+
+    .attachments-header.enhanced h2 {
+        font-size: 1rem;
+        margin: 0 0 4px 0;
+    }
+
+    .card-info {
+        margin-top: 2px;
+    }
+
+    .upload-section.compact-upload {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+
+    .upload-dropzone {
+        padding: 6px;
+        min-height: 50px;
+    }
+
+    .upload-dropzone i {
+        font-size: 1.2rem;
+        margin-bottom: 2px;
+    }
+
+    .upload-dropzone p {
+        font-size: 0.8rem;
+        margin: 2px 0 1px 0;
+    }
+
+    .upload-dropzone small {
+        font-size: 0.7rem;
+    }
+}
+
+/* تحسين حالة التحميل */
+.loading-attachments {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.loading-attachments i {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    color: #17a2b8;
+}
+
+/* تحسين حالة عدم وجود مرفقات */
+.no-attachments-state,
+.mobile-no-attachments {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #6c757d;
+    text-align: center;
+}
+
+.no-attachments-state i,
+.mobile-no-attachments i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+    color: #17a2b8;
+}
+
+/* تحسينات الجوال لحالات التحميل وعدم وجود مرفقات */
+@media (max-width: 768px) {
+    .loading-attachments {
+        padding: 20px 15px;
+    }
+
+    .loading-attachments i {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+
+    .no-attachments-state,
+    .mobile-no-attachments {
+        padding: 20px 15px;
+    }
+
+    .no-attachments-state i,
+    .mobile-no-attachments i {
+        font-size: 2.5rem;
+        margin-bottom: 12px;
+    }
+
+    .no-attachments-state p,
+    .mobile-no-attachments p {
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .no-attachments-state small,
+    .mobile-no-attachments small {
+        font-size: 0.8rem;
+        margin-top: 4px;
+        display: block;
+    }
+}
+
+@media (max-width: 480px) {
+    .loading-attachments {
+        padding: 15px 10px;
+    }
+
+    .loading-attachments i {
+        font-size: 1.8rem;
+        margin-bottom: 6px;
+    }
+
+    .no-attachments-state,
+    .mobile-no-attachments {
+        padding: 15px 10px;
+    }
+
+    .no-attachments-state i,
+    .mobile-no-attachments i {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+
+    .no-attachments-state p,
+    .mobile-no-attachments p {
+        font-size: 0.85rem;
+    }
+
+    .no-attachments-state small,
+    .mobile-no-attachments small {
+        font-size: 0.75rem;
+    }
+}
+
+/* تحسين التكيف التلقائي مع المحتوى */
+.attachments-modal.enhanced {
+    min-height: 300px;
+    height: auto;
+}
+
+/* عندما لا توجد مرفقات - تقليل الحجم */
+.attachments-modal.enhanced.no-attachments {
+    max-height: 500px;
+}
+
+/* عندما توجد مرفقات قليلة - تكيف الحجم */
+.attachments-modal.enhanced.few-attachments {
+    max-height: 600px;
+}
+
+/* عندما توجد مرفقات كثيرة - الحجم الكامل */
+.attachments-modal.enhanced.many-attachments {
+    max-height: 85vh;
+}
+
+/* تحسين الانيميشن */
+@keyframes modalSlideInEnhanced {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* تحسين الألوان والتدرجات */
+.modal-overlay.enhanced-modal-overlay {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+/* تحسين الفوكس والإمكانية */
+.attachments-modal.enhanced:focus-within {
+    box-shadow: 0 20px 60px rgba(23, 162, 184, 0.2), 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* تحسين الاستجابة للحركة */
+@media (prefers-reduced-motion: reduce) {
+    .attachments-modal.enhanced {
+        animation: none;
+    }
+
+    .attachment-item,
+    .btn-primary,
+    .btn-secondary {
+        transition: none;
+    }
+}
 
     .attachments-content.enhanced {
         padding: 16px;
@@ -2851,7 +3777,7 @@ tr:hover {
         justify-content: center;
         padding: 10px;
     }
-}
+
 
 /* Touch Device Optimizations */
 @media (hover: none) and (pointer: coarse) {

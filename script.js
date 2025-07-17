@@ -744,6 +744,9 @@ function updateGenericFilterButtons() {
 function clearAllFilters() {
     console.log('🗑️ مسح جميع الفلاتر...');
 
+    // إظهار أيقونة التحميل على أزرار مسح الفلاتر
+    showClearFiltersLoading(true);
+
     // إعادة تعيين جميع المتغيرات
     currentCountry = null;
     currentProperty = null;
@@ -824,10 +827,44 @@ function clearAllFilters() {
             updateTotals();
         }
         updateActiveFiltersDisplay();
+
+        // إخفاء أيقونة التحميل بعد اكتمال العمليات
+        setTimeout(() => {
+            showClearFiltersLoading(false);
+        }, 300);
     }, 100);
 
     // إظهار أيقونة صغيرة بدلاً من الإشعار النصي
     showMiniIconNotification('🗑️', '#28a745', 2000);
+}
+
+// إظهار/إخفاء أيقونة التحميل على أزرار مسح الفلاتر
+function showClearFiltersLoading(show) {
+    const clearButtons = document.querySelectorAll('.clear-all-filters-btn');
+
+    clearButtons.forEach(btn => {
+        if (show) {
+            // حفظ النص الأصلي
+            if (!btn.dataset.originalText) {
+                btn.dataset.originalText = btn.innerHTML;
+            }
+
+            // إظهار أيقونة التحميل
+            btn.innerHTML = `
+                <i class="fas fa-spinner fa-spin" style="margin-left: 8px;"></i>
+                جاري المسح...
+            `;
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+        } else {
+            // إعادة النص الأصلي
+            if (btn.dataset.originalText) {
+                btn.innerHTML = btn.dataset.originalText;
+            }
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    });
 }
 
 // إظهار إشعار مؤقت
@@ -6894,6 +6931,13 @@ function checkPassword() {
 
 // إغلاق المودال (التصميم السابق)
 function closeModal() {
+    // إعادة تفعيل التمرير في الخلفية
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+    document.documentElement.style.overflow = '';
+
     // حفظ تلقائي قبل الإغلاق إذا كان هناك نموذج تحرير نشط
     const activeForm = document.querySelector('.modal-overlay form');
     if (activeForm && typeof autoSaveInstallmentChanges === 'function') {
@@ -8484,9 +8528,36 @@ function showAttachmentsProperties(city) {
     });
 }
 
+// دالة التكيف التلقائي مع المحتوى
+function adjustModalSizeBasedOnContent(attachmentCount) {
+    const modal = document.querySelector('.attachments-modal.enhanced');
+    if (!modal) return;
+
+    // إزالة الكلاسات السابقة
+    modal.classList.remove('no-attachments', 'few-attachments', 'many-attachments');
+
+    // تطبيق الكلاس المناسب حسب عدد المرفقات
+    if (attachmentCount === 0) {
+        modal.classList.add('no-attachments');
+    } else if (attachmentCount <= 5) {
+        modal.classList.add('few-attachments');
+    } else {
+        modal.classList.add('many-attachments');
+    }
+
+    console.log(`📏 تم تعديل حجم النافذة حسب المحتوى: ${attachmentCount} مرفق`);
+}
+
 // Enhanced attachments modal with real-time cross-device synchronization (Updated to match Card Attachments)
 function showAttachmentsModal(city, propertyName) {
     console.log('🎯 فتح نافذة مرفقات العقار...', { city, propertyName });
+
+    // منع التمرير في الخلفية
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    document.documentElement.style.overflow = 'hidden';
 
     // إغلاق أي نوافذ موجودة مسبقاً
     closeModal();
@@ -8591,20 +8662,18 @@ function showAttachmentsModal(city, propertyName) {
         // التصميم الحالي للشاشات الكبيرة (بدون تغيير)
         html = `
         <div class="modal-overlay enhanced-modal-overlay" style="display:flex;">
-            <div class="modal-box attachments-modal enhanced-attachments-modal">
+            <div class="modal-box attachments-modal enhanced">
                 <!-- زر الإغلاق المحسن -->
                 <button class="close-modal enhanced-close-btn" onclick="closeModal()" title="إغلاق النافذة">
                     <i class="fas fa-times"></i>
                 </button>
 
                 <!-- رأس النافذة المحسن -->
-                <div class="attachments-modal-header enhanced-header">
-                    <div class="header-content">
-                        <h2><i class="fas fa-paperclip"></i> مرفقات العقار</h2>
-                        <div class="card-info">
-                            <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
-                            <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
-                        </div>
+                <div class="attachments-header enhanced">
+                    <h2><i class="fas fa-paperclip"></i> مرفقات العقار</h2>
+                    <div class="card-info">
+                        <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
+                        <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
                     </div>
                 </div>
 
@@ -8645,6 +8714,20 @@ function showAttachmentsModal(city, propertyName) {
                     </div>
                 </div>
 
+                <!-- منطقة الأزرار للشاشات الصغيرة -->
+                <div class="mobile-buttons-area" style="display: none;">
+                    ${canUpload ? `
+                    <button class="btn btn-upload" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                        <i class="fas fa-plus"></i>
+                        إدراج مرفقات
+                    </button>
+                    ` : ''}
+                    <button class="btn btn-cancel" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                        إلغاء
+                    </button>
+                </div>
+
                 <!-- زر الإغلاق في الأسفل -->
                 <div class="modal-footer-actions">
                     <button class="close-modal-btn" onclick="closeModal()">
@@ -8657,6 +8740,9 @@ function showAttachmentsModal(city, propertyName) {
                 <button class="scroll-to-top-btn" id="scrollToTopBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" onclick="scrollToTopPropertyAttachments('${propertyKey}')" title="العودة للأعلى">
                     <i class="fas fa-chevron-up"></i>
                 </button>
+
+                <!-- حقل الرفع المخفي للشاشات الصغيرة -->
+                <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
             </div>
         </div>`;
     }
@@ -8712,6 +8798,9 @@ function showAttachmentsModal(city, propertyName) {
             }
 
             console.log('✅ تم عرض المرفقات في النافذة مع تحسينات الجوال');
+
+            // تطبيق التكيف التلقائي مع المحتوى
+            adjustModalSizeBasedOnContent(propertyAttachments.length);
 
             // Initialize search functionality
             setTimeout(() => {
@@ -18747,6 +18836,13 @@ function loadUnitsResults() {
 function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber) {
     console.log('🎯 فتح نافذة مرفقات البطاقة...', { city, propertyName, contractNumber, unitNumber });
 
+    // منع التمرير في الخلفية
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    document.documentElement.style.overflow = 'hidden';
+
     // إغلاق أي نوافذ موجودة مسبقاً
     closeModal();
 
@@ -18846,79 +18942,42 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
         // التصميم الحالي للشاشات الكبيرة (بدون تغيير)
         html = `
         <div class="modal-overlay enhanced-modal-overlay" style="display:flex;">
-            <div class="modal-box attachments-modal enhanced-attachments-modal">
+            <div class="modal-box attachments-modal enhanced">
                 <!-- زر الإغلاق المحسن -->
                 <button class="close-modal enhanced-close-btn" onclick="closeModal()" title="إغلاق النافذة">
                     <i class="fas fa-times"></i>
                 </button>
 
                 <!-- رأس النافذة المحسن -->
-                <div class="attachments-modal-header enhanced-header">
-                    <div class="header-content">
-                        <h2><i class="fas fa-paperclip"></i> مرفقات البطاقة</h2>
-                        <div class="card-info">
-                            <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
-                            <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
-                            ${contractNumber ? `<span class="info-item"><i class="fas fa-file-contract"></i> عقد: ${contractNumber}</span>` : ''}
-                            ${unitNumber ? `<span class="info-item"><i class="fas fa-home"></i> وحدة: ${unitNumber}</span>` : ''}
-                        </div>
+                <div class="attachments-header enhanced">
+                    <h2><i class="fas fa-paperclip"></i> مرفقات البطاقة</h2>
+                    <div class="card-info">
+                        <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
+                        <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
+                        ${contractNumber ? `<span class="info-item"><i class="fas fa-file-contract"></i> عقد: ${contractNumber}</span>` : ''}
+                        ${unitNumber ? `<span class="info-item"><i class="fas fa-home"></i> وحدة: ${unitNumber}</span>` : ''}
                     </div>
                 </div>
 
-                <!-- محتوى النافذة بالتخطيط الجديد -->
+                <!-- محتوى النافذة -->
                 <div class="attachments-modal-content enhanced-content">
-                    <div class="content-layout-new">
-                        <!-- الجانب الأيسر: منطقة الرفع والملاحظات -->
-                        <div class="upload-notes-sidebar">
-                            <!-- منطقة الرفع -->
-                            <div class="upload-section compact-upload">
-                                <div class="upload-area enhanced-upload" id="cardUploadArea_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">
-                                    <div class="upload-dropzone" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                        <p>اسحب الملفات هنا أو انقر للاختيار</p>
-                                        <small>يدعم جميع أنواع الملفات</small>
-                                    </div>
-                                    <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
-                                </div>
+                    <!-- منطقة الرفع -->
+                    <div class="upload-section compact-upload" style="margin-bottom: 20px;">
+                        <div class="upload-area enhanced-upload" id="cardUploadArea_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">
+                            <div class="upload-dropzone" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>اسحب الملفات هنا أو انقر للاختيار</p>
+                                <small>يدعم جميع أنواع الملفات</small>
                             </div>
-
-                            <!-- قسم الملاحظات -->
-                            <div class="notes-section-compact">
-                                <div class="notes-container-compact">
-                                    <h4><i class="fas fa-sticky-note"></i> ملاحظات</h4>
-                                    <textarea
-                                        id="cardUploadNotes_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}"
-                                        class="notes-textarea-compact"
-                                        placeholder="أضف ملاحظات..."
-                                        rows="3"
-                                    ></textarea>
-                                    <div class="notes-info-compact">
-                                        <small><i class="fas fa-info-circle"></i> ستُحفظ مع المرفقات الجديدة</small>
-                                    </div>
-                                </div>
-                            </div>
+                            <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
                         </div>
+                    </div>
 
-                        <!-- الجانب الأيمن: قائمة المرفقات (العرض الكامل) -->
-                        <div class="attachments-main-section">
+                    <!-- قائمة المرفقات (العرض الكامل) -->
+                    <div class="attachments-main-section" style="width: 100%;">
                             <div class="attachments-header">
                                 <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
-                                <!-- Search Controls Outside Container -->
-                                <div class="attachments-search-controls">
-                                    <div class="attachments-search-container">
-                                        <input type="text" id="cardAttachmentsSearch_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" placeholder="بحث في المرفقات..." class="attachments-search-input">
-                                    </div>
-                                    <div class="attachments-search-actions">
-                                        <button class="search-btn attachments-search-btn" onclick="performCardAttachmentsSearch('${cardKey}')" title="بحث">
-                                            <i class="fas fa-search"></i>
-                                            <span class="btn-text">بحث</span>
-                                        </button>
-                                        <button class="clear-btn attachments-clear-btn" onclick="clearCardAttachmentsSearchWithLoading('${cardKey}')" title="مسح" style="display: none;">
-                                            <i class="fas fa-times"></i>
-                                            <span class="btn-text">مسح</span>
-                                        </button>
-                                    </div>
-                                </div>
+
                             </div>
                             <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list scrollable-attachments">
                                 <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
@@ -18926,8 +18985,21 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                                     <p>جاري تحميل المرفقات...</p>
                                 </div>
                             </div>
-                        </div>
                     </div>
+                </div>
+
+                <!-- منطقة الأزرار للشاشات الصغيرة -->
+                <div class="mobile-buttons-area" style="display: none;">
+                    ${canUpload ? `
+                    <button class="btn btn-upload" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                        <i class="fas fa-plus"></i>
+                        إدراج مرفقات
+                    </button>
+                    ` : ''}
+                    <button class="btn btn-cancel" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                        إلغاء
+                    </button>
                 </div>
 
                 <!-- زر الإغلاق في الأسفل -->
@@ -18942,6 +19014,9 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                 <button class="scroll-to-top-btn" id="scrollToTopBtn_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" onclick="scrollToTopAttachments('${cardKey}')" title="العودة للأعلى">
                     <i class="fas fa-chevron-up"></i>
                 </button>
+
+                <!-- حقل الرفع المخفي للشاشات الصغيرة -->
+                <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${city}', '${propertyName}', '${contractNumber}', '${unitNumber}')">
             </div>
         </div>`;
     }
@@ -18997,6 +19072,9 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
             }
 
             console.log('✅ تم عرض المرفقات في النافذة مع تحسينات الجوال');
+
+            // تطبيق التكيف التلقائي مع المحتوى
+            adjustModalSizeBasedOnContent(cardAttachments.length);
 
             // Initialize search functionality
             setTimeout(() => {

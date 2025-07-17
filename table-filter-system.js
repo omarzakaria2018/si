@@ -409,6 +409,9 @@ class TableFilterSystem {
 
     // مسح جميع الفلاتر
     clearAllFilters(tableId) {
+        // إظهار أيقونة التحميل
+        this.showTableClearLoading(tableId, true);
+
         // مسح الفلاتر المتعلقة بالجدول
         const keysToDelete = [];
         for (const key of this.activeFilters.keys()) {
@@ -416,12 +419,12 @@ class TableFilterSystem {
                 keysToDelete.push(key);
             }
         }
-        
+
         keysToDelete.forEach(key => this.activeFilters.delete(key));
-        
+
         // إعادة عرض جميع الصفوف
         this.applyAllFilters(tableId);
-        
+
         // تحديث جميع أيقونات الفلاتر
         const table = document.getElementById(tableId);
         if (table) {
@@ -430,8 +433,43 @@ class TableFilterSystem {
                 this.updateFilterIcon(tableId, index);
             });
         }
-        
+
         console.log(`🧹 تم مسح جميع فلاتر الجدول: ${tableId}`);
+
+        // إخفاء أيقونة التحميل بعد اكتمال العمليات
+        setTimeout(() => {
+            this.showTableClearLoading(tableId, false);
+        }, 500);
+    }
+
+    // إظهار/إخفاء أيقونة التحميل على أزرار مسح فلاتر الجدول
+    showTableClearLoading(tableId, show) {
+        // البحث عن أزرار مسح الفلاتر المرتبطة بهذا الجدول
+        const clearButtons = document.querySelectorAll(`[onclick*="clearAllFilters('${tableId}')"], [onclick*="clearAllFilters(\\"${tableId}\\")"]`);
+
+        clearButtons.forEach(btn => {
+            if (show) {
+                // حفظ النص الأصلي
+                if (!btn.dataset.originalText) {
+                    btn.dataset.originalText = btn.innerHTML;
+                }
+
+                // إظهار أيقونة التحميل
+                btn.innerHTML = `
+                    <i class="fas fa-spinner fa-spin" style="margin-left: 8px;"></i>
+                    جاري المسح...
+                `;
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            } else {
+                // إعادة النص الأصلي
+                if (btn.dataset.originalText) {
+                    btn.innerHTML = btn.dataset.originalText;
+                }
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        });
     }
 
     // إضافة الأنماط المطلوبة
