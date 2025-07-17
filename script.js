@@ -867,6 +867,60 @@ function showClearFiltersLoading(show) {
     });
 }
 
+// إظهار/إخفاء مؤشر تحميل الملفات
+function showDownloadProgress(fileName, show) {
+    const progressId = `download-progress-${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+    if (show) {
+        // إنشاء مؤشر التحميل
+        const progressDiv = document.createElement('div');
+        progressDiv.id = progressId;
+        progressDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #17a2b8;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 300px;
+        `;
+
+        progressDiv.innerHTML = `
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>جاري تحميل: ${fileName.length > 20 ? fileName.substring(0, 20) + '...' : fileName}</span>
+        `;
+
+        document.body.appendChild(progressDiv);
+
+        // إضافة تأثير الظهور
+        setTimeout(() => {
+            progressDiv.style.transform = 'translateX(0)';
+            progressDiv.style.opacity = '1';
+        }, 100);
+
+    } else {
+        // إزالة مؤشر التحميل
+        const progressDiv = document.getElementById(progressId);
+        if (progressDiv) {
+            progressDiv.style.transform = 'translateX(100%)';
+            progressDiv.style.opacity = '0';
+            setTimeout(() => {
+                if (progressDiv.parentNode) {
+                    progressDiv.parentNode.removeChild(progressDiv);
+                }
+            }, 300);
+        }
+    }
+}
+
 // إظهار إشعار مؤقت
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -9233,7 +9287,7 @@ function viewPropertyAttachment(propertyKey, fileIndex) {
     `);
 }
 
-// تحميل مرفق العقار
+// تحميل مرفق العقار - Enhanced for all file types
 function downloadPropertyAttachment(propertyKey, fileIndex) {
     const propertyFiles = attachments[propertyKey] || [];
     const file = propertyFiles[fileIndex];
@@ -9243,13 +9297,68 @@ function downloadPropertyAttachment(propertyKey, fileIndex) {
         return;
     }
 
-    // إنشاء رابط التحميل
-    const link = document.createElement('a');
-    link.href = file.data;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+        console.log(`📥 بدء تحميل مرفق العقار: ${file.name}`);
+
+        // إظهار مؤشر التحميل
+        showDownloadProgress(file.name, true);
+
+        // تحويل base64 إلى blob إذا لزم الأمر
+        let downloadUrl = file.data;
+        let shouldRevoke = false;
+
+        if (file.data.startsWith('data:')) {
+            // تحويل data URL إلى blob للتحميل الصحيح
+            const response = fetch(file.data);
+            response.then(res => res.blob()).then(blob => {
+                downloadUrl = window.URL.createObjectURL(blob);
+                shouldRevoke = true;
+                performDownload();
+            });
+        } else {
+            performDownload();
+        }
+
+        function performDownload() {
+            // إنشاء رابط التحميل
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = file.name;
+            link.style.display = 'none';
+
+            // إضافة الرابط للصفحة وتفعيله
+            document.body.appendChild(link);
+            link.click();
+
+            // تنظيف الموارد
+            document.body.removeChild(link);
+            if (shouldRevoke) {
+                window.URL.revokeObjectURL(downloadUrl);
+            }
+
+            // إخفاء مؤشر التحميل وإظهار رسالة نجاح
+            showDownloadProgress(file.name, false);
+            showMiniIconNotification('📥', '#28a745', 2000);
+
+            console.log(`✅ تم تحميل مرفق العقار بنجاح: ${file.name}`);
+        }
+
+    } catch (error) {
+        console.error(`❌ خطأ في تحميل مرفق العقار ${file.name}:`, error);
+
+        // إخفاء مؤشر التحميل وإظهار رسالة خطأ
+        showDownloadProgress(file.name, false);
+        showMiniIconNotification('❌', '#dc3545', 3000);
+
+        // محاولة التحميل المباشر كبديل
+        const link = document.createElement('a');
+        link.href = file.data;
+        link.download = file.name;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }
 
 // حذف مرفق العقار
@@ -10384,15 +10493,62 @@ function viewAttachmentFromSupabase(attachmentId, fileUrl, fileType) {
     }
 }
 
-// Download attachment from Supabase
-function downloadAttachmentFromSupabase(fileUrl, fileName) {
-    const link = document.createElement('a');
-    link.href = fileUrl;
-    link.download = fileName;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+// Download attachment from Supabase - Enhanced for all file types
+async function downloadAttachmentFromSupabase(fileUrl, fileName) {
+    try {
+        console.log(`📥 بدء تحميل الملف: ${fileName}`);
+
+        // إظهار مؤشر التحميل
+        showDownloadProgress(fileName, true);
+
+        // جلب الملف من الرابط
+        const response = await fetch(fileUrl);
+
+        if (!response.ok) {
+            throw new Error(`فشل في تحميل الملف: ${response.status}`);
+        }
+
+        // تحويل الاستجابة إلى blob
+        const blob = await response.blob();
+
+        // إنشاء رابط التحميل
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+        link.style.display = 'none';
+
+        // إضافة الرابط للصفحة وتفعيله
+        document.body.appendChild(link);
+        link.click();
+
+        // تنظيف الموارد
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+
+        // إخفاء مؤشر التحميل وإظهار رسالة نجاح
+        showDownloadProgress(fileName, false);
+        showMiniIconNotification('📥', '#28a745', 2000);
+
+        console.log(`✅ تم تحميل الملف بنجاح: ${fileName}`);
+
+    } catch (error) {
+        console.error(`❌ خطأ في تحميل الملف ${fileName}:`, error);
+
+        // إخفاء مؤشر التحميل وإظهار رسالة خطأ
+        showDownloadProgress(fileName, false);
+        showMiniIconNotification('❌', '#dc3545', 3000);
+
+        // محاولة التحميل المباشر كبديل
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = fileName;
+        link.target = '_blank';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }
 
 // Delete attachment from Supabase
@@ -19594,7 +19750,7 @@ function setupCardDragAndDrop(cardKey) {
     });
 }
 
-// تحميل مرفق البطاقة
+// تحميل مرفق البطاقة - Enhanced for all file types
 function downloadCardAttachment(cardKey, fileName) {
     const cardFiles = cardAttachments[cardKey] || [];
     const file = cardFiles.find(f => f.name === fileName);
@@ -19604,12 +19760,68 @@ function downloadCardAttachment(cardKey, fileName) {
         return;
     }
 
-    const link = document.createElement('a');
-    link.href = file.data;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+        console.log(`📥 بدء تحميل مرفق البطاقة: ${file.name}`);
+
+        // إظهار مؤشر التحميل
+        showDownloadProgress(file.name, true);
+
+        // تحويل base64 إلى blob إذا لزم الأمر
+        let downloadUrl = file.data;
+        let shouldRevoke = false;
+
+        if (file.data.startsWith('data:')) {
+            // تحويل data URL إلى blob للتحميل الصحيح
+            const response = fetch(file.data);
+            response.then(res => res.blob()).then(blob => {
+                downloadUrl = window.URL.createObjectURL(blob);
+                shouldRevoke = true;
+                performDownload();
+            });
+        } else {
+            performDownload();
+        }
+
+        function performDownload() {
+            // إنشاء رابط التحميل
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = file.name;
+            link.style.display = 'none';
+
+            // إضافة الرابط للصفحة وتفعيله
+            document.body.appendChild(link);
+            link.click();
+
+            // تنظيف الموارد
+            document.body.removeChild(link);
+            if (shouldRevoke) {
+                window.URL.revokeObjectURL(downloadUrl);
+            }
+
+            // إخفاء مؤشر التحميل وإظهار رسالة نجاح
+            showDownloadProgress(file.name, false);
+            showMiniIconNotification('📥', '#28a745', 2000);
+
+            console.log(`✅ تم تحميل مرفق البطاقة بنجاح: ${file.name}`);
+        }
+
+    } catch (error) {
+        console.error(`❌ خطأ في تحميل مرفق البطاقة ${file.name}:`, error);
+
+        // إخفاء مؤشر التحميل وإظهار رسالة خطأ
+        showDownloadProgress(file.name, false);
+        showMiniIconNotification('❌', '#dc3545', 3000);
+
+        // محاولة التحميل المباشر كبديل
+        const link = document.createElement('a');
+        link.href = file.data;
+        link.download = file.name;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }
 
 // عرض مرفق البطاقة
