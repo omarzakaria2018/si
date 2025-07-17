@@ -8551,19 +8551,7 @@ function showAttachmentsModal(city, propertyName) {
                     <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
                 </div>
 
-                <!-- قائمة المرفقات (80% من المساحة) -->
-                <div class="mobile-attachments-section">
-                    <div class="mobile-attachments-header-small">
-                        <span><i class="fas fa-folder-open"></i> المرفقات الموجودة</span>
-                        <span class="mobile-attachments-count" id="mobilePropertyAttachmentsCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}">جاري التحميل...</span>
-                    </div>
-                    <div id="propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="mobile-attachments-list">
-                        <div class="mobile-loading" style="text-align: center; padding: 20px; color: #666;">
-                            <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
-                            <p style="font-size: 0.9rem;">جاري تحميل المرفقات...</p>
-                        </div>
-                    </div>
-                </div>
+             
 
                 <!-- زر الإغلاق في الأسفل -->
                 <div class="mobile-footer">
@@ -8611,44 +8599,7 @@ function showAttachmentsModal(city, propertyName) {
                                 </div>
                             </div>
 
-                            <!-- قسم الملاحظات -->
-                            <div class="notes-section-compact">
-                                <div class="notes-container-compact">
-                                    <h4><i class="fas fa-sticky-note"></i> ملاحظات</h4>
-                                    <textarea
-                                        id="propertyUploadNotes_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
-                                        class="notes-textarea-compact"
-                                        placeholder="أضف ملاحظات..."
-                                        rows="3"
-                                    ></textarea>
-                                    <div class="notes-info-compact">
-                                        <small><i class="fas fa-info-circle"></i> ستُحفظ مع المرفقات الجديدة</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- الجانب الأيمن: قائمة المرفقات (العرض الكامل) -->
-                        <div class="attachments-main-section">
-                            <div class="attachments-header">
-                                <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
-                                <!-- Search Controls Outside Container -->
-                                <div class="attachments-search-controls">
-                                    <div class="attachments-search-container">
-                                        <input type="text" id="attachmentsSearch_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" placeholder="بحث في المرفقات..." class="attachments-search-input">
-                                    </div>
-                                    <div class="attachments-search-actions">
-                                        <button class="search-btn attachments-search-btn" onclick="performAttachmentsSearch('${propertyKey}')" title="بحث">
-                                            <i class="fas fa-search"></i>
-                                            <span class="btn-text">بحث</span>
-                                        </button>
-                                        <button class="clear-btn attachments-clear-btn" onclick="clearAttachmentsSearchWithLoading('${propertyKey}')" title="مسح" style="display: none;">
-                                            <i class="fas fa-times"></i>
-                                            <span class="btn-text">مسح</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
                             <div id="propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list scrollable-attachments">
                                 <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
                                     <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
@@ -8730,6 +8681,8 @@ function showAttachmentsModal(city, propertyName) {
             // Initialize search functionality
             setTimeout(() => {
                 initAttachmentsSearch(propertyKey);
+                // تهيئة عداد التحديد المتعدد
+                updateAttachmentSelectedCount(propertyKey);
             }, 200);
         } else {
             console.error('❌ لم يتم العثور على حاوية قائمة المرفقات');
@@ -8776,7 +8729,33 @@ function renderPropertyAttachmentsList(propertyKey, attachments) {
         `;
     }
 
-    return attachments.map((file, index) => {
+    // إضافة شريط التحكم بالتحديد المتعدد
+    let html = `
+        <div class="attachments-bulk-controls" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label class="bulk-select-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                        <input type="checkbox" id="selectAllAttachments_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                               onchange="toggleSelectAllAttachments('${propertyKey}')"
+                               style="width: 18px; height: 18px; cursor: pointer;">
+                        <span>تحديد الكل</span>
+                    </label>
+                    <span id="selectedCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="selected-count"
+                          style="color: #6c757d; font-size: 0.9rem; display: none;">
+                        (0 محدد)
+                    </span>
+                </div>
+                <button id="deleteSelectedBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                        onclick="deleteSelectedAttachments('${propertyKey}')"
+                        class="btn-danger bulk-delete-btn"
+                        style="display: none; padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                    <i class="fas fa-trash"></i> حذف المحدد
+                </button>
+            </div>
+        </div>
+    `;
+
+    html += attachments.map((file, index) => {
         // Handle both local and cloud file formats
         const fileName = file.file_name || file.name;
         const fileSize = formatFileSize(file.file_size || file.size);
@@ -8788,9 +8767,17 @@ function renderPropertyAttachmentsList(propertyKey, attachments) {
         const isCloudFile = file.file_url || file.url;
         const sourceIcon = isCloudFile ? '☁️' : '💾';
         const sourceText = isCloudFile ? 'سحابي' : 'محلي';
+        const fileId = file.id || `local_${index}`;
 
         return `
-            <div class="attachment-item desktop-enhanced-item" data-file-index="${index}">
+            <div class="attachment-item desktop-enhanced-item" data-file-index="${index}" data-file-id="${fileId}">
+                <div class="attachment-checkbox" style="margin-left: 12px;">
+                    <input type="checkbox" class="attachment-select"
+                           data-file-id="${fileId}"
+                           data-property-key="${propertyKey}"
+                           onchange="updateAttachmentSelectedCount('${propertyKey}')"
+                           style="width: 16px; height: 16px; cursor: pointer;">
+                </div>
                 <div class="file-icon-enhanced" style="color: ${getFileIconColor(fileName)};">
                     ${fileIcon}
                 </div>
@@ -8829,6 +8816,8 @@ function renderPropertyAttachmentsList(propertyKey, attachments) {
             </div>
         `;
     }).join('');
+
+    return html;
 }
 
 // ===== Render Mobile Property Attachments List =====
@@ -8845,7 +8834,31 @@ function renderMobilePropertyAttachmentsList(propertyKey, attachments) {
         `;
     }
 
-    let html = '';
+    // إضافة شريط التحكم بالتحديد المتعدد للجوال
+    let html = `
+        <div class="mobile-bulk-controls" style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e9ecef;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <label class="mobile-bulk-select-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem;">
+                    <input type="checkbox" id="selectAllAttachments_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                           onchange="toggleSelectAllAttachments('${propertyKey}')"
+                           style="width: 16px; height: 16px; cursor: pointer;">
+                    <span>تحديد الكل</span>
+                </label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="selectedCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="mobile-selected-count"
+                          style="color: #6c757d; font-size: 0.8rem; display: none;">
+                        (0 محدد)
+                    </span>
+                    <button id="deleteSelectedBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                            onclick="deleteSelectedAttachments('${propertyKey}')"
+                            class="mobile-bulk-delete-btn"
+                            style="display: none; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                        <i class="fas fa-trash"></i> حذف
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
 
     attachments.forEach((file, index) => {
         // Handle both local and cloud file formats
@@ -8858,9 +8871,19 @@ function renderMobilePropertyAttachmentsList(propertyKey, attachments) {
         const isCloudFile = file.file_url || file.url;
         const sourceIcon = isCloudFile ? '☁️' : '💾';
         const sourceText = isCloudFile ? 'سحابي' : 'محلي';
+        const fileId = file.id || `local_${index}`;
 
         html += `
-            <div class="mobile-attachment-item" data-file-index="${index}">
+            <div class="mobile-attachment-item" data-file-index="${index}" data-file-id="${fileId}">
+                <!-- تشيك بوكس التحديد -->
+                <div class="mobile-attachment-checkbox" style="margin-left: 8px;">
+                    <input type="checkbox" class="attachment-select"
+                           data-file-id="${fileId}"
+                           data-property-key="${propertyKey}"
+                           onchange="updateAttachmentSelectedCount('${propertyKey}')"
+                           style="width: 14px; height: 14px; cursor: pointer;">
+                </div>
+
                 <!-- أيقونة الملف -->
                 <div class="mobile-file-icon" style="color: ${getFileIconColor(fileName)};">
                     ${fileIcon}
@@ -9196,7 +9219,12 @@ async function refreshPropertyAttachmentsList(propertyKey) {
         // استعادة الشفافية
         listContainer.style.opacity = '1';
 
-        console.log(`✅ تم تحديث قائمة مرفقات العقار: ${attachments.length} ملف`);
+        // تهيئة عداد التحديد المتعدد
+        setTimeout(() => {
+            updateAttachmentSelectedCount(propertyKey);
+        }, 100);
+
+        console.log(`✅ تم تحديث قائمة مرفقات العقار: ${propertyAttachments.length} ملف`);
 
     } catch (error) {
         console.error('❌ خطأ في تحديث قائمة مرفقات العقار:', error);
@@ -9215,6 +9243,342 @@ async function refreshPropertyAttachmentsList(propertyKey) {
         // استعادة الشفافية
         listContainer.style.opacity = '1';
     }
+}
+
+// ===== دوال التحديد المتعدد للمرفقات =====
+
+// تبديل تحديد جميع المرفقات
+function toggleSelectAllAttachments(propertyKey) {
+    console.log(`🔄 تبديل تحديد جميع المرفقات للعقار: ${propertyKey}`);
+
+    const selectAllCheckbox = document.getElementById(`selectAllAttachments_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    const attachmentCheckboxes = document.querySelectorAll(`.attachment-select[data-property-key="${propertyKey}"]`);
+
+    if (!selectAllCheckbox || !attachmentCheckboxes.length) {
+        console.warn('⚠️ لم يتم العثور على عناصر التحديد');
+        return;
+    }
+
+    const isChecked = selectAllCheckbox.checked;
+
+    // تحديد/إلغاء تحديد جميع المرفقات
+    attachmentCheckboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+    });
+
+    // تحديث العداد وزر الحذف
+    updateAttachmentSelectedCount(propertyKey);
+
+    console.log(`✅ تم ${isChecked ? 'تحديد' : 'إلغاء تحديد'} جميع المرفقات`);
+}
+
+// تحديث عداد المرفقات المحددة
+function updateAttachmentSelectedCount(propertyKey) {
+    console.log(`🔄 تحديث عداد المرفقات المحددة للعقار: ${propertyKey}`);
+
+    const attachmentCheckboxes = document.querySelectorAll(`.attachment-select[data-property-key="${propertyKey}"]:checked`);
+    const totalCheckboxes = document.querySelectorAll(`.attachment-select[data-property-key="${propertyKey}"]`);
+    const selectedCount = attachmentCheckboxes.length;
+    const totalCount = totalCheckboxes.length;
+
+    console.log(`📊 العداد: ${selectedCount}/${totalCount} مرفق محدد`);
+
+    // تحديث عداد المحدد
+    const countElement = document.getElementById(`selectedCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    if (countElement) {
+        if (selectedCount > 0) {
+            countElement.textContent = `(${selectedCount} محدد)`;
+            countElement.style.display = 'inline';
+            console.log(`✅ تم إظهار العداد: ${selectedCount} محدد`);
+        } else {
+            countElement.style.display = 'none';
+            console.log(`🔄 تم إخفاء العداد`);
+        }
+    } else {
+        console.warn(`⚠️ لم يتم العثور على عنصر العداد: selectedCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    }
+
+    // تحديث زر الحذف
+    const deleteBtnId = `deleteSelectedBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const deleteBtn = document.getElementById(deleteBtnId);
+    console.log(`🔍 البحث عن زر الحذف: ${deleteBtnId}`, deleteBtn ? 'موجود' : 'غير موجود');
+
+    if (deleteBtn) {
+        if (selectedCount > 0) {
+            deleteBtn.style.display = 'inline-block';
+            deleteBtn.style.visibility = 'visible';
+            deleteBtn.innerHTML = `<i class="fas fa-trash"></i> حذف المحدد (${selectedCount})`;
+            console.log(`✅ تم إظهار زر الحذف: ${selectedCount} مرفق محدد`);
+        } else {
+            deleteBtn.style.display = 'none';
+            console.log(`🔄 تم إخفاء زر الحذف`);
+        }
+    } else {
+        console.error(`❌ لم يتم العثور على زر الحذف: ${deleteBtnId}`);
+        // محاولة البحث عن جميع الأزرار المشابهة
+        const allDeleteBtns = document.querySelectorAll('[id*="deleteSelectedBtn"]');
+        console.log(`🔍 الأزرار الموجودة:`, Array.from(allDeleteBtns).map(btn => btn.id));
+    }
+
+    // تحديث حالة تحديد الكل
+    const selectAllCheckbox = document.getElementById(`selectAllAttachments_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    if (selectAllCheckbox) {
+        if (selectedCount === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        } else if (selectedCount === totalCount) {
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.indeterminate = false;
+        } else {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+
+    console.log(`📊 تم تحديث العداد: ${selectedCount}/${totalCount} مرفق محدد`);
+}
+
+// دالة مساعدة لفرض إظهار زر الحذف (للتشخيص)
+function forceShowDeleteButton(propertyKey) {
+    const deleteBtnId = `deleteSelectedBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const deleteBtn = document.getElementById(deleteBtnId);
+
+    if (deleteBtn) {
+        deleteBtn.style.display = 'inline-block';
+        deleteBtn.style.visibility = 'visible';
+        deleteBtn.innerHTML = `<i class="fas fa-trash"></i> حذف المحدد (تجريبي)`;
+        console.log(`🔧 تم فرض إظهار زر الحذف للاختبار`);
+    } else {
+        console.error(`❌ لم يتم العثور على زر الحذف: ${deleteBtnId}`);
+    }
+}
+
+// حذف المرفقات المحددة
+async function deleteSelectedAttachments(propertyKey) {
+    const selectedCheckboxes = document.querySelectorAll(`.attachment-select[data-property-key="${propertyKey}"]:checked`);
+
+    if (selectedCheckboxes.length === 0) {
+        alert('لم يتم تحديد أي مرفقات للحذف');
+        return;
+    }
+
+    // تأكيد واحد فقط في البداية
+    const confirmMessage = `هل أنت متأكد من حذف ${selectedCheckboxes.length} مرفق محدد؟\n\nسيتم الحذف مباشرة دون طلب تأكيد إضافي.`;
+
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    console.log(`🗑️ بدء حذف ${selectedCheckboxes.length} مرفق محدد للعقار: ${propertyKey}`);
+
+    // إنشاء شريط التقدم
+    const progressBarHtml = `
+        <div id="deleteProgressBar_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="delete-progress-bar" style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 1px solid #dc3545;
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            min-width: 300px;
+            font-family: 'Cairo', sans-serif;
+        ">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <i class="fas fa-trash" style="color: #dc3545;"></i>
+                <span style="font-weight: 600; color: #dc3545;">جاري حذف المرفقات</span>
+            </div>
+            <div style="background: #f8f9fa; border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 8px;">
+                <div id="deleteProgressFill_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" style="
+                    background: linear-gradient(90deg, #dc3545, #c82333);
+                    height: 100%;
+                    width: 0%;
+                    transition: width 0.3s ease;
+                "></div>
+            </div>
+            <div id="deleteProgressText_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" style="
+                font-size: 0.9rem;
+                color: #6c757d;
+                text-align: center;
+            ">تم حذف 0 من ${selectedCheckboxes.length} مرفق</div>
+        </div>
+    `;
+
+    // إضافة شريط التقدم للصفحة
+    document.body.insertAdjacentHTML('beforeend', progressBarHtml);
+
+    // تعطيل زر الحذف
+    const deleteBtn = document.getElementById(`deleteSelectedBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحذف...';
+    }
+
+    let successCount = 0;
+    let errorCount = 0;
+    const totalCount = selectedCheckboxes.length;
+
+    // دالة تحديث شريط التقدم
+    function updateProgress() {
+        const progressFill = document.getElementById(`deleteProgressFill_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        const progressText = document.getElementById(`deleteProgressText_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+
+        if (progressFill && progressText) {
+            const completedCount = successCount + errorCount;
+            const percentage = (completedCount / totalCount) * 100;
+
+            progressFill.style.width = `${percentage}%`;
+            progressText.textContent = `تم حذف ${successCount} من ${totalCount} مرفق${errorCount > 0 ? ` (${errorCount} فشل)` : ''}`;
+        }
+    }
+
+    // حذف كل مرفق محدد بدون طلب تأكيد إضافي
+    for (let i = 0; i < selectedCheckboxes.length; i++) {
+        const checkbox = selectedCheckboxes[i];
+        const fileId = checkbox.getAttribute('data-file-id');
+        const attachmentItem = checkbox.closest('.attachment-item, .mobile-attachment-item');
+
+        try {
+            // إضافة تأثير بصري للعنصر قيد الحذف
+            if (attachmentItem) {
+                attachmentItem.style.opacity = '0.3';
+                attachmentItem.style.pointerEvents = 'none';
+                attachmentItem.style.transform = 'scale(0.95)';
+                attachmentItem.style.transition = 'all 0.3s ease';
+            }
+
+            // تحديد نوع الحذف (سحابي أم محلي)
+            if (fileId.startsWith('local_')) {
+                // حذف محلي فوري
+                const fileIndex = parseInt(fileId.replace('local_', ''));
+                const localAttachments = window.attachments?.[propertyKey] || [];
+
+                if (localAttachments[fileIndex]) {
+                    localAttachments.splice(fileIndex, 1);
+                    window.attachments[propertyKey] = localAttachments;
+                    localStorage.setItem('attachments', JSON.stringify(window.attachments));
+                    successCount++;
+                }
+            } else {
+                // حذف من السحابة بدون تأكيد
+                if (typeof deleteAttachmentEnhanced === 'function') {
+                    // تعديل مؤقت لتجاوز التأكيد في deleteAttachmentEnhanced
+                    const originalConfirm = window.confirm;
+                    window.confirm = () => true; // تجاوز التأكيد
+
+                    const success = await deleteAttachmentEnhanced(fileId);
+
+                    // استعادة دالة التأكيد الأصلية
+                    window.confirm = originalConfirm;
+
+                    if (success) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                } else {
+                    console.warn('⚠️ وظيفة حذف المرفقات من السحابة غير متوفرة');
+                    errorCount++;
+                }
+            }
+
+        } catch (error) {
+            console.error(`❌ خطأ في حذف المرفق ${fileId}:`, error);
+            errorCount++;
+
+            // استعادة العنصر في حالة الخطأ
+            if (attachmentItem) {
+                attachmentItem.style.opacity = '1';
+                attachmentItem.style.pointerEvents = 'auto';
+                attachmentItem.style.transform = 'scale(1)';
+            }
+        }
+
+        // تحديث شريط التقدم
+        updateProgress();
+
+        // توقف قصير لإظهار التقدم
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // إخفاء شريط التقدم بعد 2 ثانية
+    setTimeout(() => {
+        const progressBar = document.getElementById(`deleteProgressBar_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (progressBar) {
+            progressBar.style.opacity = '0';
+            progressBar.style.transform = 'translateX(100%)';
+            progressBar.style.transition = 'all 0.5s ease';
+            setTimeout(() => progressBar.remove(), 500);
+        }
+    }, 2000);
+
+    // تحديث القائمة
+    await refreshPropertyAttachmentsList(propertyKey);
+
+    // إظهار نتيجة العملية
+    console.log(`✅ تم حذف ${successCount} مرفق بنجاح`);
+    if (errorCount > 0) {
+        console.warn(`⚠️ فشل في حذف ${errorCount} مرفق`);
+    }
+
+    // رسالة نجاح مختصرة
+    if (successCount > 0) {
+        showToast(`تم حذف ${successCount} مرفق بنجاح${errorCount > 0 ? ` (فشل ${errorCount})` : ''}`, 'success');
+    }
+
+    // استعادة زر الحذف
+    if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.style.display = 'none';
+    }
+
+    console.log(`🏁 انتهت عملية الحذف المتعدد: ${successCount} نجح، ${errorCount} فشل`);
+}
+
+// دالة مساعدة لإظهار رسائل Toast
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10001;
+        font-family: 'Cairo', sans-serif;
+        font-size: 0.9rem;
+        max-width: 300px;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    `;
+
+    toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // إظهار التوست
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 100);
+
+    // إخفاء التوست بعد 3 ثواني
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 // Enhanced file upload with comprehensive cross-device synchronization
