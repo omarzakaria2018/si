@@ -787,8 +787,8 @@ function clearAllFilters() {
     updateActiveFiltersDisplay();
 
     // تحديث الإحصائيات
-    if (typeof updateTotals === 'function') {
-        updateTotals();
+    if (typeof updateTotalStats === 'function') {
+        updateTotalStats();
     }
 
     // حفظ الحالة الجديدة
@@ -8493,6 +8493,10 @@ function showAttachmentsModal(city, propertyName) {
 
     const propertyKey = `${city}_${propertyName}`;
 
+    // التحقق من صلاحيات المستخدم
+    const canDelete = isAuthorizedUser();
+    const canUpload = isAuthorizedUser();
+
     // Try to get attachments from Supabase first, fallback to local
     async function loadPropertyAttachments() {
         let propertyAttachments = [];
@@ -8543,15 +8547,37 @@ function showAttachmentsModal(city, propertyName) {
                     <span><i class="fas fa-map-marker-alt"></i> ${city}</span>
                 </div>
 
-                <!-- زر الإرفاق المضغوط (20% من المساحة) -->
+                <!-- زر الإرفاق المضغوط (فقط لعمر ومحمد) -->
+                ${canUpload ? `
                 <div class="mobile-upload-section">
                     <button class="mobile-upload-btn" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
                         <i class="fas fa-plus"></i> إضافة مرفق
                     </button>
                     <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
                 </div>
+                ` : ''}
 
-             
+                <!-- رسالة للمستخدمين محدودي الصلاحية -->
+                ${!canUpload && !canDelete ? `
+                <div class="limited-user-notice" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 6px; padding: 12px; margin-bottom: 15px; text-align: center;">
+                    <i class="fas fa-info-circle" style="color: #2196f3; margin-left: 8px;"></i>
+                    <span style="color: #1976d2; font-size: 0.9rem;">يمكنك عرض وتحميل المرفقات فقط</span>
+                </div>
+                ` : ''}
+
+                <!-- قائمة المرفقات للجوال -->
+                <div class="mobile-attachments-section">
+                    <div class="mobile-attachments-header-small">
+                        <span><i class="fas fa-folder-open"></i> المرفقات الموجودة</span>
+                        <span class="mobile-attachments-count" id="mobilePropertyAttachmentsCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}">جاري التحميل...</span>
+                    </div>
+                    <div id="propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="mobile-attachments-list">
+                        <div class="mobile-loading" style="text-align: center; padding: 20px; color: #666;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 10px;"></i>
+                            <p style="font-size: 0.9rem;">جاري تحميل المرفقات...</p>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- زر الإغلاق في الأسفل -->
                 <div class="mobile-footer">
@@ -8587,6 +8613,7 @@ function showAttachmentsModal(city, propertyName) {
                     <div class="content-layout-new">
                         <!-- الجانب الأيسر: منطقة الرفع والملاحظات -->
                         <div class="upload-notes-sidebar">
+                            ${canUpload ? `
                             <!-- منطقة الرفع -->
                             <div class="upload-section compact-upload">
                                 <div class="upload-area enhanced-upload" id="propertyUploadArea_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}">
@@ -8598,7 +8625,15 @@ function showAttachmentsModal(city, propertyName) {
                                     <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
                                 </div>
                             </div>
+                            ` : ''}
 
+                            <!-- رسالة للمستخدمين محدودي الصلاحية -->
+                            ${!canUpload && !canDelete ? `
+                            <div class="limited-user-notice" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center;">
+                                <i class="fas fa-info-circle" style="color: #2196f3; margin-left: 10px; font-size: 1.2rem;"></i>
+                                <span style="color: #1976d2; font-size: 1rem; font-weight: 500;">يمكنك عرض وتحميل المرفقات فقط</span>
+                            </div>
+                            ` : ''}
 
                             <div id="propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list scrollable-attachments">
                                 <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
@@ -8729,31 +8764,38 @@ function renderPropertyAttachmentsList(propertyKey, attachments) {
         `;
     }
 
-    // إضافة شريط التحكم بالتحديد المتعدد
-    let html = `
-        <div class="attachments-bulk-controls" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <label class="bulk-select-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
-                        <input type="checkbox" id="selectAllAttachments_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
-                               onchange="toggleSelectAllAttachments('${propertyKey}')"
-                               style="width: 18px; height: 18px; cursor: pointer;">
-                        <span>تحديد الكل</span>
-                    </label>
-                    <span id="selectedCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="selected-count"
-                          style="color: #6c757d; font-size: 0.9rem; display: none;">
-                        (0 محدد)
-                    </span>
+    // التحقق من صلاحيات المستخدم
+    const canDelete = isAuthorizedUser();
+    const canUpload = isAuthorizedUser();
+
+    // إضافة شريط التحكم بالتحديد المتعدد (فقط للمستخدمين المخولين)
+    let html = '';
+    if (canDelete) {
+        html += `
+            <div class="attachments-bulk-controls" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label class="bulk-select-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500;">
+                            <input type="checkbox" id="selectAllAttachments_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                                   onchange="toggleSelectAllAttachments('${propertyKey}')"
+                                   style="width: 18px; height: 18px; cursor: pointer;">
+                            <span>تحديد الكل</span>
+                        </label>
+                        <span id="selectedCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="selected-count"
+                              style="color: #6c757d; font-size: 0.9rem; display: none;">
+                            (0 محدد)
+                        </span>
+                    </div>
+                    <button id="deleteSelectedBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                            onclick="deleteSelectedAttachments('${propertyKey}')"
+                            class="btn-danger bulk-delete-btn"
+                            style="display: none; padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                        <i class="fas fa-trash"></i> حذف المحدد
+                    </button>
                 </div>
-                <button id="deleteSelectedBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
-                        onclick="deleteSelectedAttachments('${propertyKey}')"
-                        class="btn-danger bulk-delete-btn"
-                        style="display: none; padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                    <i class="fas fa-trash"></i> حذف المحدد
-                </button>
             </div>
-        </div>
-    `;
+        `;
+    }
 
     html += attachments.map((file, index) => {
         // Handle both local and cloud file formats
@@ -8771,6 +8813,7 @@ function renderPropertyAttachmentsList(propertyKey, attachments) {
 
         return `
             <div class="attachment-item desktop-enhanced-item" data-file-index="${index}" data-file-id="${fileId}">
+                ${canDelete ? `
                 <div class="attachment-checkbox" style="margin-left: 12px;">
                     <input type="checkbox" class="attachment-select"
                            data-file-id="${fileId}"
@@ -8778,6 +8821,7 @@ function renderPropertyAttachmentsList(propertyKey, attachments) {
                            onchange="updateAttachmentSelectedCount('${propertyKey}')"
                            style="width: 16px; height: 16px; cursor: pointer;">
                 </div>
+                ` : ''}
                 <div class="file-icon-enhanced" style="color: ${getFileIconColor(fileName)};">
                     ${fileIcon}
                 </div>
@@ -8799,18 +8843,18 @@ function renderPropertyAttachmentsList(propertyKey, attachments) {
                         <button class="btn-enhanced download-btn" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
                             <i class="fas fa-download"></i>
                         </button>
-                        <button class="btn-enhanced delete-btn" onclick="deletePropertyAttachmentFromSupabase('${file.id}', '${propertyKey}')" title="حذف">
+                        ${canDelete ? `<button class="btn-enhanced delete-btn" onclick="deletePropertyAttachmentFromSupabase('${file.id}', '${propertyKey}')" title="حذف">
                             <i class="fas fa-trash"></i>
-                        </button>` :
+                        </button>` : ''}` :
                         `<button class="btn-enhanced view-btn" onclick="viewPropertyAttachment('${propertyKey}', ${index})" title="عرض">
                             <i class="fas fa-eye"></i>
                         </button>
                         <button class="btn-enhanced download-btn" onclick="downloadPropertyAttachment('${propertyKey}', ${index})" title="تحميل">
                             <i class="fas fa-download"></i>
                         </button>
-                        <button class="btn-enhanced delete-btn" onclick="deletePropertyAttachment('${propertyKey}', ${index})" title="حذف">
+                        ${canDelete ? `<button class="btn-enhanced delete-btn" onclick="deletePropertyAttachment('${propertyKey}', ${index})" title="حذف">
                             <i class="fas fa-trash"></i>
-                        </button>`
+                        </button>` : ''}`
                     }
                 </div>
             </div>
@@ -8834,31 +8878,38 @@ function renderMobilePropertyAttachmentsList(propertyKey, attachments) {
         `;
     }
 
-    // إضافة شريط التحكم بالتحديد المتعدد للجوال
-    let html = `
-        <div class="mobile-bulk-controls" style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e9ecef;">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                <label class="mobile-bulk-select-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem;">
-                    <input type="checkbox" id="selectAllAttachments_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
-                           onchange="toggleSelectAllAttachments('${propertyKey}')"
-                           style="width: 16px; height: 16px; cursor: pointer;">
-                    <span>تحديد الكل</span>
-                </label>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span id="selectedCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="mobile-selected-count"
-                          style="color: #6c757d; font-size: 0.8rem; display: none;">
-                        (0 محدد)
-                    </span>
-                    <button id="deleteSelectedBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
-                            onclick="deleteSelectedAttachments('${propertyKey}')"
-                            class="mobile-bulk-delete-btn"
-                            style="display: none; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
-                        <i class="fas fa-trash"></i> حذف
-                    </button>
+    // التحقق من صلاحيات المستخدم
+    const canDelete = isAuthorizedUser();
+    const canUpload = isAuthorizedUser();
+
+    // إضافة شريط التحكم بالتحديد المتعدد للجوال (فقط للمستخدمين المخولين)
+    let html = '';
+    if (canDelete) {
+        html += `
+            <div class="mobile-bulk-controls" style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e9ecef;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <label class="mobile-bulk-select-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 0.9rem;">
+                        <input type="checkbox" id="selectAllAttachments_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                               onchange="toggleSelectAllAttachments('${propertyKey}')"
+                               style="width: 16px; height: 16px; cursor: pointer;">
+                        <span>تحديد الكل</span>
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="selectedCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="mobile-selected-count"
+                              style="color: #6c757d; font-size: 0.8rem; display: none;">
+                            (0 محدد)
+                        </span>
+                        <button id="deleteSelectedBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}"
+                                onclick="deleteSelectedAttachments('${propertyKey}')"
+                                class="mobile-bulk-delete-btn"
+                                style="display: none; padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
+    }
 
     attachments.forEach((file, index) => {
         // Handle both local and cloud file formats
@@ -8875,6 +8926,7 @@ function renderMobilePropertyAttachmentsList(propertyKey, attachments) {
 
         html += `
             <div class="mobile-attachment-item" data-file-index="${index}" data-file-id="${fileId}">
+                ${canDelete ? `
                 <!-- تشيك بوكس التحديد -->
                 <div class="mobile-attachment-checkbox" style="margin-left: 8px;">
                     <input type="checkbox" class="attachment-select"
@@ -8883,6 +8935,7 @@ function renderMobilePropertyAttachmentsList(propertyKey, attachments) {
                            onchange="updateAttachmentSelectedCount('${propertyKey}')"
                            style="width: 14px; height: 14px; cursor: pointer;">
                 </div>
+                ` : ''}
 
                 <!-- أيقونة الملف -->
                 <div class="mobile-file-icon" style="color: ${getFileIconColor(fileName)};">
@@ -8910,18 +8963,18 @@ function renderMobilePropertyAttachmentsList(propertyKey, attachments) {
                         <button class="mobile-action-btn download" onclick="downloadAttachmentFromSupabase('${file.file_url || file.url}', '${fileName}')" title="تحميل">
                             <i class="fas fa-download"></i>
                         </button>
-                        <button class="mobile-action-btn delete" onclick="deletePropertyAttachmentFromSupabase('${file.id}', '${propertyKey}')" title="حذف">
+                        ${canDelete ? `<button class="mobile-action-btn delete" onclick="deletePropertyAttachmentFromSupabase('${file.id}', '${propertyKey}')" title="حذف">
                             <i class="fas fa-trash"></i>
-                        </button>` :
+                        </button>` : ''}` :
                         `<button class="mobile-action-btn view" onclick="viewPropertyAttachment('${propertyKey}', ${index})" title="عرض">
                             <i class="fas fa-eye"></i>
                         </button>
                         <button class="mobile-action-btn download" onclick="downloadPropertyAttachment('${propertyKey}', ${index})" title="تحميل">
                             <i class="fas fa-download"></i>
                         </button>
-                        <button class="mobile-action-btn delete" onclick="deletePropertyAttachment('${propertyKey}', ${index})" title="حذف">
+                        ${canDelete ? `<button class="mobile-action-btn delete" onclick="deletePropertyAttachment('${propertyKey}', ${index})" title="حذف">
                             <i class="fas fa-trash"></i>
-                        </button>`
+                        </button>` : ''}`
                     }
                 </div>
             </div>
@@ -9224,7 +9277,7 @@ async function refreshPropertyAttachmentsList(propertyKey) {
             updateAttachmentSelectedCount(propertyKey);
         }, 100);
 
-        console.log(`✅ تم تحديث قائمة مرفقات العقار: ${propertyAttachments.length} ملف`);
+        console.log(`✅ تم تحديث قائمة مرفقات العقار: ${attachments.length} ملف`);
 
     } catch (error) {
         console.error('❌ خطأ في تحديث قائمة مرفقات العقار:', error);
@@ -9355,6 +9408,11 @@ function forceShowDeleteButton(propertyKey) {
 
 // حذف المرفقات المحددة
 async function deleteSelectedAttachments(propertyKey) {
+    // التحقق من الصلاحيات أولاً
+    if (!checkAttachmentPermission('bulk_delete')) {
+        return;
+    }
+
     const selectedCheckboxes = document.querySelectorAll(`.attachment-select[data-property-key="${propertyKey}"]:checked`);
 
     if (selectedCheckboxes.length === 0) {
@@ -42957,9 +43015,9 @@ const users = {
             editData: false,
             deleteData: false,
             manageProperties: false,
-            manageAttachments: true,
-            addAttachments: false,
-            deleteAttachments: false,
+            manageAttachments: true,  // Can view attachments only
+            addAttachments: false,    // Cannot upload attachments
+            deleteAttachments: false, // Cannot delete attachments
             exportData: true,
             importData: true,
             manageSettings: false
@@ -43074,6 +43132,12 @@ function handleLogin(event) {
 
         // إظهار رسالة ترحيب
         showWelcomeMessage(users[username].fullName);
+
+        // تحديث رؤية عناصر إدارة المرفقات بناءً على المستخدم (مع تأخير قصير)
+        setTimeout(() => {
+            toggleAttachmentManagementVisibility();
+            showAttachmentManagementButtons();
+        }, 500);
 
         // للمستخدم المحدود: إزالة جميع الإشعارات بسرعة ومراقبة دورية
         if (users[username].role === 'limited') {
@@ -43753,6 +43817,216 @@ function checkPermission(action) {
     return hasPermission;
 }
 
+// التحقق من صلاحية المرفقات (مقصورة على عمر ومحمد فقط)
+function checkAttachmentPermission(operation = 'manage', showError = true) {
+    // الحصول على اسم المستخدم الحالي
+    const currentUser = localStorage.getItem('currentUser');
+
+    // السماح فقط لعمر ومحمد
+    const allowedUsers = ['عمر', 'محمد'];
+
+    if (!allowedUsers.includes(currentUser)) {
+        if (showError) {
+            let operationText = '';
+            switch(operation) {
+                case 'upload':
+                    operationText = 'رفع المرفقات';
+                    break;
+                case 'delete':
+                    operationText = 'حذف المرفقات';
+                    break;
+                case 'bulk_delete':
+                    operationText = 'الحذف المتعدد للمرفقات';
+                    break;
+                default:
+                    operationText = 'إدارة المرفقات';
+            }
+
+            showNoPermissionMessage(`عذراً، ${operationText} مقصور على المديرين (عمر ومحمد) فقط`);
+        }
+        return false;
+    }
+
+    return true;
+}
+
+// دالة مساعدة للتحقق من المستخدم المخول للرفع والحذف (عمر ومحمد فقط)
+function isAuthorizedUser() {
+    let currentUserName = null;
+
+    // محاولة الحصول على اسم المستخدم من localStorage
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            currentUserName = userData.username;
+        } catch (e) {
+            // إذا فشل parsing، قد يكون المستخدم محفوظ كنص بسيط
+            currentUserName = savedUser;
+        }
+    }
+
+    // إذا لم نجد في localStorage، تحقق من المتغير العام
+    if (!currentUserName && window.currentUser) {
+        currentUserName = window.currentUser;
+    }
+
+    const allowedUsers = ['عمر', 'محمد'];
+    const isAuthorized = allowedUsers.includes(currentUserName);
+
+    console.log(`🔐 التحقق من صلاحية الرفع/الحذف للمستخدم: ${currentUserName} - مخول: ${isAuthorized}`);
+
+    return isAuthorized;
+}
+
+// دالة للتحقق من إمكانية عرض إدارة المرفقات (جميع المستخدمين المسجلين)
+function canViewAttachmentManager() {
+    let currentUserName = null;
+
+    // محاولة الحصول على اسم المستخدم من localStorage
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            currentUserName = userData.username;
+        } catch (e) {
+            currentUserName = savedUser;
+        }
+    }
+
+    // إذا لم نجد في localStorage، تحقق من المتغير العام
+    if (!currentUserName && window.currentUser) {
+        currentUserName = window.currentUser;
+    }
+
+    // جميع المستخدمين المسجلين يمكنهم عرض إدارة المرفقات
+    const canView = currentUserName && currentUserName !== 'guest';
+
+    console.log(`👁️ التحقق من إمكانية عرض إدارة المرفقات للمستخدم: ${currentUserName} - يمكن العرض: ${canView}`);
+
+    return canView;
+}
+
+// إخفاء/إظهار عناصر إدارة المرفقات بناءً على المستخدم
+function toggleAttachmentManagementVisibility() {
+    const canView = canViewAttachmentManager();
+
+    console.log(`🔐 بدء تحديث رؤية عناصر إدارة المرفقات - يمكن العرض: ${canView}`);
+
+    // عناصر إدارة المرفقات في القوائم والأزرار
+    const attachmentElements = [
+        // القائمة المنسدلة
+        {
+            element: document.querySelector('.dropdown-item[onclick*="showAttachmentsManagerFromDropdown"]'),
+            name: 'القائمة المنسدلة'
+        },
+        // زر إدارة المرفقات في الهيدر
+        {
+            element: document.getElementById('attachmentsManagerBtn'),
+            name: 'زر الهيدر'
+        },
+        // زر إدارة المرفقات في الجوال
+        {
+            element: document.getElementById('mobile-attachments-btn'),
+            name: 'زر الجوال'
+        }
+    ];
+
+    attachmentElements.forEach(({element, name}) => {
+        if (element) {
+            if (canView) {
+                element.style.display = '';
+                element.style.visibility = 'visible';
+                element.style.opacity = '1';
+                console.log(`✅ تم إظهار ${name}`);
+            } else {
+                element.style.display = 'none';
+                element.style.visibility = 'hidden';
+                element.style.opacity = '0';
+                console.log(`❌ تم إخفاء ${name}`);
+            }
+        } else {
+            console.log(`⚠️ لم يتم العثور على ${name}`);
+        }
+    });
+
+    // تحديث أزرار إدارة المرفقات في الهيدر أيضاً
+    const headerAttachmentBtns = document.querySelectorAll('[onclick*="showAttachmentsManager"]');
+    headerAttachmentBtns.forEach(btn => {
+        if (btn) {
+            if (canView) {
+                btn.style.display = '';
+                btn.style.visibility = 'visible';
+            } else {
+                btn.style.display = 'none';
+                btn.style.visibility = 'hidden';
+            }
+        }
+    });
+
+    console.log(`🔐 انتهى تحديث رؤية عناصر إدارة المرفقات - ${canView ? 'مرئية' : 'مخفية'}`);
+}
+
+// إظهار أزرار إدارة المرفقات بشكل صريح (لجميع المستخدمين المسجلين)
+function showAttachmentManagementButtons() {
+    const canView = canViewAttachmentManager();
+
+    if (!canView) {
+        console.log('🔐 المستخدم غير مسجل دخول - لن يتم إظهار أزرار إدارة المرفقات');
+        return;
+    }
+
+    console.log('🔐 إظهار أزرار إدارة المرفقات للمستخدم المسجل');
+
+    // إظهار زر إدارة المرفقات في الهيدر
+    const headerBtn = document.getElementById('attachmentsManagerBtn');
+    if (headerBtn) {
+        headerBtn.style.display = 'inline-block';
+        headerBtn.style.visibility = 'visible';
+        headerBtn.style.opacity = '1';
+
+        // إضافة event listener إذا لم يكن موجود
+        if (!headerBtn.onclick) {
+            headerBtn.onclick = function() {
+                showAttachmentsManager();
+            };
+        }
+
+        console.log('✅ تم إظهار زر إدارة المرفقات في الهيدر');
+    }
+
+    // إظهار زر إدارة المرفقات في الجوال
+    const mobileBtn = document.getElementById('mobile-attachments-btn');
+    if (mobileBtn) {
+        mobileBtn.style.display = 'block';
+        mobileBtn.style.visibility = 'visible';
+        mobileBtn.style.opacity = '1';
+
+        // إضافة event listener إذا لم يكن موجود
+        if (!mobileBtn.onclick) {
+            mobileBtn.onclick = function() {
+                showAttachmentsManager();
+                // إغلاق قائمة الجوال
+                const mobileMenu = document.getElementById('mobileMenu');
+                const menuOverlay = document.getElementById('menuOverlay');
+                if (mobileMenu) mobileMenu.classList.remove('active');
+                if (menuOverlay) menuOverlay.classList.remove('active');
+            };
+        }
+
+        console.log('✅ تم إظهار زر إدارة المرفقات في الجوال');
+    }
+
+    // إظهار عنصر القائمة المنسدلة
+    const dropdownItem = document.querySelector('.dropdown-item[onclick*="showAttachmentsManagerFromDropdown"]');
+    if (dropdownItem) {
+        dropdownItem.style.display = 'block';
+        dropdownItem.style.visibility = 'visible';
+        dropdownItem.style.opacity = '1';
+        console.log('✅ تم إظهار عنصر إدارة المرفقات في القائمة المنسدلة');
+    }
+}
+
 // إظهار رسالة عدم وجود صلاحيات
 function showNoPermissionMessage(customMessage = null) {
     // إزالة أي رسالة سابقة
@@ -43969,6 +44243,9 @@ function logout() {
         // إزالة كلاسات المستخدم
         document.body.classList.remove('user-omar', 'admin-user', 'limited-user');
 
+        // إخفاء عناصر إدارة المرفقات
+        toggleAttachmentManagementVisibility();
+
         // إعادة تحميل الصفحة
         location.reload();
     }
@@ -44099,50 +44376,50 @@ window.showPropertyManager = function() {
 // حماية وظائف المرفقات
 const originalDeletePropertyAttachment = window.deletePropertyAttachment;
 window.deletePropertyAttachment = function(propertyKey, fileIndex) {
-    if (!checkPermission('manageAttachments')) return;
+    if (!checkAttachmentPermission('delete')) return;
     if (originalDeletePropertyAttachment) originalDeletePropertyAttachment(propertyKey, fileIndex);
 };
 
 const originalDeletePropertyAttachmentFromSupabase = window.deletePropertyAttachmentFromSupabase;
 window.deletePropertyAttachmentFromSupabase = function(attachmentId, propertyKey) {
-    if (!checkPermission('manageAttachments')) return;
+    if (!checkAttachmentPermission('delete')) return;
     if (originalDeletePropertyAttachmentFromSupabase) originalDeletePropertyAttachmentFromSupabase(attachmentId, propertyKey);
 };
 
 const originalDeleteCardAttachment = window.deleteCardAttachment;
 window.deleteCardAttachment = function(cardKey, fileName) {
-    if (!checkPermission('manageAttachments')) return;
+    if (!checkAttachmentPermission('delete')) return;
     if (originalDeleteCardAttachment) originalDeleteCardAttachment(cardKey, fileName);
 };
 
 const originalDeleteCardAttachmentFromSupabase = window.deleteCardAttachmentFromSupabase;
 window.deleteCardAttachmentFromSupabase = function(attachmentId, cardKey) {
-    if (!checkPermission('manageAttachments')) return;
+    if (!checkAttachmentPermission('delete')) return;
     if (originalDeleteCardAttachmentFromSupabase) originalDeleteCardAttachmentFromSupabase(attachmentId, cardKey);
 };
 
 const originalDeleteAttachment = window.deleteAttachment;
 window.deleteAttachment = function(propertyKey, fileName, city, propertyName) {
-    if (!checkPermission('manageAttachments')) return;
+    if (!checkAttachmentPermission('delete')) return;
     if (originalDeleteAttachment) originalDeleteAttachment(propertyKey, fileName, city, propertyName);
 };
 
 const originalDeleteAttachmentFromSupabase = window.deleteAttachmentFromSupabase;
 window.deleteAttachmentFromSupabase = function(attachmentId, propertyKey) {
-    if (!checkPermission('manageAttachments')) return;
+    if (!checkAttachmentPermission('delete')) return;
     if (originalDeleteAttachmentFromSupabase) originalDeleteAttachmentFromSupabase(attachmentId, propertyKey);
 };
 
 // حماية وظائف رفع الملفات
 const originalHandleFileUploadEnhanced = window.handleFileUploadEnhanced;
 window.handleFileUploadEnhanced = function(event, city, propertyName) {
-    if (!checkPermission('manageAttachments')) return;
+    if (!checkAttachmentPermission('upload')) return;
     if (originalHandleFileUploadEnhanced) originalHandleFileUploadEnhanced(event, city, propertyName);
 };
 
 const originalHandleCardFileUpload = window.handleCardFileUpload;
 window.handleCardFileUpload = function(event, cardKey) {
-    if (!checkPermission('manageAttachments')) return;
+    if (!checkAttachmentPermission('upload')) return;
     if (originalHandleCardFileUpload) originalHandleCardFileUpload(event, cardKey);
 };
 
@@ -44156,9 +44433,9 @@ window.syncLocalAttachment = function(propertyKey, fileName) {
 // حماية وظائف إدارة المرفقات العامة - السماح للمستخدمين الذين لديهم صلاحية manageAttachments
 const originalShowAttachmentsManager = window.showAttachmentsManager;
 window.showAttachmentsManager = function() {
-    // السماح للمستخدمين الذين لديهم صلاحية إدارة المرفقات (بما في ذلك أبو تميم)
-    if (!checkPermission('manageAttachments')) {
-        showNoPermissionMessage('ليس لديك صلاحية لإدارة المرفقات');
+    // السماح لجميع المستخدمين المسجلين بعرض إدارة المرفقات
+    if (!canViewAttachmentManager()) {
+        showNoPermissionMessage('يجب تسجيل الدخول أولاً للوصول إلى إدارة المرفقات');
         return;
     }
     if (originalShowAttachmentsManager) originalShowAttachmentsManager();
@@ -44166,9 +44443,9 @@ window.showAttachmentsManager = function() {
 
 const originalShowAttachmentsManagerFromDropdown = window.showAttachmentsManagerFromDropdown;
 window.showAttachmentsManagerFromDropdown = function() {
-    // السماح للمستخدمين الذين لديهم صلاحية إدارة المرفقات (بما في ذلك أبو تميم)
-    if (!checkPermission('manageAttachments')) {
-        showNoPermissionMessage('ليس لديك صلاحية لإدارة المرفقات');
+    // السماح لجميع المستخدمين المسجلين بعرض إدارة المرفقات
+    if (!canViewAttachmentManager()) {
+        showNoPermissionMessage('يجب تسجيل الدخول أولاً للوصول إلى إدارة المرفقات');
         return;
     }
     if (originalShowAttachmentsManagerFromDropdown) originalShowAttachmentsManagerFromDropdown();
@@ -44228,6 +44505,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // إضافة زر تسجيل الخروج إذا كان المستخدم مسجل دخول
         if (currentUser && currentUser !== 'guest') {
             addLogoutButton();
+            // تحديث رؤية عناصر إدارة المرفقات (مع تأخير قصير)
+            setTimeout(() => {
+                toggleAttachmentManagementVisibility();
+                showAttachmentManagementButtons();
+            }, 1000);
             updateMobileUserSection();
         }
 

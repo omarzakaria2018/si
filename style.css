@@ -9081,13 +9081,44 @@ footer {
     font-weight: 500 !important;
 }
 
+/* قسم المرفقات للجوال */
+.mobile-attachments-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+    max-height: 60vh;
+    margin-top: 15px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.mobile-attachments-header-small {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #495057;
+}
+
+.mobile-attachments-count {
+    color: #007bff;
+    font-weight: 600;
+}
+
 /* قائمة المرفقات للجوال */
 .mobile-attachments-list {
     flex: 1 !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
-    padding-right: 5px !important;
-    margin-right: -5px !important;
+    padding: 8px !important;
+    background: white;
 }
 
 /* شريط التمرير للجوال */
