@@ -3550,6 +3550,40 @@ tr:hover {
             box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
         }
     }
+
+    /* تحسين حقل البحث العام - نص توضيحي موحد لجميع الشاشات */
+    #globalSearch::placeholder {
+        font-size: 13px !important;
+        color: #6c757d;
+        opacity: 0.8;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #globalSearch {
+        font-size: 16px !important; /* حجم الخط عند الكتابة يبقى كما هو */
+        padding: 12px 16px;
+    }
+
+    /* للهواتف - تحسينات إضافية */
+    @media (max-width: 768px) {
+        #globalSearch::placeholder {
+            font-size: 12px !important;
+        }
+
+        #globalSearch {
+            padding: 14px 16px;
+            min-height: 48px;
+        }
+    }
+
+    /* للشاشات الكبيرة - حجم أكبر قليلاً */
+    @media (min-width: 769px) {
+        #globalSearch::placeholder {
+            font-size: 13px !important;
+        }
+    }
 }
 
 /* تحسين التمرير */

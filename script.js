@@ -3797,6 +3797,12 @@ function initGlobalSearch() {
     const searchInput = document.getElementById('globalSearch');
     if (!searchInput) return;
 
+    // تحديث النص التوضيحي حسب حجم الشاشة
+    updateSearchPlaceholder();
+
+    // إضافة مستمع لتغيير حجم الشاشة
+    window.addEventListener('resize', updateSearchPlaceholder);
+
     // إزالة البحث التلقائي القديم
     searchInput.removeEventListener('input', renderData);
 
@@ -3834,6 +3840,22 @@ function initGlobalSearch() {
     }
 
     console.log('✅ تم تهيئة البحث العام المحسن مع التخطيط الأفقي ومراقبة المسح اليدوي');
+}
+
+// تحديث النص التوضيحي حسب حجم الشاشة
+function updateSearchPlaceholder() {
+    const searchInput = document.getElementById('globalSearch');
+    if (!searchInput) return;
+
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+        // نص مختصر للهواتف
+        searchInput.placeholder = "بحث... (// هرمي، + متعدد)";
+    } else {
+        // نص مختصر للشاشات الكبيرة أيضاً ليظهر كاملاً
+        searchInput.placeholder = "بحث في البيانات... (// هرمي، + متعدد)";
+    }
 }
 
 // ===== ATTACHMENTS SEARCH FUNCTIONS =====
