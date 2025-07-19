@@ -43745,6 +43745,8 @@ function applyUserPermissions() {
     if (currentUser === 'عمر') {
         body.classList.add('user-omar');
         console.log('🔧 تم تفعيل أزرار الاختبار والحماية لعمر');
+        // إظهار أزرار المرفقات لعمر
+        setTimeout(() => showAttachmentButtonsForAuthorizedUser(), 100);
     } else {
         body.classList.remove('user-omar');
         console.log('🔒 تم إخفاء أزرار الاختبار والحماية');
@@ -43754,6 +43756,8 @@ function applyUserPermissions() {
     if (currentUser === 'محمد') {
         body.classList.add('user-mohammed');
         console.log('🔧 تم تفعيل أزرار حذف البيانات لمحمد');
+        // إظهار أزرار المرفقات لمحمد
+        setTimeout(() => showAttachmentButtonsForAuthorizedUser(), 100);
     } else {
         body.classList.remove('user-mohammed');
     }
@@ -44061,6 +44065,9 @@ window.showAttachmentsModal = function(city, propertyName) {
             if (users[currentUser]?.role === 'limited') {
                 applyAttachmentsRestrictions();
                 addLimitedUserNoticeToAttachments();
+            } else if (currentUser === 'عمر' || currentUser === 'محمد') {
+                // إظهار أزرار المرفقات للمستخدمين المخولين
+                showAttachmentButtonsForAuthorizedUser();
             }
         }, 100);
     }
@@ -44076,6 +44083,9 @@ window.showCardAttachmentsModal = function(city, propertyName, contractNumber, u
             if (users[currentUser]?.role === 'limited') {
                 applyAttachmentsRestrictions();
                 addLimitedUserNoticeToAttachments();
+            } else if (currentUser === 'عمر' || currentUser === 'محمد') {
+                // إظهار أزرار المرفقات للمستخدمين المخولين
+                showAttachmentButtonsForAuthorizedUser();
             }
         }, 100);
     }
@@ -44100,12 +44110,29 @@ function checkPermission(action) {
 // التحقق من صلاحية المرفقات (مقصورة على عمر ومحمد فقط)
 function checkAttachmentPermission(operation = 'manage', showError = true) {
     // الحصول على اسم المستخدم الحالي
-    const currentUser = localStorage.getItem('currentUser');
+    let currentUserName = null;
+
+    // محاولة الحصول على اسم المستخدم من localStorage
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            currentUserName = userData.username;
+        } catch (e) {
+            // إذا فشل parsing، قد يكون المستخدم محفوظ كنص بسيط
+            currentUserName = savedUser;
+        }
+    }
+
+    // إذا لم نجد في localStorage، تحقق من المتغير العام
+    if (!currentUserName && window.currentUser) {
+        currentUserName = window.currentUser;
+    }
 
     // السماح فقط لعمر ومحمد
     const allowedUsers = ['عمر', 'محمد'];
 
-    if (!allowedUsers.includes(currentUser)) {
+    if (!allowedUsers.includes(currentUserName)) {
         if (showError) {
             let operationText = '';
             switch(operation) {
@@ -44157,6 +44184,33 @@ function isAuthorizedUser() {
     console.log(`🔐 التحقق من صلاحية الرفع/الحذف للمستخدم: ${currentUserName} - مخول: ${isAuthorized}`);
 
     return isAuthorized;
+}
+
+// دالة لإظهار أزرار المرفقات للمستخدمين المخولين (عمر ومحمد)
+function showAttachmentButtonsForAuthorizedUser() {
+    console.log('🔓 إظهار أزرار المرفقات للمستخدم المخول');
+
+    // إظهار جميع أزرار الحذف والإرفاق
+    const deleteButtons = document.querySelectorAll('.delete-btn, .attachment-btn.delete-btn, .btn-delete');
+    const uploadAreas = document.querySelectorAll('.upload-area, .upload-section, .upload-dropzone, .upload-zone, .file-upload-area');
+    const attachmentActions = document.querySelectorAll('.attachment-actions');
+
+    deleteButtons.forEach(btn => {
+        btn.style.display = '';
+        btn.style.visibility = 'visible';
+    });
+
+    uploadAreas.forEach(area => {
+        area.style.display = '';
+        area.style.visibility = 'visible';
+    });
+
+    attachmentActions.forEach(actions => {
+        actions.style.display = 'flex';
+        actions.style.visibility = 'visible';
+    });
+
+    console.log(`✅ تم إظهار ${deleteButtons.length} زر حذف و ${uploadAreas.length} منطقة رفع`);
 }
 
 // دالة للتحقق من إمكانية عرض إدارة المرفقات (جميع المستخدمين المسجلين)

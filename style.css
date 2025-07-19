@@ -18549,6 +18549,26 @@ textarea.mobile-friendly:focus {
   display: none !important;
 }
 
+/* إظهار أزرار الإرفاق والحذف لعمر ومحمد حتى لو كان هناك كلاس limited-user خطأً */
+.user-omar .delete-btn,
+.user-omar .attachment-btn.delete-btn,
+.user-omar .btn-delete,
+.user-omar .upload-area,
+.user-omar .upload-section,
+.user-omar .upload-dropzone,
+.user-omar .upload-zone,
+.user-omar .file-upload-area,
+.user-mohammed .delete-btn,
+.user-mohammed .attachment-btn.delete-btn,
+.user-mohammed .btn-delete,
+.user-mohammed .upload-area,
+.user-mohammed .upload-section,
+.user-mohammed .upload-dropzone,
+.user-mohammed .upload-zone,
+.user-mohammed .file-upload-area {
+  display: block !important;
+}
+
 /* قيود المرفقات للمستخدم محدود الصلاحيات */
 .limited-user .upload-area,
 .limited-user .upload-section,
@@ -18575,6 +18595,23 @@ textarea.mobile-friendly:focus {
 .limited-user .sync-btn,
 .limited-user .attachment-btn.sync-btn {
   display: none !important;
+}
+
+/* فرض إظهار أزرار المرفقات لعمر ومحمد */
+.user-omar .attachment-btn,
+.user-omar .attachment-actions,
+.user-omar .attachment-actions .delete-btn,
+.user-omar .attachment-actions .attachment-btn,
+.user-mohammed .attachment-btn,
+.user-mohammed .attachment-actions,
+.user-mohammed .attachment-actions .delete-btn,
+.user-mohammed .attachment-actions .attachment-btn {
+  display: inline-block !important;
+}
+
+.user-omar .attachment-actions,
+.user-mohammed .attachment-actions {
+  display: flex !important;
 }
 
 /* إعادة تخطيط المحتوى للمستخدم محدود الصلاحيات */
