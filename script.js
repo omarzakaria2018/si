@@ -8717,7 +8717,12 @@ function showAttachmentsModal(city, propertyName) {
                 <!-- أزرار الأسفل - مثل الشاشات الكبيرة -->
                 <div class="bottom-buttons-row">
                     ${canUpload ? `
-                    <button class="bottom-action-btn upload" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                    <button class="bottom-action-btn upload drag-drop-zone"
+                            onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()"
+                            ondragover="handleDragOver(event)"
+                            ondragenter="handleDragEnter(event)"
+                            ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event, 'propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}')">
                         <i class="fas fa-plus"></i> إرفاق
                     </button>
                     ` : ''}
@@ -8775,7 +8780,12 @@ function showAttachmentsModal(city, propertyName) {
                 <!-- أزرار الأسفل -->
                 <div class="bottom-buttons-row">
                     ${canUpload ? `
-                    <button class="bottom-action-btn upload" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                    <button class="bottom-action-btn upload drag-drop-zone"
+                            onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()"
+                            ondragover="handleDragOver(event)"
+                            ondragenter="handleDragEnter(event)"
+                            ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event, 'propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}')">
                         <i class="fas fa-plus"></i> إرفاق
                     </button>
                     ` : ''}
@@ -19070,7 +19080,12 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                 <!-- أزرار الأسفل - مثل الشاشات الكبيرة -->
                 <div class="bottom-buttons-row">
                     ${canUpload ? `
-                    <button class="bottom-action-btn upload" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                    <button class="bottom-action-btn upload drag-drop-zone"
+                            onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()"
+                            ondragover="handleDragOver(event)"
+                            ondragenter="handleDragEnter(event)"
+                            ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event, 'cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}')">
                         <i class="fas fa-plus"></i> إرفاق
                     </button>
                     ` : ''}
@@ -19130,7 +19145,12 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                 <!-- أزرار الأسفل -->
                 <div class="bottom-buttons-row">
                     ${canUpload ? `
-                    <button class="bottom-action-btn upload" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                    <button class="bottom-action-btn upload drag-drop-zone"
+                            onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()"
+                            ondragover="handleDragOver(event)"
+                            ondragenter="handleDragEnter(event)"
+                            ondragleave="handleDragLeave(event)"
+                            ondrop="handleDrop(event, 'cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}')">
                         <i class="fas fa-plus"></i> إرفاق
                     </button>
                     ` : ''}
@@ -48726,6 +48746,57 @@ window.testInstantUpdate = function() {
         console.warn('⚠️ لم يتم العثور على عقار للاختبار');
     }
 };
+
+// دوال السحب والإفلات للأزرار
+function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const button = event.currentTarget;
+    button.classList.add('drag-over');
+}
+
+function handleDragEnter(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const button = event.currentTarget;
+    button.classList.add('drag-over');
+}
+
+function handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const button = event.currentTarget;
+    // التحقق من أن المؤشر خرج من الزر فعلاً وليس من عنصر فرعي
+    if (!button.contains(event.relatedTarget)) {
+        button.classList.remove('drag-over');
+    }
+}
+
+function handleDrop(event, inputId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const button = event.currentTarget;
+    button.classList.remove('drag-over');
+
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        // العثور على حقل الإدخال المخفي
+        const fileInput = document.getElementById(inputId);
+        if (fileInput) {
+            // تعيين الملفات للحقل المخفي
+            fileInput.files = files;
+
+            // تشغيل حدث التغيير لمعالجة الملفات
+            const changeEvent = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(changeEvent);
+
+            console.log(`✅ تم إسقاط ${files.length} ملف على زر الإرفاق`);
+        } else {
+            console.error(`❌ لم يتم العثور على حقل الإدخال: ${inputId}`);
+        }
+    }
+}
 
 // دالة لاختبار التحسينات الجديدة
 window.testNewDesign = function() {

@@ -26527,6 +26527,49 @@ body.limited-user .restricted-dropdown-item::before {
     transform: scale(0.95);
 }
 
+/* تأثيرات السحب والإفلات لأزرار الإرفاق */
+.drag-drop-zone {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.drag-drop-zone.drag-over {
+    background: linear-gradient(135deg, #20c997, #17a2b8) !important;
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(32, 201, 151, 0.4);
+    border: 2px dashed #ffffff;
+}
+
+.drag-drop-zone.drag-over::before {
+    content: "📁 اسقط الملفات هنا";
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2c3e50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0.9;
+}
+
+.drag-drop-zone.drag-over::after {
+    content: "";
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #2c3e50;
+    z-index: 1000;
+}
+
 /* أزرار الجوال في الأسفل */
 .mobile-bottom-buttons-row {
     display: flex;
@@ -26757,6 +26800,20 @@ body.limited-user .restricted-dropdown-item::before {
         padding: 4px;
         min-width: 32px;
         height: 32px;
+    }
+
+    /* تحسين تأثيرات السحب والإفلات للشاشات الصغيرة */
+    .drag-drop-zone.drag-over::before {
+        font-size: 0.7rem;
+        padding: 3px 6px;
+        top: -30px;
+    }
+
+    .drag-drop-zone.drag-over::after {
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 4px solid #2c3e50;
+        top: -6px;
     }
 
 

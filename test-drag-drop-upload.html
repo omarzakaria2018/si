@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار السحب والإفلات للإرفاق</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .demo-area {
+            background: white;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+
+        .demo-area.drag-over {
+            border-color: #28a745;
+            background: #f8fff9;
+            transform: scale(1.02);
+        }
+
+        .demo-upload-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            margin: 10px;
+        }
+
+        .demo-upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-cloud-upload-alt"></i> اختبار السحب والإفلات</h1>
+            <p>اختبار ميزة السحب والإفلات لأزرار الإرفاق</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> كيفية الاختبار</h4>
+                <ul>
+                    <li>افتح نافذة المرفقات باستخدام الأزرار أدناه</li>
+                    <li>اسحب ملف من جهازك إلى زر "إرفاق" الأخضر</li>
+                    <li>ستلاحظ تغيير لون الزر وظهور رسالة "اسقط الملفات هنا"</li>
+                    <li>اتركه فوق الزر لرفع الملف تلقائياً</li>
+                    <li>يعمل مع ملفات متعددة في نفس الوقت</li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار النوافذ الفعلية</h3>
+                
+                <button class="btn btn-success" onclick="testGeneralAttachments()">
+                    <i class="fas fa-building"></i> اختبار المرفقات العامة
+                </button>
+                
+                <button class="btn btn-danger" onclick="testCardAttachments()">
+                    <i class="fas fa-paperclip"></i> اختبار مرفقات البطاقة
+                </button>
+                
+                <button class="btn btn-info" onclick="testLimitedUser()">
+                    <i class="fas fa-eye"></i> اختبار مستخدم محدود الصلاحية
+                </button>
+                
+                <div id="status" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-demo"></i> عرض توضيحي للتأثيرات</h3>
+                
+                <div class="demo-area" id="demoArea">
+                    <h4>منطقة تجريبية للسحب والإفلات</h4>
+                    <p>اسحب أي ملف إلى هذه المنطقة لرؤية التأثيرات</p>
+                    
+                    <button class="demo-upload-btn drag-drop-zone" 
+                            ondragover="handleDragOver(event)" 
+                            ondragenter="handleDragEnter(event)" 
+                            ondragleave="handleDragLeave(event)" 
+                            ondrop="handleDemoDrop(event)">
+                        <i class="fas fa-plus"></i> زر إرفاق تجريبي
+                    </button>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-list-check"></i> المميزات الجديدة</h3>
+                
+                <div class="status success">
+                    <h4>✅ ميزة السحب والإفلات:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>سحب الملفات مباشرة إلى زر الإرفاق</li>
+                        <li>تأثيرات بصرية عند السحب</li>
+                        <li>رسالة توضيحية "اسقط الملفات هنا"</li>
+                        <li>دعم ملفات متعددة</li>
+                        <li>يعمل مع جميع أنواع الملفات</li>
+                    </ul>
+                </div>
+                
+                <div class="status info">
+                    <h4>🎨 التأثيرات البصرية:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>تغيير لون الزر إلى أزرق-أخضر</li>
+                        <li>تكبير الزر قليلاً (1.05x)</li>
+                        <li>إضافة ظل ملون</li>
+                        <li>حدود منقطة بيضاء</li>
+                        <li>رسالة منبثقة في الأعلى</li>
+                    </ul>
+                </div>
+                
+                <div class="status warning">
+                    <h4>⚠️ ملاحظات مهمة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>الميزة تعمل فقط في الشاشات الكبيرة</li>
+                        <li>لا تؤثر على التصميم الأصلي للزر</li>
+                        <li>تحافظ على جميع الوظائف السابقة</li>
+                        <li>متوافقة مع جميع المتصفحات الحديثة</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testGeneralAttachments() {
+            showStatus('جاري فتح نافذة المرفقات العامة...', 'info');
+            
+            // تسجيل دخول كعمر
+            if (typeof setCurrentUser === 'function') {
+                setCurrentUser('عمر');
+            }
+            
+            // فتح نافذة المرفقات العامة
+            if (typeof showAttachmentsModal === 'function') {
+                showAttachmentsModal('الرياض', 'مجمع_السحب_والإفلات');
+                showStatus('تم فتح النافذة - اسحب ملف إلى زر الإرفاق الأخضر', 'success');
+            } else {
+                showStatus('خطأ: وظيفة showAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function testCardAttachments() {
+            showStatus('جاري فتح نافذة مرفقات البطاقة...', 'info');
+            
+            // تسجيل دخول كعمر
+            if (typeof setCurrentUser === 'function') {
+                setCurrentUser('عمر');
+            }
+            
+            // فتح نافذة مرفقات البطاقة
+            if (typeof showCardAttachmentsModal === 'function') {
+                showCardAttachmentsModal('الرياض', 'مجمع_السحب_والإفلات', '123', 'A1');
+                showStatus('تم فتح النافذة - اسحب ملف إلى زر الإرفاق الأخضر', 'success');
+            } else {
+                showStatus('خطأ: وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function testLimitedUser() {
+            showStatus('جاري اختبار المستخدم محدود الصلاحية...', 'info');
+            
+            // تسجيل دخول كأبو تميم
+            if (typeof setCurrentUser === 'function') {
+                setCurrentUser('1234');
+            }
+            
+            // فتح نافذة مرفقات البطاقة
+            if (typeof showCardAttachmentsModal === 'function') {
+                showCardAttachmentsModal('الرياض', 'مجمع_السحب_والإفلات', '123', 'A1');
+                showStatus('تم فتح النافذة - لا يوجد زر إرفاق (مستخدم محدود الصلاحية)', 'warning');
+            } else {
+                showStatus('خطأ: وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        // دالة تجريبية للسحب والإفلات
+        function handleDemoDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const button = event.currentTarget;
+            button.classList.remove('drag-over');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                showStatus(`تم إسقاط ${files.length} ملف بنجاح! (تجريبي)`, 'success');
+                console.log('📁 الملفات المسقطة:', files);
+            }
+        }
+
+        // إضافة تأثيرات للمنطقة التجريبية
+        const demoArea = document.getElementById('demoArea');
+        
+        demoArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        });
+        
+        demoArea.addEventListener('dragleave', function(e) {
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove('drag-over');
+            }
+        });
+        
+        demoArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+        });
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                initSupabase();
+            }
+            
+            showStatus('الصفحة جاهزة للاختبار - انقر على أحد الأزرار أعلاه', 'info');
+        });
+    </script>
+</body>
+</html>
