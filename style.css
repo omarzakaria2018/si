@@ -8336,7 +8336,7 @@ footer {
 
 .attachments-header.enhanced {
     background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
-    color: white;
+    color: #205ace;
     padding: 20px 24px;
     display: flex;
     justify-content: space-between;
@@ -26237,5 +26237,509 @@ body.limited-user .restricted-dropdown-item::before {
 
 .inline-table-container::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
+}
+
+/* ===== COMPACT ATTACHMENTS MODAL DESIGN ===== */
+
+/* تصميم النافذة المضغوطة */
+.attachments-modal.compact {
+    max-width: 95%;
+    max-height: 95%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.attachments-modal.compact .attachments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.attachments-modal.compact .attachments-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.4rem;
+}
+
+.attachments-modal.compact .card-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 8px;
+}
+
+.attachments-modal.compact .info-item {
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* أزرار الأسفل المتجاورة */
+.bottom-buttons-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    border-top: 1px solid #e9ecef;
+    margin-top: auto;
+}
+
+.bottom-action-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.bottom-action-btn.upload {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.bottom-action-btn.upload:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+    background: linear-gradient(135deg, #218838, #1e7e34);
+}
+
+.bottom-action-btn.cancel {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.bottom-action-btn.cancel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    background: linear-gradient(135deg, #5a6268, #343a40);
+}
+
+.bottom-action-btn:active {
+    transform: translateY(0);
+}
+
+.bottom-action-btn.disabled {
+    display: none;
+}
+
+/* قائمة المرفقات الموسعة */
+.attachments-list.expanded {
+    flex: 1;
+    min-height: 400px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 10px; /* مساحة للأزرار في الأسفل */
+}
+
+.attachments-list.expanded:empty::before {
+    content: "لا توجد مرفقات";
+    display: block;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 40px 20px;
+}
+
+/* تصميم الجوال المضغوط */
+.mobile-attachments-modal.compact {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+}
+
+.mobile-attachments-modal.compact .mobile-attachments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* رأس مضغوط للجوال - صف واحد */
+.mobile-compact-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.mobile-compact-header .header-content {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    flex: 1;
+    font-size: 0.85rem;
+    flex-direction: row;
+}
+
+.mobile-compact-header .header-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.mobile-compact-header .header-separator {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+.mobile-compact-header .header-info {
+    color: #4c85be;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mobile-compact-header .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.mobile-compact-header .close-btn:hover {
+    background: #f8f9fa;
+    color: #495057;
+}
+
+/* رأس مضغوط للشاشات الكبيرة */
+.compact-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.header-content-inline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    flex: 1;
+    font-size: 1rem;
+}
+
+.header-content-inline .header-title {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-content-inline .header-separator {
+    color: #6c757d;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.header-content-inline .header-info {
+    color: #495057;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.header-content-inline .header-info i {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* زر الإغلاق في الرأس */
+.header-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+}
+
+.header-close-btn:hover {
+    background: #f8f9fa;
+    color: #495057;
+    transform: scale(1.1);
+}
+
+.header-close-btn:active {
+    transform: scale(0.95);
+}
+
+/* أزرار الجوال في الأسفل */
+.mobile-bottom-buttons-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    border-top: 1px solid #e9ecef;
+    margin-top: auto;
+    background: white;
+}
+
+.mobile-action-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 100px;
+    justify-content: center;
+    flex: 1;
+    max-width: 140px;
+}
+
+.mobile-action-btn.upload {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    box-shadow: 0 3px 12px rgba(40, 167, 69, 0.3);
+}
+
+.mobile-action-btn.upload:hover,
+.mobile-action-btn.upload:active {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+}
+
+.mobile-action-btn.cancel {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    box-shadow: 0 3px 12px rgba(108, 117, 125, 0.3);
+}
+
+.mobile-action-btn.cancel:hover,
+.mobile-action-btn.cancel:active {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+}
+
+.mobile-action-btn.disabled {
+    display: none;
+}
+
+.mobile-attachments-section.expanded {
+    flex: 1;
+    min-height: 50vh;
+    max-height: 70vh;
+    overflow-y: auto;
+    margin-bottom: 10px; /* مساحة للأزرار في الأسفل */
+}
+
+/* تنسيق زر الإغلاق */
+.modal-footer-actions.compact {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+    gap: 15px;
+}
+
+.close-modal-btn.compact {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.close-modal-btn.compact:hover {
+    background: linear-gradient(135deg, #5a6268, #343a40);
+    transform: translateY(-1px);
+}
+
+/* إخفاء منطقة الرفع التقليدية */
+.attachments-modal.compact .upload-section,
+.attachments-modal.compact .mobile-upload-section {
+    display: none;
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 768px) {
+    .bottom-buttons-row {
+        padding: 15px;
+        gap: 12px;
+    }
+
+    .bottom-action-btn {
+        padding: 10px 18px;
+        font-size: 0.9rem;
+        min-width: 100px;
+    }
+
+    /* تحسين الرأس المضغوط للجوال */
+    .mobile-compact-header .header-content {
+        font-size: 0.8rem;
+        gap: 6px;
+    }
+
+    .mobile-compact-header .header-title {
+        font-size: 0.85rem;
+    }
+
+    .mobile-compact-header .header-info {
+        font-size: 0.75rem;
+    }
+
+    .mobile-compact-header .header-separator {
+        font-size: 0.7rem;
+    }
+
+    /* تحسين الرأس المضغوط للشاشات الصغيرة */
+    .compact-header-row {
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+    }
+
+    .header-content-inline {
+        font-size: 0.9rem;
+        gap: 10px;
+    }
+
+    .header-content-inline .header-title {
+        font-size: 1.1rem;
+    }
+
+    .header-content-inline .header-info {
+        font-size: 0.85rem;
+    }
+
+    .header-content-inline .header-separator {
+        font-size: 0.8rem;
+    }
+
+    .header-close-btn {
+        font-size: 1.2rem;
+        padding: 6px;
+        min-width: 36px;
+        height: 36px;
+    }
+}
+
+@media (max-width: 480px) {
+    .bottom-buttons-row {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .bottom-action-btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        min-width: 80px;
+    }
+
+    /* تحسين الرأس للشاشات الصغيرة جداً */
+    .mobile-compact-header .header-content {
+        font-size: 0.75rem;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .mobile-compact-header .header-title {
+        font-size: 0.8rem;
+        flex-basis: 100%;
+        margin-bottom: 4px;
+    }
+
+    .mobile-compact-header .header-info {
+        font-size: 0.7rem;
+    }
+
+    .mobile-compact-header .header-separator {
+        font-size: 0.65rem;
+    }
+
+    .mobile-compact-header .close-btn {
+        font-size: 1rem;
+        padding: 3px;
+    }
+
+    /* تحسين الرأس المضغوط للشاشات الصغيرة جداً */
+    .compact-header-row {
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+    }
+
+    .header-content-inline {
+        font-size: 0.8rem;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .header-content-inline .header-title {
+        font-size: 1rem;
+        flex-basis: 100%;
+        margin-bottom: 6px;
+    }
+
+    .header-content-inline .header-info {
+        font-size: 0.75rem;
+    }
+
+    .header-content-inline .header-separator {
+        font-size: 0.7rem;
+    }
+
+    .header-close-btn {
+        font-size: 1rem;
+        padding: 4px;
+        min-width: 32px;
+        height: 32px;
+    }
 }
 

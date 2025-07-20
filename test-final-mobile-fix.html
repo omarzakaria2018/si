@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الإصلاح النهائي للجوال</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #e74c3c;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .log-entry.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .log-entry.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .log-entry.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .log-entry.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-bug"></i> اختبار الإصلاح النهائي</h1>
+            <p>التحقق من تطبيق التحديثات على نوافذ المرفقات</p>
+        </div>
+
+        <div class="content">
+            <div class="test-section">
+                <h3><i class="fas fa-mobile-alt"></i> اختبار التصميم المحدث</h3>
+                
+                <button class="btn btn-danger" onclick="testCardAttachments()">
+                    <i class="fas fa-paperclip"></i> اختبار مرفقات البطاقة
+                </button>
+                
+                <button class="btn btn-warning" onclick="testGeneralAttachments()">
+                    <i class="fas fa-building"></i> اختبار المرفقات العامة
+                </button>
+                
+                <button class="btn btn-info" onclick="testLimitedUser()">
+                    <i class="fas fa-eye"></i> اختبار مستخدم محدود الصلاحية
+                </button>
+                
+                <div id="status" class="status" style="display: none;"></div>
+                
+                <div id="log" class="log" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-list-check"></i> التحقق من التحديثات</h3>
+                
+                <div id="checkResults">
+                    <p>انقر على أحد الأزرار أعلاه لبدء الاختبار...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        let logContainer;
+        
+        function log(message, type = 'info') {
+            if (!logContainer) {
+                logContainer = document.getElementById('log');
+                logContainer.style.display = 'block';
+            }
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testCardAttachments() {
+            log('🏷️ بدء اختبار مرفقات البطاقة...', 'info');
+            showStatus('جاري اختبار مرفقات البطاقة...', 'warning');
+            
+            // تسجيل دخول كعمر
+            if (typeof setCurrentUser === 'function') {
+                setCurrentUser('عمر');
+                log('✅ تم تسجيل الدخول كعمر', 'success');
+            }
+            
+            // فتح نافذة مرفقات البطاقة
+            if (typeof showCardAttachmentsModal === 'function') {
+                showCardAttachmentsModal('الرياض', 'مجمع_الاختبار_النهائي', '123', 'A1');
+                log('✅ تم فتح نافذة مرفقات البطاقة', 'success');
+                showStatus('تم فتح نافذة مرفقات البطاقة - تحقق من التصميم', 'success');
+                
+                // فحص العناصر بعد ثانية
+                setTimeout(checkModalElements, 1000);
+            } else {
+                log('❌ وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+                showStatus('خطأ: وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function testGeneralAttachments() {
+            log('🏢 بدء اختبار المرفقات العامة...', 'info');
+            showStatus('جاري اختبار المرفقات العامة...', 'warning');
+            
+            // تسجيل دخول كعمر
+            if (typeof setCurrentUser === 'function') {
+                setCurrentUser('عمر');
+                log('✅ تم تسجيل الدخول كعمر', 'success');
+            }
+            
+            // فتح نافذة المرفقات العامة
+            if (typeof showAttachmentsModal === 'function') {
+                showAttachmentsModal('الرياض', 'مجمع_الاختبار_النهائي');
+                log('✅ تم فتح نافذة المرفقات العامة', 'success');
+                showStatus('تم فتح نافذة المرفقات العامة - تحقق من التصميم', 'success');
+                
+                // فحص العناصر بعد ثانية
+                setTimeout(checkModalElements, 1000);
+            } else {
+                log('❌ وظيفة showAttachmentsModal غير متوفرة', 'error');
+                showStatus('خطأ: وظيفة showAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function testLimitedUser() {
+            log('👁️ بدء اختبار المستخدم محدود الصلاحية...', 'info');
+            showStatus('جاري اختبار المستخدم محدود الصلاحية...', 'warning');
+            
+            // تسجيل دخول كأبو تميم
+            if (typeof setCurrentUser === 'function') {
+                setCurrentUser('1234');
+                log('✅ تم تسجيل الدخول كأبو تميم (1234)', 'success');
+            }
+            
+            // فتح نافذة مرفقات البطاقة
+            if (typeof showCardAttachmentsModal === 'function') {
+                showCardAttachmentsModal('الرياض', 'مجمع_الاختبار_النهائي', '123', 'A1');
+                log('✅ تم فتح نافذة مرفقات البطاقة للمستخدم محدود الصلاحية', 'success');
+                showStatus('تم فتح النافذة - يجب أن يظهر زر الإلغاء فقط', 'success');
+                
+                // فحص العناصر بعد ثانية
+                setTimeout(checkModalElements, 1000);
+            } else {
+                log('❌ وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+                showStatus('خطأ: وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function checkModalElements() {
+            log('🔍 فحص عناصر النافذة...', 'info');
+
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                log('✅ النافذة مفتوحة', 'success');
+
+                // فحص الرأس المضغوط
+                const compactHeader = document.querySelector('.compact-header-row, .mobile-compact-header');
+                if (compactHeader) {
+                    log('✅ الرأس المضغوط موجود', 'success');
+
+                    // فحص محتوى الرأس
+                    const headerContent = compactHeader.querySelector('.header-content-inline, .header-content');
+                    if (headerContent) {
+                        const title = headerContent.querySelector('.header-title');
+                        const separators = headerContent.querySelectorAll('.header-separator');
+                        const infos = headerContent.querySelectorAll('.header-info');
+
+                        log(`📝 العنوان: ${title ? 'موجود' : 'غير موجود'}`, title ? 'success' : 'error');
+                        log(`📝 الفواصل: ${separators.length} فاصل`, separators.length > 0 ? 'success' : 'warning');
+                        log(`📝 المعلومات: ${infos.length} عنصر`, infos.length > 0 ? 'success' : 'warning');
+                    }
+
+                    // فحص زر الإغلاق في الرأس
+                    const headerCloseBtn = compactHeader.querySelector('.header-close-btn, .close-btn');
+                    if (headerCloseBtn) {
+                        log('✅ زر الإغلاق في الرأس موجود', 'success');
+                    } else {
+                        log('⚠️ زر الإغلاق في الرأس غير موجود', 'warning');
+                    }
+                } else {
+                    log('⚠️ الرأس المضغوط غير موجود', 'warning');
+                }
+
+                // فحص عدم وجود زر X منفصل
+                const separateCloseBtn = document.querySelector('.enhanced-close-btn');
+                if (separateCloseBtn) {
+                    log('⚠️ يوجد زر X منفصل (يجب إزالته)', 'warning');
+                } else {
+                    log('✅ لا يوجد زر X منفصل', 'success');
+                }
+
+                // فحص الأزرار في الأسفل
+                const bottomButtons = document.querySelector('.bottom-buttons-row');
+                if (bottomButtons) {
+                    log('✅ أزرار الأسفل موجودة', 'success');
+
+                    const uploadBtn = bottomButtons.querySelector('.upload');
+                    const cancelBtn = bottomButtons.querySelector('.cancel');
+
+                    if (uploadBtn) {
+                        log('✅ زر الإرفاق موجود', 'success');
+                    } else {
+                        log('ℹ️ زر الإرفاق مخفي (مستخدم محدود الصلاحية)', 'info');
+                    }
+
+                    if (cancelBtn) {
+                        log('✅ زر الإلغاء موجود', 'success');
+                    } else {
+                        log('❌ زر الإلغاء غير موجود', 'error');
+                    }
+                } else {
+                    log('❌ أزرار الأسفل غير موجودة', 'error');
+                }
+
+            } else {
+                log('❌ النافذة غير مفتوحة', 'error');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 بدء اختبار الإصلاح النهائي للجوال...', 'info');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                log(`Supabase تهيئة: ${initialized ? 'نجح' : 'فشل'}`, initialized ? 'success' : 'error');
+            }
+            
+            log('📱 الصفحة جاهزة للاختبار', 'success');
+        });
+    </script>
+</body>
+</html>

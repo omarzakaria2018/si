@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح مرفقات البطاقة للمستخدمين الثلاثة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #3498db;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .user-test {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .user-test:hover {
+            border-color: #3498db;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-left: 15px;
+        }
+
+        .user-omar { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .user-mohammed { background: linear-gradient(135deg, #27ae60, #229954); }
+        .user-abu-tameem { background: linear-gradient(135deg, #f39c12, #e67e22); }
+
+        .user-details h4 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .user-details p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .log-success { color: #2ecc71; }
+        .log-error { color: #e74c3c; }
+        .log-warning { color: #f39c12; }
+        .log-info { color: #3498db; }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+
+        .status-success { background: #2ecc71; }
+        .status-error { background: #e74c3c; }
+        .status-warning { background: #f39c12; }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .test-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-bug"></i> اختبار إصلاح مرفقات البطاقة</h1>
+            <p>اختبار فتح مرفقات البطاقة للمستخدمين الثلاثة: عمر، محمد، وأبو تميم</p>
+        </div>
+
+        <div class="content">
+            <div class="test-section">
+                <h3><i class="fas fa-users"></i> اختبار المستخدمين</h3>
+                
+                <!-- عمر - المدير -->
+                <div class="user-test">
+                    <div class="user-info">
+                        <div class="user-avatar user-omar">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div class="user-details">
+                            <h4>عمر - المدير</h4>
+                            <p>صلاحيات كاملة: عرض، رفع، حذف المرفقات</p>
+                        </div>
+                    </div>
+                    <div class="test-buttons">
+                        <button class="btn btn-primary" onclick="testUserAttachments('عمر', '159')">
+                            <i class="fas fa-sign-in-alt"></i> تسجيل دخول كعمر
+                        </button>
+                        <button class="btn btn-success" onclick="testCardAttachments('عمر')">
+                            <i class="fas fa-paperclip"></i> اختبار مرفقات البطاقة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- محمد - المدير المساعد -->
+                <div class="user-test">
+                    <div class="user-info">
+                        <div class="user-avatar user-mohammed">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="user-details">
+                            <h4>محمد - المدير المساعد</h4>
+                            <p>صلاحيات كاملة: عرض، رفع، حذف المرفقات</p>
+                        </div>
+                    </div>
+                    <div class="test-buttons">
+                        <button class="btn btn-primary" onclick="testUserAttachments('محمد', 'm12345')">
+                            <i class="fas fa-sign-in-alt"></i> تسجيل دخول كمحمد
+                        </button>
+                        <button class="btn btn-success" onclick="testCardAttachments('محمد')">
+                            <i class="fas fa-paperclip"></i> اختبار مرفقات البطاقة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- أبو تميم - مستخدم محدود -->
+                <div class="user-test">
+                    <div class="user-info">
+                        <div class="user-avatar user-abu-tameem">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                        <div class="user-details">
+                            <h4>أبو تميم - شركة السنيدي</h4>
+                            <p>صلاحيات محدودة: عرض وتحميل المرفقات فقط</p>
+                        </div>
+                    </div>
+                    <div class="test-buttons">
+                        <button class="btn btn-primary" onclick="testUserAttachments('1234', '1234')">
+                            <i class="fas fa-sign-in-alt"></i> تسجيل دخول كأبو تميم
+                        </button>
+                        <button class="btn btn-warning" onclick="testCardAttachments('1234')">
+                            <i class="fas fa-paperclip"></i> اختبار مرفقات البطاقة
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-cogs"></i> أدوات الاختبار</h3>
+                <div class="test-buttons">
+                    <button class="btn btn-success" onclick="checkSystemStatus()">
+                        <i class="fas fa-heartbeat"></i> فحص حالة النظام
+                    </button>
+                    <button class="btn btn-primary" onclick="testAllUsers()">
+                        <i class="fas fa-users-cog"></i> اختبار جميع المستخدمين
+                    </button>
+                    <button class="btn btn-warning" onclick="clearLog()">
+                        <i class="fas fa-broom"></i> مسح السجل
+                    </button>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-list"></i> سجل الاختبار</h3>
+                <div id="testLog" class="log">
+                    <div class="log-entry log-info">
+                        <i class="fas fa-info-circle"></i> جاهز لبدء الاختبار...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        // دوال الاختبار
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const iconMap = {
+                'success': 'fas fa-check-circle',
+                'error': 'fas fa-exclamation-triangle', 
+                'warning': 'fas fa-exclamation-circle',
+                'info': 'fas fa-info-circle'
+            };
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.innerHTML = `
+                <i class="${iconMap[type]}"></i>
+                [${timestamp}] ${message}
+            `;
+            
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = `
+                <div class="log-entry log-info">
+                    <i class="fas fa-info-circle"></i> تم مسح السجل - جاهز لبدء اختبار جديد...
+                </div>
+            `;
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 بدء اختبار إصلاح مرفقات البطاقة للمستخدمين الثلاثة...', 'info');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                log('Supabase تهيئة: ' + (initialized ? 'نجح' : 'فشل'), initialized ? 'success' : 'error');
+            }
+        });
+
+        async function testUserAttachments(username, password) {
+            log(`🔐 اختبار تسجيل دخول المستخدم: ${username}`, 'info');
+            
+            try {
+                // محاكاة تسجيل الدخول
+                if (typeof handleLogin === 'function') {
+                    // إنشاء حدث وهمي
+                    const mockEvent = {
+                        preventDefault: () => {},
+                        target: {
+                            username: { value: username },
+                            password: { value: password }
+                        }
+                    };
+                    
+                    // تسجيل الدخول
+                    await handleLogin(mockEvent);
+                    log(`✅ تم تسجيل دخول ${username} بنجاح`, 'success');
+                } else {
+                    // استخدام الطريقة المباشرة
+                    if (typeof users !== 'undefined' && users[username] && users[username].password === password) {
+                        if (typeof setCurrentUser === 'function') {
+                            setCurrentUser(username);
+                            log(`✅ تم تسجيل دخول ${username} بنجاح (طريقة مباشرة)`, 'success');
+                        }
+                    } else {
+                        throw new Error('بيانات المستخدم غير صحيحة');
+                    }
+                }
+                
+                // فحص الصلاحيات
+                checkUserPermissions(username);
+                
+            } catch (error) {
+                log(`❌ خطأ في تسجيل دخول ${username}: ${error.message}`, 'error');
+            }
+        }
+
+        function checkUserPermissions(username) {
+            log(`🔍 فحص صلاحيات المستخدم: ${username}`, 'info');
+            
+            if (typeof isAuthorizedUser === 'function') {
+                const canUpload = isAuthorizedUser();
+                log(`📤 صلاحية الرفع: ${canUpload ? 'نعم' : 'لا'}`, canUpload ? 'success' : 'warning');
+            }
+            
+            if (typeof canViewAttachments === 'function') {
+                const canView = canViewAttachments();
+                log(`👁️ صلاحية العرض: ${canView ? 'نعم' : 'لا'}`, canView ? 'success' : 'error');
+            }
+        }
+
+        function testCardAttachments(username) {
+            log(`🏷️ اختبار مرفقات البطاقة للمستخدم: ${username}`, 'info');
+            
+            if (typeof showCardAttachmentsModal === 'function') {
+                try {
+                    showCardAttachmentsModal('الرياض', 'مجمع_اختبار_الإصلاح', '123', null);
+                    log(`✅ تم فتح نافذة مرفقات البطاقة للمستخدم: ${username}`, 'success');
+                    
+                    // فحص العناصر بعد فتح النافذة
+                    setTimeout(() => {
+                        checkModalElements(username);
+                    }, 1000);
+                    
+                } catch (error) {
+                    log(`❌ خطأ في فتح نافذة المرفقات: ${error.message}`, 'error');
+                }
+            } else {
+                log('❌ وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function checkModalElements(username) {
+            log(`🔍 فحص عناصر النافذة للمستخدم: ${username}`, 'info');
+            
+            // فحص وجود النافذة
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) {
+                log('✅ النافذة مفتوحة', 'success');
+                
+                // فحص منطقة الرفع
+                const uploadArea = document.querySelector('.upload-area, .mobile-upload-section');
+                if (uploadArea) {
+                    const isVisible = uploadArea.style.display !== 'none' && !uploadArea.hidden;
+                    log(`📤 منطقة الرفع: ${isVisible ? 'مرئية' : 'مخفية'}`, isVisible ? 'success' : 'warning');
+                }
+                
+                // فحص قائمة المرفقات
+                const attachmentsList = document.querySelector('.attachments-list, .mobile-attachments-list');
+                if (attachmentsList) {
+                    log('✅ قائمة المرفقات موجودة', 'success');
+                } else {
+                    log('⚠️ قائمة المرفقات غير موجودة', 'warning');
+                }
+                
+                // فحص الرسائل التوضيحية
+                const limitedNotice = document.querySelector('.limited-user-notice');
+                if (limitedNotice) {
+                    log('ℹ️ رسالة المستخدم محدود الصلاحية موجودة', 'info');
+                }
+                
+            } else {
+                log('❌ النافذة غير مفتوحة', 'error');
+            }
+        }
+
+        function checkSystemStatus() {
+            log('🔍 فحص حالة النظام...', 'info');
+            
+            // فحص Supabase
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                log('✅ Supabase Client متوفر', 'success');
+            } else {
+                log('❌ Supabase Client غير متوفر', 'error');
+            }
+            
+            // فحص الوظائف المطلوبة
+            const requiredFunctions = [
+                'showCardAttachmentsModal',
+                'isAuthorizedUser', 
+                'canViewAttachments',
+                'handleCardFileUploadEnhanced'
+            ];
+            
+            requiredFunctions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    log(`✅ ${funcName} متوفرة`, 'success');
+                } else {
+                    log(`❌ ${funcName} غير متوفرة`, 'error');
+                }
+            });
+        }
+
+        async function testAllUsers() {
+            log('🧪 بدء اختبار شامل لجميع المستخدمين...', 'info');
+            
+            const users = [
+                { username: 'عمر', password: '159', name: 'عمر - المدير' },
+                { username: 'محمد', password: 'm12345', name: 'محمد - المدير المساعد' },
+                { username: '1234', password: '1234', name: 'أبو تميم - شركة السنيدي' }
+            ];
+            
+            for (const user of users) {
+                log(`\n--- اختبار ${user.name} ---`, 'info');
+                await testUserAttachments(user.username, user.password);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                testCardAttachments(user.username);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // إغلاق النافذة إن كانت مفتوحة
+                if (typeof closeModal === 'function') {
+                    closeModal();
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            log('🎉 انتهى الاختبار الشامل', 'success');
+        }
+    </script>
+</body>
+</html>

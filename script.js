@@ -8676,33 +8676,21 @@ function showAttachmentsModal(city, propertyName) {
     let html;
 
     if (isMobile) {
-        // تصميم مخصص للجوال - مبسط ومضغوط
+        // تصميم مضغوط للجوال
         html = `
         <div class="modal-overlay mobile-attachments-overlay" style="display:flex;">
-            <div class="modal-box mobile-attachments-modal">
-                <!-- رأس النافذة المبسط للجوال -->
-                <div class="mobile-attachments-header">
-                    <h2><i class="fas fa-paperclip"></i> مرفقات العقار</h2>
-                    <button class="mobile-close-btn" onclick="closeModal()" title="إغلاق">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+            <div class="modal-box mobile-attachments-modal compact">
+                <!-- رأس مضغوط - صف واحد -->
+                <div class="mobile-compact-header">
+                    <div class="header-content">
+                        <span class="header-title"><i class="fas fa-paperclip"></i> مرفقات العقار</span>
+                        <span class="header-separator">|</span>
+                        <span class="header-info"><i class="fas fa-building"></i> ${propertyName}</span>
+                        <span class="header-separator">|</span>
+                        <span class="header-info"><i class="fas fa-map-marker-alt"></i> ${city}</span>
+                    </div>
 
-                <!-- معلومات العقار المضغوطة -->
-                <div class="mobile-card-info">
-                    <span><i class="fas fa-building"></i> ${propertyName}</span>
-                    <span><i class="fas fa-map-marker-alt"></i> ${city}</span>
                 </div>
-
-                <!-- زر الإرفاق المضغوط (فقط لعمر ومحمد) -->
-                ${canUpload ? `
-                <div class="mobile-upload-section">
-                    <button class="mobile-upload-btn" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
-                        <i class="fas fa-plus"></i> إضافة مرفق
-                    </button>
-                    <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
-                </div>
-                ` : ''}
 
                 <!-- رسالة للمستخدمين محدودي الصلاحية -->
                 ${!canUpload && !canDelete ? `
@@ -8712,8 +8700,8 @@ function showAttachmentsModal(city, propertyName) {
                 </div>
                 ` : ''}
 
-                <!-- قائمة المرفقات للجوال -->
-                <div class="mobile-attachments-section">
+                <!-- قائمة المرفقات الموسعة -->
+                <div class="mobile-attachments-section expanded">
                     <div class="mobile-attachments-header-small">
                         <span><i class="fas fa-folder-open"></i> المرفقات الموجودة</span>
                         <span class="mobile-attachments-count" id="mobilePropertyAttachmentsCount_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}">جاري التحميل...</span>
@@ -8726,99 +8714,80 @@ function showAttachmentsModal(city, propertyName) {
                     </div>
                 </div>
 
-                <!-- زر الإغلاق في الأسفل -->
-                <div class="mobile-footer">
-                    <button class="mobile-close-footer-btn" onclick="closeModal()">
-                        <i class="fas fa-times"></i> إغلاق
+                <!-- أزرار الأسفل - مثل الشاشات الكبيرة -->
+                <div class="bottom-buttons-row">
+                    ${canUpload ? `
+                    <button class="bottom-action-btn upload" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                        <i class="fas fa-plus"></i> إرفاق
+                    </button>
+                    ` : ''}
+                    <button class="bottom-action-btn cancel" onclick="closeModal()">
+                        <i class="fas fa-times"></i> إلغاء
                     </button>
                 </div>
+
+                <!-- حقل الرفع المخفي -->
+                ${canUpload ? `
+                <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
+                ` : ''}
             </div>
         </div>`;
     } else {
-        // التصميم الحالي للشاشات الكبيرة (بدون تغيير)
+        // تصميم مضغوط للشاشات الكبيرة
         html = `
         <div class="modal-overlay enhanced-modal-overlay" style="display:flex;">
-            <div class="modal-box attachments-modal enhanced">
-                <!-- زر الإغلاق المحسن -->
-                <button class="close-modal enhanced-close-btn" onclick="closeModal()" title="إغلاق النافذة">
-                    <i class="fas fa-times"></i>
-                </button>
-
-                <!-- رأس النافذة المحسن -->
-                <div class="attachments-header enhanced">
-                    <h2><i class="fas fa-paperclip"></i> مرفقات العقار</h2>
-                    <div class="card-info">
-                        <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
-                        <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
+            <div class="modal-box attachments-modal enhanced compact">
+                <!-- رأس مضغوط - صف واحد مع زر الإغلاق -->
+                <div class="compact-header-row">
+                    <div class="header-content-inline">
+                        <span class="header-title"><i class="fas fa-paperclip"></i> مرفقات العقار</span>
+                        <span class="header-separator">|</span>
+                        <span class="header-info"><i class="fas fa-building"></i> ${propertyName}</span>
+                        <span class="header-separator">|</span>
+                        <span class="header-info"><i class="fas fa-map-marker-alt"></i> ${city}</span>
                     </div>
+                    <button class="header-close-btn" onclick="closeModal()" title="إغلاق النافذة">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
 
-                <!-- محتوى النافذة بالتخطيط الجديد -->
-                <div class="attachments-modal-content enhanced-content">
-                    <div class="content-layout-new">
-                        <!-- الجانب الأيسر: منطقة الرفع والملاحظات -->
-                        <div class="upload-notes-sidebar">
-                            ${canUpload ? `
-                            <!-- منطقة الرفع -->
-                            <div class="upload-section compact-upload">
-                                <div class="upload-area enhanced-upload" id="propertyUploadArea_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}">
-                                    <div class="upload-dropzone" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
-                                        <i class="fas fa-cloud-upload-alt"></i>
-                                        <p>اسحب الملفات هنا أو انقر للاختيار</p>
-                                        <small>يدعم جميع أنواع الملفات</small>
-                                    </div>
-                                    <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
-                                </div>
-                            </div>
-                            ` : ''}
+                <!-- رسالة للمستخدمين محدودي الصلاحية -->
+                ${!canUpload && !canDelete ? `
+                <div class="limited-user-notice" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center;">
+                    <i class="fas fa-info-circle" style="color: #2196f3; margin-left: 10px; font-size: 1.2rem;"></i>
+                    <span style="color: #1976d2; font-size: 1rem; font-weight: 500;">يمكنك عرض وتحميل المرفقات فقط</span>
+                </div>
+                ` : ''}
 
-                            <!-- رسالة للمستخدمين محدودي الصلاحية -->
-                            ${!canUpload && !canDelete ? `
-                            <div class="limited-user-notice" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center;">
-                                <i class="fas fa-info-circle" style="color: #2196f3; margin-left: 10px; font-size: 1.2rem;"></i>
-                                <span style="color: #1976d2; font-size: 1rem; font-weight: 500;">يمكنك عرض وتحميل المرفقات فقط</span>
-                            </div>
-                            ` : ''}
-
-                            <div id="propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list scrollable-attachments">
-                                <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
-                                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                                    <p>جاري تحميل المرفقات...</p>
-                                </div>
-                            </div>
+                <!-- قائمة المرفقات الموسعة -->
+                <div class="attachments-main-section" style="width: 100%;">
+                    <div class="attachments-header">
+                        <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
+                    </div>
+                    <div id="propertyAttachmentsList_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list expanded">
+                        <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p>جاري تحميل المرفقات...</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- منطقة الأزرار للشاشات الصغيرة -->
-                <div class="mobile-buttons-area" style="display: none;">
+                <!-- أزرار الأسفل -->
+                <div class="bottom-buttons-row">
                     ${canUpload ? `
-                    <button class="btn btn-upload" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
-                        <i class="fas fa-plus"></i>
-                        إدراج مرفقات
+                    <button class="bottom-action-btn upload" onclick="document.getElementById('propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                        <i class="fas fa-plus"></i> إرفاق
                     </button>
                     ` : ''}
-                    <button class="btn btn-cancel" onclick="closeModal()">
-                        <i class="fas fa-times"></i>
-                        إلغاء
+                    <button class="bottom-action-btn cancel" onclick="closeModal()">
+                        <i class="fas fa-times"></i> إلغاء
                     </button>
                 </div>
 
-                <!-- زر الإغلاق في الأسفل -->
-                <div class="modal-footer-actions">
-                    <button class="close-modal-btn" onclick="closeModal()">
-                        <i class="fas fa-times"></i>
-                        إغلاق النافذة
-                    </button>
-                </div>
-
-                <!-- زر العودة للأعلى -->
-                <button class="scroll-to-top-btn" id="scrollToTopBtn_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" onclick="scrollToTopPropertyAttachments('${propertyKey}')" title="العودة للأعلى">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
-
-                <!-- حقل الرفع المخفي للشاشات الصغيرة -->
+                <!-- حقل الرفع المخفي -->
+                ${canUpload ? `
                 <input type="file" id="propertyFileInput_${propertyKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleFileUploadEnhanced(event, '${city}', '${propertyName}')">
+                ` : ''}
             </div>
         </div>`;
     }
@@ -19010,6 +18979,10 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
     // إغلاق أي نوافذ موجودة مسبقاً
     closeModal();
 
+    // التحقق من صلاحيات المستخدم
+    const canDelete = isAuthorizedUser();
+    const canUpload = isAuthorizedUser();
+
     // إنشاء مفتاح فريد للبطاقة
     let cardKey;
     if (contractNumber) {
@@ -19052,36 +19025,36 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
     let html;
 
     if (isMobile) {
-        // تصميم مخصص للجوال - مبسط ومضغوط
+        // تصميم مضغوط للجوال
         html = `
         <div class="modal-overlay mobile-attachments-overlay" style="display:flex;">
-            <div class="modal-box mobile-attachments-modal">
-                <!-- رأس النافذة المبسط للجوال -->
-                <div class="mobile-attachments-header">
-                    <h2><i class="fas fa-paperclip"></i> مرفقات البطاقة</h2>
-                    <button class="mobile-close-btn" onclick="closeModal()" title="إغلاق">
+            <div class="modal-box mobile-attachments-modal compact">
+                <!-- رأس مضغوط - صف واحد -->
+                <div class="mobile-compact-header">
+                    <div class="header-content">
+                        <span class="header-title"><i class="fas fa-paperclip"></i> مرفقات البطاقة</span>
+                        <span class="header-separator">|</span>
+                        <span class="header-info"><i class="fas fa-building"></i> ${propertyName}</span>
+                        <span class="header-separator">|</span>
+                        <span class="header-info"><i class="fas fa-map-marker-alt"></i> ${city}</span>
+                        ${contractNumber ? `<span class="header-separator">|</span><span class="header-info"><i class="fas fa-file-contract"></i> ${contractNumber}</span>` : ''}
+                        ${unitNumber ? `<span class="header-separator">|</span><span class="header-info"><i class="fas fa-home"></i> ${unitNumber}</span>` : ''}
+                    </div>
+                    <button class="close-btn" onclick="closeModal()" title="إغلاق">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
 
-                <!-- معلومات البطاقة المضغوطة -->
-                <div class="mobile-card-info">
-                    <span><i class="fas fa-building"></i> ${propertyName}</span>
-                    <span><i class="fas fa-map-marker-alt"></i> ${city}</span>
-                    ${contractNumber ? `<span><i class="fas fa-file-contract"></i> ${contractNumber}</span>` : ''}
-                    ${unitNumber ? `<span><i class="fas fa-home"></i> ${unitNumber}</span>` : ''}
+                <!-- رسالة للمستخدمين محدودي الصلاحية -->
+                ${!canUpload && !canDelete ? `
+                <div class="limited-user-notice" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 6px; padding: 12px; margin-bottom: 15px; text-align: center;">
+                    <i class="fas fa-info-circle" style="color: #2196f3; margin-left: 8px;"></i>
+                    <span style="color: #1976d2; font-size: 0.9rem;">يمكنك عرض وتحميل المرفقات فقط</span>
                 </div>
+                ` : ''}
 
-                <!-- زر الإرفاق المضغوط (20% من المساحة) -->
-                <div class="mobile-upload-section">
-                    <button class="mobile-upload-btn" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
-                        <i class="fas fa-plus"></i> إضافة مرفق
-                    </button>
-                    <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
-                </div>
-
-                <!-- قائمة المرفقات (80% من المساحة) -->
-                <div class="mobile-attachments-section">
+                <!-- قائمة المرفقات الموسعة -->
+                <div class="mobile-attachments-section expanded">
                     <div class="mobile-attachments-header-small">
                         <span><i class="fas fa-folder-open"></i> المرفقات الموجودة</span>
                         <span class="mobile-attachments-count" id="mobileAttachmentsCount_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">جاري التحميل...</span>
@@ -19094,93 +19067,82 @@ function showCardAttachmentsModal(city, propertyName, contractNumber, unitNumber
                     </div>
                 </div>
 
-                <!-- زر الإغلاق في الأسفل -->
-                <div class="mobile-footer">
-                    <button class="mobile-close-footer-btn" onclick="closeModal()">
-                        <i class="fas fa-times"></i> إغلاق
+                <!-- أزرار الأسفل - مثل الشاشات الكبيرة -->
+                <div class="bottom-buttons-row">
+                    ${canUpload ? `
+                    <button class="bottom-action-btn upload" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                        <i class="fas fa-plus"></i> إرفاق
+                    </button>
+                    ` : ''}
+                    <button class="bottom-action-btn cancel" onclick="closeModal()">
+                        <i class="fas fa-times"></i> إلغاء
                     </button>
                 </div>
+
+                <!-- حقل الرفع المخفي -->
+                ${canUpload ? `
+                <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
+                ` : ''}
             </div>
         </div>`;
     } else {
-        // التصميم الحالي للشاشات الكبيرة (بدون تغيير)
+        // تصميم مضغوط للشاشات الكبيرة
         html = `
         <div class="modal-overlay enhanced-modal-overlay" style="display:flex;">
-            <div class="modal-box attachments-modal enhanced">
-                <!-- زر الإغلاق المحسن -->
-                <button class="close-modal enhanced-close-btn" onclick="closeModal()" title="إغلاق النافذة">
-                    <i class="fas fa-times"></i>
-                </button>
-
-                <!-- رأس النافذة المحسن -->
-                <div class="attachments-header enhanced">
-                    <h2><i class="fas fa-paperclip"></i> مرفقات البطاقة</h2>
-                    <div class="card-info">
-                        <span class="info-item"><i class="fas fa-building"></i> ${propertyName}</span>
-                        <span class="info-item"><i class="fas fa-map-marker-alt"></i> ${city}</span>
-                        ${contractNumber ? `<span class="info-item"><i class="fas fa-file-contract"></i> عقد: ${contractNumber}</span>` : ''}
-                        ${unitNumber ? `<span class="info-item"><i class="fas fa-home"></i> وحدة: ${unitNumber}</span>` : ''}
+            <div class="modal-box attachments-modal enhanced compact">
+                <!-- رأس مضغوط - صف واحد مع زر الإغلاق -->
+                <div class="compact-header-row">
+                    <div class="header-content-inline">
+                        <span class="header-title"><i class="fas fa-paperclip"></i> مرفقات البطاقة</span>
+                        <span class="header-separator">|</span>
+                        <span class="header-info"><i class="fas fa-building"></i> ${propertyName}</span>
+                        <span class="header-separator">|</span>
+                        <span class="header-info"><i class="fas fa-map-marker-alt"></i> ${city}</span>
+                        ${contractNumber ? `<span class="header-separator">|</span><span class="header-info"><i class="fas fa-file-contract"></i> عقد: ${contractNumber}</span>` : ''}
+                        ${unitNumber ? `<span class="header-separator">|</span><span class="header-info"><i class="fas fa-home"></i> وحدة: ${unitNumber}</span>` : ''}
                     </div>
+                    <button class="header-close-btn" onclick="closeModal()" title="إغلاق النافذة">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
 
-                <!-- محتوى النافذة -->
-                <div class="attachments-modal-content enhanced-content">
-                    <!-- منطقة الرفع -->
-                    <div class="upload-section compact-upload" style="margin-bottom: 20px;">
-                        <div class="upload-area enhanced-upload" id="cardUploadArea_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}">
-                            <div class="upload-dropzone" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
-                                <i class="fas fa-cloud-upload-alt"></i>
-                                <p>اسحب الملفات هنا أو انقر للاختيار</p>
-                                <small>يدعم جميع أنواع الملفات</small>
-                            </div>
-                            <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
+                <!-- رسالة للمستخدمين محدودي الصلاحية -->
+                ${!canUpload && !canDelete ? `
+                <div class="limited-user-notice" style="background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: center;">
+                    <i class="fas fa-info-circle" style="color: #2196f3; margin-left: 10px; font-size: 1.2rem;"></i>
+                    <span style="color: #1976d2; font-size: 1rem; font-weight: 500;">يمكنك عرض وتحميل المرفقات فقط</span>
+                </div>
+                ` : ''}
+
+                <!-- قائمة المرفقات الموسعة -->
+                <div class="attachments-main-section" style="width: 100%;">
+                    <div class="attachments-header">
+                        <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
+                    </div>
+                    <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list expanded">
+                        <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p>جاري تحميل المرفقات...</p>
                         </div>
                     </div>
-
-                    <!-- قائمة المرفقات (العرض الكامل) -->
-                    <div class="attachments-main-section" style="width: 100%;">
-                            <div class="attachments-header">
-                                <h3><i class="fas fa-folder-open"></i> المرفقات الموجودة</h3>
-
-                            </div>
-                            <div id="cardAttachmentsList_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" class="attachments-list compact-list scrollable-attachments">
-                                <div class="loading-attachments" style="text-align: center; padding: 20px; color: #666;">
-                                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                                    <p>جاري تحميل المرفقات...</p>
-                                </div>
-                            </div>
-                    </div>
                 </div>
 
-                <!-- منطقة الأزرار للشاشات الصغيرة -->
-                <div class="mobile-buttons-area" style="display: none;">
+                <!-- أزرار الأسفل -->
+                <div class="bottom-buttons-row">
                     ${canUpload ? `
-                    <button class="btn btn-upload" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
-                        <i class="fas fa-plus"></i>
-                        إدراج مرفقات
+                    <button class="bottom-action-btn upload" onclick="document.getElementById('cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}').click()">
+                        <i class="fas fa-plus"></i> إرفاق
                     </button>
                     ` : ''}
-                    <button class="btn btn-cancel" onclick="closeModal()">
-                        <i class="fas fa-times"></i>
-                        إلغاء
+                    <button class="bottom-action-btn cancel" onclick="closeModal()">
+                        <i class="fas fa-times"></i> إلغاء
                     </button>
                 </div>
 
-                <!-- زر الإغلاق في الأسفل -->
-                <div class="modal-footer-actions">
-                    <button class="close-modal-btn" onclick="closeModal()">
-                        <i class="fas fa-times"></i>
-                        إغلاق النافذة
-                    </button>
-                </div>
-
-                <!-- زر العودة للأعلى -->
-                <button class="scroll-to-top-btn" id="scrollToTopBtn_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" onclick="scrollToTopAttachments('${cardKey}')" title="العودة للأعلى">
-                    <i class="fas fa-chevron-up"></i>
-                </button>
-
-                <!-- حقل الرفع المخفي للشاشات الصغيرة -->
-                <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${city}', '${propertyName}', '${contractNumber}', '${unitNumber}')">
+                <!-- حقل الرفع المخفي -->
+                ${canUpload ? `
+                <input type="file" id="cardFileInput_${cardKey.replace(/[^a-zA-Z0-9]/g, '_')}" multiple style="display:none" onchange="handleCardFileUploadEnhanced(event, '${cardKey}')">
+                ` : ''}
             </div>
         </div>`;
     }
@@ -19340,6 +19302,9 @@ function renderCardAttachmentsList(cardKey, attachments = null) {
     // Check if mobile device for responsive design
     const isMobile = isMobileDevice();
 
+    // التحقق من صلاحيات المستخدم
+    const canDelete = isAuthorizedUser();
+
     return cardFiles.map(file => {
         // Handle both local and cloud file formats
         const fileName = file.file_name || file.name;
@@ -19368,18 +19333,18 @@ function renderCardAttachmentsList(cardKey, attachments = null) {
                         <i class="fas fa-download"></i>
                         <span>تحميل</span>
                     </button>
-                    <button onclick="deleteCardAttachment('${cardKey}', '${fileName}')" class="btn-enhanced btn-delete" title="حذف">
+                    ${canDelete ? `<button onclick="deleteCardAttachment('${cardKey}', '${fileName}')" class="btn-enhanced btn-delete" title="حذف">
                         <i class="fas fa-trash"></i>
                         <span>حذف</span>
-                    </button>` :
+                    </button>` : ''}` :
                     `<button onclick="downloadAttachmentFromSupabase('${file.file_url}', '${fileName}')" class="btn-enhanced btn-download" title="تحميل">
                         <i class="fas fa-download"></i>
                         <span>تحميل</span>
                     </button>
-                    <button onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" class="btn-enhanced btn-delete" title="حذف">
+                    ${canDelete ? `<button onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" class="btn-enhanced btn-delete" title="حذف">
                         <i class="fas fa-trash"></i>
                         <span>حذف</span>
-                    </button>`
+                    </button>` : ''}`
                 }
             </div>
         </div>
@@ -19391,12 +19356,15 @@ function renderCardAttachmentsList(cardKey, attachments = null) {
 function renderMobileCardAttachmentsList(cardKey, attachments) {
     console.log(`📱 عرض ${attachments.length} مرفق للجوال - البطاقة: ${cardKey}`);
 
+    // التحقق من صلاحيات المستخدم
+    const canDelete = isAuthorizedUser();
+
     if (!attachments || attachments.length === 0) {
         return `
             <div class="mobile-no-attachments" style="text-align: center; padding: 30px 20px; color: #6c757d;">
                 <i class="fas fa-folder-open" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
                 <p style="margin: 0; font-size: 0.9rem;">لا توجد مرفقات</p>
-                <small style="opacity: 0.7;">استخدم زر "إضافة مرفق" لرفع الملفات</small>
+                <small style="opacity: 0.7;">${canDelete ? 'استخدم زر "إضافة مرفق" لرفع الملفات' : 'لا توجد مرفقات للعرض'}</small>
             </div>
         `;
     }
@@ -19434,18 +19402,18 @@ function renderMobileCardAttachmentsList(cardKey, attachments) {
                                 <i class="fas fa-download"></i>
                                 <span>تحميل</span>
                             </button>
-                            <button class="mobile-action-btn delete" onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" title="حذف">
+                            ${canDelete ? `<button class="mobile-action-btn delete" onclick="deleteCardAttachmentFromSupabase('${file.id}', '${cardKey}')" title="حذف">
                                 <i class="fas fa-trash"></i>
                                 <span>حذف</span>
-                            </button>` :
+                            </button>` : ''}` :
                             `<button class="mobile-action-btn download" onclick="downloadCardAttachment('${cardKey}', ${index})" title="تحميل">
                                 <i class="fas fa-download"></i>
                                 <span>تحميل</span>
                             </button>
-                            <button class="mobile-action-btn delete" onclick="deleteCardAttachment('${cardKey}', ${index})" title="حذف">
+                            ${canDelete ? `<button class="mobile-action-btn delete" onclick="deleteCardAttachment('${cardKey}', ${index})" title="حذف">
                                 <i class="fas fa-trash"></i>
                                 <span>حذف</span>
-                            </button>`
+                            </button>` : ''}`
                         }
                     </div>
                 </div>
@@ -44184,6 +44152,35 @@ function isAuthorizedUser() {
     console.log(`🔐 التحقق من صلاحية الرفع/الحذف للمستخدم: ${currentUserName} - مخول: ${isAuthorized}`);
 
     return isAuthorized;
+}
+
+// دالة للتحقق من إمكانية عرض المرفقات (جميع المستخدمين يمكنهم العرض)
+function canViewAttachments() {
+    let currentUserName = null;
+
+    // محاولة الحصول على اسم المستخدم من localStorage
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            currentUserName = userData.username;
+        } catch (e) {
+            currentUserName = savedUser;
+        }
+    }
+
+    // إذا لم نجد في localStorage، تحقق من المتغير العام
+    if (!currentUserName && window.currentUser) {
+        currentUserName = window.currentUser;
+    }
+
+    // جميع المستخدمين المسجلين يمكنهم عرض المرفقات
+    const allUsers = ['عمر', 'محمد', '1234'];
+    const canView = allUsers.includes(currentUserName);
+
+    console.log(`👁️ التحقق من صلاحية عرض المرفقات للمستخدم: ${currentUserName} - يمكن العرض: ${canView}`);
+
+    return canView;
 }
 
 // دالة لإظهار أزرار المرفقات للمستخدمين المخولين (عمر ومحمد)
