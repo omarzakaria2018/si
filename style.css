@@ -10406,7 +10406,7 @@ footer {
     height: 28px !important;
     border-radius: 4px !important;
     cursor: pointer !important;
-    font-size: 0.75rem !important;
+    font-size: 1.1rem !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -10441,6 +10441,23 @@ footer {
 .mobile-action-btn.delete:hover {
     background: #dc3545 !important;
     color: white !important;
+}
+
+/* أزرار الأيقونات فقط للجوال */
+/* إخفاء النص في أزرار الجوال مع الحفاظ على التصميم الأصلي */
+@media (max-width: 768px) {
+    .mobile-action-btn span {
+        display: none !important;
+    }
+
+    .mobile-action-btn {
+        min-width: auto !important;
+        padding: 8px !important;
+    }
+
+    .mobile-action-btn i {
+        margin: 0 !important;
+    }
 }
 
 /* تذييل النافذة للجوال */
@@ -26741,5 +26758,7 @@ body.limited-user .restricted-dropdown-item::before {
         min-width: 32px;
         height: 32px;
     }
+
+
 }
 

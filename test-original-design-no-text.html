@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التصميم الأصلي بدون نص</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .demo-file-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .demo-file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .demo-file-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .comparison-item h4 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .desktop-view {
+            border-left: 4px solid #17a2b8;
+        }
+
+        .mobile-view {
+            border-left: 4px solid #28a745;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-check-circle"></i> التصميم الأصلي بدون نص</h1>
+            <p>نفس الألوان والتنسيق السابق مع إخفاء النص في الجوال</p>
+        </div>
+
+        <div class="content">
+            <div class="test-section">
+                <h3><i class="fas fa-eye"></i> مقارنة التصميم</h3>
+                
+                <div class="comparison">
+                    <div class="comparison-item desktop-view">
+                        <h4>الشاشات الكبيرة</h4>
+                        <div class="demo-file-item">
+                            <div class="demo-file-name">ملف تجريبي.pdf</div>
+                            <div class="demo-file-actions">
+                                <button class="mobile-action-btn download" style="padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
+                                    <i class="fas fa-download"></i>
+                                    <span>تحميل</span>
+                                </button>
+                                <button class="mobile-action-btn delete" style="padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
+                                    <i class="fas fa-trash"></i>
+                                    <span>حذف</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="comparison-item mobile-view">
+                        <h4>الجوال (النص مخفي)</h4>
+                        <div class="demo-file-item">
+                            <div class="demo-file-name">ملف تجريبي.pdf</div>
+                            <div class="demo-file-actions">
+                                <button class="mobile-action-btn download" style="padding: 8px; background: #28a745; color: white; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; min-width: auto;">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button class="mobile-action-btn delete" style="padding: 8px; background: #dc3545; color: white; border: none; border-radius: 6px; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; min-width: auto;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار النوافذ الفعلية</h3>
+                
+                <button class="btn btn-success" onclick="testGeneralAttachments()">
+                    <i class="fas fa-building"></i> اختبار المرفقات العامة
+                </button>
+                
+                <button class="btn btn-danger" onclick="testCardAttachments()">
+                    <i class="fas fa-paperclip"></i> اختبار مرفقات البطاقة
+                </button>
+                
+                <button class="btn btn-info" onclick="testLimitedUser()">
+                    <i class="fas fa-eye"></i> اختبار مستخدم محدود الصلاحية
+                </button>
+                
+                <div id="status" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-list-check"></i> النتيجة المطلوبة</h3>
+                
+                <div class="status success">
+                    <h4>✅ في الشاشات الكبيرة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>زر أخضر مع أيقونة + كلمة "تحميل"</li>
+                        <li>زر أحمر مع أيقونة + كلمة "حذف"</li>
+                        <li>نفس التصميم والألوان السابقة</li>
+                    </ul>
+                </div>
+                
+                <div class="status info">
+                    <h4>📱 في الجوال والشاشات الصغيرة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>زر أخضر مع أيقونة فقط (بدون "تحميل")</li>
+                        <li>زر أحمر مع أيقونة فقط (بدون "حذف")</li>
+                        <li>نفس الألوان والتنسيق</li>
+                        <li>حجم أصغر لتوفير المساحة</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testGeneralAttachments() {
+            showStatus('جاري فتح نافذة المرفقات العامة...', 'info');
+            
+            // تسجيل دخول كعمر
+            if (typeof setCurrentUser === 'function') {
+                setCurrentUser('عمر');
+            }
+            
+            // فتح نافذة المرفقات العامة
+            if (typeof showAttachmentsModal === 'function') {
+                showAttachmentsModal('الرياض', 'مجمع_التصميم_الأصلي');
+                showStatus('تم فتح النافذة - تحقق من الأزرار (أخضر وأحمر بدون نص في الجوال)', 'success');
+            } else {
+                showStatus('خطأ: وظيفة showAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function testCardAttachments() {
+            showStatus('جاري فتح نافذة مرفقات البطاقة...', 'info');
+            
+            // تسجيل دخول كعمر
+            if (typeof setCurrentUser === 'function') {
+                setCurrentUser('عمر');
+            }
+            
+            // فتح نافذة مرفقات البطاقة
+            if (typeof showCardAttachmentsModal === 'function') {
+                showCardAttachmentsModal('الرياض', 'مجمع_التصميم_الأصلي', '123', 'A1');
+                showStatus('تم فتح النافذة - تحقق من الأزرار (أخضر وأحمر بدون نص في الجوال)', 'success');
+            } else {
+                showStatus('خطأ: وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        function testLimitedUser() {
+            showStatus('جاري اختبار المستخدم محدود الصلاحية...', 'info');
+            
+            // تسجيل دخول كأبو تميم
+            if (typeof setCurrentUser === 'function') {
+                setCurrentUser('1234');
+            }
+            
+            // فتح نافذة مرفقات البطاقة
+            if (typeof showCardAttachmentsModal === 'function') {
+                showCardAttachmentsModal('الرياض', 'مجمع_التصميم_الأصلي', '123', 'A1');
+                showStatus('تم فتح النافذة - يجب أن تظهر أزرار التحميل الخضراء فقط', 'success');
+            } else {
+                showStatus('خطأ: وظيفة showCardAttachmentsModal غير متوفرة', 'error');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                initSupabase();
+            }
+            
+            showStatus('الصفحة جاهزة للاختبار - انقر على أحد الأزرار أعلاه', 'info');
+        });
+    </script>
+</body>
+</html>
