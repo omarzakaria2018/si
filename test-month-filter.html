@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار فلتر الشهر المحدث</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #007bff;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary { background: linear-gradient(135deg, #007bff, #0056b3); color: white; }
+        .btn-success { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); color: white; }
+        .btn-info { background: linear-gradient(135deg, #17a2b8, #138496); color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status.danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        .improvements-list {
+            background: #e8f5e8;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .improvements-list h4 {
+            color: #155724;
+            margin-bottom: 15px;
+        }
+
+        .improvements-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .improvements-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #c3e6cb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .improvements-list li:last-child {
+            border-bottom: none;
+        }
+
+        .improvements-list li i {
+            color: #28a745;
+            width: 20px;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid;
+        }
+
+        .comparison-card.before {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .comparison-card.after {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .comparison-card h5 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .comparison-card.before h5 {
+            color: #721c24;
+        }
+
+        .comparison-card.after h5 {
+            color: #155724;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.2);
+        }
+
+        .feature-card i {
+            font-size: 2.5rem;
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container { margin: 10px; border-radius: 10px; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.5rem; }
+            .content { padding: 20px; }
+            .comparison-grid { grid-template-columns: 1fr; }
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-calendar-alt"></i> فلتر الشهر المحدث</h1>
+            <p>إضافة زر الإغلاق وتحسين التصميم لنافذة فلتر الشهر</p>
+        </div>
+
+        <div class="content">
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> التحسينات المطبقة</h3>
+                
+                <div class="improvements-list">
+                    <h4>✨ ما تم تحسينه في فلتر الشهر:</h4>
+                    <ul>
+                        <li><i class="fas fa-times-circle"></i> إزالة زر X من أعلى النافذة</li>
+                        <li><i class="fas fa-plus-circle"></i> إضافة زر إغلاق في أسفل النافذة</li>
+                        <li><i class="fas fa-palette"></i> تحسين التصميم والألوان</li>
+                        <li><i class="fas fa-tag"></i> إضافة أيقونة وعداد في العنوان</li>
+                        <li><i class="fas fa-border-style"></i> تحسين تصميم الحقول والتسميات</li>
+                        <li><i class="fas fa-mouse-pointer"></i> إضافة إغلاق عند النقر خارج النافذة</li>
+                        <li><i class="fas fa-code"></i> دالة إغلاق منفصلة (closeMonthFilterModal)</li>
+                        <li><i class="fas fa-mobile-alt"></i> تحسين التجاوب مع الشاشات المختلفة</li>
+                    </ul>
+                </div>
+                
+                <div class="comparison-grid">
+                    <div class="comparison-card before">
+                        <h5><i class="fas fa-times"></i> قبل التحسين</h5>
+                        <ul style="list-style: none; padding: 0;">
+                            <li>• زر X صغير في الأعلى</li>
+                            <li>• تصميم بسيط للحقول</li>
+                            <li>• بدون أيقونات أو عدادات</li>
+                            <li>• دالة إغلاق عامة</li>
+                            <li>• تسميات بسيطة</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="comparison-card after">
+                        <h5><i class="fas fa-check"></i> بعد التحسين</h5>
+                        <ul style="list-style: none; padding: 0;">
+                            <li>• زر إغلاق واضح في الأسفل</li>
+                            <li>• تصميم محسن للحقول مع تسميات</li>
+                            <li>• أيقونة تقويم وعداد في العنوان</li>
+                            <li>• دالة إغلاق منفصلة</li>
+                            <li>• تسميات واضحة لكل حقل</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-cogs"></i> الميزات الجديدة</h3>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h4>أيقونة التقويم</h4>
+                        <p>أيقونة واضحة في العنوان تدل على وظيفة الفلتر</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <i class="fas fa-tag"></i>
+                        <h4>عداد العناصر</h4>
+                        <p>عداد يوضح نوع الفلتر (تاريخ) في العنوان</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <i class="fas fa-tags"></i>
+                        <h4>تسميات الحقول</h4>
+                        <p>تسميات واضحة لكل حقل (نوع التاريخ، اليوم، الشهر، السنة)</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <i class="fas fa-times"></i>
+                        <h4>زر الإغلاق</h4>
+                        <p>زر إغلاق واضح في أسفل النافذة مع أيقونة</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <i class="fas fa-mouse-pointer"></i>
+                        <h4>إغلاق خارجي</h4>
+                        <p>إمكانية الإغلاق عند النقر خارج النافذة</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <i class="fas fa-code"></i>
+                        <h4>دالة منفصلة</h4>
+                        <p>دالة إغلاق منفصلة (closeMonthFilterModal)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار فلتر الشهر</h3>
+                
+                <button class="btn btn-primary" onclick="testMonthFilter()">
+                    <i class="fas fa-calendar-alt"></i> اختبار فلتر الشهر
+                </button>
+                
+                <button class="btn btn-success" onclick="openMainPage()">
+                    <i class="fas fa-external-link-alt"></i> فتح الصفحة الرئيسية
+                </button>
+                
+                <button class="btn btn-warning" onclick="checkConsole()">
+                    <i class="fas fa-terminal"></i> مراقبة Console
+                </button>
+                
+                <button class="btn btn-danger" onclick="showExpectedResults()">
+                    <i class="fas fa-bullseye"></i> النتائج المتوقعة
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+                
+                <div class="status warning">
+                    <h4>📋 للاختبار الفعلي:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>افتح الصفحة الرئيسية</strong> (index.html)</li>
+                        <li><strong>اختبر فلتر الشهر من:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>الناف بار - زر "فلتر الشهر"</li>
+                                <li>القائمة المنسدلة - "فلتر الشهر"</li>
+                                <li>الجوال - زر "فلتر التاريخ"</li>
+                            </ul>
+                        </li>
+                        <li><strong>تحقق من التحسينات:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>✅ لا يوجد زر X في أعلى النافذة</li>
+                                <li>✅ يوجد زر إغلاق في أسفل النافذة</li>
+                                <li>✅ أيقونة تقويم في العنوان</li>
+                                <li>✅ عداد "تاريخ" في العنوان</li>
+                                <li>✅ تسميات واضحة للحقول</li>
+                                <li>✅ تصميم محسن للحقول</li>
+                                <li>✅ الإغلاق يعمل عند النقر خارج النافذة</li>
+                            </ul>
+                        </li>
+                        <li><strong>اختبر الوظائف:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>اختر نوع التاريخ (بداية/نهاية)</li>
+                                <li>اختر يوم، شهر، سنة</li>
+                                <li>انقر "تطبيق" - يجب أن يطبق الفلتر</li>
+                                <li>انقر "مسح" - يجب أن يمسح الفلتر</li>
+                                <li>انقر "إغلاق" - يجب أن يغلق النافذة</li>
+                                <li>انقر خارج النافذة - يجب أن يغلق النافذة</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="status success">
+                    <h4>🎯 النتائج المتوقعة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>تصميم محسن:</strong> نافذة أكثر جمالاً ووضوحاً</li>
+                        <li><strong>سهولة الاستخدام:</strong> تسميات واضحة وحقول منظمة</li>
+                        <li><strong>زر إغلاق واضح:</strong> في أسفل النافذة مع أيقونة</li>
+                        <li><strong>إغلاق متعدد:</strong> زر الإغلاق أو النقر خارج النافذة</li>
+                        <li><strong>رسائل Console:</strong> رسائل واضحة لفتح وإغلاق النافذة</li>
+                        <li><strong>تناسق مع النوافذ الأخرى:</strong> نفس التصميم المحسن</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testMonthFilter() {
+            showTestStatus('📅 فتح نافذة فلتر الشهر...', 'info');
+            if (typeof showMonthFilterModal === 'function') {
+                showMonthFilterModal();
+                showTestStatus('✅ تم فتح نافذة فلتر الشهر - تحقق من التحسينات المطبقة', 'success');
+            } else {
+                showTestStatus('❌ وظيفة showMonthFilterModal غير متوفرة', 'danger');
+            }
+        }
+
+        function openMainPage() {
+            showTestStatus('🌐 فتح الصفحة الرئيسية...', 'info');
+            window.open('index.html', '_blank');
+            showTestStatus('✅ تم فتح الصفحة الرئيسية - اختبر فلتر الشهر من الناف بار أو القائمة', 'success');
+        }
+
+        function checkConsole() {
+            showTestStatus('🔍 افتح Console (F12) وراقب رسائل فتح وإغلاق نافذة فلتر الشهر', 'info');
+            console.log('🔍 مراقبة Console مفعلة - اختبر فلتر الشهر لرؤية الرسائل');
+            console.log('📅 رسائل متوقعة:');
+            console.log('- 🔴 إغلاق نافذة فلتر الشهر...');
+            console.log('- ✅ تم إغلاق نافذة فلتر الشهر');
+            console.log('- ✅ تم ربط الإغلاق عند النقر خارج نافذة فلتر الشهر');
+        }
+
+        function showExpectedResults() {
+            showTestStatus('🎯 النتائج المتوقعة: زر إغلاق في الأسفل، تصميم محسن، أيقونة تقويم، تسميات واضحة، إغلاق عند النقر خارج النافذة', 'danger');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار فلتر الشهر المحدث جاهزة');
+            showTestStatus('الصفحة جاهزة - جرب زر "اختبار فلتر الشهر" أو افتح الصفحة الرئيسية', 'info');
+        });
+    </script>
+</body>
+</html>

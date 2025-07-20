@@ -145,11 +145,31 @@ function updateActiveFiltersDisplay() {
         });
 
         // إظهار أزرار مسح الكل
-        if (desktopClearBtn) desktopClearBtn.style.display = 'inline-flex';
-        if (mobileClearBtn) mobileClearBtn.style.display = 'block';
+        if (desktopClearBtn) {
+            desktopClearBtn.style.display = 'inline-flex';
+            desktopClearBtn.style.visibility = 'visible';
+            desktopClearBtn.style.opacity = '1';
+        }
+        if (mobileClearBtn) {
+            mobileClearBtn.style.display = 'block';
+            mobileClearBtn.style.visibility = 'visible';
+            mobileClearBtn.style.opacity = '1';
+        }
 
         // إظهار الحاويات
-        if (desktopContainer) desktopContainer.style.display = 'block';
+        if (desktopContainer) {
+            desktopContainer.style.display = 'block';
+            desktopContainer.style.visibility = 'visible';
+            desktopContainer.style.opacity = '1';
+        }
+
+        // التأكد من إظهار جميع أزرار مسح الفلاتر في الصفحة
+        const allClearButtons = document.querySelectorAll('.clear-all-filters-btn');
+        allClearButtons.forEach(btn => {
+            btn.style.display = 'flex';
+            btn.style.visibility = 'visible';
+            btn.style.opacity = '1';
+        });
 
         // إظهار زر الفلاتر للهاتف
         if (mobileFilterBtn) {
@@ -183,6 +203,72 @@ function updateActiveFiltersDisplay() {
 
     // تحديث حالة جميع أزرار الفلاتر
     updateAllFilterButtonsState();
+
+    // ضمان إظهار أزرار مسح الفلاتر في جميع الأماكن
+    ensureClearButtonsVisibility();
+}
+
+// دالة لضمان إظهار أزرار مسح الفلاتر في جميع الأماكن
+function ensureClearButtonsVisibility() {
+    console.log('🔍 فحص وضمان إظهار أزرار مسح الفلاتر...');
+
+    // البحث عن جميع أزرار مسح الفلاتر
+    const clearButtons = document.querySelectorAll('.clear-all-filters-btn');
+    const hasActiveFilters = document.querySelectorAll('.active-filter-tag').length > 0;
+
+    console.log(`📊 عدد أزرار مسح الفلاتر الموجودة: ${clearButtons.length}`);
+    console.log(`🏷️ هناك فلاتر نشطة: ${hasActiveFilters}`);
+
+    if (hasActiveFilters) {
+        clearButtons.forEach((btn, index) => {
+            btn.style.display = 'flex';
+            btn.style.visibility = 'visible';
+            btn.style.opacity = '1';
+            console.log(`✅ تم إظهار زر مسح الفلاتر رقم ${index + 1}`);
+        });
+
+        // إنشاء أزرار مسح الفلاتر المفقودة
+        createMissingClearButtons();
+    } else {
+        clearButtons.forEach((btn, index) => {
+            btn.style.display = 'none';
+            console.log(`❌ تم إخفاء زر مسح الفلاتر رقم ${index + 1} (لا توجد فلاتر نشطة)`);
+        });
+    }
+}
+
+// دالة لإنشاء أزرار مسح الفلاتر المفقودة
+function createMissingClearButtons() {
+    console.log('🔧 فحص الأزرار المفقودة...');
+
+    // فحص زر الشاشات الكبيرة
+    const desktopContainer = document.getElementById('activeFiltersDesktop');
+    if (desktopContainer && !desktopContainer.querySelector('.clear-all-filters-btn')) {
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'clear-all-filters-btn';
+        clearBtn.id = 'clearAllFiltersBtn';
+        clearBtn.onclick = function() { clearAllFiltersWithLoading(this); };
+        clearBtn.innerHTML = `
+            <i class="fas fa-times-circle"></i>
+            مسح جميع الفلاتر
+        `;
+        desktopContainer.appendChild(clearBtn);
+        console.log('✅ تم إنشاء زر مسح الفلاتر للشاشات الكبيرة مع loading');
+    }
+
+    // فحص زر الإحصائيات
+    const statisticsContainer = document.getElementById('statisticsActiveFilters');
+    if (statisticsContainer && !statisticsContainer.querySelector('.clear-all-filters-btn')) {
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'clear-all-filters-btn';
+        clearBtn.onclick = function() { clearAllFiltersWithLoading(this); };
+        clearBtn.innerHTML = `
+            <i class="fas fa-times-circle"></i>
+            <span>مسح جميع الفلاتر</span>
+        `;
+        statisticsContainer.appendChild(clearBtn);
+        console.log('✅ تم إنشاء زر مسح الفلاتر في قائمة الإحصائيات');
+    }
 }
 
 // إنشاء تاغ فلتر
@@ -788,6 +874,11 @@ function clearAllFilters() {
 
     // تحديث عرض الفلاتر النشطة
     updateActiveFiltersDisplay();
+
+    // ضمان إظهار أزرار مسح الفلاتر
+    setTimeout(() => {
+        ensureClearButtonsVisibility();
+    }, 100);
 
     // تحديث الإحصائيات
     if (typeof updateTotalStats === 'function') {
@@ -2627,6 +2718,16 @@ function initMobileMenu() {
         mobileMenu.classList.add('active');
         menuOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
+
+        // إخفاء الإحصائيات عند فتح القائمة
+        const totalContainer = document.getElementById('totalContainer');
+        if (totalContainer) {
+            totalContainer.style.display = 'none';
+            console.log('📊 تم إخفاء الإحصائيات عند فتح القائمة المحمولة');
+        }
+
+        // تنظيف القائمة من الترقيم والفراغات القديمة فقط
+        cleanMenuOnly();
     });
     
     // إغلاق القائمة
@@ -2634,6 +2735,13 @@ function initMobileMenu() {
         mobileMenu.classList.remove('active');
         menuOverlay.classList.remove('active');
         document.body.style.overflow = '';
+
+        // إظهار الإحصائيات عند إغلاق القائمة
+        const totalContainer = document.getElementById('totalContainer');
+        if (totalContainer) {
+            totalContainer.style.display = '';
+            console.log('📊 تم إظهار الإحصائيات عند إغلاق القائمة المحمولة');
+        }
     });
     
     // إغلاق القائمة عند النقر على الخلفية
@@ -2641,6 +2749,13 @@ function initMobileMenu() {
         mobileMenu.classList.remove('active');
         menuOverlay.classList.remove('active');
         document.body.style.overflow = '';
+
+        // إظهار الإحصائيات عند إغلاق القائمة
+        const totalContainer = document.getElementById('totalContainer');
+        if (totalContainer) {
+            totalContainer.style.display = '';
+            console.log('📊 تم إظهار الإحصائيات عند إغلاق القائمة (خلفية)');
+        }
     });
     
     // أزرار القائمة المنسدلة
@@ -2721,25 +2836,71 @@ function initMobileMenu() {
 // عرض اختيار المدينة
 function showCountrySelection() {
     const countries = getUniqueCountries();
-    let html = '<div class="modal-overlay" style="display:flex;"><div class="modal-box"><button class="close-modal" onclick="closeModal()">×</button>';
-    html += '<h3>اختر المدينة</h3><div class="country-selection">';
-    
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box cities-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-map-marker-alt" style="color: #28a745;"></i>
+                اختر المدينة
+                <span class="badge" style="background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${countries.length}</span>
+            </h3>
+            <div class="country-selection" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">`;
+
     countries.forEach(country => {
-        html += `<button onclick="selectCountry('${country}'); closeModal();" class="${currentCountry === country ? 'active' : ''}">${country}</button>`;
+        const isActive = currentCountry === country;
+        const activeClass = isActive ? 'active' : '';
+        const activeStyle = isActive ? 'background: #28a745; color: white;' : '';
+
+        html += `
+            <button onclick="selectCountry('${country}'); closeCitiesModal();"
+                    class="country-btn ${activeClass}"
+                    style="width: 100%; padding: 12px; margin: 4px 0; border-radius: 8px; cursor: pointer;
+                           transition: all 0.3s ease; border: 1px solid #e9ecef; ${activeStyle}
+                           display: flex; align-items: center; justify-content: space-between; background: ${isActive ? '#28a745' : 'white'}; min-height: 50px;">
+                <span style="font-weight: 700; font-size: 1.3rem;">${country}</span>
+                ${isActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-map-marker-alt" style="color: #28a745;"></i>'}
+            </button>
+        `;
     });
-    
-    html += '</div></div></div>';
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeCitiesModal();" class="modal-action-btn close-btn cities-close-btn" id="citiesCloseBtn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>`;
+
     document.body.insertAdjacentHTML('beforeend', html);
-    
+
     // إضافة حدث إغلاق للمودال
-    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeModal();
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة المدن - إغلاق');
+                    closeCitiesModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة المدن');
         }
-    });
-    
-    // توسيع منطقة إغلاق النافذة حول X
-    const closeBtn = document.querySelector('.modal-overlay:last-child .close-modal');
+    }, 100);
+}
+
+// دالة إغلاق نافذة المدن
+function closeCitiesModal() {
+    console.log('🔴 إغلاق نافذة المدن...');
+    const modal = document.querySelector('.cities-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة المدن');
+        }
+    }
     if (closeBtn) {
         closeBtn.style.padding = '15px';
         closeBtn.style.margin = '-15px';
@@ -2750,23 +2911,92 @@ function showCountrySelection() {
 function showStatusFilter() {
     // أضف "الفارغ" إلى قائمة الحالات
     const statuses = ['جاري', 'منتهى', 'على وشك', 'فارغ'];
-    let html = '<div class="modal-overlay" style="display:flex;"><div class="modal-box"><button class="close-modal" onclick="closeModal()">×</button>';
-    html += '<h3>فلتر الحالة</h3><div class="status-filter">';
-    
-    html += `<button onclick="setStatusFilter(null); closeModal();" class="${filterStatus === null ? 'active' : ''}">الكل</button>`;
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box status-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-filter" style="color: #ffc107;"></i>
+                فلتر الحالة
+                <span class="badge" style="background: #ffc107; color: #212529; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${statuses.length + 1}</span>
+            </h3>
+            <div class="status-filter" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px;">`;
+
+    // إضافة خيار "الكل"
+    const isAllActive = filterStatus === null;
+    html += `
+        <button onclick="setStatusFilter(null); closeStatusFilterModal();"
+                class="status-btn ${isAllActive ? 'active' : ''}"
+                style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                       transition: all 0.3s ease; border: 1px solid #e9ecef;
+                       background: ${isAllActive ? '#ffc107' : 'white'}; color: ${isAllActive ? '#212529' : '#495057'};
+                       display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-weight: 500;">الكل</span>
+            ${isAllActive ? '<i class="fas fa-check" style="color: #212529;"></i>' : '<i class="fas fa-list" style="color: #ffc107;"></i>'}
+        </button>
+    `;
+
+    // إضافة باقي الحالات
     statuses.forEach(status => {
-        html += `<button onclick="setStatusFilter('${status}'); closeModal();" class="${filterStatus === status ? 'active' : ''}">${status}</button>`;
+        const isActive = filterStatus === status;
+        const statusColors = {
+            'جاري': '#28a745',
+            'منتهى': '#dc3545',
+            'على وشك': '#fd7e14',
+            'فارغ': '#6c757d'
+        };
+        const statusColor = statusColors[status] || '#007bff';
+
+        html += `
+            <button onclick="setStatusFilter('${status}'); closeStatusFilterModal();"
+                    class="status-btn ${isActive ? 'active' : ''}"
+                    style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                           transition: all 0.3s ease; border: 1px solid #e9ecef;
+                           background: ${isActive ? statusColor : 'white'}; color: ${isActive ? 'white' : '#495057'};
+                           display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 500;">${status}</span>
+                ${isActive ? '<i class="fas fa-check" style="color: white;"></i>' : `<i class="fas fa-circle" style="color: ${statusColor};"></i>`}
+            </button>
+        `;
     });
-    
-    html += '</div></div></div>';
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeStatusFilterModal();" class="modal-action-btn close-btn status-filter-close-btn" id="statusFilterCloseBtn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>`;
+
     document.body.insertAdjacentHTML('beforeend', html);
-    
+
     // إضافة حدث إغلاق للمودال
-    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeModal();
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة فلتر الحالة - إغلاق');
+                    closeStatusFilterModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة فلتر الحالة');
         }
-    });
+    }, 100);
+}
+
+// دالة إغلاق نافذة فلتر الحالة
+function closeStatusFilterModal() {
+    console.log('🔴 إغلاق نافذة فلتر الحالة...');
+    const modal = document.querySelector('.status-filter-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة فلتر الحالة');
+        }
+    }
     
     // توسيع منطقة إغلاق النافذة حول X
     const closeBtn = document.querySelector('.modal-overlay:last-child .close-modal');
@@ -2778,24 +3008,88 @@ function showStatusFilter() {
 
 // عرض تبديل طريقة العرض
 function showViewToggle() {
-    let html = '<div class="modal-overlay" style="display:flex;"><div class="modal-box"><button class="close-modal" onclick="closeModal()">×</button>';
-    html += '<h3>طريقة العرض</h3><div class="view-selection">';
-    
-    html += `<button onclick="toggleView('table'); closeModal();" class="${currentView === 'table' ? 'active' : ''}"><i class="fas fa-table"></i> جدول</button>`;
-    html += `<button onclick="toggleView('cards'); closeModal();" class="${currentView === 'cards' ? 'active' : ''}"><i class="fas fa-th-large"></i> بطاقات</button>`;
-    
-    html += '</div></div></div>';
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box view-toggle-modal" style="max-width: 400px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-eye" style="color: #6f42c1;"></i>
+                طريقة العرض
+                <span class="badge" style="background: #6f42c1; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">2</span>
+            </h3>
+            <div class="view-selection" style="max-height: 300px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px;">`;
+
+    // خيار الجدول
+    const isTableActive = currentView === 'table';
+    html += `
+        <button onclick="toggleView('table'); closeViewToggleModal();"
+                class="view-btn ${isTableActive ? 'active' : ''}"
+                style="width: 100%; padding: 15px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                       transition: all 0.3s ease; border: 1px solid #e9ecef;
+                       background: ${isTableActive ? '#6f42c1' : 'white'}; color: ${isTableActive ? 'white' : '#495057'};
+                       display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-table" style="color: ${isTableActive ? 'white' : '#6f42c1'};"></i>
+                <span style="font-weight: 500;">جدول</span>
+            </div>
+            ${isTableActive ? '<i class="fas fa-check" style="color: white;"></i>' : ''}
+        </button>
+    `;
+
+    // خيار البطاقات
+    const isCardsActive = currentView === 'cards';
+    html += `
+        <button onclick="toggleView('cards'); closeViewToggleModal();"
+                class="view-btn ${isCardsActive ? 'active' : ''}"
+                style="width: 100%; padding: 15px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                       transition: all 0.3s ease; border: 1px solid #e9ecef;
+                       background: ${isCardsActive ? '#6f42c1' : 'white'}; color: ${isCardsActive ? 'white' : '#495057'};
+                       display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-th-large" style="color: ${isCardsActive ? 'white' : '#6f42c1'};"></i>
+                <span style="font-weight: 500;">بطاقات</span>
+            </div>
+            ${isCardsActive ? '<i class="fas fa-check" style="color: white;"></i>' : ''}
+        </button>
+    `;
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeViewToggleModal();" class="modal-action-btn close-btn view-toggle-close-btn" id="viewToggleCloseBtn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>`;
+
     document.body.insertAdjacentHTML('beforeend', html);
-    
+
     // إضافة حدث إغلاق للمودال
-    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeModal();
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة طريقة العرض - إغلاق');
+                    closeViewToggleModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة طريقة العرض');
         }
-    });
-    
-    // توسيع منطقة إغلاق النافذة حول X
-    const closeBtn = document.querySelector('.modal-overlay:last-child .close-modal');
+    }, 100);
+}
+
+// دالة إغلاق نافذة طريقة العرض
+function closeViewToggleModal() {
+    console.log('🔴 إغلاق نافذة طريقة العرض...');
+    const modal = document.querySelector('.view-toggle-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة طريقة العرض');
+        }
+    }
     if (closeBtn) {
         closeBtn.style.padding = '15px';
         closeBtn.style.margin = '-15px';
@@ -4924,10 +5218,7 @@ function addSelectedPropertyIndicator() {
                 ${currentCountry ? `<span class="selected-city">في ${currentCountry}</span>` : ''}
                 <span class="units-count">${filteredCount} وحدة</span>
             </div>
-            <button class="clear-property-selection" onclick="clearPropertySelection()" title="إظهار جميع العقارات">
-                <i class="fas fa-times"></i>
-                إظهار الكل
-            </button>
+
         </div>
         ${helpMessage}
     `;
@@ -5050,6 +5341,7 @@ function toggleView(view) {
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const searchInput = document.getElementById('propertySearch');
+    const totalContainer = document.getElementById('totalContainer');
 
     // في الشاشات الصغيرة فقط
     if (window.innerWidth <= 900) {
@@ -5062,6 +5354,19 @@ function toggleSidebar() {
         }
 
         sidebar.classList.toggle('active');
+
+        // إخفاء/إظهار الإحصائيات عند تبديل القائمة
+        if (totalContainer) {
+            if (sidebar.classList.contains('active')) {
+                // عند فتح القائمة - إخفاء الإحصائيات
+                totalContainer.style.display = 'none';
+                console.log('📊 تم إخفاء الإحصائيات عند فتح القائمة');
+            } else {
+                // عند إغلاق القائمة - إظهار الإحصائيات
+                totalContainer.style.display = '';
+                console.log('📊 تم إظهار الإحصائيات عند إغلاق القائمة');
+            }
+        }
     }
     // في الشاشات الكبيرة الـ sidebar دائماً ظاهر
 }
@@ -7051,44 +7356,100 @@ function showMonthFilterModal() {
     return;
   }
 
-  let html = `
-    <div class="modal-overlay" style="display:flex;">
-      <div class="modal-box">
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>فلتر الشهر</h3>
-        <div class="date-filter-container" style="flex-direction:column;gap:10px;">
-          <select id="filterTypeModal" class="date-filter-select">
-            <option value="">نوع التاريخ</option>
-            <option value="start">تاريخ البداية</option>
-            <option value="end">تاريخ النهاية</option>
-          </select>
-          <select id="filterDayModal" class="date-filter-select">
-            <option value="">اليوم</option>
-            ${Array.from({length: 31}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}
-          </select>
-          <select id="filterMonthModal" class="date-filter-select">
-            <option value="">الشهر</option>
-            ${['يناير','فبراير','مارس','إبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
-              .map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}
-          </select>
-          <select id="filterYearModal" class="date-filter-select">
-            <option value="">السنة</option>
-            ${Array.from({length: 81}, (_, i) => `<option value="${2020+i}">${2020+i}</option>`).join('')}
-          </select>
-          <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;">
-            <button onclick="applyMonthFilterModal()" class="apply-filter-btn"><i class="fas fa-check"></i> تطبيق</button>
-            <button onclick="clearMonthFilterModal()" class="clear-filter-btn"><i class="fas fa-times"></i> مسح</button>
-          </div>
+  let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box month-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-calendar-alt" style="color: #007bff;"></i>
+                فلتر الشهر
+                <span class="badge" style="background: #007bff; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">تاريخ</span>
+            </h3>
+            <div class="date-filter-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="font-weight: 600; color: #495057;">نوع التاريخ:</label>
+                    <select id="filterTypeModal" class="date-filter-select" style="padding: 10px; border: 1px solid #e9ecef; border-radius: 6px; font-size: 1rem;">
+                        <option value="">اختر نوع التاريخ</option>
+                        <option value="start">تاريخ البداية</option>
+                        <option value="end">تاريخ النهاية</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="font-weight: 600; color: #495057;">اليوم:</label>
+                    <select id="filterDayModal" class="date-filter-select" style="padding: 10px; border: 1px solid #e9ecef; border-radius: 6px; font-size: 1rem;">
+                        <option value="">اختر اليوم</option>
+                        ${Array.from({length: 31}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="font-weight: 600; color: #495057;">الشهر:</label>
+                    <select id="filterMonthModal" class="date-filter-select" style="padding: 10px; border: 1px solid #e9ecef; border-radius: 6px; font-size: 1rem;">
+                        <option value="">اختر الشهر</option>
+                        ${['يناير','فبراير','مارس','إبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
+                          .map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label style="font-weight: 600; color: #495057;">السنة:</label>
+                    <select id="filterYearModal" class="date-filter-select" style="padding: 10px; border: 1px solid #e9ecef; border-radius: 6px; font-size: 1rem;">
+                        <option value="">اختر السنة</option>
+                        ${Array.from({length: 81}, (_, i) => `<option value="${2020+i}">${2020+i}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                    <button onclick="applyMonthFilterModal()" class="apply-filter-btn" style="flex: 1; background: linear-gradient(135deg, #007bff, #0056b3); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fas fa-check"></i> تطبيق
+                    </button>
+                    <button onclick="clearMonthFilterModal()" class="clear-filter-btn" style="flex: 1; background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fas fa-times"></i> مسح
+                    </button>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeMonthFilterModal();" class="modal-action-btn close-btn month-filter-close-btn" id="monthFilterCloseBtn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
         </div>
-      </div>
-    </div>
-  `;
+    </div>`;
+
   document.body.insertAdjacentHTML('beforeend', html);
+
   // تعبئة القيم الحالية إذا كانت موجودة
   document.getElementById('filterTypeModal').value = dateFilterType;
   document.getElementById('filterDayModal').value = dateFilterDay;
   document.getElementById('filterMonthModal').value = dateFilterMonth;
   document.getElementById('filterYearModal').value = dateFilterYear;
+
+  // إضافة حدث إغلاق للمودال
+  setTimeout(() => {
+      const modalOverlay = document.querySelector('.modal-overlay:last-child');
+      if (modalOverlay) {
+          modalOverlay.addEventListener('click', function(e) {
+              if (e.target === this) {
+                  console.log('🔴 تم النقر خارج نافذة فلتر الشهر - إغلاق');
+                  closeMonthFilterModal();
+              }
+          });
+          console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة فلتر الشهر');
+      }
+  }, 100);
+}
+
+// دالة إغلاق نافذة فلتر الشهر
+function closeMonthFilterModal() {
+    console.log('🔴 إغلاق نافذة فلتر الشهر...');
+    const modal = document.querySelector('.month-filter-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة فلتر الشهر');
+        }
+    }
 }
 
 function applyMonthFilterModal() {
@@ -7108,7 +7469,7 @@ function applyMonthFilterModal() {
     activeFilters.monthFilter = '';
   }
 
-  closeModal();
+  closeMonthFilterModal();
   renderData();
 
   // تحديث عرض الفلاتر النشطة
@@ -7127,7 +7488,7 @@ function clearMonthFilterModal() {
   // مسح فلتر الشهر من activeFilters
   activeFilters.monthFilter = '';
 
-  closeModal();
+  closeMonthFilterModal();
   renderData();
 
   // تحديث عرض الفلاتر النشطة
@@ -7145,24 +7506,85 @@ function showContractTypeFilter() {
         return;
     }
 
-    let html = `
-    <div class="modal-overlay" style="display:flex;">
-      <div class="modal-box">
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>فلتر نوع العقد</h3>
-        <div class="contract-type-filter">
-          <button onclick="setContractTypeFilter(null)" class="filter-btn${!contractTypeFilter ? ' active' : ''}">الكل</button>
-          <button onclick="setContractTypeFilter('ضريبي')" class="filter-btn${contractTypeFilter === 'ضريبي' ? ' active' : ''}">ضريبي</button>
-          <button onclick="setContractTypeFilter('سكني')" class="filter-btn${contractTypeFilter === 'سكني' ? ' active' : ''}">سكني</button>
-        </div>
-      </div>
-    </div>
+    const contractTypes = ['ضريبي', 'سكني'];
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box contract-type-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-file-contract" style="color: #e83e8c;"></i>
+                فلتر نوع العقد
+                <span class="badge" style="background: #e83e8c; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${contractTypes.length + 1}</span>
+            </h3>
+            <div class="contract-type-filter" style="max-height: 300px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px;">`;
+
+    // إضافة خيار "الكل"
+    const isAllActive = !contractTypeFilter;
+    html += `
+        <button onclick="setContractTypeFilter(null); closeContractTypeFilterModal();"
+                class="contract-type-btn ${isAllActive ? 'active' : ''}"
+                style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                       transition: all 0.3s ease; border: 1px solid #e9ecef;
+                       background: ${isAllActive ? '#e83e8c' : 'white'}; color: ${isAllActive ? 'white' : '#495057'};
+                       display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-weight: 700; font-size: 1.3rem;">الكل</span>
+            ${isAllActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-list" style="color: #e83e8c;"></i>'}
+        </button>
     `;
-    document.body.insertAdjacentHTML('beforeend', html);
-    // إغلاق عند الضغط خارج المودال
-    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
+
+    // إضافة باقي أنواع العقود
+    contractTypes.forEach(type => {
+        const isActive = contractTypeFilter === type;
+        html += `
+            <button onclick="setContractTypeFilter('${type}'); closeContractTypeFilterModal();"
+                    class="contract-type-btn ${isActive ? 'active' : ''}"
+                    style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                           transition: all 0.3s ease; border: 1px solid #e9ecef;
+                           background: ${isActive ? '#e83e8c' : 'white'}; color: ${isActive ? 'white' : '#495057'};
+                           display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 700; font-size: 1.3rem;">${type}</span>
+                ${isActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-file-contract" style="color: #e83e8c;"></i>'}
+            </button>
+        `;
     });
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeContractTypeFilterModal();" class="modal-action-btn close-btn contract-type-filter-close-btn" id="contractTypeFilterCloseBtn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // إضافة حدث إغلاق للمودال
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة فلتر نوع العقد - إغلاق');
+                    closeContractTypeFilterModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة فلتر نوع العقد');
+        }
+    }, 100);
+}
+
+// دالة إغلاق نافذة فلتر نوع العقد
+function closeContractTypeFilterModal() {
+    console.log('🔴 إغلاق نافذة فلتر نوع العقد...');
+    const modal = document.querySelector('.contract-type-filter-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة فلتر نوع العقد');
+        }
+    }
 }
 
 // تعيين فلتر نوع العقد
@@ -7172,7 +7594,7 @@ function setContractTypeFilter(type) {
     // تحديث activeFilters أيضاً للفلاتر النشطة
     activeFilters.contractType = type || '';
 
-    closeModal();
+    closeContractTypeFilterModal();
     renderData();
 
     // تحديث عرض الفلاتر النشطة
@@ -7849,52 +8271,111 @@ function showMultiPropertyCityFilter() {
     }
 
     const cities = getUniqueCountries().filter(c => c !== 'الكل');
-    let html = `<div class="modal-overlay" style="display:flex;">
-      <div class="modal-box">
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>اختر المدينة</h3>
-        <div class="country-selection">`;
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box multi-property-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-building" style="color: #20c997;"></i>
+                فلتر العقارات المتعددة - اختر المدينة
+                <span class="badge" style="background: #20c997; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${cities.length}</span>
+            </h3>
+            <div class="country-selection" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">`;
+
     cities.forEach(city => {
-        html += `<button onclick="selectMultiFilterCity('${city}')">${city}</button>`;
+        html += `
+            <button onclick="selectMultiFilterCity('${city}')"
+                    class="city-btn"
+                    style="width: 100%; padding: 12px; margin: 4px 0; border-radius: 8px; cursor: pointer;
+                           transition: all 0.3s ease; border: 1px solid #e9ecef; background: white;
+                           display: flex; align-items: center; justify-content: space-between; min-height: 50px;">
+                <span style="font-weight: 700; font-size: 1.3rem;">${city}</span>
+                <i class="fas fa-arrow-left" style="color: #20c997;"></i>
+            </button>
+        `;
     });
-    html += `</div></div></div>`;
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeMultiPropertyFilterModal();" class="modal-action-btn close-btn multi-property-filter-close-btn" id="multiPropertyFilterCloseBtn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>`;
+
     document.body.insertAdjacentHTML('beforeend', html);
-    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
+
+    // إضافة حدث إغلاق للمودال
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة فلتر العقارات المتعددة - إغلاق');
+                    closeMultiPropertyFilterModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة فلتر العقارات المتعددة');
+        }
+    }, 100);
+}
+
+// دالة إغلاق نافذة فلتر العقارات المتعددة
+function closeMultiPropertyFilterModal() {
+    console.log('🔴 إغلاق نافذة فلتر العقارات المتعددة...');
+    const modal = document.querySelector('.multi-property-filter-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة فلتر العقارات المتعددة');
+        }
+    }
 }
 
 function selectMultiFilterCity(city) {
-    closeModal();
+    closeMultiPropertyFilterModal();
     multiFilterSelectedCity = city;
     multiFilterSelectedProperties = [];
     const props = properties.filter(p => p.المدينة === city)
         .map(p => p['اسم العقار'])
         .filter((v, i, arr) => v && arr.indexOf(v) === i);
 
-    let html = `<div class="modal-overlay" style="display:flex;">
-      <div class="modal-box" style="max-width:420px;">
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>اختر العقارات (يمكن تحديد أكثر من عقار)</h3>
-        <input type="text" id="multiPropertySearch" placeholder="بحث عن عقار..." style="width:95%;margin-bottom:12px;padding:10px 12px;border-radius:8px;border:1.5px solid #d1d5db;font-size:1.05rem;">
-        <div id="multiPropertyList" style="max-height:300px;overflow:auto;padding:10px 0 10px 0;">`;
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box multi-property-selection-modal" style="max-width: 600px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-building" style="color: #20c997;"></i>
+                اختر العقارات - ${city}
+                <span class="badge" style="background: #20c997; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${props.length}</span>
+            </h3>
+            <input type="text" id="multiPropertySearch" placeholder="بحث عن عقار..."
+                   style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #e9ecef; border-radius:8px; font-size: 1rem;">
+            <div id="multiPropertyList" style="max-height:300px; overflow-y:auto; border:1px solid #e9ecef; border-radius: 8px; padding:15px;">`;
 
     props.forEach(prop => {
-        html += `<label class="multi-property-option" style="display:block;margin-bottom:8px;padding:7px 8px;border-radius:7px;transition:background 0.2s;">
-            <input type="checkbox" value="${prop}" onchange="toggleMultiFilterProperty(this)">
-            <span>${prop}</span>
-        </label>`;
+        html += `
+            <label class="multi-property-option" style="display:block; margin:8px 0; cursor:pointer; padding: 10px; border: 1px solid #e9ecef; border-radius: 6px; transition: all 0.3s ease; background: white;">
+                <input type="checkbox" value="${prop}" onchange="toggleMultiFilterProperty(this)" style="margin-left: 10px;">
+                <span style="font-weight: 700; font-size: 1.3rem;">${prop}</span>
+            </label>
+        `;
     });
-    html += `</div>
-      <div class="modal-actions" style="flex-direction:row;gap:10px;">
-        <button onclick="applyMultiPropertyFilter()" class="modal-action-btn print-btn" style="flex:1;">
-          <i class="fas fa-check"></i> عرض الإحصائيات
-        </button>
-        <button onclick="closeModal()" class="modal-action-btn close-btn" style="flex:1;">
-          <i class="fas fa-times"></i> إلغاء
-        </button>
-      </div>
-      </div></div>`;
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="applyMultiPropertyFilter()" class="modal-action-btn print-btn"
+                        style="flex: 1; background: linear-gradient(135deg, #20c997, #17a2b8); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-check"></i> عرض الإحصائيات
+                </button>
+                <button onclick="closeMultiPropertySelectionModal()" class="modal-action-btn close-btn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>`;
 
     document.body.insertAdjacentHTML('beforeend', html);
 
@@ -7907,10 +8388,32 @@ function selectMultiFilterCity(city) {
         });
     });
 
-    // إغلاق عند الضغط خارج المودال
-    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
+    // إضافة حدث إغلاق للمودال
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة اختيار العقارات المتعددة - إغلاق');
+                    closeMultiPropertySelectionModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة اختيار العقارات المتعددة');
+        }
+    }, 100);
+}
+
+// دالة إغلاق نافذة اختيار العقارات المتعددة
+function closeMultiPropertySelectionModal() {
+    console.log('🔴 إغلاق نافذة اختيار العقارات المتعددة...');
+    const modal = document.querySelector('.multi-property-selection-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة اختيار العقارات المتعددة');
+        }
+    }
 }
 
 // تحديث قائمة العقارات المختارة
@@ -8541,23 +9044,71 @@ async function updateCardAttachmentCount(cardElement, cardKey) {
     }
 }
 
-// نافذة اختيار المدينة
+// نافذة اختيار المدينة لإدارة المرفقات
 function showAttachmentsManager() {
     closeModal();
     const cities = getUniqueCountries().filter(c => c !== 'الكل');
-    let html = `<div class="modal-overlay" style="display:flex;">
-        <div class="modal-box">
-            <button class="close-modal" onclick="closeModal()">×</button>
-            <h3>اختر المدينة</h3>
-            <div class="country-selection">`;
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box attachments-manager-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-paperclip" style="color: #17a2b8;"></i>
+                إدارة المرفقات - اختر المدينة
+                <span class="badge" style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${cities.length}</span>
+            </h3>
+            <div class="country-selection" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">`;
+
     cities.forEach(city => {
-        html += `<button onclick="showAttachmentsProperties('${city}')">${city}</button>`;
+        html += `
+            <button onclick="showAttachmentsProperties('${city}')"
+                    class="city-btn"
+                    style="width: 100%; padding: 12px; margin: 4px 0; border-radius: 8px; cursor: pointer;
+                           transition: all 0.3s ease; border: 1px solid #e9ecef; background: white;
+                           display: flex; align-items: center; justify-content: space-between; min-height: 50px;">
+                <span style="font-weight: 700; font-size: 1.3rem;">${city}</span>
+                <i class="fas fa-arrow-left" style="color: #17a2b8;"></i>
+            </button>
+        `;
     });
-    html += `</div></div></div>`;
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeAttachmentsManagerModal();" class="modal-action-btn close-btn attachments-manager-close-btn" id="attachmentsManagerCloseBtn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>`;
+
     document.body.insertAdjacentHTML('beforeend', html);
-    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
+
+    // إضافة حدث إغلاق للمودال
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة إدارة المرفقات - إغلاق');
+                    closeAttachmentsManagerModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة إدارة المرفقات');
+        }
+    }, 100);
+}
+
+// دالة إغلاق نافذة إدارة المرفقات
+function closeAttachmentsManagerModal() {
+    console.log('🔴 إغلاق نافذة إدارة المرفقات...');
+    const modal = document.querySelector('.attachments-manager-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة إدارة المرفقات');
+        }
+    }
 }
 
 // نافذة اختيار العقار
@@ -29773,34 +30324,85 @@ function showPropertyTypeFilter() {
         return;
     }
 
-    let html = `
-    <div class="modal-overlay" style="display:flex;">
-      <div class="modal-box">
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3><i class="fas fa-tag"></i> فلتر نوع العقار</h3>
-        <div class="property-type-filter">
-          <button onclick="setPropertyTypeFilter(null)" class="filter-btn${!propertyTypeFilter ? ' active' : ''}">الكل</button>
-          <button onclick="setPropertyTypeFilter('مستودع')" class="filter-btn${propertyTypeFilter === 'مستودع' ? ' active' : ''}">مستودع</button>
-          <button onclick="setPropertyTypeFilter('مصنع')" class="filter-btn${propertyTypeFilter === 'مصنع' ? ' active' : ''}">مصنع</button>
-          <button onclick="setPropertyTypeFilter('شقة')" class="filter-btn${propertyTypeFilter === 'شقة' ? ' active' : ''}">شقة</button>
-          <button onclick="setPropertyTypeFilter('غرفة')" class="filter-btn${propertyTypeFilter === 'غرفة' ? ' active' : ''}">غرفة</button>
-          <button onclick="setPropertyTypeFilter('معرض')" class="filter-btn${propertyTypeFilter === 'معرض' ? ' active' : ''}">معرض</button>
-          <button onclick="setPropertyTypeFilter('محل')" class="filter-btn${propertyTypeFilter === 'محل' ? ' active' : ''}">محل</button>
-          <button onclick="setPropertyTypeFilter('حوش')" class="filter-btn${propertyTypeFilter === 'حوش' ? ' active' : ''}">حوش</button>
-          <button onclick="setPropertyTypeFilter('مزرعة')" class="filter-btn${propertyTypeFilter === 'مزرعة' ? ' active' : ''}">مزرعة</button>
-          <button onclick="setPropertyTypeFilter('فلة')" class="filter-btn${propertyTypeFilter === 'فلة' ? ' active' : ''}">فلة</button>
-          <button onclick="setPropertyTypeFilter('ورشة')" class="filter-btn${propertyTypeFilter === 'ورشة' ? ' active' : ''}">ورشة</button>
-          <button onclick="setPropertyTypeFilter('أرض')" class="filter-btn${propertyTypeFilter === 'أرض' ? ' active' : ''}">أرض</button>
-          <button onclick="setPropertyTypeFilter('عمارة')" class="filter-btn${propertyTypeFilter === 'عمارة' ? ' active' : ''}">عمارة</button>
-          <button onclick="setPropertyTypeFilter('مكتب')" class="filter-btn${propertyTypeFilter === 'مكتب' ? ' active' : ''}">مكتب</button>
+    const propertyTypes = ['مستودع', 'مصنع', 'شقة', 'غرفة', 'معرض', 'محل', 'حوش', 'مزرعة', 'فلة', 'ورشة', 'أرض', 'عمارة', 'مكتب'];
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box property-type-filter-modal" style="max-width: 600px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-tag" style="color: #28a745;"></i>
+                فلتر نوع العقار
+                <span class="badge" style="background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${propertyTypes.length + 1}</span>
+            </h3>
+            <div class="property-type-filter" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">`;
+
+    // إضافة خيار "الكل"
+    const isAllActive = !propertyTypeFilter;
+    html += `
+        <button onclick="setPropertyTypeFilter(null); closePropertyTypeFilterModal();"
+                class="property-type-btn ${isAllActive ? 'active' : ''}"
+                style="width: 100%; padding: 12px; margin: 4px 0; border-radius: 8px; cursor: pointer;
+                       transition: all 0.3s ease; border: 1px solid #e9ecef;
+                       background: ${isAllActive ? '#28a745' : 'white'}; color: ${isAllActive ? 'white' : '#495057'};
+                       display: flex; align-items: center; justify-content: space-between; min-height: 50px; grid-column: 1 / -1;">
+            <span style="font-weight: 700; font-size: 1.3rem;">الكل</span>
+            ${isAllActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-list" style="color: #28a745;"></i>'}
+        </button>
+    `;
+
+    // إضافة باقي أنواع العقارات في عمودين
+    propertyTypes.forEach(type => {
+        const isActive = propertyTypeFilter === type;
+        html += `
+            <button onclick="setPropertyTypeFilter('${type}'); closePropertyTypeFilterModal();"
+                    class="property-type-btn ${isActive ? 'active' : ''}"
+                    style="width: 100%; padding: 12px; margin: 4px 0; border-radius: 8px; cursor: pointer;
+                           transition: all 0.3s ease; border: 1px solid #e9ecef;
+                           background: ${isActive ? '#28a745' : 'white'}; color: ${isActive ? 'white' : '#495057'};
+                           display: flex; align-items: center; justify-content: space-between; min-height: 50px;">
+                <span style="font-weight: 700; font-size: 1.3rem;">${type}</span>
+                ${isActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-tag" style="color: #28a745;"></i>'}
+            </button>
+        `;
+    });
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closePropertyTypeFilterModal();" class="modal-action-btn close-btn property-type-filter-close-btn" id="propertyTypeFilterCloseBtn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
         </div>
-      </div>
     </div>`;
 
     document.body.insertAdjacentHTML('beforeend', html);
-    document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
+
+    // إضافة حدث إغلاق للمودال
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة فلتر نوع العقار - إغلاق');
+                    closePropertyTypeFilterModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة فلتر نوع العقار');
+        }
+    }, 100);
+}
+
+// دالة إغلاق نافذة فلتر نوع العقار
+function closePropertyTypeFilterModal() {
+    console.log('🔴 إغلاق نافذة فلتر نوع العقار...');
+    const modal = document.querySelector('.property-type-filter-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة فلتر نوع العقار');
+        }
+    }
 }
 
 // تعيين فلتر نوع العقار
@@ -29812,7 +30414,7 @@ function setPropertyTypeFilter(type) {
 
     // إعادة عرض البيانات
     renderData();
-    closeModal();
+    closePropertyTypeFilterModal();
 
     // تحديث عرض الفلاتر النشطة
     updateActiveFiltersDisplay();
@@ -29842,38 +30444,92 @@ function showOwnerFilter() {
         return;
     }
 
-    let html = `
-        <div class="modal-overlay" style="display:flex;">
-            <div class="modal-box">
-                <button class="close-modal" onclick="closeModal()">×</button>
-                <h3><i class="fas fa-user"></i> فلتر المالك</h3>
-                <p>اختر المالك المراد فلترة العقارات حسبه:</p>
+    const owners = ['أبو خالد', 'أبو تميم'];
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box owner-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-user" style="color: #fd7e14;"></i>
+                فلتر المالك
+                <span class="badge" style="background: #fd7e14; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${owners.length + 1}</span>
+            </h3>
+            <p style="color: #6c757d; margin-bottom: 15px;">اختر المالك المراد فلترة العقارات حسبه:</p>
+            <div class="filter-options" style="max-height: 300px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px;">`;
 
-                <div class="filter-options">
-                    <button class="filter-option-btn" onclick="setOwnerFilter('أبو خالد')">
-                        <i class="fas fa-user"></i>
-                        أبو خالد
-                    </button>
-                    <button class="filter-option-btn" onclick="setOwnerFilter('أبو تميم')">
-                        <i class="fas fa-user"></i>
-                        أبو تميم
-                    </button>
-                    <button class="filter-option-btn" onclick="setOwnerFilter('')">
-                        <i class="fas fa-times"></i>
-                        إزالة الفلتر
-                    </button>
-                </div>
-            </div>
-        </div>
+    // إضافة خيار "الكل"
+    const isAllActive = !activeFilters.owner || activeFilters.owner === '';
+    html += `
+        <button onclick="setOwnerFilter(''); closeOwnerFilterModal();"
+                class="owner-btn ${isAllActive ? 'active' : ''}"
+                style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                       transition: all 0.3s ease; border: 1px solid #e9ecef;
+                       background: ${isAllActive ? '#fd7e14' : 'white'}; color: ${isAllActive ? 'white' : '#495057'};
+                       display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-weight: 700; font-size: 1.3rem;">الكل</span>
+            ${isAllActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-list" style="color: #fd7e14;"></i>'}
+        </button>
     `;
 
+    // إضافة باقي المالكين
+    owners.forEach(owner => {
+        const isActive = activeFilters.owner === owner;
+        html += `
+            <button onclick="setOwnerFilter('${owner}'); closeOwnerFilterModal();"
+                    class="owner-btn ${isActive ? 'active' : ''}"
+                    style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                           transition: all 0.3s ease; border: 1px solid #e9ecef;
+                           background: ${isActive ? '#fd7e14' : 'white'}; color: ${isActive ? 'white' : '#495057'};
+                           display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 700; font-size: 1.3rem;">${owner}</span>
+                ${isActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-user" style="color: #fd7e14;"></i>'}
+            </button>
+        `;
+    });
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeOwnerFilterModal();" class="modal-action-btn close-btn owner-filter-close-btn" id="ownerFilterCloseBtn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>`;
+
     document.body.insertAdjacentHTML('beforeend', html);
+
+    // إضافة حدث إغلاق للمودال
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة فلتر المالك - إغلاق');
+                    closeOwnerFilterModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة فلتر المالك');
+        }
+    }, 100);
+}
+
+// دالة إغلاق نافذة فلتر المالك
+function closeOwnerFilterModal() {
+    console.log('🔴 إغلاق نافذة فلتر المالك...');
+    const modal = document.querySelector('.owner-filter-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة فلتر المالك');
+        }
+    }
 }
 
 function setOwnerFilter(owner) {
     activeFilters.owner = owner || '';
 
-    closeModal();
+    closeOwnerFilterModal();
     renderData();
 
     // تحديث عرض الفلاتر النشطة
@@ -48797,6 +49453,1039 @@ function handleDrop(event, inputId) {
         }
     }
 }
+
+// دوال الناف بار السفلي للجوال
+function toggleMobileCities() {
+    console.log('🏙️ فتح نافذة المدن من الناف بار');
+
+    // إزالة التفعيل من جميع العناصر
+    clearAllNavActive();
+
+    // تفعيل عنصر المدن
+    const navCities = document.getElementById('navCities');
+    navCities.classList.add('active');
+
+    // فتح نافذة المدن مباشرة (نفس الوظيفة من القائمة)
+    if (typeof showCountrySelection === 'function') {
+        showCountrySelection();
+        console.log('✅ تم فتح نافذة المدن');
+    } else {
+        console.error('❌ وظيفة showCountrySelection غير متوفرة');
+    }
+}
+
+function toggleMobileProperties() {
+    console.log('🏢 فتح قائمة العقارات من الناف بار');
+
+    // إزالة التفعيل من جميع العناصر
+    clearAllNavActive();
+
+    // تفعيل عنصر العقارات
+    const navProperties = document.getElementById('navProperties');
+    navProperties.classList.add('active');
+
+    // فتح نافذة العقارات المنفصلة
+    showMobilePropertiesModal();
+}
+
+function toggleMobileAttachments() {
+    console.log('📎 فتح إدارة المرفقات من الناف بار');
+
+    // إزالة التفعيل من جميع العناصر
+    clearAllNavActive();
+
+    // تفعيل عنصر المرفقات
+    const navAttachments = document.getElementById('navAttachments');
+    navAttachments.classList.add('active');
+
+    // فتح إدارة المرفقات مباشرة (نفس الوظيفة من القائمة)
+    if (typeof showAttachmentsManagerFromDropdown === 'function') {
+        showAttachmentsManagerFromDropdown();
+        console.log('✅ تم فتح إدارة المرفقات');
+    } else {
+        console.error('❌ وظيفة showAttachmentsManagerFromDropdown غير متوفرة');
+    }
+}
+
+function scrollToTop() {
+    console.log('⬆️ التمرير لأعلى الشاشة من الناف بار');
+
+    // إزالة التفعيل من جميع العناصر
+    clearAllNavActive();
+
+    // تفعيل الزر المركزي مؤقتاً
+    const navMain = document.getElementById('navMain');
+    navMain.classList.add('active');
+
+    // البحث عن حقل البحث العام
+    const globalSearch = document.getElementById('globalSearch');
+    const searchSection = document.getElementById('searchSection');
+
+    if (globalSearch) {
+        // التمرير السلس إلى حقل البحث
+        globalSearch.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+            inline: 'nearest'
+        });
+
+        // تركيز على حقل البحث بعد التمرير
+        setTimeout(() => {
+            globalSearch.focus();
+            console.log('✅ تم التمرير وتركيز حقل البحث');
+        }, 500);
+
+    } else if (searchSection) {
+        // التمرير إلى قسم البحث إذا لم يوجد حقل البحث
+        searchSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+        console.log('✅ تم التمرير إلى قسم البحث');
+
+    } else {
+        // التمرير إلى أعلى الصفحة كحل احتياطي
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+        console.log('✅ تم التمرير إلى أعلى الصفحة');
+    }
+
+    // إزالة التفعيل بعد التمرير
+    setTimeout(() => {
+        navMain.classList.remove('active');
+    }, 1000);
+}
+
+function toggleMobileStatistics() {
+    console.log('📊 فتح الإحصائيات من الناف بار');
+
+    // إزالة التفعيل من جميع العناصر
+    clearAllNavActive();
+
+    // تفعيل عنصر الإحصائيات
+    const navStatistics = document.getElementById('navStatistics');
+    navStatistics.classList.add('active');
+
+    // فتح قائمة الإحصائيات المنفصلة
+    showMobileStatistics();
+}
+
+function showMobileStatistics() {
+    console.log('📊 إظهار قائمة الإحصائيات المنفصلة...');
+
+    const statisticsMenu = document.getElementById('mobileStatisticsMenu');
+    if (!statisticsMenu) {
+        console.error('❌ عنصر قائمة الإحصائيات غير موجود');
+        return;
+    }
+
+    // إظهار القائمة
+    statisticsMenu.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    // تحديث محتوى الإحصائيات
+    updateStatisticsDisplay();
+
+    console.log('✅ تم إظهار قائمة الإحصائيات');
+}
+
+function closeMobileStatistics() {
+    console.log('📊 إغلاق قائمة الإحصائيات...');
+
+    const statisticsMenu = document.getElementById('mobileStatisticsMenu');
+    if (statisticsMenu) {
+        statisticsMenu.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // إزالة التفعيل من الناف بار
+    clearAllNavActive();
+
+    console.log('✅ تم إغلاق قائمة الإحصائيات');
+}
+
+function updateStatisticsDisplay() {
+    console.log('📊 تحديث عرض الإحصائيات...');
+
+    // تحديث عنوان العقار المحدد
+    updateStatisticsPropertyHeader();
+
+    // تحديث الإحصائيات
+    updateStatisticsTotals();
+
+    // تحديث الفلاتر النشطة
+    updateStatisticsActiveFilters();
+}
+
+function updateStatisticsPropertyHeader() {
+    const propertyHeader = document.getElementById('statisticsPropertyHeader');
+    const propertyText = document.getElementById('statisticsPropertyText');
+
+    if (!propertyHeader || !propertyText) return;
+
+    if (currentProperty && currentProperty !== 'الكل') {
+        propertyHeader.style.display = 'flex';
+        propertyText.textContent = currentProperty;
+    } else {
+        propertyHeader.style.display = 'none';
+    }
+}
+
+function updateStatisticsTotals() {
+    const statisticsTotals = document.getElementById('statisticsTotals');
+    if (!statisticsTotals) return;
+
+    // نسخ الإحصائيات من العنصر الأصلي
+    const originalTotals = document.getElementById('mobileTotals');
+    if (originalTotals && originalTotals.innerHTML.trim() !== '') {
+        // نسخ المحتوى مع الحفاظ على الأنماط
+        statisticsTotals.innerHTML = originalTotals.innerHTML;
+
+        // التأكد من تطبيق الأنماط الصحيحة
+        statisticsTotals.className = 'statistics-totals';
+
+        // نسخ الأنماط من العناصر الفرعية
+        const originalItems = originalTotals.querySelectorAll('.total-item');
+        const statisticsItems = statisticsTotals.querySelectorAll('.total-item');
+
+        originalItems.forEach((originalItem, index) => {
+            if (statisticsItems[index]) {
+                // نسخ جميع الكلاسات
+                statisticsItems[index].className = originalItem.className;
+            }
+        });
+
+        console.log('✅ تم نسخ الإحصائيات مع الأنماط');
+    } else {
+        // إنشاء الإحصائيات إذا لم تكن موجودة
+        if (typeof renderMobileTotals === 'function' && properties) {
+            console.log('📊 إنشاء الإحصائيات...');
+            renderMobileTotals(properties);
+
+            // نسخ المحتوى بعد الإنشاء
+            setTimeout(() => {
+                const updatedTotals = document.getElementById('mobileTotals');
+                if (updatedTotals && updatedTotals.innerHTML.trim() !== '') {
+                    statisticsTotals.innerHTML = updatedTotals.innerHTML;
+                    statisticsTotals.className = 'statistics-totals';
+
+                    // نسخ الأنماط
+                    const originalItems = updatedTotals.querySelectorAll('.total-item');
+                    const statisticsItems = statisticsTotals.querySelectorAll('.total-item');
+
+                    originalItems.forEach((originalItem, index) => {
+                        if (statisticsItems[index]) {
+                            statisticsItems[index].className = originalItem.className;
+                        }
+                    });
+
+                    console.log('✅ تم إنشاء ونسخ الإحصائيات');
+                } else {
+                    // إنشاء إحصائيات أساسية إذا فشل كل شيء
+                    createBasicStatistics(statisticsTotals);
+                }
+            }, 200);
+        } else {
+            // إنشاء إحصائيات أساسية
+            createBasicStatistics(statisticsTotals);
+        }
+    }
+}
+
+function createBasicStatistics(container) {
+    console.log('📊 إنشاء إحصائيات أساسية...');
+
+    if (!properties || !Array.isArray(properties)) {
+        container.innerHTML = `
+            <div class="total-item units-stat">
+                <div class="total-label">إجمالي الوحدات</div>
+                <div class="total-value">0</div>
+            </div>
+            <div class="total-item empty-stat">
+                <div class="total-label">وحدات فارغة</div>
+                <div class="total-value">0</div>
+            </div>
+        `;
+        return;
+    }
+
+    // حساب الإحصائيات الأساسية
+    let filteredData = properties;
+
+    // تطبيق الفلاتر
+    if (currentCountry && currentCountry !== 'الكل') {
+        filteredData = filteredData.filter(item => item.المدينة === currentCountry);
+    }
+
+    if (currentProperty && currentProperty !== 'الكل') {
+        filteredData = filteredData.filter(item => item['اسم العقار'] === currentProperty);
+    }
+
+    const totalUnits = filteredData.length;
+    const occupiedUnits = filteredData.filter(item =>
+        item['اسم المستأجر'] && item['اسم المستأجر'].trim() !== ''
+    ).length;
+    const emptyUnits = totalUnits - occupiedUnits;
+
+    const totalRent = filteredData.reduce((sum, item) => {
+        const rent = parseFloat(item['قيمة الإيجار']) || 0;
+        return sum + rent;
+    }, 0);
+
+    container.innerHTML = `
+        <div class="total-item units-stat">
+            <div class="total-label">إجمالي الوحدات</div>
+            <div class="total-value">${totalUnits}</div>
+        </div>
+        <div class="total-item active-stat">
+            <div class="total-label">وحدات مؤجرة</div>
+            <div class="total-value">${occupiedUnits}</div>
+        </div>
+        <div class="total-item empty-stat">
+            <div class="total-label">وحدات فارغة</div>
+            <div class="total-value">${emptyUnits}</div>
+        </div>
+        <div class="total-item taxable-base-stat">
+            <div class="total-label">إجمالي الإيجارات</div>
+            <div class="total-value">${totalRent.toLocaleString()} ريال</div>
+        </div>
+    `;
+
+    console.log('✅ تم إنشاء الإحصائيات الأساسية');
+}
+
+// تم نقل هذه الدالة إلى مكان آخر - استخدم updateStatisticsActiveFilters الجديدة
+
+function clearAllNavActive() {
+    // إزالة التفعيل من جميع عناصر الناف بار
+    const navItems = document.querySelectorAll('.mobile-bottom-nav .nav-item');
+    navItems.forEach(item => {
+        item.classList.remove('active');
+    });
+}
+
+// دالة إنشاء نافذة العقارات المنفصلة للناف بار
+function showMobilePropertiesModal() {
+    console.log('🏢 إنشاء نافذة العقارات المنفصلة...');
+
+    // إغلاق أي نافذة مفتوحة
+    closeModal();
+
+    // الحصول على العقارات حسب المدينة المحددة
+    let filteredProperties = properties;
+    if (currentCountry && currentCountry !== 'الكل') {
+        filteredProperties = properties.filter(property => property.المدينة === currentCountry);
+    }
+
+    // الحصول على أسماء العقارات الفريدة
+    const propertyNames = [...new Set(filteredProperties.map(p => p['اسم العقار']).filter(name => name && name.trim() !== ''))];
+
+    // إضافة العقارات من التعريفات إذا كانت متوفرة
+    if (typeof propertyDefinitions !== 'undefined' && propertyDefinitions) {
+        Object.keys(propertyDefinitions).forEach(cityName => {
+            if (!currentCountry || currentCountry === 'الكل' || cityName === currentCountry) {
+                if (propertyDefinitions[cityName] && Array.isArray(propertyDefinitions[cityName])) {
+                    propertyDefinitions[cityName].forEach(propName => {
+                        if (propName && propName.trim() !== '' && !propertyNames.includes(propName)) {
+                            propertyNames.push(propName);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    // ترتيب العقارات
+    propertyNames.sort();
+
+    // إنشاء HTML للنافذة
+    const cityText = currentCountry && currentCountry !== 'الكل' ? currentCountry : 'جميع المدن';
+
+    let html = `
+        <div class="modal-overlay" style="display: flex; z-index: 10000;">
+            <div class="modal-box properties-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+
+                <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <i class="fas fa-building" style="color: #007bff;"></i>
+                    العقارات - ${cityText}
+                    <span class="badge" style="background: #007bff; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${propertyNames.length}</span>
+                </h3>
+
+                <!-- قسم الفلاتر النشطة -->
+                <div id="propertiesActiveFilters" class="properties-active-filters" style="display: none; background: #f8f9fa; margin: 0 0 15px 0; border-radius: 10px; padding: 15px; border: 1px solid #e9ecef;">
+                    <div class="properties-filters-title" style="font-weight: 600; color: #495057; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-filter" style="color: #ffc107;"></i>
+                        الفلاتر النشطة:
+                    </div>
+                    <div class="properties-filters-list" id="propertiesFiltersList" style="margin-bottom: 15px;"></div>
+                    <button class="clear-all-filters-btn" onclick="clearAllFiltersWithLoading(this); setTimeout(() => refreshPropertiesModal(), 1000);" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; position: relative; overflow: hidden;">
+                        <i class="fas fa-times-circle"></i>
+                        <span>مسح جميع الفلاتر</span>
+                    </button>
+                </div>
+
+                <div class="property-search-container" style="margin-bottom: 15px;">
+                    <input type="text" id="mobilePropertiesSearch" placeholder="بحث في العقارات..."
+                           style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                </div>
+
+                <div id="mobilePropertiesList" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px;">
+    `;
+
+    if (propertyNames.length === 0) {
+        html += `
+            <div style="text-align: center; padding: 40px; color: #6c757d;">
+                <i class="fas fa-building" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i>
+                <p>لا توجد عقارات متاحة</p>
+            </div>
+        `;
+    } else {
+        propertyNames.forEach(propertyName => {
+            const isActive = currentProperty === propertyName;
+            const activeClass = isActive ? 'active' : '';
+            const activeStyle = isActive ? 'background: #007bff; color: white;' : '';
+
+            html += `
+                <div class="mobile-property-item ${activeClass}" data-property="${propertyName}"
+                     onclick="selectPropertyFromModal('${propertyName}')"
+                     style="padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                            transition: all 0.3s ease; border: 1px solid #e9ecef; ${activeStyle}
+                            display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-weight: 500;">${propertyName}</span>
+                    ${isActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-building" style="color: #007bff;"></i>'}
+                </div>
+            `;
+        });
+    }
+
+    html += `
+                </div>
+
+                <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button onclick="closePropertiesModalDirect();" class="modal-action-btn close-btn properties-close-btn" id="propertiesCloseBtn"
+                            style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fas fa-times"></i> إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // إضافة وظيفة البحث
+    const searchInput = document.getElementById('mobilePropertiesSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const propertyItems = document.querySelectorAll('.mobile-property-item');
+
+            propertyItems.forEach(item => {
+                const propertyName = item.dataset.property.toLowerCase();
+                if (propertyName.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // إغلاق عند النقر خارج النافذة
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج النافذة - إغلاق');
+                    closePropertiesModalDirect();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج النافذة');
+        }
+    }, 50);
+
+    // تحديث الفلاتر النشطة في نافذة العقارات
+    updatePropertiesActiveFilters();
+
+    // التحقق من وجود زر الإغلاق
+    setTimeout(() => {
+        const closeButton = document.querySelector('#propertiesCloseBtn');
+        if (closeButton) {
+            console.log('✅ تم العثور على زر الإغلاق مع onclick');
+        } else {
+            console.warn('⚠️ زر الإغلاق غير موجود');
+        }
+    }, 100);
+
+    console.log('✅ تم إنشاء نافذة العقارات المنفصلة');
+}
+
+// دالة لحذف جميع الأرقام والفراغات القديمة من القائمة المحمولة
+function cleanOldNumberingFromMenu() {
+    console.log('🧹 تنظيف الترقيم والفراغات القديمة من القائمة المحمولة...');
+
+    const menuList = document.querySelector('.mobile-dropdown-list');
+    if (!menuList) {
+        console.warn('⚠️ لم يتم العثور على قائمة الأزرار المحمولة');
+        return;
+    }
+
+    const allButtons = menuList.querySelectorAll('li > button');
+    let cleanedCount = 0;
+
+    allButtons.forEach(button => {
+        // إزالة عناصر الأرقام المضافة بـ JavaScript
+        const existingNumbers = button.querySelectorAll('.menu-number');
+        existingNumbers.forEach(num => {
+            num.remove();
+            cleanedCount++;
+        });
+
+        // إزالة أي أرقام في بداية النص
+        const textNodes = Array.from(button.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
+        textNodes.forEach(textNode => {
+            // إزالة الأرقام والنقاط من بداية النص
+            const cleanedText = textNode.textContent.replace(/^\s*\d+\.\s*/, '').trim();
+            if (cleanedText !== textNode.textContent.trim()) {
+                textNode.textContent = cleanedText;
+                cleanedCount++;
+            }
+        });
+
+        // تنظيف الفراغات الزائدة
+        button.innerHTML = button.innerHTML.replace(/^\s+|\s+$/g, '').replace(/\s+/g, ' ');
+    });
+
+    console.log(`✅ تم تنظيف ${cleanedCount} عنصر من الترقيم والفراغات القديمة`);
+}
+
+// دالة لإضافة أرقام تسلسلية للأزرار الظاهرة فقط في القائمة المحمولة
+function addNumbersToVisibleMenuItems() {
+    console.log('🔢 بدء ترقيم الأزرار الظاهرة في القائمة المحمولة...');
+
+    // أولاً تنظيف أي ترقيم قديم
+    cleanOldNumberingFromMenu();
+
+    const menuList = document.querySelector('.mobile-dropdown-list');
+    if (!menuList) {
+        console.warn('⚠️ لم يتم العثور على قائمة الأزرار المحمولة');
+        return;
+    }
+
+    // الحصول على العناصر الظاهرة فقط
+    const visibleItems = [];
+    const allItems = menuList.querySelectorAll('li');
+
+    allItems.forEach(item => {
+        const button = item.querySelector('button');
+        if (!button) return;
+
+        // التحقق من أن العنصر ظاهر
+        const isHidden = item.style.display === 'none' ||
+                        getComputedStyle(item).display === 'none' ||
+                        button.style.display === 'none' ||
+                        getComputedStyle(button).display === 'none';
+
+        if (!isHidden) {
+            visibleItems.push({ item, button });
+        }
+    });
+
+    // إضافة الأرقام للعناصر الظاهرة
+    visibleItems.forEach((itemData, index) => {
+        const { button } = itemData;
+        const number = index + 1;
+
+        // إنشاء عنصر الرقم
+        const numberElement = document.createElement('span');
+        numberElement.className = 'menu-number';
+        numberElement.textContent = number + '. ';
+        numberElement.style.cssText = `
+            color: #007bff;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-left: 8px;
+            background: rgba(0, 123, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 50%;
+            min-width: 24px;
+            text-align: center;
+            display: inline-block;
+        `;
+
+        // إضافة الرقم في بداية النص
+        button.insertBefore(numberElement, button.firstChild);
+    });
+
+    console.log(`✅ تم ترقيم ${visibleItems.length} زر ظاهر في القائمة المحمولة`);
+}
+
+// دالة لحذف الأزرار الفارغة من القائمة المحمولة
+function removeEmptyMenuButtons() {
+    console.log('🗑️ حذف الأزرار الفارغة من القائمة المحمولة...');
+
+    const menuList = document.querySelector('.mobile-dropdown-list');
+    if (!menuList) {
+        console.warn('⚠️ لم يتم العثور على قائمة الأزرار المحمولة');
+        return;
+    }
+
+    const allItems = Array.from(menuList.querySelectorAll('li'));
+    let removedCount = 0;
+
+    allItems.forEach((item, index) => {
+        const button = item.querySelector('button');
+
+        // فحص إذا كان العنصر مخفي
+        const isHidden = item.style.display === 'none' ||
+                        getComputedStyle(item).display === 'none';
+
+        if (isHidden) {
+            console.log(`🗑️ حذف عنصر مخفي: ${index + 1}`);
+            item.remove();
+            removedCount++;
+            return;
+        }
+
+        if (!button) {
+            // إذا لم يكن هناك زر، احذف العنصر
+            console.log(`🗑️ حذف عنصر بدون زر: ${index + 1}`);
+            item.remove();
+            removedCount++;
+            return;
+        }
+
+        // فحص محتوى الزر
+        const buttonText = button.textContent.trim();
+        const buttonIcons = button.querySelectorAll('i, svg, img');
+
+        // إزالة النصوص الفارغة أو التي تحتوي على أرقام فقط
+        const cleanText = buttonText.replace(/^\d+\.\s*/, '').replace(/^\s*$/, '').trim();
+
+        // فحص إذا كان الزر فارغ أو يحتوي على محتوى غير مفيد
+        if (cleanText.length === 0 && buttonIcons.length === 0) {
+            console.log(`🗑️ حذف زر فارغ: "${buttonText}" في الموضع ${index + 1}`);
+            item.remove();
+            removedCount++;
+        } else if (buttonText.match(/^\s*\d+\s*\.?\s*$/) && buttonIcons.length === 0) {
+            console.log(`🗑️ حذف زر يحتوي على أرقام فقط: "${buttonText}" في الموضع ${index + 1}`);
+            item.remove();
+            removedCount++;
+        } else if (buttonText.trim() === '' && buttonIcons.length === 0) {
+            console.log(`🗑️ حذف زر فارغ تماماً في الموضع ${index + 1}`);
+            item.remove();
+            removedCount++;
+        }
+    });
+
+    console.log(`✅ تم حذف ${removedCount} زر فارغ من القائمة المحمولة`);
+}
+
+// دالة لإزالة الترقيم من القائمة المحمولة
+function removeNumberingFromMenu() {
+    console.log('🔢 إزالة الترقيم من القائمة المحمولة...');
+
+    const menuList = document.querySelector('.mobile-dropdown-list');
+    if (!menuList) {
+        console.warn('⚠️ لم يتم العثور على قائمة الأزرار المحمولة');
+        return;
+    }
+
+    // إذا كانت القائمة من نوع ol، حولها إلى ul لإزالة الترقيم
+    if (menuList.tagName.toLowerCase() === 'ol') {
+        const newUl = document.createElement('ul');
+        newUl.className = menuList.className;
+        newUl.id = menuList.id;
+
+        // نقل جميع العناصر من ol إلى ul
+        while (menuList.firstChild) {
+            newUl.appendChild(menuList.firstChild);
+        }
+
+        // استبدال ol بـ ul
+        menuList.parentNode.replaceChild(newUl, menuList);
+        console.log('✅ تم تحويل القائمة من ol إلى ul لإزالة الترقيم');
+    }
+
+    // إزالة أي CSS يضيف ترقيم
+    const style = document.createElement('style');
+    style.textContent = `
+        .mobile-dropdown-list {
+            list-style: none !important;
+            counter-reset: none !important;
+        }
+        .mobile-dropdown-list li {
+            counter-increment: none !important;
+        }
+        .mobile-dropdown-list li::before {
+            display: none !important;
+            content: none !important;
+        }
+        .mobile-dropdown-list li::marker {
+            display: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    console.log('✅ تم إزالة الترقيم من القائمة المحمولة');
+}
+
+// دالة منفصلة لتنظيف القائمة فقط بدون إضافة ترقيم جديد
+function cleanMenuOnly() {
+    console.log('🧹 تنظيف القائمة المحمولة من الترقيم والفراغات القديمة...');
+
+    // أولاً إزالة الترقيم من القائمة
+    removeNumberingFromMenu();
+
+    // ثانياً حذف الأزرار الفارغة
+    removeEmptyMenuButtons();
+
+    // ثالثاً تنظيف الترقيم القديم من النصوص
+    cleanOldNumberingFromMenu();
+
+    console.log('✅ تم تنظيف القائمة بنجاح');
+}
+
+// دالة خاصة لإغلاق نافذة العقارات
+function closePropertiesModal() {
+    console.log('🔴 إغلاق نافذة العقارات...');
+
+    // البحث عن نافذة العقارات
+    const propertiesModal = document.querySelector('.modal-overlay .properties-modal');
+    const modalOverlay = document.querySelector('.modal-overlay');
+
+    if (propertiesModal && modalOverlay) {
+        // إزالة النافذة
+        modalOverlay.remove();
+        console.log('✅ تم إغلاق نافذة العقارات');
+
+        // إزالة التفعيل من الناف بار
+        clearAllNavActive();
+        console.log('✅ تم إزالة التفعيل من الناف بار');
+
+        // إعادة تفعيل التمرير
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.height = '';
+        document.documentElement.style.overflow = '';
+
+        return true;
+    } else {
+        console.warn('⚠️ نافذة العقارات غير موجودة');
+        return false;
+    }
+}
+
+// دالة مباشرة للإغلاق (تستدعى من onclick)
+function closePropertiesModalDirect() {
+    console.log('🔴 تم النقر على زر الإغلاق - إغلاق مباشر');
+
+    try {
+        // البحث عن النافذة وإزالتها مباشرة
+        const modalOverlay = document.querySelector('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم حذف النافذة');
+        }
+
+        // إزالة التفعيل من الناف بار
+        if (typeof clearAllNavActive === 'function') {
+            clearAllNavActive();
+            console.log('✅ تم إزالة التفعيل من الناف بار');
+        }
+
+        // إعادة تفعيل التمرير
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.height = '';
+        document.documentElement.style.overflow = '';
+
+        console.log('✅ تم إغلاق النافذة بنجاح');
+
+    } catch (error) {
+        console.error('❌ خطأ في إغلاق النافذة:', error);
+
+        // محاولة بديلة
+        const allModals = document.querySelectorAll('.modal-overlay');
+        allModals.forEach(modal => modal.remove());
+        clearAllNavActive();
+    }
+}
+
+// دالة اختيار العقار من النافذة المنفصلة
+function selectPropertyFromModal(propertyName) {
+    console.log('🏢 اختيار العقار:', propertyName);
+
+    // استخدام الدالة الأصلية لاختيار العقار
+    if (typeof selectProperty === 'function') {
+        selectProperty(propertyName);
+    } else {
+        // طريقة بديلة
+        currentProperty = propertyName === 'الكل' ? null : propertyName;
+
+        // تحديث العرض
+        if (typeof renderData === 'function') {
+            renderData();
+        }
+
+        // تحديث حالة الأزرار
+        if (typeof updatePropertyButtonsState === 'function') {
+            updatePropertyButtonsState();
+        }
+    }
+
+    // إغلاق النافذة
+    closeModal();
+    clearAllNavActive();
+
+    console.log('✅ تم اختيار العقار وإغلاق النافذة');
+}
+
+// دالة تحديث الفلاتر النشطة في نافذة العقارات
+function updatePropertiesActiveFilters() {
+    const activeFiltersContainer = document.getElementById('propertiesActiveFilters');
+    const filtersList = document.getElementById('propertiesFiltersList');
+
+    if (!activeFiltersContainer || !filtersList) return;
+
+    // جمع الفلاتر النشطة
+    const activeFilters = [];
+
+    if (currentCountry && currentCountry !== 'الكل') {
+        activeFilters.push(`المدينة: ${currentCountry}`);
+    }
+
+    if (currentProperty && currentProperty !== 'الكل') {
+        activeFilters.push(`العقار: ${currentProperty}`);
+    }
+
+    if (currentStatus && currentStatus !== 'الكل') {
+        activeFilters.push(`الحالة: ${currentStatus}`);
+    }
+
+    if (currentOwnerFilter && currentOwnerFilter !== 'الكل') {
+        activeFilters.push(`المالك: ${currentOwnerFilter}`);
+    }
+
+    // إضافة فلاتر أخرى إذا كانت موجودة
+    if (typeof window.currentDateFilter !== 'undefined' && window.currentDateFilter && window.currentDateFilter !== 'الكل') {
+        activeFilters.push(`التاريخ: ${window.currentDateFilter}`);
+    }
+
+    if (typeof window.currentRentFilter !== 'undefined' && window.currentRentFilter && window.currentRentFilter !== 'الكل') {
+        activeFilters.push(`الإيجار: ${window.currentRentFilter}`);
+    }
+
+    if (activeFilters.length > 0) {
+        activeFiltersContainer.style.display = 'block';
+        filtersList.innerHTML = activeFilters.map(filter =>
+            `<span class="filter-tag" style="display: inline-block; background: #007bff; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; margin: 2px;">${filter}</span>`
+        ).join('');
+
+        // التأكد من إظهار زر مسح الفلاتر
+        let clearButton = activeFiltersContainer.querySelector('.clear-all-filters-btn');
+        if (clearButton) {
+            clearButton.style.display = 'flex';
+        }
+
+        console.log(`🏢 عرض ${activeFilters.length} فلتر نشط في نافذة العقارات`);
+    } else {
+        activeFiltersContainer.style.display = 'none';
+        console.log('🏢 لا توجد فلاتر نشطة في نافذة العقارات');
+    }
+}
+
+// دالة تحديث نافذة العقارات بعد مسح الفلاتر
+function refreshPropertiesModal() {
+    console.log('🔄 تحديث نافذة العقارات...');
+
+    // التحقق من وجود النافذة
+    const propertiesModal = document.querySelector('.properties-modal');
+    if (!propertiesModal) {
+        console.log('ℹ️ نافذة العقارات غير مفتوحة');
+        return;
+    }
+
+    // إغلاق النافذة الحالية وفتح نافذة جديدة
+    closeModal();
+
+    // فتح نافذة جديدة بعد تأخير قصير
+    setTimeout(() => {
+        showMobilePropertiesModal();
+        console.log('✅ تم تحديث نافذة العقارات');
+    }, 100);
+}
+
+// دالة فتح القائمة الرئيسية (بدون الإحصائيات)
+function toggleMobileMainMenu() {
+    console.log('☰ فتح القائمة الرئيسية من الناف بار');
+
+    // إزالة التفعيل من جميع العناصر
+    clearAllNavActive();
+
+    // فتح القائمة الرئيسية
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.click();
+
+        // إخفاء الإحصائيات من القائمة الرئيسية
+        setTimeout(() => {
+            hideMobileTotalsInMenu();
+        }, 100);
+    }
+}
+
+function hideMobileTotalsInMenu() {
+    // إخفاء الإحصائيات من القائمة الجانبية عند فتحها من الناف بار
+    const mobileTotals = document.querySelector('#mobileMenu #mobileTotals');
+    const mobilePropertyHeader = document.querySelector('#mobileMenu #mobilePropertyHeader');
+
+    if (mobileTotals) {
+        mobileTotals.style.display = 'none';
+    }
+
+    if (mobilePropertyHeader) {
+        mobilePropertyHeader.style.display = 'none';
+    }
+
+    console.log('✅ تم إخفاء الإحصائيات من القائمة الرئيسية');
+}
+
+function showMobileTotalsInMenu() {
+    // إظهار الإحصائيات في القائمة الجانبية عند فتحها بالطريقة العادية
+    const mobileTotals = document.querySelector('#mobileMenu #mobileTotals');
+    const mobilePropertyHeader = document.querySelector('#mobileMenu #mobilePropertyHeader');
+
+    if (mobileTotals) {
+        mobileTotals.style.display = 'block';
+    }
+
+    if (mobilePropertyHeader && currentProperty && currentProperty !== 'الكل') {
+        mobilePropertyHeader.style.display = 'flex';
+    }
+
+    console.log('✅ تم إظهار الإحصائيات في القائمة الرئيسية');
+}
+
+// دالة مسح الفلاتر مع تأثير loading محسن
+function clearAllFiltersWithLoading(button) {
+    console.log('🗑️ مسح جميع الفلاتر مع loading محسن...');
+
+    // إضافة تأثير loading لجميع أزرار مسح الفلاتر
+    showClearFiltersLoading(true);
+
+    // إضافة تأثير loading إضافي للزر المحدد
+    if (button) {
+        button.classList.add('loading');
+        button.style.transform = 'scale(0.95)';
+        button.style.transition = 'all 0.3s ease';
+    }
+
+    // تنفيذ مسح الفلاتر مع تأخير للتأثير البصري
+    setTimeout(() => {
+        // استدعاء دالة مسح الفلاتر الأصلية (التي تحتوي على loading بالفعل)
+        clearAllFilters();
+
+        // تحديث عرض الإحصائيات
+        updateStatisticsDisplay();
+
+        // إزالة تأثير loading الإضافي
+        setTimeout(() => {
+            if (button) {
+                button.classList.remove('loading');
+                button.style.transform = 'scale(1)';
+                button.style.transition = 'all 0.3s ease';
+            }
+
+            // إظهار رسالة نجاح
+            showMiniIconNotification('🗑️', '#28a745', 2000);
+
+            console.log('✅ تم مسح جميع الفلاتر بنجاح');
+        }, 800);
+
+    }, 300);
+}
+
+// دالة محسنة لتحديث الفلاتر النشطة في قائمة الإحصائيات
+function updateStatisticsActiveFilters() {
+    const activeFiltersContainer = document.getElementById('statisticsActiveFilters');
+    const filtersList = document.getElementById('statisticsFiltersList');
+
+    if (!activeFiltersContainer || !filtersList) return;
+
+    // جمع الفلاتر النشطة
+    const activeFilters = [];
+
+    if (currentCountry && currentCountry !== 'الكل') {
+        activeFilters.push(`المدينة: ${currentCountry}`);
+    }
+
+    if (currentProperty && currentProperty !== 'الكل') {
+        activeFilters.push(`العقار: ${currentProperty}`);
+    }
+
+    if (currentStatus && currentStatus !== 'الكل') {
+        activeFilters.push(`الحالة: ${currentStatus}`);
+    }
+
+    if (currentOwnerFilter && currentOwnerFilter !== 'الكل') {
+        activeFilters.push(`المالك: ${currentOwnerFilter}`);
+    }
+
+    // إضافة فلاتر أخرى إذا كانت موجودة
+    if (typeof window.currentDateFilter !== 'undefined' && window.currentDateFilter && window.currentDateFilter !== 'الكل') {
+        activeFilters.push(`التاريخ: ${window.currentDateFilter}`);
+    }
+
+    if (typeof window.currentRentFilter !== 'undefined' && window.currentRentFilter && window.currentRentFilter !== 'الكل') {
+        activeFilters.push(`الإيجار: ${window.currentRentFilter}`);
+    }
+
+    if (activeFilters.length > 0) {
+        activeFiltersContainer.style.display = 'block';
+        filtersList.innerHTML = activeFilters.map(filter =>
+            `<span class="filter-tag">${filter}</span>`
+        ).join('');
+
+        // التأكد من إظهار زر مسح الفلاتر
+        let clearButton = activeFiltersContainer.querySelector('.clear-all-filters-btn');
+        if (!clearButton) {
+            // إنشاء زر مسح الفلاتر إذا لم يكن موجوداً
+            clearButton = document.createElement('button');
+            clearButton.className = 'clear-all-filters-btn';
+            clearButton.onclick = function() { clearAllFiltersWithLoading(this); };
+            clearButton.innerHTML = `
+                <i class="fas fa-times-circle"></i>
+                <span>مسح جميع الفلاتر</span>
+            `;
+            activeFiltersContainer.appendChild(clearButton);
+            console.log('✅ تم إنشاء زر مسح الفلاتر في قائمة الإحصائيات');
+        }
+        clearButton.style.display = 'flex';
+
+        console.log(`📊 عرض ${activeFilters.length} فلتر نشط في قائمة الإحصائيات`);
+    } else {
+        activeFiltersContainer.style.display = 'none';
+        console.log('📊 لا توجد فلاتر نشطة في قائمة الإحصائيات');
+    }
+}
+
+// إضافة مستمع لإزالة التفعيل عند إغلاق النوافذ
+document.addEventListener('click', function(event) {
+    // التحقق من إغلاق النوافذ
+    if (event.target.classList.contains('modal-overlay') ||
+        event.target.classList.contains('close') ||
+        event.target.closest('.close') ||
+        event.target.classList.contains('mobile-statistics-overlay')) {
+        // إزالة التفعيل من الناف بار بعد تأخير قصير
+        setTimeout(clearAllNavActive, 300);
+    }
+});
 
 // دالة لاختبار التحسينات الجديدة
 window.testNewDesign = function() {

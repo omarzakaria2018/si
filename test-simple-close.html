@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار زر الإغلاق البسيط</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+            overflow-x: auto;
+        }
+
+        .fix-list {
+            background: #e8f5e8;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .fix-list h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .fix-list ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .fix-list li {
+            margin-bottom: 8px;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-wrench"></i> إصلاح زر الإغلاق</h1>
+            <p>حل بسيط ومباشر لمشكلة عدم عمل زر الإغلاق</p>
+        </div>
+
+        <div class="content">
+            <div class="test-section">
+                <h3><i class="fas fa-tools"></i> الحل البسيط المطبق</h3>
+                
+                <div class="fix-list">
+                    <h4><i class="fas fa-check-circle"></i> الإصلاحات المطبقة:</h4>
+                    <ul>
+                        <li><strong>onclick مباشر:</strong> استخدام onclick="closePropertiesModalDirect();" في HTML</li>
+                        <li><strong>دالة مباشرة:</strong> closePropertiesModalDirect() بدون تعقيدات</li>
+                        <li><strong>إزالة مباشرة:</strong> modalOverlay.remove() فوراً</li>
+                        <li><strong>معالجة الأخطاء:</strong> try-catch للتأكد من العمل</li>
+                        <li><strong>حل احتياطي:</strong> إزالة جميع النوافذ في حالة الخطأ</li>
+                    </ul>
+                </div>
+
+                <div class="status success">
+                    <h4>✅ الكود الجديد:</h4>
+                    <div class="code-block">
+// في HTML
+&lt;button onclick="closePropertiesModalDirect();"&gt;
+    إغلاق
+&lt;/button&gt;
+
+// في JavaScript
+function closePropertiesModalDirect() {
+    console.log('🔴 تم النقر على زر الإغلاق - إغلاق مباشر');
+    
+    try {
+        const modalOverlay = document.querySelector('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم حذف النافذة');
+        }
+        
+        clearAllNavActive();
+        document.body.style.overflow = '';
+        
+    } catch (error) {
+        // حل احتياطي
+        const allModals = document.querySelectorAll('.modal-overlay');
+        allModals.forEach(modal => modal.remove());
+        clearAllNavActive();
+    }
+}
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار الإصلاح</h3>
+                
+                <button class="btn btn-success" onclick="openPropertiesModal()">
+                    <i class="fas fa-building"></i> فتح نافذة العقارات
+                </button>
+                
+                <button class="btn btn-primary" onclick="checkConsole()">
+                    <i class="fas fa-terminal"></i> مراقبة Console
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+                
+                <div class="status warning">
+                    <h4>📋 للاختبار:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>افتح Console (F12)</strong></li>
+                        <li><strong>انقر على "فتح نافذة العقارات"</strong> أعلاه</li>
+                        <li><strong>انقر على زر "إغلاق"</strong> في أسفل النافذة</li>
+                        <li><strong>تحقق من:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>اختفاء النافذة فوراً</li>
+                                <li>رسائل في Console</li>
+                                <li>إزالة التفعيل من الناف بار</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="status info">
+                    <h4>🔍 رسائل Console المتوقعة:</h4>
+                    <div class="code-block">
+🔴 تم النقر على زر الإغلاق - إغلاق مباشر
+✅ تم حذف النافذة
+✅ تم إزالة التفعيل من الناف بار
+✅ تم إغلاق النافذة بنجاح
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-lightbulb"></i> لماذا يعمل الآن؟</h3>
+                
+                <div class="status success">
+                    <h4>🎯 الأسباب:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>onclick مباشر:</strong> لا يحتاج addEventListener معقد</li>
+                        <li><strong>دالة بسيطة:</strong> بدون تعقيدات أو شروط كثيرة</li>
+                        <li><strong>إزالة مباشرة:</strong> modalOverlay.remove() فوراً</li>
+                        <li><strong>معالجة أخطاء:</strong> try-catch يضمن العمل</li>
+                        <li><strong>حل احتياطي:</strong> إزالة جميع النوافذ إذا فشل الأول</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function openPropertiesModal() {
+            showTestStatus('🏢 فتح نافذة العقارات...', 'info');
+            
+            if (typeof showMobilePropertiesModal === 'function') {
+                showMobilePropertiesModal();
+                showTestStatus('✅ تم فتح النافذة - جرب زر الإغلاق الآن!', 'success');
+            } else {
+                showTestStatus('❌ وظيفة showMobilePropertiesModal غير متوفرة', 'error');
+            }
+        }
+
+        function checkConsole() {
+            showTestStatus('🔍 افتح Console (F12) وراقب الرسائل عند النقر على زر الإغلاق', 'info');
+            console.log('🔍 مراقبة Console مفعلة - افتح النافذة واختبر زر الإغلاق');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار الحل البسيط جاهزة');
+            
+            if (typeof initSupabase === 'function') {
+                initSupabase();
+            }
+            
+            showTestStatus('الصفحة جاهزة - افتح نافذة العقارات واختبر زر الإغلاق المُصلح', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نقل الوظائف للناف بار</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+            padding-bottom: 100px; /* مساحة للناف بار */
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-item {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .comparison-item h4 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .before {
+            border-left: 4px solid #dc3545;
+        }
+
+        .after {
+            border-left: 4px solid #28a745;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list li i {
+            color: #28a745;
+            width: 20px;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-exchange-alt"></i> نقل الوظائف للناف بار</h1>
+            <p>اختبار نقل وظائف المدن والعقارات والمرفقات من القائمة إلى الناف بار</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> ما تم تطبيقه</h4>
+                <ul>
+                    <li>نقل وظيفة المدن من القائمة الجانبية إلى الناف بار</li>
+                    <li>نقل وظيفة العقارات من القائمة الجانبية إلى الناف بار</li>
+                    <li>نقل وظيفة إدارة المرفقات من القائمة إلى الناف بار</li>
+                    <li>إخفاء هذه الأزرار من القائمة الجانبية في الشاشات الصغيرة</li>
+                    <li>الحفاظ على نفس الوظائف والسلوك</li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-before-after"></i> مقارنة قبل وبعد</h3>
+                
+                <div class="comparison">
+                    <div class="comparison-item before">
+                        <h4>❌ قبل التحديث</h4>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-times"></i> المدن في القائمة الجانبية</li>
+                            <li><i class="fas fa-times"></i> العقارات في القائمة الجانبية</li>
+                            <li><i class="fas fa-times"></i> المرفقات في القائمة الجانبية</li>
+                            <li><i class="fas fa-times"></i> صعوبة الوصول في الجوال</li>
+                            <li><i class="fas fa-times"></i> تكرار في الوظائف</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="comparison-item after">
+                        <h4>✅ بعد التحديث</h4>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> المدن في الناف بار السفلي</li>
+                            <li><i class="fas fa-check"></i> العقارات في الناف بار السفلي</li>
+                            <li><i class="fas fa-check"></i> المرفقات في الناف بار السفلي</li>
+                            <li><i class="fas fa-check"></i> سهولة الوصول في الجوال</li>
+                            <li><i class="fas fa-check"></i> تصميم نظيف ومنظم</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار الوظائف</h3>
+                
+                <button class="btn btn-success" onclick="testCitiesFunction()">
+                    <i class="fas fa-map-marker-alt"></i> اختبار وظيفة المدن
+                </button>
+                
+                <button class="btn btn-primary" onclick="testPropertiesFunction()">
+                    <i class="fas fa-building"></i> اختبار وظيفة العقارات
+                </button>
+                
+                <button class="btn btn-warning" onclick="testAttachmentsFunction()">
+                    <i class="fas fa-paperclip"></i> اختبار وظيفة المرفقات
+                </button>
+                
+                <button class="btn btn-info" onclick="testMainMenuFunction()">
+                    <i class="fas fa-plus"></i> اختبار القائمة الرئيسية
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-mobile-alt"></i> تعليمات الاختبار</h3>
+                
+                <div class="status warning">
+                    <h4>📱 للاختبار على الجوال:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>افتح الصفحة الرئيسية على الجوال أو قلل حجم النافذة</li>
+                        <li>ستجد الناف بار في الأسفل مع 5 أيقونات</li>
+                        <li>انقر على أيقونة المدن - يجب أن تفتح نافذة اختيار المدن</li>
+                        <li>انقر على أيقونة العقارات - يجب أن تفتح قائمة العقارات الجانبية</li>
+                        <li>انقر على أيقونة المرفقات - يجب أن تفتح نافذة إدارة المرفقات</li>
+                        <li>تحقق من أن هذه الأزرار لم تعد موجودة في القائمة الجانبية</li>
+                    </ul>
+                </div>
+                
+                <div class="status success">
+                    <h4>✅ النتائج المتوقعة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>الوظائف تعمل بنفس الطريقة السابقة</li>
+                        <li>الأيقونات تصبح صفراء عند التفعيل</li>
+                        <li>القائمة الجانبية أصبحت أكثر تنظيماً</li>
+                        <li>سهولة أكبر في الاستخدام على الجوال</li>
+                        <li>تصميم أكثر حداثة وأناقة</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-cogs"></i> التفاصيل التقنية</h3>
+                
+                <div class="status info">
+                    <h4>🔧 التغييرات المطبقة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>JavaScript:</strong> تحديث دوال الناف بار لاستخدام الوظائف الأصلية</li>
+                        <li><strong>CSS:</strong> إخفاء الأزرار من القائمة في الشاشات الصغيرة</li>
+                        <li><strong>المدن:</strong> استخدام showCountrySelection() مباشرة</li>
+                        <li><strong>العقارات:</strong> استخدام toggleSidebar() مباشرة</li>
+                        <li><strong>المرفقات:</strong> استخدام showAttachmentsManagerFromDropdown() مباشرة</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testCitiesFunction() {
+            showTestStatus('🏙️ اختبار وظيفة المدن...', 'info');
+            
+            if (typeof toggleMobileCities === 'function') {
+                toggleMobileCities();
+                showTestStatus('✅ تم تشغيل وظيفة المدن من الناف بار', 'success');
+            } else {
+                showTestStatus('❌ وظيفة toggleMobileCities غير متوفرة', 'error');
+            }
+        }
+
+        function testPropertiesFunction() {
+            showTestStatus('🏢 اختبار وظيفة العقارات...', 'info');
+            
+            if (typeof toggleMobileProperties === 'function') {
+                toggleMobileProperties();
+                showTestStatus('✅ تم تشغيل وظيفة العقارات من الناف بار', 'success');
+            } else {
+                showTestStatus('❌ وظيفة toggleMobileProperties غير متوفرة', 'error');
+            }
+        }
+
+        function testAttachmentsFunction() {
+            showTestStatus('📎 اختبار وظيفة المرفقات...', 'info');
+            
+            if (typeof toggleMobileAttachments === 'function') {
+                toggleMobileAttachments();
+                showTestStatus('✅ تم تشغيل وظيفة المرفقات من الناف بار', 'success');
+            } else {
+                showTestStatus('❌ وظيفة toggleMobileAttachments غير متوفرة', 'error');
+            }
+        }
+
+        function testMainMenuFunction() {
+            showTestStatus('➕ اختبار القائمة الرئيسية...', 'info');
+            
+            if (typeof toggleMobileMainMenu === 'function') {
+                toggleMobileMainMenu();
+                showTestStatus('✅ تم تشغيل القائمة الرئيسية من الناف بار', 'success');
+            } else {
+                showTestStatus('❌ وظيفة toggleMobileMainMenu غير متوفرة', 'error');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار نقل الوظائف جاهزة');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                initSupabase();
+            }
+            
+            showTestStatus('الصفحة جاهزة للاختبار - انقر على أحد الأزرار أعلاه', 'info');
+        });
+    </script>
+</body>
+</html>

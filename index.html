@@ -388,6 +388,14 @@
         <li>
           <button id="mobile-property-type-btn"><i class="fas fa-tag"></i> نوع العقار</button>
         </li>
+
+        <!-- فلتر الشهر - مطلوب -->
+        <li>
+          <button id="mobile-date-filter-btn">
+            <i class="fas fa-calendar-alt"></i> فلتر الشهر
+          </button>
+        </li>
+
         <!-- العناصر المطلوبة فقط في القائمة المحمولة -->
 
         <!-- فلتر عقارات متعدد - مطلوب -->
@@ -412,11 +420,6 @@
         </li>
 
         <!-- العناصر المخفية -->
-        <li style="display: none;">
-          <button id="mobile-date-filter-btn">
-            <i class="fas fa-calendar-alt"></i> فلتر التاريخ
-          </button>
-        </li>
 
         <li style="display: none;">
           <button id="mobile-property-statistics-print-btn">
@@ -534,7 +537,7 @@
           الفلاتر النشطة:
         </div>
         <div class="active-filters-list" id="activeFiltersList"></div>
-        <button class="clear-all-filters-btn" id="clearAllFiltersBtn" onclick="clearAllFilters()" style="display: none;">
+        <button class="clear-all-filters-btn" id="clearAllFiltersBtn" onclick="clearAllFiltersWithLoading(this)" style="display: none;">
           <i class="fas fa-times-circle"></i>
           مسح جميع الفلاتر
         </button>
@@ -568,7 +571,7 @@
             لا توجد فلاتر نشطة حالياً
           </div>
         </div>
-        <button class="clear-all-filters-btn mobile-clear-btn" id="clearAllFiltersBtnMobile" onclick="clearAllFilters(); closeMobileFilters();" style="display: none;">
+        <button class="clear-all-filters-btn mobile-clear-btn" id="clearAllFiltersBtnMobile" onclick="clearAllFiltersWithLoading(this); setTimeout(() => closeMobileFilters(), 1000);" style="display: none;">
           <i class="fas fa-times-circle"></i>
           مسح جميع الفلاتر
         </button>
@@ -653,6 +656,68 @@
           <li><strong>المدير المساعد (محمد):</strong> صلاحيات كاملة</li>
           <li><strong>ابو تميم :</strong> عرض فقط</li>
         </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ناف بار سفلي للشاشات الصغيرة والهواتف -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <div class="nav-item" onclick="toggleMobileCities()" id="navCities">
+      <i class="fas fa-map-marker-alt"></i>
+      <span>المدن</span>
+    </div>
+
+    <div class="nav-item" onclick="toggleMobileProperties()" id="navProperties">
+      <i class="fas fa-building"></i>
+      <span>العقارات</span>
+    </div>
+
+    <div class="nav-item nav-center" onclick="scrollToTop()" id="navMain">
+      <i class="fas fa-arrow-up"></i>
+    </div>
+
+    <div class="nav-item" onclick="toggleMobileAttachments()" id="navAttachments">
+      <i class="fas fa-paperclip"></i>
+      <span>المرفقات</span>
+    </div>
+
+    <div class="nav-item" onclick="toggleMobileStatistics()" id="navStatistics">
+      <i class="fas fa-chart-bar"></i>
+      <span>الإحصائيات</span>
+    </div>
+  </nav>
+
+  <!-- قائمة الإحصائيات المنفصلة للناف بار -->
+  <div class="mobile-statistics-menu" id="mobileStatisticsMenu">
+    <div class="mobile-statistics-overlay" onclick="closeMobileStatistics()"></div>
+    <div class="mobile-statistics-content">
+      <div class="mobile-statistics-header">
+        <h3><i class="fas fa-chart-bar"></i> الإحصائيات</h3>
+        <button class="close-statistics-btn" onclick="closeMobileStatistics()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- عرض اسم العقار المحدد -->
+      <div id="statisticsPropertyHeader" class="statistics-property-header" style="display: none;">
+        <i class="fas fa-building"></i>
+        <span id="statisticsPropertyText"></span>
+      </div>
+
+      <!-- الإحصائيات -->
+      <div id="statisticsTotals" class="statistics-totals"></div>
+
+      <!-- الفلاتر النشطة -->
+      <div class="statistics-active-filters" id="statisticsActiveFilters" style="display: none;">
+        <div class="statistics-filters-title">
+          <i class="fas fa-filter"></i>
+          الفلاتر النشطة:
+        </div>
+        <div class="statistics-filters-list" id="statisticsFiltersList"></div>
+        <button class="clear-all-filters-btn" onclick="clearAllFiltersWithLoading(this);">
+          <i class="fas fa-times-circle"></i>
+          <span>مسح جميع الفلاتر</span>
+        </button>
       </div>
     </div>
   </div>

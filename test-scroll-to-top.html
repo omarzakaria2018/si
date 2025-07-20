@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار زر العودة لأعلى</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .search-demo {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            border: 2px solid #007bff;
+        }
+
+        .search-demo h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+            outline: none;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
+            min-height: 300px;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .demo-nav {
+            position: fixed;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 8px 0;
+            z-index: 1000;
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 20px 20px 0 0;
+            display: flex;
+        }
+
+        .demo-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            margin: 0 4px;
+            position: relative;
+        }
+
+        .demo-nav-item i {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .demo-nav-item span {
+            font-size: 0.7rem;
+            color: #6c757d;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .demo-nav-center {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            margin: -20px 8px 0 8px;
+            box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+            border: 4px solid white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .demo-nav-center::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: all 0.6s ease;
+        }
+
+        .demo-nav-center i {
+            color: white !important;
+            font-size: 1.4rem !important;
+            margin-bottom: 0 !important;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        .demo-nav-center:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 123, 255, 0.4);
+        }
+
+        .demo-nav-center:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .demo-nav-center:hover i {
+            transform: translateY(-2px);
+            font-size: 1.5rem !important;
+        }
+
+        .demo-nav-center.active {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            animation: scrollPulse 1s ease-in-out;
+        }
+
+        .demo-nav-center.active i {
+            animation: arrowBounce 0.6s ease-in-out;
+        }
+
+        @keyframes scrollPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes arrowBounce {
+            0%, 100% { transform: translateY(0); }
+            25% { transform: translateY(-3px); }
+            50% { transform: translateY(-6px); }
+            75% { transform: translateY(-3px); }
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- منطقة البحث في الأعلى -->
+    <div class="search-demo" id="searchSection">
+        <h3><i class="fas fa-search"></i> منطقة البحث المستهدفة</h3>
+        <input type="text" class="search-input" id="globalSearch" placeholder="هذا هو حقل البحث الذي سيتم التمرير إليه...">
+        <p style="margin-top: 10px; color: #6c757d;">
+            <i class="fas fa-info-circle"></i> 
+            عند النقر على زر السهم في الناف بار، ستتم العودة إلى هذا المكان وتركيز حقل البحث
+        </p>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-arrow-up"></i> زر العودة لأعلى</h1>
+            <p>اختبار الزر الأزرق المركزي الجديد في الناف بار</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> ما تم تطبيقه</h4>
+                <ul>
+                    <li>تحويل الزر الأزرق المركزي من "+" إلى سهم لأعلى "↑"</li>
+                    <li>عند النقر عليه يتم التمرير السلس إلى أعلى الشاشة</li>
+                    <li>يركز على حقل البحث العام تلقائياً</li>
+                    <li>تأثيرات بصرية جميلة أثناء التمرير</li>
+                    <li>تصميم محسن مع انيميشن</li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار الوظيفة</h3>
+                
+                <button class="btn btn-success" onclick="testScrollFunction()">
+                    <i class="fas fa-arrow-up"></i> اختبار التمرير لأعلى
+                </button>
+                
+                <button class="btn btn-primary" onclick="scrollToBottom()">
+                    <i class="fas fa-arrow-down"></i> التمرير لأسفل للاختبار
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> المميزات الجديدة</h3>
+                
+                <div class="status success">
+                    <h4>✅ الوظائف:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>التمرير السلس:</strong> انتقال ناعم إلى أعلى الشاشة</li>
+                        <li><strong>تركيز البحث:</strong> تفعيل حقل البحث تلقائياً</li>
+                        <li><strong>تأثيرات بصرية:</strong> انيميشن جميل أثناء التمرير</li>
+                        <li><strong>استجابة سريعة:</strong> تفاعل فوري مع النقر</li>
+                    </ul>
+                </div>
+                
+                <div class="status info">
+                    <h4>🎨 التصميم:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>سهم أنيق يشير لأعلى</li>
+                        <li>تأثير hover مع تكبير وإضاءة</li>
+                        <li>انيميشن نبضة عند التفعيل</li>
+                        <li>تغيير اللون إلى أخضر أثناء التمرير</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- محتوى إضافي لجعل الصفحة طويلة -->
+            <div class="test-section">
+                <h3>محتوى إضافي للاختبار</h3>
+                <p>هذا محتوى إضافي لجعل الصفحة طويلة بما يكفي لاختبار وظيفة التمرير.</p>
+                <p>امرر لأسفل ثم انقر على زر السهم في الناف بار لاختبار الوظيفة.</p>
+            </div>
+
+            <div class="test-section">
+                <h3>المزيد من المحتوى</h3>
+                <p>استمر في التمرير لأسفل...</p>
+            </div>
+
+            <div class="test-section">
+                <h3>نهاية الصفحة</h3>
+                <p>الآن انقر على زر السهم في الناف بار لترى كيف يعمل!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- الناف بار التجريبي -->
+    <nav class="demo-nav">
+        <div class="demo-nav-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>المدن</span>
+        </div>
+        
+        <div class="demo-nav-item">
+            <i class="fas fa-building"></i>
+            <span>العقارات</span>
+        </div>
+        
+        <div class="demo-nav-item demo-nav-center" onclick="testScrollFunction()" id="demoScrollBtn">
+            <i class="fas fa-arrow-up"></i>
+        </div>
+        
+        <div class="demo-nav-item">
+            <i class="fas fa-paperclip"></i>
+            <span>المرفقات</span>
+        </div>
+        
+        <div class="demo-nav-item">
+            <i class="fas fa-cog"></i>
+            <span>الإعدادات</span>
+        </div>
+    </nav>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testScrollFunction() {
+            showTestStatus('⬆️ بدء التمرير لأعلى...', 'info');
+            
+            const scrollBtn = document.getElementById('demoScrollBtn');
+            const globalSearch = document.getElementById('globalSearch');
+            
+            // تفعيل الزر
+            scrollBtn.classList.add('active');
+            
+            // التمرير إلى حقل البحث
+            if (globalSearch) {
+                globalSearch.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                });
+                
+                // تركيز على حقل البحث
+                setTimeout(() => {
+                    globalSearch.focus();
+                    showTestStatus('✅ تم التمرير وتركيز حقل البحث بنجاح!', 'success');
+                }, 500);
+            }
+            
+            // إزالة التفعيل
+            setTimeout(() => {
+                scrollBtn.classList.remove('active');
+            }, 1000);
+        }
+
+        function scrollToBottom() {
+            showTestStatus('⬇️ التمرير لأسفل...', 'info');
+            
+            window.scrollTo({ 
+                top: document.body.scrollHeight, 
+                behavior: 'smooth' 
+            });
+            
+            setTimeout(() => {
+                showTestStatus('✅ تم التمرير لأسفل - الآن جرب زر السهم!', 'success');
+            }, 1000);
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار زر العودة لأعلى جاهزة');
+            showTestStatus('الصفحة جاهزة - امرر لأسفل ثم انقر على زر السهم', 'info');
+        });
+    </script>
+</body>
+</html>

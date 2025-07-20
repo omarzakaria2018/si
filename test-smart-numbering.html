@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الترقيم الذكي للأزرار الظاهرة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #e91e63;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #e91e63, #c2185b);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .before-card {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+
+        .after-card {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+
+        .before-card h4 {
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        .after-card h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            border-left: 4px solid #e91e63;
+            overflow-x: auto;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        .smart-features {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .smart-features h4 {
+            color: #856404;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-brain"></i> الترقيم الذكي للأزرار</h1>
+            <p>ترقيم الأزرار الظاهرة فقط بدءاً من رقم 1</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h4><i class="fas fa-lightbulb"></i> الترقيم الذكي</h4>
+                <ul>
+                    <li><strong>الهدف:</strong> ترقيم الأزرار الظاهرة فقط بدءاً من رقم 1</li>
+                    <li><strong>الذكاء:</strong> تجاهل الأزرار المخفية تماماً</li>
+                    <li><strong>الديناميكية:</strong> إعادة حساب الأرقام عند كل فتح للقائمة</li>
+                    <li><strong>التقنية:</strong> JavaScript بدلاً من CSS Counter</li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-magic"></i> المشكلة والحل</h3>
+                
+                <div class="comparison-grid">
+                    <div class="comparison-card before-card">
+                        <h4>❌ المشكلة السابقة</h4>
+                        <ul style="text-align: right; margin: 10px 0;">
+                            <li>CSS Counter يعد جميع العناصر</li>
+                            <li>الأزرار المخفية تأخذ أرقام</li>
+                            <li>ترقيم غير متسلسل للظاهرة</li>
+                            <li>مثال: 1، 3، 5، 8، 10</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="comparison-card after-card">
+                        <h4>✅ الحل الذكي</h4>
+                        <ul style="text-align: right; margin: 10px 0;">
+                            <li>JavaScript يفحص العناصر الظاهرة</li>
+                            <li>الأزرار المخفية لا تأخذ أرقام</li>
+                            <li>ترقيم متسلسل للظاهرة فقط</li>
+                            <li>مثال: 1، 2، 3، 4، 5</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-code"></i> الكود الذكي</h3>
+                
+                <div class="status success">
+                    <h4>🧠 دالة الترقيم الذكي:</h4>
+                    <div class="code-block">
+function addNumbersToVisibleMenuItems() {
+    const menuList = document.querySelector('.mobile-dropdown-list');
+    
+    // إزالة الأرقام السابقة
+    const allButtons = menuList.querySelectorAll('li > button');
+    allButtons.forEach(button => {
+        const existingNumber = button.querySelector('.menu-number');
+        if (existingNumber) existingNumber.remove();
+    });
+    
+    // الحصول على العناصر الظاهرة فقط
+    const visibleItems = [];
+    const allItems = menuList.querySelectorAll('li');
+    
+    allItems.forEach(item => {
+        const button = item.querySelector('button');
+        if (!button) return;
+        
+        // التحقق من أن العنصر ظاهر
+        const isHidden = item.style.display === 'none' || 
+                        getComputedStyle(item).display === 'none' ||
+                        button.style.display === 'none' ||
+                        getComputedStyle(button).display === 'none';
+        
+        if (!isHidden) {
+            visibleItems.push({ item, button });
+        }
+    });
+    
+    // إضافة الأرقام للعناصر الظاهرة
+    visibleItems.forEach((itemData, index) => {
+        const { button } = itemData;
+        const number = index + 1; // بدءاً من 1
+        
+        // إنشاء عنصر الرقم
+        const numberElement = document.createElement('span');
+        numberElement.className = 'menu-number';
+        numberElement.textContent = number + '. ';
+        // تنسيق جميل للرقم...
+        
+        button.insertBefore(numberElement, button.firstChild);
+    });
+}
+                    </div>
+                </div>
+                
+                <div class="status info">
+                    <h4>⚡ استدعاء الدالة:</h4>
+                    <div class="code-block">
+// عند فتح القائمة المحمولة
+mobileMenuBtn.addEventListener('click', function() {
+    mobileMenu.classList.add('active');
+    menuOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // إضافة أرقام تسلسلية للأزرار الظاهرة فقط
+    addNumbersToVisibleMenuItems();
+});
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-cogs"></i> الميزات الذكية</h3>
+                
+                <div class="smart-features">
+                    <h4><i class="fas fa-brain"></i> الذكاء المطبق:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>فحص الرؤية:</strong> يتحقق من display: none و getComputedStyle</li>
+                        <li><strong>إزالة السابق:</strong> ينظف الأرقام السابقة قبل إضافة جديدة</li>
+                        <li><strong>ترقيم متسلسل:</strong> يبدأ من 1 للعناصر الظاهرة فقط</li>
+                        <li><strong>تحديث ديناميكي:</strong> يعيد الحساب عند كل فتح للقائمة</li>
+                        <li><strong>تصميم جميل:</strong> أرقام ملونة مع خلفية دائرية</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار الترقيم الذكي</h3>
+                
+                <button class="btn btn-primary" onclick="openMainPage()">
+                    <i class="fas fa-external-link-alt"></i> فتح الصفحة الرئيسية
+                </button>
+                
+                <button class="btn btn-success" onclick="testInstructions()">
+                    <i class="fas fa-clipboard-list"></i> عرض تعليمات الاختبار
+                </button>
+                
+                <button class="btn btn-warning" onclick="checkConsole()">
+                    <i class="fas fa-terminal"></i> مراقبة Console
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+                
+                <div class="status warning">
+                    <h4>📋 للاختبار الفعلي:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>افتح الصفحة الرئيسية</strong> (index.html)</li>
+                        <li><strong>افتح Console (F12)</strong> لمراقبة الرسائل</li>
+                        <li><strong>قلل حجم الشاشة</strong> لأقل من 900px</li>
+                        <li><strong>انقر على زر القائمة (☰)</strong> في الهيدر</li>
+                        <li><strong>تحقق من الترقيم:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>✅ الأزرار الظاهرة مرقمة: 1، 2، 3، 4، 5...</li>
+                                <li>❌ الأزرار المخفية لا تأخذ أرقام</li>
+                                <li>✅ ترقيم متسلسل بدون فجوات</li>
+                                <li>✅ رسالة في Console تؤكد عدد الأزرار المرقمة</li>
+                            </ul>
+                        </li>
+                        <li><strong>اختبر مع مستخدمين مختلفين:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>بعض الأزرار مخفية حسب صلاحيات المستخدم</li>
+                                <li>الترقيم يتكيف مع الأزرار الظاهرة فقط</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="status success">
+                    <h4>🔍 رسائل Console المتوقعة:</h4>
+                    <div class="code-block">
+🔢 بدء ترقيم الأزرار الظاهرة في القائمة المحمولة...
+✅ تم ترقيم 8 زر ظاهر في القائمة المحمولة
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> النتائج المتوقعة</h3>
+                
+                <div class="status info">
+                    <h4>🎯 ما ستراه:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>ترقيم متسلسل:</strong> 1، 2، 3، 4، 5، 6، 7، 8...</li>
+                        <li><strong>بدون فجوات:</strong> لا توجد أرقام مفقودة</li>
+                        <li><strong>أزرار ظاهرة فقط:</strong> المخفية لا تؤثر على الترقيم</li>
+                        <li><strong>تحديث ديناميكي:</strong> إعادة حساب عند كل فتح</li>
+                        <li><strong>تصميم جميل:</strong> أرقام ملونة مع خلفية</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function openMainPage() {
+            showTestStatus('🌐 فتح الصفحة الرئيسية...', 'info');
+            window.open('index.html', '_blank');
+            showTestStatus('✅ تم فتح الصفحة الرئيسية - اختبر الترقيم الذكي الآن', 'success');
+        }
+
+        function testInstructions() {
+            showTestStatus('📋 اتبع خطوات الاختبار أعلاه لرؤية الترقيم الذكي', 'warning');
+        }
+
+        function checkConsole() {
+            showTestStatus('🔍 افتح Console (F12) وراقب رسائل الترقيم عند فتح القائمة', 'info');
+            console.log('🔍 مراقبة Console مفعلة - افتح القائمة المحمولة لرؤية الترقيم الذكي');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار الترقيم الذكي جاهزة');
+            showTestStatus('الصفحة جاهزة - افتح الصفحة الرئيسية واختبر الترقيم الذكي', 'info');
+        });
+    </script>
+</body>
+</html>

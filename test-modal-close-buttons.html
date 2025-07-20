@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار أزرار الإغلاق في النوافذ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-success { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); color: white; }
+        .btn-info { background: linear-gradient(135deg, #17a2b8, #138496); color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status.danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        .modal-tests {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .modal-test {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-test:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        }
+
+        .modal-test i {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .modal-test h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .modal-test p {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .modal-test .test-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+            overflow-x: auto;
+        }
+
+        .improvements-list {
+            background: #e8f5e8;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .improvements-list h4 {
+            color: #155724;
+            margin-bottom: 15px;
+        }
+
+        .improvements-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .improvements-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #c3e6cb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .improvements-list li:last-child {
+            border-bottom: none;
+        }
+
+        .improvements-list li i {
+            color: #28a745;
+            width: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container { margin: 10px; border-radius: 10px; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.5rem; }
+            .content { padding: 20px; }
+            .modal-tests { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-window-close"></i> تحسين أزرار الإغلاق</h1>
+            <p>إزالة زر X وإضافة زر إغلاق في أسفل النوافذ</p>
+        </div>
+
+        <div class="content">
+            <div class="test-section">
+                <h3><i class="fas fa-magic"></i> التحسينات المطبقة</h3>
+                
+                <div class="improvements-list">
+                    <h4>✨ ما تم تحسينه:</h4>
+                    <ul>
+                        <li><i class="fas fa-times-circle"></i> إزالة زر X من أعلى النوافذ</li>
+                        <li><i class="fas fa-plus-circle"></i> إضافة زر إغلاق في أسفل النوافذ</li>
+                        <li><i class="fas fa-palette"></i> تحسين التصميم والألوان</li>
+                        <li><i class="fas fa-mobile-alt"></i> تحسين التجاوب مع الشاشات المختلفة</li>
+                        <li><i class="fas fa-mouse-pointer"></i> إضافة إغلاق عند النقر خارج النافذة</li>
+                        <li><i class="fas fa-code"></i> دوال إغلاق منفصلة لكل نافذة</li>
+                    </ul>
+                </div>
+                
+                <div class="modal-tests">
+                    <div class="modal-test">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <h4>نافذة المدن</h4>
+                        <p>اختيار المدينة مع زر إغلاق في الأسفل</p>
+                        <button class="test-btn" onclick="testCitiesModal()">اختبار النافذة</button>
+                    </div>
+                    
+                    <div class="modal-test">
+                        <i class="fas fa-paperclip"></i>
+                        <h4>إدارة المرفقات</h4>
+                        <p>نافذة إدارة المرفقات مع زر إغلاق</p>
+                        <button class="test-btn" onclick="testAttachmentsModal()">اختبار النافذة</button>
+                    </div>
+                    
+                    <div class="modal-test">
+                        <i class="fas fa-filter"></i>
+                        <h4>فلتر الحالة</h4>
+                        <p>نافذة فلتر الحالة مع زر إغلاق</p>
+                        <button class="test-btn" onclick="testStatusFilterModal()">اختبار النافذة</button>
+                    </div>
+                    
+                    <div class="modal-test">
+                        <i class="fas fa-eye"></i>
+                        <h4>طريقة العرض</h4>
+                        <p>نافذة تبديل طريقة العرض مع زر إغلاق</p>
+                        <button class="test-btn" onclick="testViewToggleModal()">اختبار النافذة</button>
+                    </div>
+                    
+                    <div class="modal-test">
+                        <i class="fas fa-building"></i>
+                        <h4>نافذة العقارات</h4>
+                        <p>نافذة العقارات (مرجع التصميم)</p>
+                        <button class="test-btn" onclick="testPropertiesModal()">اختبار النافذة</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-code"></i> التحسينات التقنية</h3>
+                
+                <div class="status success">
+                    <h4>🏗️ هيكل النافذة الجديد:</h4>
+                    <div class="code-block">
+&lt;div class="modal-overlay" style="display:flex; z-index: 10000;"&gt;
+    &lt;div class="modal-box cities-modal" style="max-width: 500px; position: relative;"&gt;
+        &lt;h3 style="display: flex; align-items: center; gap: 10px;"&gt;
+            &lt;i class="fas fa-map-marker-alt" style="color: #28a745;"&gt;&lt;/i&gt;
+            اختر المدينة
+            &lt;span class="badge"&gt;عدد المدن&lt;/span&gt;
+        &lt;/h3&gt;
+        
+        &lt;!-- محتوى النافذة --&gt;
+        &lt;div class="country-selection"&gt;...&lt;/div&gt;
+        
+        &lt;!-- زر الإغلاق في الأسفل --&gt;
+        &lt;div class="modal-actions"&gt;
+            &lt;button onclick="closeCitiesModal();" class="modal-action-btn close-btn"&gt;
+                &lt;i class="fas fa-times"&gt;&lt;/i&gt; إغلاق
+            &lt;/button&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+                    </div>
+                </div>
+                
+                <div class="status info">
+                    <h4>⚙️ دوال الإغلاق المنفصلة:</h4>
+                    <div class="code-block">
+// دالة إغلاق نافذة المدن
+function closeCitiesModal() {
+    console.log('🔴 إغلاق نافذة المدن...');
+    const modal = document.querySelector('.cities-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة المدن');
+        }
+    }
+}
+
+// دالة إغلاق نافذة إدارة المرفقات
+function closeAttachmentsManagerModal() {
+    console.log('🔴 إغلاق نافذة إدارة المرفقات...');
+    const modal = document.querySelector('.attachments-manager-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة إدارة المرفقات');
+        }
+    }
+}
+                    </div>
+                </div>
+                
+                <div class="status warning">
+                    <h4>🎨 تحسينات التصميم:</h4>
+                    <div class="code-block">
+/* زر الإغلاق المحسن */
+.modal-action-btn.close-btn {
+    flex: 1;
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* أزرار الخيارات المحسنة */
+.country-btn, .status-btn, .view-btn {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار شامل</h3>
+                
+                <button class="btn btn-primary" onclick="openMainPage()">
+                    <i class="fas fa-external-link-alt"></i> فتح الصفحة الرئيسية
+                </button>
+                
+                <button class="btn btn-success" onclick="testAllModals()">
+                    <i class="fas fa-play"></i> اختبار جميع النوافذ
+                </button>
+                
+                <button class="btn btn-warning" onclick="checkConsole()">
+                    <i class="fas fa-terminal"></i> مراقبة Console
+                </button>
+                
+                <button class="btn btn-danger" onclick="showExpectedResults()">
+                    <i class="fas fa-bullseye"></i> النتائج المتوقعة
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+                
+                <div class="status warning">
+                    <h4>📋 للاختبار الفعلي:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>افتح الصفحة الرئيسية</strong> (index.html)</li>
+                        <li><strong>اختبر النوافذ من الناف بار:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>انقر على "المدن" في الناف بار السفلي</li>
+                                <li>انقر على "المرفقات" في الناف بار السفلي</li>
+                                <li>انقر على "العقارات" في الناف بار السفلي</li>
+                            </ul>
+                        </li>
+                        <li><strong>اختبر النوافذ من القائمة:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>افتح القائمة وانقر على "المدن"</li>
+                                <li>افتح القائمة وانقر على "فلتر الحالة"</li>
+                                <li>افتح القائمة وانقر على "طريقة العرض"</li>
+                            </ul>
+                        </li>
+                        <li><strong>تحقق من التحسينات:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>✅ لا يوجد زر X في أعلى النافذة</li>
+                                <li>✅ يوجد زر إغلاق في أسفل النافذة</li>
+                                <li>✅ التصميم محسن مع الألوان والأيقونات</li>
+                                <li>✅ الإغلاق يعمل عند النقر خارج النافذة</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="status success">
+                    <h4>🔍 رسائل Console المتوقعة:</h4>
+                    <div class="code-block">
+🏙️ فتح نافذة المدن من الناف بار
+✅ تم ربط الإغلاق عند النقر خارج نافذة المدن
+🔴 إغلاق نافذة المدن...
+✅ تم إغلاق نافذة المدن
+
+📎 فتح إدارة المرفقات من الناف بار
+✅ تم ربط الإغلاق عند النقر خارج نافذة إدارة المرفقات
+🔴 إغلاق نافذة إدارة المرفقات...
+✅ تم إغلاق نافذة إدارة المرفقات
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> النتائج المتوقعة</h3>
+                
+                <div class="status info">
+                    <h4>🎯 ما ستراه:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>تصميم موحد:</strong> جميع النوافذ تتبع نفس التصميم</li>
+                        <li><strong>زر إغلاق واضح:</strong> في أسفل كل نافذة مع أيقونة</li>
+                        <li><strong>ألوان مميزة:</strong> كل نافذة لها لون مميز للأيقونة</li>
+                        <li><strong>تفاعل محسن:</strong> تأثيرات hover وانتقالات سلسة</li>
+                        <li><strong>إغلاق متعدد:</strong> زر الإغلاق أو النقر خارج النافذة</li>
+                        <li><strong>معلومات إضافية:</strong> عدد العناصر في كل نافذة</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testCitiesModal() {
+            showTestStatus('🏙️ فتح نافذة المدن...', 'info');
+            
+            if (typeof showCountrySelection === 'function') {
+                showCountrySelection();
+                showTestStatus('✅ تم فتح نافذة المدن - تحقق من زر الإغلاق في الأسفل', 'success');
+            } else {
+                showTestStatus('❌ وظيفة showCountrySelection غير متوفرة', 'danger');
+            }
+        }
+
+        function testAttachmentsModal() {
+            showTestStatus('📎 فتح نافذة إدارة المرفقات...', 'info');
+            
+            if (typeof showAttachmentsManager === 'function') {
+                showAttachmentsManager();
+                showTestStatus('✅ تم فتح نافذة إدارة المرفقات - تحقق من زر الإغلاق', 'success');
+            } else {
+                showTestStatus('❌ وظيفة showAttachmentsManager غير متوفرة', 'danger');
+            }
+        }
+
+        function testStatusFilterModal() {
+            showTestStatus('🔍 فتح نافذة فلتر الحالة...', 'info');
+            
+            if (typeof showStatusFilter === 'function') {
+                showStatusFilter();
+                showTestStatus('✅ تم فتح نافذة فلتر الحالة - تحقق من زر الإغلاق', 'success');
+            } else {
+                showTestStatus('❌ وظيفة showStatusFilter غير متوفرة', 'danger');
+            }
+        }
+
+        function testViewToggleModal() {
+            showTestStatus('👁️ فتح نافذة طريقة العرض...', 'info');
+            
+            if (typeof showViewToggle === 'function') {
+                showViewToggle();
+                showTestStatus('✅ تم فتح نافذة طريقة العرض - تحقق من زر الإغلاق', 'success');
+            } else {
+                showTestStatus('❌ وظيفة showViewToggle غير متوفرة', 'danger');
+            }
+        }
+
+        function testPropertiesModal() {
+            showTestStatus('🏢 فتح نافذة العقارات...', 'info');
+            
+            if (typeof showMobilePropertiesModal === 'function') {
+                showMobilePropertiesModal();
+                showTestStatus('✅ تم فتح نافذة العقارات - هذه هي المرجع للتصميم', 'success');
+            } else {
+                showTestStatus('❌ وظيفة showMobilePropertiesModal غير متوفرة', 'danger');
+            }
+        }
+
+        function testAllModals() {
+            showTestStatus('🚀 اختبار جميع النوافذ...', 'info');
+            
+            let delay = 0;
+            const modals = [
+                { name: 'المدن', func: testCitiesModal },
+                { name: 'إدارة المرفقات', func: testAttachmentsModal },
+                { name: 'فلتر الحالة', func: testStatusFilterModal },
+                { name: 'طريقة العرض', func: testViewToggleModal }
+            ];
+            
+            modals.forEach((modal, index) => {
+                setTimeout(() => {
+                    modal.func();
+                    if (index === modals.length - 1) {
+                        setTimeout(() => {
+                            showTestStatus('✅ تم اختبار جميع النوافذ - تحقق من أزرار الإغلاق', 'success');
+                        }, 1000);
+                    }
+                }, delay);
+                delay += 2000;
+            });
+        }
+
+        function openMainPage() {
+            showTestStatus('🌐 فتح الصفحة الرئيسية...', 'info');
+            window.open('index.html', '_blank');
+            showTestStatus('✅ تم فتح الصفحة الرئيسية - اختبر النوافذ من الناف بار والقائمة', 'success');
+        }
+
+        function checkConsole() {
+            showTestStatus('🔍 افتح Console (F12) وراقب رسائل فتح وإغلاق النوافذ', 'info');
+            console.log('🔍 مراقبة Console مفعلة - اختبر النوافذ لرؤية الرسائل');
+        }
+
+        function showExpectedResults() {
+            showTestStatus('🎯 النتائج المتوقعة: زر إغلاق في أسفل كل نافذة، تصميم محسن، إغلاق عند النقر خارج النافذة', 'danger');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار أزرار الإغلاق جاهزة');
+            showTestStatus('الصفحة جاهزة - جرب الأزرار أعلاه أو افتح الصفحة الرئيسية', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار زر الإغلاق في الأسفل</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #6c757d;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-item {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            min-height: 200px;
+        }
+
+        .comparison-item.old {
+            border-color: #dc3545;
+        }
+
+        .comparison-item.new {
+            border-color: #28a745;
+        }
+
+        .comparison-item h4 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .comparison-item.old h4 {
+            color: #dc3545;
+        }
+
+        .comparison-item.new h4 {
+            color: #28a745;
+        }
+
+        .mock-modal {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            position: relative;
+            min-height: 120px;
+        }
+
+        .mock-close-top {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .mock-close-bottom {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-arrow-down"></i> زر الإغلاق في الأسفل</h1>
+            <p>تحويل زر الإغلاق من الأعلى (×) إلى زر عادي في الأسفل</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> التغييرات المطبقة</h4>
+                <ul>
+                    <li><strong>إزالة زر × من الأعلى:</strong> حذف الزر الدائري من الزاوية العلوية</li>
+                    <li><strong>إضافة زر في الأسفل:</strong> زر "إغلاق" مع أيقونة في منطقة الأزرار</li>
+                    <li><strong>تصميم محسن:</strong> زر رمادي بتدرج لوني جميل</li>
+                    <li><strong>تأثيرات تفاعلية:</strong> hover وانيميشن عند النقر</li>
+                    <li><strong>عرض كامل:</strong> الزر يأخذ العرض الكامل للنافذة</li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-exchange-alt"></i> مقارنة قبل وبعد</h3>
+                
+                <div class="comparison">
+                    <div class="comparison-item old">
+                        <h4>❌ التصميم السابق</h4>
+                        <div class="mock-modal">
+                            <div class="mock-close-top">×</div>
+                            <h5 style="margin: 10px 0;">🏢 العقارات</h5>
+                            <p style="color: #6c757d; font-size: 0.9rem;">زر × في الأعلى</p>
+                        </div>
+                        <ul style="text-align: right; margin-top: 15px; color: #6c757d; font-size: 0.9rem;">
+                            <li>صعوبة في الوصول</li>
+                            <li>قد يكون مخفي</li>
+                            <li>غير واضح للمستخدم</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="comparison-item new">
+                        <h4>✅ التصميم الجديد</h4>
+                        <div class="mock-modal">
+                            <h5 style="margin: 10px 0;">🏢 العقارات</h5>
+                            <p style="color: #6c757d; font-size: 0.9rem;">زر واضح في الأسفل</p>
+                            <button class="mock-close-bottom">
+                                <i class="fas fa-times"></i> إغلاق
+                            </button>
+                        </div>
+                        <ul style="text-align: right; margin-top: 15px; color: #6c757d; font-size: 0.9rem;">
+                            <li>سهل الوصول</li>
+                            <li>واضح ومرئي</li>
+                            <li>تصميم احترافي</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار التصميم الجديد</h3>
+                
+                <button class="btn btn-secondary" onclick="openPropertiesModal()">
+                    <i class="fas fa-building"></i> فتح نافذة العقارات
+                </button>
+                
+                <button class="btn btn-primary" onclick="testFromNavbar()">
+                    <i class="fas fa-mobile-alt"></i> اختبار من الناف بار
+                </button>
+                
+                <button class="btn btn-success" onclick="checkBottomButton()">
+                    <i class="fas fa-search"></i> فحص زر الإغلاق في الأسفل
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> مميزات التصميم الجديد</h3>
+                
+                <div class="status success">
+                    <h4>✅ المميزات الجديدة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>سهولة الوصول:</strong> الزر في مكان طبيعي ومتوقع</li>
+                        <li><strong>وضوح التصميم:</strong> زر واضح مع نص وأيقونة</li>
+                        <li><strong>تصميم متسق:</strong> يتماشى مع باقي أزرار التطبيق</li>
+                        <li><strong>تأثيرات جميلة:</strong> hover وانيميشن احترافي</li>
+                        <li><strong>استجابة كاملة:</strong> يعمل على جميع الشاشات</li>
+                    </ul>
+                </div>
+                
+                <div class="status info">
+                    <h4>🎨 التفاصيل التقنية:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>اللون:</strong> تدرج رمادي (linear-gradient)</li>
+                        <li><strong>الحجم:</strong> padding: 12px 20px</li>
+                        <li><strong>الخط:</strong> font-size: 1rem, font-weight: 600</li>
+                        <li><strong>التأثيرات:</strong> translateY(-2px) عند hover</li>
+                        <li><strong>العرض:</strong> width: 100% (العرض الكامل)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+                
+                <div class="status warning">
+                    <h4>📋 للاختبار الفعلي:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li>افتح الصفحة الرئيسية</li>
+                        <li>انقر على أيقونة العقارات (🏢) في الناف بار السفلي</li>
+                        <li>تحقق من عدم وجود زر × في الأعلى</li>
+                        <li>تحقق من وجود زر "إغلاق" في الأسفل</li>
+                        <li>انقر على زر "إغلاق" وتأكد من إغلاق النافذة</li>
+                        <li>تأكد من إزالة التفعيل من أيقونة العقارات</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function openPropertiesModal() {
+            showTestStatus('🏢 فتح نافذة العقارات...', 'info');
+            
+            if (typeof showMobilePropertiesModal === 'function') {
+                showMobilePropertiesModal();
+                
+                // فحص زر الإغلاق بعد فتح النافذة
+                setTimeout(() => {
+                    const bottomButton = document.querySelector('.properties-modal .properties-close-btn');
+                    const topButton = document.querySelector('.properties-modal .close-modal');
+                    
+                    if (bottomButton && !topButton) {
+                        showTestStatus('✅ تم فتح النافذة وزر الإغلاق في الأسفل فقط', 'success');
+                    } else if (bottomButton && topButton) {
+                        showTestStatus('⚠️ النافذة مفتوحة لكن يوجد زرين إغلاق', 'warning');
+                    } else if (!bottomButton && topButton) {
+                        showTestStatus('❌ زر الإغلاق ما زال في الأعلى', 'error');
+                    } else {
+                        showTestStatus('❌ لا يوجد زر إغلاق', 'error');
+                    }
+                }, 200);
+            } else {
+                showTestStatus('❌ وظيفة showMobilePropertiesModal غير متوفرة', 'error');
+            }
+        }
+
+        function testFromNavbar() {
+            showTestStatus('📱 اختبار من الناف بار...', 'info');
+            
+            if (typeof toggleMobileProperties === 'function') {
+                toggleMobileProperties();
+                showTestStatus('✅ تم فتح النافذة من الناف بار - تحقق من زر الإغلاق', 'success');
+            } else {
+                showTestStatus('❌ وظيفة toggleMobileProperties غير متوفرة', 'error');
+            }
+        }
+
+        function checkBottomButton() {
+            showTestStatus('🔍 فحص زر الإغلاق في الأسفل...', 'info');
+            
+            const propertiesModal = document.querySelector('.properties-modal');
+            if (!propertiesModal) {
+                showTestStatus('⚠️ نافذة العقارات غير مفتوحة - افتحها أولاً', 'warning');
+                return;
+            }
+            
+            const bottomButton = propertiesModal.querySelector('.properties-close-btn');
+            const topButton = propertiesModal.querySelector('.close-modal');
+            
+            if (bottomButton && !topButton) {
+                const styles = window.getComputedStyle(bottomButton);
+                const isVisible = styles.display !== 'none' && styles.visibility !== 'hidden' && styles.opacity !== '0';
+                
+                if (isVisible) {
+                    showTestStatus('✅ زر الإغلاق موجود في الأسفل ومرئي بشكل صحيح', 'success');
+                } else {
+                    showTestStatus('⚠️ زر الإغلاق موجود في الأسفل لكن مخفي', 'warning');
+                }
+            } else if (bottomButton && topButton) {
+                showTestStatus('⚠️ يوجد زرين إغلاق (أعلى وأسفل)', 'warning');
+            } else if (!bottomButton && topButton) {
+                showTestStatus('❌ زر الإغلاق ما زال في الأعلى فقط', 'error');
+            } else {
+                showTestStatus('❌ لا يوجد زر إغلاق', 'error');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار زر الإغلاق في الأسفل جاهزة');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                initSupabase();
+            }
+            
+            showTestStatus('الصفحة جاهزة للاختبار - افتح نافذة العقارات لاختبار زر الإغلاق الجديد', 'info');
+        });
+    </script>
+</body>
+</html>

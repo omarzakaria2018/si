@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح زر مسح الفلاتر</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-tools"></i> إصلاح زر مسح الفلاتر</h1>
+            <p>اختبار إصلاح مشكلة عدم ظهور زر مسح الفلاتر في قائمة الإحصائيات</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> الإصلاحات المطبقة</h4>
+                <ul>
+                    <li>إضافة فحص لوجود زر مسح الفلاتر في دالة updateStatisticsActiveFilters</li>
+                    <li>إنشاء الزر تلقائياً إذا لم يكن موجوداً</li>
+                    <li>إضافة أنماط CSS قوية لضمان الإظهار</li>
+                    <li>ربط الزر بالدالة الصحيحة مع تأثير Loading</li>
+                    <li>التأكد من الإظهار في جميع الحالات</li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-bug"></i> تشخيص المشكلة</h3>
+                
+                <div class="status warning">
+                    <h4>❌ المشكلة السابقة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>زر مسح الفلاتر لا يظهر في قائمة الإحصائيات</li>
+                        <li>الدالة updateStatisticsActiveFilters لا تتعامل مع الزر</li>
+                        <li>عدم وجود آلية لإنشاء الزر إذا كان مفقوداً</li>
+                        <li>أنماط CSS غير كافية لضمان الإظهار</li>
+                    </ul>
+                </div>
+                
+                <div class="status success">
+                    <h4>✅ الحلول المطبقة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>فحص وجود الزر:</strong> التحقق من وجود الزر في كل تحديث</li>
+                        <li><strong>إنشاء تلقائي:</strong> إنشاء الزر إذا لم يكن موجوداً</li>
+                        <li><strong>أنماط قوية:</strong> display: flex !important</li>
+                        <li><strong>ربط الوظائف:</strong> ربط الزر بدالة clearAllFiltersWithLoading</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار الإصلاح</h3>
+                
+                <button class="btn btn-success" onclick="testWithFilters()">
+                    <i class="fas fa-filter"></i> إنشاء فلاتر تجريبية
+                </button>
+                
+                <button class="btn btn-primary" onclick="openStatistics()">
+                    <i class="fas fa-chart-bar"></i> فتح قائمة الإحصائيات
+                </button>
+                
+                <button class="btn btn-warning" onclick="checkButtonExists()">
+                    <i class="fas fa-search"></i> فحص وجود الزر
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-code"></i> الكود المضاف</h3>
+                
+                <div class="status info">
+                    <h4>🔧 JavaScript:</h4>
+                    <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 0.9rem;">
+// التأكد من إظهار زر مسح الفلاتر
+let clearButton = activeFiltersContainer.querySelector('.clear-all-filters-btn');
+if (!clearButton) {
+    // إنشاء زر مسح الفلاتر إذا لم يكن موجوداً
+    clearButton = document.createElement('button');
+    clearButton.className = 'clear-all-filters-btn';
+    clearButton.onclick = function() { clearAllFiltersWithLoading(this); };
+    clearButton.innerHTML = `
+        &lt;i class="fas fa-times-circle"&gt;&lt;/i&gt;
+        &lt;span&gt;مسح جميع الفلاتر&lt;/span&gt;
+    `;
+    activeFiltersContainer.appendChild(clearButton);
+}
+clearButton.style.display = 'flex';
+                    </pre>
+                </div>
+                
+                <div class="status info">
+                    <h4>🎨 CSS:</h4>
+                    <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 0.9rem;">
+/* التأكد من إظهار زر مسح الفلاتر في قائمة الإحصائيات */
+.statistics-active-filters .clear-all-filters-btn {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+                    </pre>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+                
+                <div class="status warning">
+                    <h4>📋 للاختبار الفعلي:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li>افتح الصفحة الرئيسية</li>
+                        <li>طبق أي فلتر (مدينة، عقار، حالة)</li>
+                        <li>انقر على أيقونة الإحصائيات (📊) في الناف بار</li>
+                        <li>تحقق من ظهور قسم "الفلاتر النشطة"</li>
+                        <li>تأكد من وجود زر "مسح جميع الفلاتر" في الأسفل</li>
+                        <li>انقر على الزر واختبر تأثير Loading</li>
+                        <li>تأكد من مسح جميع الفلاتر بعد انتهاء التحميل</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testWithFilters() {
+            showTestStatus('🔍 إنشاء فلاتر تجريبية...', 'info');
+            
+            // إنشاء فلاتر تجريبية
+            if (typeof window !== 'undefined') {
+                window.currentCountry = 'الرياض';
+                window.currentProperty = 'برج الرياض';
+                window.currentStatus = 'مؤجرة';
+                window.currentOwnerFilter = 'أحمد محمد';
+                
+                showTestStatus('✅ تم إنشاء فلاتر تجريبية - افتح قائمة الإحصائيات الآن', 'success');
+            } else {
+                showTestStatus('❌ فشل في إنشاء الفلاتر التجريبية', 'error');
+            }
+        }
+
+        function openStatistics() {
+            showTestStatus('📊 فتح قائمة الإحصائيات...', 'info');
+            
+            if (typeof toggleMobileStatistics === 'function') {
+                toggleMobileStatistics();
+                showTestStatus('✅ تم فتح قائمة الإحصائيات - تحقق من وجود زر مسح الفلاتر', 'success');
+            } else {
+                showTestStatus('❌ وظيفة toggleMobileStatistics غير متوفرة', 'error');
+            }
+        }
+
+        function checkButtonExists() {
+            showTestStatus('🔍 فحص وجود زر مسح الفلاتر...', 'info');
+            
+            const statisticsMenu = document.getElementById('mobileStatisticsMenu');
+            if (!statisticsMenu) {
+                showTestStatus('⚠️ قائمة الإحصائيات غير مفتوحة - افتحها أولاً', 'warning');
+                return;
+            }
+            
+            const clearButton = statisticsMenu.querySelector('.clear-all-filters-btn');
+            if (clearButton) {
+                const isVisible = window.getComputedStyle(clearButton).display !== 'none';
+                if (isVisible) {
+                    showTestStatus('✅ زر مسح الفلاتر موجود ومرئي', 'success');
+                } else {
+                    showTestStatus('⚠️ زر مسح الفلاتر موجود لكنه مخفي', 'warning');
+                }
+            } else {
+                showTestStatus('❌ زر مسح الفلاتر غير موجود', 'error');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار إصلاح زر مسح الفلاتر جاهزة');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                initSupabase();
+            }
+            
+            showTestStatus('الصفحة جاهزة للاختبار - ابدأ بإنشاء فلاتر تجريبية', 'info');
+        });
+    </script>
+</body>
+</html>

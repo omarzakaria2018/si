@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إخفاء الإحصائيات من القائمة المحمولة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #6f42c1;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6f42c1, #5a2d91);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .comparison-card {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .before-card {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+        }
+
+        .after-card {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+
+        .before-card h4 {
+            color: #dc3545;
+            margin-bottom: 15px;
+        }
+
+        .after-card h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            border-left: 4px solid #6f42c1;
+            overflow-x: auto;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        .target-elements {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .target-elements h4 {
+            color: #856404;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-mobile-alt"></i> إخفاء الإحصائيات من القائمة المحمولة</h1>
+            <p>إزالة قسم الإحصائيات من القائمة المحمولة في الشاشات الصغيرة</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h4><i class="fas fa-bullseye"></i> الهدف المحدد</h4>
+                <ul>
+                    <li><strong>العنصر المستهدف:</strong> قسم الإحصائيات داخل القائمة المحمولة (.mobile-menu)</li>
+                    <li><strong>الشرط:</strong> الشاشات الصغيرة فقط (عرض أقل من 900px)</li>
+                    <li><strong>السلوك:</strong> إخفاء دائم للإحصائيات من القائمة المحمولة</li>
+                    <li><strong>الاحتفاظ بـ:</strong> باقي عناصر القائمة وعرض الإحصائيات في الشاشات الكبيرة</li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-crosshairs"></i> العناصر المستهدفة</h3>
+                
+                <div class="target-elements">
+                    <h4><i class="fas fa-code"></i> العناصر المُخفاة:</h4>
+                    <div class="code-block">
+&lt;!-- داخل .mobile-menu --&gt;
+&lt;div id="mobileTotals" class="mobile-totals"&gt;&lt;/div&gt;
+&lt;div id="mobilePropertyHeader" class="mobile-property-header"&gt;&lt;/div&gt;
+                    </div>
+                </div>
+
+                <div class="comparison-grid">
+                    <div class="comparison-card before-card">
+                        <h4>❌ قبل الإصلاح</h4>
+                        <ul style="text-align: right; margin: 10px 0;">
+                            <li>الإحصائيات ظاهرة في القائمة</li>
+                            <li>تأخذ مساحة كبيرة</li>
+                            <li>تشتت انتباه المستخدم</li>
+                            <li>قائمة مزدحمة</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="comparison-card after-card">
+                        <h4>✅ بعد الإصلاح</h4>
+                        <ul style="text-align: right; margin: 10px 0;">
+                            <li>الإحصائيات مخفية من القائمة</li>
+                            <li>مساحة أكبر للأزرار</li>
+                            <li>تركيز على التنقل</li>
+                            <li>قائمة نظيفة ومرتبة</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-code"></i> الكود المضاف</h3>
+                
+                <div class="status success">
+                    <h4>🎯 CSS المضاف لإخفاء الإحصائيات:</h4>
+                    <div class="code-block">
+/* إخفاء الإحصائيات من القائمة المحمولة في الشاشات الصغيرة */
+.mobile-menu .mobile-totals {
+    display: none !important;
+}
+
+/* إخفاء عنوان العقار المحدد من القائمة المحمولة */
+.mobile-menu .mobile-property-header {
+    display: none !important;
+}
+                    </div>
+                </div>
+                
+                <div class="status info">
+                    <h4>🔍 شرح الكود:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>.mobile-menu:</strong> يستهدف القائمة المحمولة فقط</li>
+                        <li><strong>.mobile-totals:</strong> قسم الإحصائيات داخل القائمة</li>
+                        <li><strong>display: none !important:</strong> إخفاء كامل مع أولوية عالية</li>
+                        <li><strong>الشاشات الكبيرة:</strong> غير متأثرة بهذا التغيير</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار الإصلاح</h3>
+                
+                <button class="btn btn-primary" onclick="openMainPage()">
+                    <i class="fas fa-external-link-alt"></i> فتح الصفحة الرئيسية
+                </button>
+                
+                <button class="btn btn-success" onclick="testInstructions()">
+                    <i class="fas fa-clipboard-list"></i> عرض تعليمات الاختبار
+                </button>
+                
+                <button class="btn btn-warning" onclick="checkResponsive()">
+                    <i class="fas fa-mobile-alt"></i> اختبار الاستجابة
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+                
+                <div class="status warning">
+                    <h4>📋 للاختبار الفعلي:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>افتح الصفحة الرئيسية</strong> (index.html)</li>
+                        <li><strong>قلل حجم الشاشة</strong> لأقل من 900px أو استخدم الهاتف</li>
+                        <li><strong>انقر على زر القائمة (☰)</strong> في الهيدر</li>
+                        <li><strong>تحقق من القائمة المحمولة:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>✅ أزرار التنقل موجودة (المدن، العقارات، الفلاتر)</li>
+                                <li>❌ قسم الإحصائيات غير موجود</li>
+                                <li>❌ عنوان العقار المحدد غير موجود</li>
+                                <li>✅ القائمة نظيفة ومرتبة</li>
+                            </ul>
+                        </li>
+                        <li><strong>اختبر الشاشات الكبيرة:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>كبر حجم الشاشة لأكثر من 900px</li>
+                                <li>✅ الإحصائيات ظاهرة في الصفحة الرئيسية</li>
+                                <li>✅ لا توجد قائمة محمولة (القائمة الجانبية ثابتة)</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="status success">
+                    <h4>🎯 النتائج المتوقعة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>الشاشات الصغيرة:</strong> قائمة محمولة بدون إحصائيات</li>
+                        <li><strong>الشاشات الكبيرة:</strong> إحصائيات ظاهرة في الصفحة الرئيسية</li>
+                        <li><strong>أزرار التنقل:</strong> تعمل بشكل طبيعي في جميع الأحجام</li>
+                        <li><strong>تجربة المستخدم:</strong> محسنة ونظيفة</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-lightbulb"></i> فوائد الإصلاح</h3>
+                
+                <div class="status info">
+                    <h4>✨ المزايا المحققة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>قائمة نظيفة:</strong> إزالة العناصر غير الضرورية من القائمة</li>
+                        <li><strong>تركيز أفضل:</strong> التركيز على أزرار التنقل الأساسية</li>
+                        <li><strong>مساحة أكبر:</strong> مساحة أكبر لعرض أزرار القائمة</li>
+                        <li><strong>تجربة محسنة:</strong> تجربة مستخدم أفضل في الشاشات الصغيرة</li>
+                        <li><strong>عدم التأثير:</strong> لا يؤثر على الشاشات الكبيرة</li>
+                        <li><strong>استهداف دقيق:</strong> يستهدف القائمة المحمولة فقط</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function openMainPage() {
+            showTestStatus('🌐 فتح الصفحة الرئيسية...', 'info');
+            window.open('index.html', '_blank');
+            showTestStatus('✅ تم فتح الصفحة الرئيسية - اختبر القائمة المحمولة الآن', 'success');
+        }
+
+        function testInstructions() {
+            showTestStatus('📋 اتبع خطوات الاختبار أعلاه لتجربة الإصلاح', 'warning');
+        }
+
+        function checkResponsive() {
+            showTestStatus('📱 قلل حجم الشاشة لأقل من 900px واختبر القائمة المحمولة', 'info');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار إخفاء الإحصائيات من القائمة المحمولة جاهزة');
+            showTestStatus('الصفحة جاهزة - افتح الصفحة الرئيسية واختبر القائمة المحمولة', 'info');
+        });
+    </script>
+</body>
+</html>

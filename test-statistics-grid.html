@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الإحصائيات بتنسيق العمودين</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* معاينة الإحصائيات */
+        .statistics-preview {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .statistics-preview h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* نسخ أنماط الإحصائيات من الملف الأصلي */
+        .demo-statistics-totals {
+            padding: 15px 20px;
+            margin: 0 15px 15px 15px;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            justify-content: center;
+            max-width: calc(100% - 30px);
+        }
+
+        .demo-statistics-totals .total-item {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(42,75,155,0.08);
+            padding: 12px 8px !important;
+            font-size: 0.9em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 5px;
+            border: 1px solid #f3f4f6;
+            min-height: 75px;
+            transition: all 0.3s ease;
+        }
+
+        .demo-statistics-totals .total-item .total-label {
+            font-weight: bold;
+            color: #2a4b9b;
+            font-size: 0.75em;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .demo-statistics-totals .total-item .total-value {
+            font-weight: bold;
+            color: #222;
+            font-size: 1.15em;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        .demo-statistics-totals .total-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(42,75,155,0.15);
+        }
+
+        /* ألوان مخصصة لكل نوع */
+        .demo-statistics-totals .units-stat { background: #f3f0ff !important; border-color: #a78bfa !important; }
+        .demo-statistics-totals .tenants-stat { background: #e0f2fe !important; border-color: #0ea5e9 !important; }
+        .demo-statistics-totals .empty-stat { background: #f3f4f6 !important; border-color: #6b7280 !important; }
+        .demo-statistics-totals .active-stat { background: #e8f7ef !important; border-color: #22c55e !important; }
+        .demo-statistics-totals .expired-stat { background: #fee2e2 !important; border-color: #dc2626 !important; }
+        .demo-statistics-totals .pending-stat { background: #fff7ed !important; border-color: #f59e42 !important; }
+        .demo-statistics-totals .taxable-base-stat { background: #133889 !important; border-color: #2a4b9b !important; color: white !important; }
+        .demo-statistics-totals .vat-stat { background: #d40101 !important; border-color: #e46e6d !important; color: white !important; }
+        .demo-statistics-totals .after-taxonly-stat { background: #006d33 !important; border-color: #05940e !important; color: white !important; }
+        .demo-statistics-totals .residential-stat { background: #dc5f0d !important; border-color: #f59e42 !important; color: white !important; }
+
+        /* تحسينات للشاشات الصغيرة */
+        @media (max-width: 500px) {
+            .demo-statistics-totals {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                padding: 12px 15px;
+                margin: 0 10px 12px 10px;
+            }
+
+            .demo-statistics-totals .total-item {
+                padding: 8px 6px !important;
+                font-size: 0.85em;
+                min-height: 65px;
+            }
+
+            .demo-statistics-totals .total-item .total-label {
+                font-size: 0.7em;
+            }
+
+            .demo-statistics-totals .total-item .total-value {
+                font-size: 1.05em;
+            }
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-th-large"></i> الإحصائيات بتنسيق العمودين</h1>
+            <p>اختبار عرض الإحصائيات في قائمة منفصلة بنفس تنسيق القائمة الأصلية</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> ما تم تطبيقه</h4>
+                <ul>
+                    <li>تحديث تنسيق الإحصائيات في القائمة المنفصلة</li>
+                    <li>استخدام نفس تخطيط العمودين من القائمة الأصلية</li>
+                    <li>نسخ جميع الأنماط والألوان المخصصة</li>
+                    <li>دعم الشاشات الصغيرة والكبيرة</li>
+                    <li>تأثيرات بصرية متطابقة</li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-eye"></i> معاينة التنسيق الجديد</h3>
+                
+                <div class="statistics-preview">
+                    <h4><i class="fas fa-chart-bar"></i> إحصائيات تجريبية</h4>
+                    
+                    <div class="demo-statistics-totals">
+                        <div class="total-item units-stat">
+                            <div class="total-label">إجمالي الوحدات</div>
+                            <div class="total-value">150</div>
+                        </div>
+                        
+                        <div class="total-item active-stat">
+                            <div class="total-label">وحدات مؤجرة</div>
+                            <div class="total-value">120</div>
+                        </div>
+                        
+                        <div class="total-item empty-stat">
+                            <div class="total-label">وحدات فارغة</div>
+                            <div class="total-value">30</div>
+                        </div>
+                        
+                        <div class="total-item taxable-base-stat">
+                            <div class="total-label">إجمالي الإيجارات</div>
+                            <div class="total-value">450,000</div>
+                        </div>
+                        
+                        <div class="total-item vat-stat">
+                            <div class="total-label">ضريبة القيمة المضافة</div>
+                            <div class="total-value">67,500</div>
+                        </div>
+                        
+                        <div class="total-item after-taxonly-stat">
+                            <div class="total-label">الإجمالي بعد الضريبة</div>
+                            <div class="total-value">517,500</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار الوظيفة</h3>
+                
+                <button class="btn btn-success" onclick="testStatisticsModal()">
+                    <i class="fas fa-chart-bar"></i> فتح قائمة الإحصائيات
+                </button>
+                
+                <button class="btn btn-primary" onclick="testWithData()">
+                    <i class="fas fa-database"></i> اختبار مع بيانات تجريبية
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> المميزات الجديدة</h3>
+                
+                <div class="status success">
+                    <h4>✅ التنسيق المحسن:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>عمودين متساويين:</strong> تخطيط منظم ومتوازن</li>
+                        <li><strong>ألوان مخصصة:</strong> كل نوع إحصائية له لون مميز</li>
+                        <li><strong>تأثيرات تفاعلية:</strong> hover وانيميشن عند التمرير</li>
+                        <li><strong>متجاوب:</strong> يتكيف مع جميع أحجام الشاشات</li>
+                        <li><strong>مطابق للأصل:</strong> نفس تنسيق القائمة الرئيسية</li>
+                    </ul>
+                </div>
+                
+                <div class="status info">
+                    <h4>🎨 الألوان المخصصة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>🟣 <strong>إجمالي الوحدات:</strong> بنفسجي فاتح</li>
+                        <li>🟢 <strong>وحدات مؤجرة:</strong> أخضر فاتح</li>
+                        <li>⚪ <strong>وحدات فارغة:</strong> رمادي فاتح</li>
+                        <li>🔵 <strong>الإيجارات:</strong> أزرق داكن مع نص أبيض</li>
+                        <li>🔴 <strong>الضريبة:</strong> أحمر داكن مع نص أبيض</li>
+                        <li>🟢 <strong>الإجمالي:</strong> أخضر داكن مع نص أبيض</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testStatisticsModal() {
+            showTestStatus('📊 فتح قائمة الإحصائيات...', 'info');
+            
+            if (typeof toggleMobileStatistics === 'function') {
+                toggleMobileStatistics();
+                showTestStatus('✅ تم فتح قائمة الإحصائيات بالتنسيق الجديد', 'success');
+            } else {
+                showTestStatus('❌ وظيفة toggleMobileStatistics غير متوفرة', 'error');
+            }
+        }
+
+        function testWithData() {
+            showTestStatus('📊 إنشاء بيانات تجريبية...', 'info');
+            
+            // إنشاء بيانات تجريبية
+            if (typeof window !== 'undefined') {
+                window.properties = [
+                    { 'اسم العقار': 'برج الرياض', 'المدينة': 'الرياض', 'اسم المستأجر': 'أحمد محمد', 'قيمة الإيجار': '5000' },
+                    { 'اسم العقار': 'برج الرياض', 'المدينة': 'الرياض', 'اسم المستأجر': 'سارة أحمد', 'قيمة الإيجار': '4500' },
+                    { 'اسم العقار': 'برج الرياض', 'المدينة': 'الرياض', 'اسم المستأجر': '', 'قيمة الإيجار': '4000' },
+                    { 'اسم العقار': 'مجمع جدة', 'المدينة': 'جدة', 'اسم المستأجر': 'محمد علي', 'قيمة الإيجار': '6000' },
+                    { 'اسم العقار': 'مجمع جدة', 'المدينة': 'جدة', 'اسم المستأجر': '', 'قيمة الإيجار': '5500' }
+                ];
+                
+                window.currentProperty = null;
+                window.currentCountry = null;
+            }
+            
+            if (typeof toggleMobileStatistics === 'function') {
+                toggleMobileStatistics();
+                showTestStatus('✅ تم فتح الإحصائيات مع البيانات التجريبية', 'success');
+            } else {
+                showTestStatus('⚠️ تم إنشاء البيانات - جرب فتح الإحصائيات من الصفحة الرئيسية', 'warning');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار الإحصائيات بالعمودين جاهزة');
+            
+            // تهيئة Supabase
+            if (typeof initSupabase === 'function') {
+                initSupabase();
+            }
+            
+            showTestStatus('الصفحة جاهزة للاختبار - انقر على أحد الأزرار أعلاه', 'info');
+        });
+    </script>
+</body>
+</html>

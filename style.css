@@ -263,7 +263,7 @@ header {
   border: none;
   border-radius: 8px;
   padding: 12px 16px;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -294,7 +294,7 @@ header {
 }
 .mobile-dropdown-list .dropdown-sub li button {
   background: none;
-  color: var(--dark-color);
+  color: #1a3d92;
   border: none;
   width: 100%;
   text-align: right;
@@ -1974,7 +1974,7 @@ main {
   }
 
   .card-actions {
-    margin-top: 0.5rem !important;
+    margin-top: 1.1rem !important;
     gap: 0.3rem !important;
   }
 
@@ -1985,7 +1985,7 @@ main {
   }
 
   .badge {
-    font-size: 0.7rem !important;
+    font-size: 1.1rem !important;
     padding: 0.2rem 0.4rem !important;
   }
 
@@ -2007,6 +2007,54 @@ main {
   .mobile-totals {
     padding: 0.5rem !important;
     font-size: 0.8rem !important;
+  }
+
+  /* إخفاء الإحصائيات من القائمة المحمولة في الشاشات الصغيرة */
+  .mobile-menu .mobile-totals {
+    display: none !important;
+  }
+
+  /* إخفاء عنوان العقار المحدد من القائمة المحمولة في الشاشات الصغيرة */
+  .mobile-menu .mobile-property-header {
+    display: none !important;
+  }
+
+  /* تنسيق القائمة المحمولة بدون ترقيم */
+  .mobile-dropdown-list {
+    list-style: none !important;
+    padding: 0;
+    counter-reset: none !important;
+  }
+
+  /* إزالة الترقيم من عناصر القائمة */
+  .mobile-dropdown-list li {
+    counter-increment: none !important;
+    list-style: none !important;
+  }
+
+  /* إزالة أي ترقيم من ::before و ::marker */
+  .mobile-dropdown-list li::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .mobile-dropdown-list li::marker {
+    display: none !important;
+  }
+
+  /* إزالة الترقيم من ol إذا كانت القائمة من هذا النوع */
+  ol.mobile-dropdown-list {
+    list-style-type: none !important;
+  }
+
+  /* تحسين مظهر الأزرار في القائمة المحمولة */
+  .mobile-dropdown-list > li > button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 12px 15px;
+    text-align: right;
   }
 
   .mobile-totals .total-item {
@@ -5684,11 +5732,11 @@ footer {
 
 .close-modal {
     position: absolute;
-    top: 28px;
+    top: 3px;
     left: 2px;
     background: none;
     border: none;
-    font-size: 3.5rem;
+    font-size: 4rem;
     cursor: pointer;
     color: #dc3545;
     transition: color 0.2s;
@@ -5740,12 +5788,12 @@ footer {
 .status-filter button,
 .view-selection button {
   background: #f0f2f5;
-  color: var(--dark-color);
+  color:#1879bb;
   border: none;
   border-radius: 8px;
   padding: 12px 20px;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.3rem;
+  font-weight: 700;
   transition: all 0.3s;
   min-width: 120px;
   text-align: center;
@@ -25179,7 +25227,7 @@ body.limited-user .restricted-dropdown-item::before {
     }
 
     .tenant-name-value {
-        font-size: 1.5em !important; /* أكبر في الهاتف */
+        font-size: 1.2rem !important; /* أكبر في الهاتف */
         font-weight: 800 !important; /* أعرض في الهاتف */
         letter-spacing: 0.5px !important; /* أوضح في الهاتف */
         padding: 4px 0 !important; /* أكبر في الهاتف */
@@ -26757,7 +26805,7 @@ body.limited-user .restricted-dropdown-item::before {
     }
 
     .mobile-compact-header .header-info {
-        font-size: 0.7rem;
+        font-size: 1%;
     }
 
     .mobile-compact-header .header-separator {
@@ -26815,7 +26863,866 @@ body.limited-user .restricted-dropdown-item::before {
         border-top: 4px solid #2c3e50;
         top: -6px;
     }
+}
 
+/* ناف بار سفلي للشاشات الصغيرة والهواتف */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 8px 0;
+    z-index: 1000;
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 20px 20px 0 0;
+}
 
+.mobile-bottom-nav .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 8px 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    margin: 0 4px;
+    position: relative;
+}
+
+.mobile-bottom-nav .nav-item i {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+.mobile-bottom-nav .nav-item span {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.mobile-bottom-nav .nav-item.active {
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.mobile-bottom-nav .nav-item.active i {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+.mobile-bottom-nav .nav-item.active span {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.mobile-bottom-nav .nav-item:hover {
+    background: rgba(0, 123, 255, 0.05);
+}
+
+.mobile-bottom-nav .nav-item:hover i {
+    color: #007bff;
+}
+
+.mobile-bottom-nav .nav-item:hover span {
+    color: #007bff;
+}
+
+/* الزر المركزي - العودة لأعلى */
+.mobile-bottom-nav .nav-center {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    margin: -20px 8px 0 8px;
+    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+    border: 4px solid white;
+    position: relative;
+    overflow: hidden;
+}
+
+.mobile-bottom-nav .nav-center::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: all 0.6s ease;
+}
+
+.mobile-bottom-nav .nav-center i {
+    color: white !important;
+    font-size: 1.4rem !important;
+    margin-bottom: 0 !important;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.mobile-bottom-nav .nav-center:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 123, 255, 0.4);
+}
+
+.mobile-bottom-nav .nav-center:hover::before {
+    width: 100%;
+    height: 100%;
+}
+
+.mobile-bottom-nav .nav-center:hover i {
+    transform: translateY(-2px);
+    font-size: 1.5rem !important;
+}
+
+.mobile-bottom-nav .nav-center.active {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    animation: scrollPulse 1s ease-in-out;
+}
+
+.mobile-bottom-nav .nav-center.active i {
+    animation: arrowBounce 0.6s ease-in-out;
+}
+
+@keyframes scrollPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes arrowBounce {
+    0%, 100% { transform: translateY(0); }
+    25% { transform: translateY(-3px); }
+    50% { transform: translateY(-6px); }
+    75% { transform: translateY(-3px); }
+}
+
+/* إظهار الناف بار في الشاشات الصغيرة */
+@media (max-width: 768px) {
+    .mobile-bottom-nav {
+        display: flex;
+    }
+
+    /* إضافة مساحة في الأسفل للمحتوى */
+    body {
+        padding-bottom: 80px;
+    }
+
+    .container {
+        margin-bottom: 20px;
+    }
+
+    /* إخفاء أزرار المدن والعقارات والمرفقات من القائمة الجانبية في الجوال */
+    #mobile-country-btn,
+    #mobile-property-btn,
+    #mobile-attachments-btn {
+        display: none !important;
+    }
+
+    /* إخفاء العناصر الأب أيضاً */
+    #mobile-country-btn + ul,
+    #mobile-property-btn + ul {
+        display: none !important;
+    }
+
+    /* إخفاء عنصر li الذي يحتوي على زر المرفقات */
+    #mobile-attachments-btn {
+        display: none !important;
+    }
+
+    /* إخفاء li الأب للمرفقات */
+    li:has(#mobile-attachments-btn) {
+        display: none !important;
+    }
+}
+
+/* أنماط نافذة العقارات المنفصلة */
+.properties-modal {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.properties-modal h3 {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    margin: -20px -20px 20px -20px;
+    padding: 20px;
+    border-radius: 15px 15px 0 0;
+}
+
+.mobile-property-item {
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.mobile-property-item:hover {
+    background: #f8f9fa !important;
+    transform: translateX(-5px);
+    box-shadow: 0 2px 10px rgba(0, 123, 255, 0.1);
+}
+
+.mobile-property-item.active {
+    background: #007bff !important;
+    color: white !important;
+    transform: translateX(-5px);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.mobile-property-item.active:hover {
+    background: #0056b3 !important;
+}
+
+.property-search-container input {
+    transition: all 0.3s ease;
+}
+
+.property-search-container input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+#mobilePropertiesList {
+    background: #f8f9fa;
+}
+
+#mobilePropertiesList::-webkit-scrollbar {
+    width: 8px;
+}
+
+#mobilePropertiesList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#mobilePropertiesList::-webkit-scrollbar-thumb {
+    background: #007bff;
+    border-radius: 4px;
+}
+
+#mobilePropertiesList::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}
+
+/* أنماط نافذة العقارات المنفصلة */
+.properties-modal {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.properties-modal h3 {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    margin: -20px -20px 20px -20px;
+    padding: 20px;
+    border-radius: 15px 15px 0 0;
+}
+
+.mobile-property-item {
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.mobile-property-item:hover {
+    background: #f8f9fa !important;
+    transform: translateX(-5px);
+    box-shadow: 0 2px 10px rgba(0, 123, 255, 0.1);
+}
+
+.mobile-property-item.active {
+    background: #007bff !important;
+    color: white !important;
+    transform: translateX(-5px);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.mobile-property-item.active:hover {
+    background: #0056b3 !important;
+}
+
+.property-search-container input {
+    transition: all 0.3s ease;
+}
+
+.property-search-container input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+#mobilePropertiesList {
+    background: #f8f9fa;
+}
+
+#mobilePropertiesList::-webkit-scrollbar {
+    width: 8px;
+}
+
+#mobilePropertiesList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#mobilePropertiesList::-webkit-scrollbar-thumb {
+    background: #007bff;
+    border-radius: 4px;
+}
+
+#mobilePropertiesList::-webkit-scrollbar-thumb:hover {
+    background: #0056b3;
+}
+
+/* أنماط زر الإغلاق في نافذة العقارات - في الأسفل */
+.properties-modal .properties-close-btn,
+.modal-box.properties-modal .properties-close-btn,
+.modal-overlay .properties-modal .properties-close-btn {
+    background: linear-gradient(135deg, #6c757d, #495057) !important;
+    color: white !important;
+    border: none !important;
+    padding: 12px 20px !important;
+    border-radius: 8px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2) !important;
+}
+
+.properties-modal .properties-close-btn:hover,
+.modal-box.properties-modal .properties-close-btn:hover,
+.modal-overlay .properties-modal .properties-close-btn:hover {
+    background: linear-gradient(135deg, #495057, #343a40) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3) !important;
+}
+
+.properties-modal .properties-close-btn:active,
+.modal-box.properties-modal .properties-close-btn:active,
+.modal-overlay .properties-modal .properties-close-btn:active {
+    transform: translateY(0) !important;
+}
+
+/* أنماط منطقة الأزرار في نافذة العقارات */
+.properties-modal .modal-actions {
+    margin-top: 20px !important;
+    display: flex !important;
+    gap: 10px !important;
+    padding: 0 !important;
+}
+
+/* ضمان عدم إخفاء زر الإغلاق */
+.properties-modal .properties-close-btn {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* أنماط الفلاتر النشطة في نافذة العقارات */
+.properties-active-filters {
+    background: #f8f9fa !important;
+    margin: 0 0 15px 0 !important;
+    border-radius: 10px !important;
+    padding: 15px !important;
+    border: 1px solid #e9ecef !important;
+}
+
+.properties-active-filters .clear-all-filters-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333) !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 15px !important;
+    border-radius: 8px !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.properties-active-filters .clear-all-filters-btn:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
+}
+
+.properties-active-filters .clear-all-filters-btn.loading {
+    background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+}
+
+.properties-active-filters .clear-all-filters-btn.loading::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 20px !important;
+    height: 20px !important;
+    border: 2px solid transparent !important;
+    border-top: 2px solid white !important;
+    border-radius: 50% !important;
+    animation: spin 1s linear infinite !important;
+}
+
+.properties-active-filters .clear-all-filters-btn.loading i,
+.properties-active-filters .clear-all-filters-btn.loading span {
+    opacity: 0 !important;
+}
+
+/* قائمة الإحصائيات المنفصلة */
+.mobile-statistics-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: none;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.mobile-statistics-menu.active {
+    display: block;
+    opacity: 1;
+}
+
+.mobile-statistics-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+.mobile-statistics-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 20px 20px 0 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-statistics-menu.active .mobile-statistics-content {
+    transform: translateY(0);
+}
+
+.mobile-statistics-header {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 20px 20px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.mobile-statistics-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.close-statistics-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.close-statistics-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.statistics-property-header {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.statistics-property-header i {
+    color: #007bff;
+}
+
+.statistics-totals {
+    padding: 15px 20px;
+    margin: 0 15px 15px 15px;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    justify-content: center;
+    max-width: calc(100% - 30px);
+}
+
+.statistics-totals .total-item {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(42,75,155,0.08);
+    padding: 12px 8px !important;
+    font-size: 0.9em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 5px;
+    border: 1px solid #f3f4f6;
+    min-height: 75px;
+    transition: all 0.3s ease;
+}
+
+.statistics-totals .total-item .total-label {
+    font-weight: bold;
+    color: #2a4b9b;
+    font-size: 1.2rem;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.statistics-totals .total-item .total-value {
+    font-weight: bold;
+    color: #222;
+    font-size: 1.15em;
+    margin: 0;
+    line-height: 1.1;
+}
+
+.statistics-totals .total-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(42,75,155,0.15);
+}
+
+.statistics-totals .total-item:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(42,75,155,0.08);
+}
+
+/* ألوان مخصصة لكل نوع في قائمة الإحصائيات */
+.statistics-totals .units-stat { background: #f3f0ff !important; border-color: #a78bfa !important; }
+.statistics-totals .tenants-stat { background: #e0f2fe !important; border-color: #0ea5e9 !important; }
+.statistics-totals .empty-stat { background: #f3f4f6 !important; border-color: #6b7280 !important; }
+.statistics-totals .active-stat { background: #e8f7ef !important; border-color: #22c55e !important; }
+.statistics-totals .expired-stat { background: #fee2e2 !important; border-color: #dc2626 !important; }
+.statistics-totals .pending-stat { background: #fff7ed !important; border-color: #f59e42 !important; }
+.statistics-totals .taxable-base-stat { background: #133889 !important; border-color: #2a4b9b !important; }
+.statistics-totals .vat-stat { background: #d40101 !important; border-color: #e46e6d !important; }
+.statistics-totals .after-taxonly-stat { background: #006d33 !important; border-color: #05940e !important; }
+.statistics-totals .residential-stat { background: #dc5f0d !important; border-color: #f59e42 !important; }
+.statistics-totals .deed-number-stat { background: #f0f2f5 !important; border-color: #2a4b9b !important; }
+.statistics-totals .deed-area-stat { background: #f0f2f5 !important; border-color: #2a4b9b !important; }
+
+.statistics-active-filters {
+    background: #f8f9fa;
+    margin: 0 20px 20px 20px;
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid #e9ecef;
+}
+
+.statistics-filters-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.statistics-filters-title i {
+    color: #ffc107;
+}
+
+.statistics-filters-list {
+    margin-bottom: 15px;
+}
+
+.statistics-filters-list .filter-tag {
+    display: inline-block;
+    background: #007bff;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin: 2px;
+}
+
+/* زر مسح الفلاتر في قائمة الإحصائيات */
+.statistics-active-filters .clear-all-filters-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.statistics-active-filters .clear-all-filters-btn:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.statistics-active-filters .clear-all-filters-btn:active {
+    transform: translateY(0);
+}
+
+/* تأثير loading لزر مسح الفلاتر */
+.statistics-active-filters .clear-all-filters-btn.loading {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.statistics-active-filters .clear-all-filters-btn.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.statistics-active-filters .clear-all-filters-btn.loading i,
+.statistics-active-filters .clear-all-filters-btn.loading span {
+    opacity: 0;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* إظهار زر مسح الفلاتر في جميع الشاشات */
+.clear-all-filters-btn {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* ضمان إظهار زر مسح الفلاتر عند وجود فلاتر نشطة */
+.active-filters-desktop:not(:empty) .clear-all-filters-btn,
+.statistics-active-filters:not(:empty) .clear-all-filters-btn,
+.properties-active-filters:not(:empty) .clear-all-filters-btn {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* تأثير loading لأزرار مسح الفلاتر */
+.clear-all-filters-btn.loading {
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    transform: scale(0.95) !important;
+    transition: all 0.3s ease !important;
+}
+
+.clear-all-filters-btn.loading:hover {
+    transform: scale(0.95) !important;
+    background: var(--danger-color) !important;
+}
+
+/* تأثير الدوران للأيقونة */
+.clear-all-filters-btn .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* تحسين مظهر زر مسح الفلاتر أثناء التحميل */
+.clear-all-filters-btn:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+    background: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+.clear-all-filters-btn:disabled:hover {
+    background: #6c757d !important;
+    border-color: #6c757d !important;
+    transform: none !important;
+}
+
+/* التأكد من إظهار زر مسح الفلاتر في قائمة الإحصائيات */
+.statistics-active-filters .clear-all-filters-btn {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* تحسين زر مسح الفلاتر في الشاشات الكبيرة */
+.active-filters-desktop .clear-all-filters-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    margin-top: 8px;
+}
+
+.active-filters-desktop .clear-all-filters-btn:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* تأثير loading للشاشات الكبيرة */
+.active-filters-desktop .clear-all-filters-btn.loading {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    cursor: not-allowed;
+    pointer-events: none;
+    position: relative;
+}
+
+.active-filters-desktop .clear-all-filters-btn.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.active-filters-desktop .clear-all-filters-btn.loading i,
+.active-filters-desktop .clear-all-filters-btn.loading span {
+    opacity: 0;
+}
+
+/* تخصيص شريط التمرير لقائمة الإحصائيات */
+.mobile-statistics-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.mobile-statistics-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.mobile-statistics-content::-webkit-scrollbar-thumb {
+    background: #28a745;
+    border-radius: 4px;
+}
+
+.mobile-statistics-content::-webkit-scrollbar-thumb:hover {
+    background: #20c997;
+}
+
+/* تحسينات للشاشات الصغيرة جداً */
+@media (max-width: 500px) {
+    .statistics-totals {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 12px 15px;
+        margin: 0 10px 12px 10px;
+    }
+
+    .statistics-totals .total-item {
+        padding: 8px 6px !important;
+        font-size: 0.85em;
+        min-height: 65px;
+    }
+
+    .statistics-totals .total-item .total-label {
+        font-size: 1.1rem;
+    }
+
+    .statistics-totals .total-item .total-value {
+        font-size: 1.2rem;
+    }
+
+    .statistics-property-header {
+        padding: 12px 15px;
+        margin: 0 10px 10px 10px;
+        font-size: 1.1rem;
+    }
+
+    .mobile-statistics-header h3 {
+        font-size: 1.1rem;
+    }
 }
 

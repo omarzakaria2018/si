@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار حذف الأزرار الفارغة من القائمة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #dc3545;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .empty-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .empty-button-card {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .empty-button-card h5 {
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
+
+        .empty-button-card .demo-button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+            margin-bottom: 5px;
+            min-height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            border-left: 4px solid #dc3545;
+            overflow-x: auto;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            color: #1565c0;
+        }
+
+        .detection-methods {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .detection-methods h4 {
+            color: #856404;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .empty-buttons-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-trash-alt"></i> حذف الأزرار الفارغة</h1>
+            <p>إزالة الأزرار الفارغة والعناصر بدون محتوى من القائمة المحمولة</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h4><i class="fas fa-info-circle"></i> المشكلة والحل</h4>
+                <ul>
+                    <li><strong>المشكلة:</strong> وجود أزرار فارغة في القائمة المحمولة (مثل رقم 1 و 2)</li>
+                    <li><strong>السبب:</strong> عناصر HTML فارغة أو تحتوي على فراغات/أرقام فقط</li>
+                    <li><strong>الحل:</strong> فحص محتوى كل زر وحذف الفارغ منها</li>
+                    <li><strong>النتيجة:</strong> قائمة نظيفة تحتوي على الأزرار المفيدة فقط</li>
+                </ul>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-search"></i> أنواع الأزرار الفارغة المكتشفة</h3>
+                
+                <div class="empty-buttons-grid">
+                    <div class="empty-button-card">
+                        <h5>زر بدون محتوى</h5>
+                        <div class="demo-button"></div>
+                        <small>لا يحتوي على نص أو أيقونات</small>
+                    </div>
+                    
+                    <div class="empty-button-card">
+                        <h5>زر بفراغات فقط</h5>
+                        <div class="demo-button">   </div>
+                        <small>يحتوي على فراغات فقط</small>
+                    </div>
+                    
+                    <div class="empty-button-card">
+                        <h5>زر بأرقام فقط</h5>
+                        <div class="demo-button">1.</div>
+                        <small>يحتوي على أرقام ونقاط فقط</small>
+                    </div>
+                    
+                    <div class="empty-button-card">
+                        <h5>عنصر بدون زر</h5>
+                        <div style="border: 1px dashed #dc3545; padding: 10px; color: #dc3545;">
+                            &lt;li&gt;&lt;/li&gt;
+                        </div>
+                        <small>عنصر قائمة فارغ</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-code"></i> كود حذف الأزرار الفارغة</h3>
+                
+                <div class="status danger">
+                    <h4>🗑️ دالة حذف الأزرار الفارغة:</h4>
+                    <div class="code-block">
+function removeEmptyMenuButtons() {
+    console.log('🗑️ حذف الأزرار الفارغة من القائمة المحمولة...');
+    
+    const menuList = document.querySelector('.mobile-dropdown-list');
+    const allItems = menuList.querySelectorAll('li');
+    let removedCount = 0;
+    
+    allItems.forEach(item => {
+        const button = item.querySelector('button');
+        if (!button) {
+            // إذا لم يكن هناك زر، احذف العنصر
+            item.remove();
+            removedCount++;
+            return;
+        }
+        
+        // فحص محتوى الزر
+        const buttonText = button.textContent.trim();
+        const buttonIcons = button.querySelectorAll('i, svg, img');
+        const hasVisibleContent = buttonText.length > 0 || buttonIcons.length > 0;
+        
+        // فحص إذا كان الزر يحتوي على محتوى مرئي
+        if (!hasVisibleContent) {
+            console.log(`🗑️ حذف زر فارغ: ${button.outerHTML.substring(0, 100)}...`);
+            item.remove();
+            removedCount++;
+        } else {
+            // فحص إضافي للأزرار التي تحتوي على فراغات فقط أو أرقام فقط
+            const cleanText = buttonText.replace(/^\d+\.\s*/, '').trim();
+            if (cleanText.length === 0 && buttonIcons.length === 0) {
+                console.log(`🗑️ حذف زر يحتوي على أرقام/فراغات فقط: ${buttonText}`);
+                item.remove();
+                removedCount++;
+            }
+        }
+    });
+    
+    console.log(`✅ تم حذف ${removedCount} زر فارغ من القائمة المحمولة`);
+}
+                    </div>
+                </div>
+                
+                <div class="status success">
+                    <h4>🔧 التكامل مع دالة التنظيف:</h4>
+                    <div class="code-block">
+function cleanMenuOnly() {
+    console.log('🧹 تنظيف القائمة المحمولة من الترقيم والفراغات القديمة...');
+    
+    // أولاً حذف الأزرار الفارغة
+    removeEmptyMenuButtons();
+    
+    // ثم تنظيف الترقيم القديم
+    cleanOldNumberingFromMenu();
+    
+    console.log('✅ تم تنظيف القائمة بنجاح');
+}
+
+// استدعاء عند فتح القائمة
+mobileMenuBtn.addEventListener('click', function() {
+    // ... كود فتح القائمة
+    
+    // تنظيف القائمة من الترقيم والفراغات القديمة فقط
+    cleanMenuOnly();
+});
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-magnifying-glass"></i> طرق الكشف</h3>
+                
+                <div class="detection-methods">
+                    <h4><i class="fas fa-search"></i> معايير الكشف عن الأزرار الفارغة:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>عدم وجود زر:</strong> `!button` - عنصر li بدون button</li>
+                        <li><strong>نص فارغ:</strong> `buttonText.trim().length === 0` - لا يحتوي على نص</li>
+                        <li><strong>بدون أيقونات:</strong> `buttonIcons.length === 0` - لا يحتوي على i, svg, img</li>
+                        <li><strong>أرقام فقط:</strong> `cleanText.replace(/^\d+\.\s*/, '').trim()` - بعد إزالة الأرقام لا يبقى شيء</li>
+                        <li><strong>فراغات فقط:</strong> النص يحتوي على فراغات فقط</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار حذف الأزرار الفارغة</h3>
+                
+                <button class="btn btn-primary" onclick="openMainPage()">
+                    <i class="fas fa-external-link-alt"></i> فتح الصفحة الرئيسية
+                </button>
+                
+                <button class="btn btn-success" onclick="testInstructions()">
+                    <i class="fas fa-clipboard-list"></i> عرض تعليمات الاختبار
+                </button>
+                
+                <button class="btn btn-warning" onclick="checkConsole()">
+                    <i class="fas fa-terminal"></i> مراقبة Console
+                </button>
+                
+                <button class="btn btn-danger" onclick="showEmptyButtons()">
+                    <i class="fas fa-trash-alt"></i> أنواع الأزرار الفارغة
+                </button>
+                
+                <div id="testStatus" class="status info" style="display: none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+                
+                <div class="status warning">
+                    <h4>📋 للاختبار الفعلي:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>افتح الصفحة الرئيسية</strong> (index.html)</li>
+                        <li><strong>افتح Console (F12)</strong> لمراقبة عملية الحذف</li>
+                        <li><strong>قلل حجم الشاشة</strong> لأقل من 900px</li>
+                        <li><strong>انقر على زر القائمة (☰)</strong> في الهيدر</li>
+                        <li><strong>تحقق من النتائج:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>✅ في Console: "🗑️ حذف الأزرار الفارغة من القائمة المحمولة..."</li>
+                                <li>✅ في Console: "🗑️ حذف زر فارغ: ..." (لكل زر محذوف)</li>
+                                <li>✅ في Console: "✅ تم حذف X زر فارغ من القائمة المحمولة"</li>
+                                <li>❌ **لا توجد أزرار فارغة** في القائمة (مثل رقم 1 و 2)</li>
+                                <li>✅ **فقط الأزرار المفيدة** تظهر في القائمة</li>
+                            </ul>
+                        </li>
+                        <li><strong>تحقق من القائمة:</strong>
+                            <ul style="margin: 5px 0; padding-right: 20px;">
+                                <li>جميع الأزرار تحتوي على نص أو أيقونات</li>
+                                <li>لا توجد مساحات فارغة في القائمة</li>
+                                <li>القائمة مرتبة ونظيفة</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="status success">
+                    <h4>🔍 رسائل Console المتوقعة:</h4>
+                    <div class="code-block">
+🧹 تنظيف القائمة المحمولة من الترقيم والفراغات القديمة...
+🗑️ حذف الأزرار الفارغة من القائمة المحمولة...
+🗑️ حذف زر فارغ: &lt;button&gt;&lt;/button&gt;...
+🗑️ حذف زر يحتوي على أرقام/فراغات فقط: 1.
+🗑️ حذف زر يحتوي على أرقام/فراغات فقط: 2.
+✅ تم حذف 3 زر فارغ من القائمة المحمولة
+🧹 تنظيف الترقيم والفراغات القديمة من القائمة المحمولة...
+✅ تم تنظيف 0 عنصر من الترقيم والفراغات القديمة
+✅ تم تنظيف القائمة بنجاح
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> النتائج المتوقعة</h3>
+                
+                <div class="status info">
+                    <h4>🎯 ما ستراه:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>قائمة نظيفة:</strong> بدون أزرار فارغة أو عناصر غير مفيدة</li>
+                        <li><strong>أزرار مفيدة فقط:</strong> كل زر يحتوي على محتوى واضح</li>
+                        <li><strong>ترتيب محسن:</strong> لا توجد فجوات أو مساحات فارغة</li>
+                        <li><strong>حذف تلقائي:</strong> يحدث عند كل فتح للقائمة</li>
+                        <li><strong>تتبع دقيق:</strong> معرفة عدد الأزرار المحذوفة</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function openMainPage() {
+            showTestStatus('🌐 فتح الصفحة الرئيسية...', 'info');
+            window.open('index.html', '_blank');
+            showTestStatus('✅ تم فتح الصفحة الرئيسية - اختبر حذف الأزرار الفارغة الآن', 'success');
+        }
+
+        function testInstructions() {
+            showTestStatus('📋 اتبع خطوات الاختبار أعلاه لرؤية عملية حذف الأزرار الفارغة', 'warning');
+        }
+
+        function checkConsole() {
+            showTestStatus('🔍 افتح Console (F12) وراقب رسائل حذف الأزرار الفارغة عند فتح القائمة', 'info');
+            console.log('🔍 مراقبة Console مفعلة - افتح القائمة المحمولة لرؤية عملية حذف الأزرار الفارغة');
+        }
+
+        function showEmptyButtons() {
+            showTestStatus('🗑️ الأزرار الفارغة تشمل: بدون محتوى، فراغات فقط، أرقام فقط، عناصر بدون أزرار', 'danger');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 صفحة اختبار حذف الأزرار الفارغة جاهزة');
+            showTestStatus('الصفحة جاهزة - افتح الصفحة الرئيسية واختبر حذف الأزرار الفارغة', 'info');
+        });
+    </script>
+</body>
+</html>
