@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح نافذة التفاصيل - الشاشات الصغيرة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #007bff 0%, #28a745 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .fix-section {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .fix-section h3 {
+            color: #721c24;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); color: white; }
+        .btn-success { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
+        .btn-primary { background: linear-gradient(135deg, #007bff, #0056b3); color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+
+        .fixes-list {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .fixes-list h4 {
+            color: #155724;
+            margin-bottom: 15px;
+        }
+
+        .fixes-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .fixes-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #c3e6cb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .fixes-list li:last-child {
+            border-bottom: none;
+        }
+
+        .fixes-list li i {
+            color: #28a745;
+            width: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container { margin: 10px; border-radius: 10px; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.5rem; }
+            .content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-tools"></i> إصلاح نافذة التفاصيل</h1>
+            <p>حل مشكلة عدم ظهور التفاصيل في الشاشات الصغيرة</p>
+        </div>
+
+        <div class="content">
+            <div class="fix-section">
+                <h3><i class="fas fa-exclamation-triangle"></i> المشكلة المكتشفة</h3>
+                
+                <div class="status danger">
+                    <h4>🚨 المشكلة:</h4>
+                    <p>في الشاشات الصغيرة كانت نافذة "عرض التفاصيل" تظهر فارغة أو مخفية بدون أي تفاصيل، بينما في الشاشات الكبيرة تظهر التفاصيل كاملة.</p>
+                </div>
+                
+                <div class="status warning">
+                    <h4>🔍 السبب:</h4>
+                    <ul style="margin: 10px 0; padding-right: 20px;">
+                        <li>• أقسام HTML فارغة في الدالة</li>
+                        <li>• اعتماد على CSS classes غير محددة</li>
+                        <li>• عدم وجود أنماط مباشرة للعناصر</li>
+                        <li>• مشاكل في positioning و z-index</li>
+                        <li>• عدم تحديد أبعاد النافذة بوضوح</li>
+                    </ul>
+                </div>
+                
+                <div class="fixes-list">
+                    <h4>🔧 الإصلاحات المطبقة:</h4>
+                    <ul>
+                        <li><i class="fas fa-expand-arrows-alt"></i> زيادة ارتفاع النافذة للشاشات الصغيرة (80vh-95vh)</li>
+                        <li><i class="fas fa-scroll"></i> إضافة scroll للمحتوى الطويل (60vh-75vh)</li>
+                        <li><i class="fas fa-mobile-alt"></i> CSS خاص للشاشات الصغيرة (@media max-width: 768px)</li>
+                        <li><i class="fas fa-arrows-alt-v"></i> تحديد min-height و max-height واضح</li>
+                        <li><i class="fas fa-layer-group"></i> استخدام flexbox للتخطيط العمودي</li>
+                        <li><i class="fas fa-anchor"></i> أزرار ثابتة في الأسفل مع flex-shrink: 0</li>
+                        <li><i class="fas fa-palette"></i> أنماط CSS مباشرة لكل عنصر</li>
+                        <li><i class="fas fa-eye"></i> تحديد z-index عالي وpositioning محسن</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="fix-section">
+                <h3><i class="fas fa-test-tube"></i> اختبار الإصلاح</h3>
+                
+                <button class="btn btn-danger" onclick="testPropertyDetails()">
+                    <i class="fas fa-eye"></i> اختبار نافذة التفاصيل المحسنة
+                </button>
+                
+                <button class="btn btn-success" onclick="openMainPage()">
+                    <i class="fas fa-external-link-alt"></i> فتح الصفحة الرئيسية للاختبار الفعلي
+                </button>
+                
+                <button class="btn btn-primary" onclick="simulateMobile()">
+                    <i class="fas fa-mobile-alt"></i> تعليمات محاكاة الشاشة الصغيرة
+                </button>
+                
+                <div id="testStatus" class="status success" style="display: none;"></div>
+            </div>
+
+            <div class="fix-section">
+                <h3><i class="fas fa-clipboard-check"></i> خطوات التحقق</h3>
+                
+                <div class="status success">
+                    <h4>✅ النتائج المتوقعة بعد الإصلاح:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li><strong>ارتفاع كافي:</strong> النافذة بارتفاع 80vh-95vh في الشاشات الصغيرة</li>
+                        <li><strong>تفاصيل مرئية:</strong> جميع التفاصيل تظهر مع scroll عند الحاجة</li>
+                        <li><strong>scroll سلس:</strong> المحتوى قابل للتمرير بسهولة</li>
+                        <li><strong>أزرار ثابتة:</strong> زر الإغلاق ثابت في الأسفل</li>
+                        <li><strong>تجاوب ممتاز:</strong> يعمل على جميع أحجام الشاشات</li>
+                        <li><strong>تصميم محسن:</strong> عنوان ملون وتنسيق واضح</li>
+                    </ol>
+                </div>
+                
+                <div class="status warning">
+                    <h4>📱 للاختبار على الشاشات الصغيرة:</h4>
+                    <ol style="margin: 10px 0; padding-right: 20px;">
+                        <li>افتح الصفحة الرئيسية (index.html)</li>
+                        <li>اضغط F12 لفتح أدوات المطور</li>
+                        <li>انقر على أيقونة الهاتف/الجهاز اللوحي</li>
+                        <li>اختر جهاز محمول (iPhone, Samsung, etc.)</li>
+                        <li>أعد تحميل الصفحة</li>
+                        <li>ابحث عن بطاقة عقار وانقر "عرض التفاصيل"</li>
+                        <li>تحقق من ظهور جميع التفاصيل بوضوح</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        function showTestStatus(message, type = 'success') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function testPropertyDetails() {
+            showTestStatus('🔧 اختبار نافذة التفاصيل المحسنة...', 'success');
+            
+            // محاكاة بيانات عقار للاختبار
+            const testProperty = {
+                'اسم العقار': 'مجمع الأعمال التجاري - اختبار',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '101',
+                'رقم العقد': '2024-TEST-001',
+                'نوع العقد': 'تجاري',
+                'نوع العقار': 'مكتب',
+                'المالك': 'شركة الاستثمار العقاري',
+                'اسم المستأجر': 'شركة التقنية المتقدمة',
+                'تاريخ البداية': '2024-01-01',
+                'تاريخ النهاية': '2025-01-01',
+                'قيمة الايجار': '50000',
+                'الاجمالى': '57500',
+                'المساحة': '150',
+                'موقع العقار': 'https://maps.google.com/test'
+            };
+            
+            // إضافة العقار إلى المصفوفة مؤقتاً للاختبار
+            if (typeof properties !== 'undefined') {
+                properties.unshift(testProperty);
+                showPropertyDetails(0);
+                showTestStatus('✅ تم فتح نافذة التفاصيل المحسنة - تحقق من ظهور جميع التفاصيل بوضوح!', 'success');
+            } else {
+                showTestStatus('❌ البيانات غير متوفرة - افتح الصفحة الرئيسية للاختبار الفعلي', 'danger');
+            }
+        }
+
+        function openMainPage() {
+            showTestStatus('🌐 فتح الصفحة الرئيسية...', 'success');
+            window.open('index.html', '_blank');
+            showTestStatus('✅ تم فتح الصفحة الرئيسية - صغر الشاشة واختبر زر "عرض التفاصيل"', 'success');
+        }
+
+        function simulateMobile() {
+            showTestStatus('📱 تعليمات محاكاة الشاشة الصغيرة: F12 > أيقونة الهاتف > اختر جهاز محمول > أعد التحميل', 'warning');
+            console.log('📱 خطوات محاكاة الشاشة الصغيرة:');
+            console.log('1. اضغط F12 لفتح أدوات المطور');
+            console.log('2. انقر على أيقونة الهاتف/الجهاز اللوحي');
+            console.log('3. اختر جهاز محمول من القائمة');
+            console.log('4. أعد تحميل الصفحة');
+            console.log('5. اختبر زر "عرض التفاصيل"');
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 صفحة اختبار إصلاح نافذة التفاصيل جاهزة');
+            showTestStatus('الصفحة جاهزة - جرب زر "اختبار نافذة التفاصيل المحسنة"', 'success');
+        });
+    </script>
+</body>
+</html>
