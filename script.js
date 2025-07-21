@@ -6691,13 +6691,42 @@ function renderCards(data) {
         }
         relatedUnits = [...new Set(relatedUnits)].sort((a, b) => a.localeCompare(b, 'ar', {numeric: true}));
 
+        // إنشاء معرف فريد للبطاقة
+        const cardId = `card_${property['رقم العقد'] || 'no_contract'}_${property['اسم العقار']?.replace(/\s+/g, '_') || 'no_name'}_${Date.now()}`;
+
         html += `
-        <div class="property-card">
+        <div class="property-card mobile-expandable" id="${cardId}" data-expanded="false" onclick="toggleCardExpansion('${cardId}', event)">
             <div class="card-header ${headerClass}">
                 <span>${property['اسم العقار'] || ''}</span>
                 <span>${property['نوع العقد'] || ''}</span>
             </div>
-            <div class="card-body">
+
+            <!-- العرض المضغوط - يظهر في الوضع المطوي فقط -->
+            <div class="card-compact-view">
+                <div class="compact-row">
+                    <span class="compact-label"><i class="fas fa-home"></i> رقم الوحدة:</span>
+                    <span class="compact-value">
+                        ${relatedUnits.map(unit =>
+                            `<span class="unit-link" onclick="event.stopPropagation(); showUnitDetails('${unit}', '${property['اسم العقار']}', '${property['رقم العقد']}')">${unit}</span>`
+                        ).join(' , ')}
+                        ${relatedUnits.length > 1 ? `<span class="units-count">(${relatedUnits.length} وحدات)</span>` : ''}
+                    </span>
+                </div>
+                <div class="compact-row">
+                    <span class="compact-label"><i class="fas fa-user"></i> المستأجر:</span>
+                    <span class="compact-value tenant-name-compact">${property['اسم المستأجر'] || 'فارغ'}</span>
+                </div>
+                <div class="compact-row">
+                    <span class="compact-label"><i class="fas fa-info-circle"></i> الحالة:</span>
+                    <span class="status-value ${badgeClass} compact-status">
+                        ${badgeIcon} ${displayStatus || ''}
+                    </span>
+                </div>
+            </div>
+
+            <!-- التفاصيل الكاملة - تظهر في الوضع الموسع فقط -->
+            <div class="card-full-view">
+                <div class="card-body">
                 <div class="card-row">
                     <span class="card-label">رقم الوحدة:</span>
                     <span class="card-value">
@@ -6819,28 +6848,29 @@ function renderCards(data) {
                         </span>
                     </span>
                 </div>` : ''}
-            </div>
-            <div class="card-footer">
-                <div class="card-actions-row">
-                    <button onclick="showPropertyDetailsByKey(${property['رقم العقد'] ? `'${property['رقم العقد']}', '${property['اسم العقار']}'` : `'', '${property['اسم العقار']}', '${property['رقم  الوحدة '] || ''}'`})">
-                        <i class="fas fa-eye"></i> عرض التفاصيل
-                    </button>
-                    <button onclick="showPrintOptions(${property['رقم العقد'] ? `'${property['رقم العقد']}', '${property['اسم العقار']}'` : `'', '${property['اسم العقار']}', '${property['رقم  الوحدة '] || ''}'`})">
-                        <i class="fas fa-print"></i> طباعة
-                    </button>
-                    ${property['موقع العقار'] ?
-                        `<button onclick="openLocation('${property['موقع العقار']}')" class="location-btn">
-                            <i class="fas fa-map-marker-alt"></i> الموقع
-                        </button>` :
-                        ''}
                 </div>
-                <div class="card-actions-row">
-                    <button onclick="showCardAttachmentsModal('${property['المدينة']}', '${property['اسم العقار']}', '${property['رقم العقد'] || ''}', '${property['رقم  الوحدة '] || ''}')" class="attachment-btn">
-                        <i class="fas fa-paperclip"></i> المرفقات
-                    </button>
-                    <button onclick="showCardEditModal('${property['رقم العقد'] || ''}', '${property['اسم العقار']}', '${property['رقم  الوحدة '] || ''}')" class="edit-btn">
-                        <i class="fas fa-edit"></i> تحرير
-                    </button>
+                <div class="card-footer">
+                    <div class="card-actions-row">
+                        <button onclick="event.stopPropagation(); showPropertyDetailsByKey(${property['رقم العقد'] ? `'${property['رقم العقد']}', '${property['اسم العقار']}'` : `'', '${property['اسم العقار']}', '${property['رقم  الوحدة '] || ''}'`})">
+                            <i class="fas fa-eye"></i> عرض التفاصيل
+                        </button>
+                        <button onclick="event.stopPropagation(); showPrintOptions(${property['رقم العقد'] ? `'${property['رقم العقد']}', '${property['اسم العقار']}'` : `'', '${property['اسم العقار']}', '${property['رقم  الوحدة '] || ''}'`})">
+                            <i class="fas fa-print"></i> طباعة
+                        </button>
+                        ${property['موقع العقار'] ?
+                            `<button onclick="event.stopPropagation(); openLocation('${property['موقع العقار']}')" class="location-btn">
+                                <i class="fas fa-map-marker-alt"></i> الموقع
+                            </button>` :
+                            ''}
+                    </div>
+                    <div class="card-actions-row">
+                        <button onclick="event.stopPropagation(); showCardAttachmentsModal('${property['المدينة']}', '${property['اسم العقار']}', '${property['رقم العقد'] || ''}', '${property['رقم  الوحدة '] || ''}')" class="attachment-btn">
+                            <i class="fas fa-paperclip"></i> المرفقات
+                        </button>
+                        <button onclick="event.stopPropagation(); showCardEditModal('${property['رقم العقد'] || ''}', '${property['اسم العقار']}', '${property['رقم  الوحدة '] || ''}')" class="edit-btn">
+                            <i class="fas fa-edit"></i> تحرير
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>`;
@@ -8778,6 +8808,105 @@ function closePropertyDetailsModal() {
             modalOverlay.remove();
             console.log('✅ تم إغلاق نافذة تفاصيل العقار');
         }
+    }
+}
+
+// دالة توسيع وطي البطاقات في الشاشات الصغيرة
+function toggleCardExpansion(cardId, event) {
+    // التحقق من حجم الشاشة - هذه الميزة للشاشات الصغيرة فقط
+    if (window.innerWidth > 768) {
+        console.log('🖥️ الشاشة كبيرة - الميزة غير نشطة');
+        return; // لا تفعل شيئاً في الشاشات الكبيرة
+    }
+
+    // منع التوسيع إذا تم النقر على زر أو رابط
+    if (event && event.target) {
+        const clickedElement = event.target;
+        const isButton = clickedElement.tagName === 'BUTTON' ||
+                        clickedElement.closest('button') ||
+                        clickedElement.tagName === 'A' ||
+                        clickedElement.closest('a') ||
+                        clickedElement.classList.contains('unit-link') ||
+                        clickedElement.closest('.unit-link');
+
+        if (isButton) {
+            console.log('🚫 تم النقر على زر/رابط - لا يتم التوسيع');
+            return;
+        }
+    }
+
+    const card = document.getElementById(cardId);
+    if (!card) {
+        console.warn('⚠️ البطاقة غير موجودة:', cardId);
+        return;
+    }
+
+    const isExpanded = card.getAttribute('data-expanded') === 'true';
+    const compactView = card.querySelector('.card-compact-view');
+    const fullView = card.querySelector('.card-full-view');
+
+    if (!compactView || !fullView) {
+        console.warn('⚠️ عناصر العرض غير موجودة في البطاقة:', cardId);
+        return;
+    }
+
+    console.log('🔄 تبديل حالة البطاقة:', cardId, 'موسعة حالياً:', isExpanded);
+
+    if (isExpanded) {
+        // طي البطاقة - إظهار العرض المضغوط وإخفاء العرض الكامل
+        card.setAttribute('data-expanded', 'false');
+        card.classList.remove('expanded');
+
+        // انتقال سلس للطي
+        fullView.style.opacity = '0';
+        fullView.style.transform = 'translateY(-10px)';
+
+        setTimeout(() => {
+            fullView.style.display = 'none';
+            compactView.style.display = 'block';
+            compactView.style.opacity = '0';
+            compactView.style.transform = 'translateY(10px)';
+
+            // إظهار العرض المضغوط بانتقال سلس
+            setTimeout(() => {
+                compactView.style.opacity = '1';
+                compactView.style.transform = 'translateY(0)';
+            }, 50);
+        }, 200);
+
+        console.log('📱 تم طي البطاقة:', cardId);
+    } else {
+        // توسيع البطاقة - إظهار العرض الكامل وإخفاء العرض المضغوط
+        card.setAttribute('data-expanded', 'true');
+        card.classList.add('expanded');
+
+        // انتقال سلس للتوسيع
+        compactView.style.opacity = '0';
+        compactView.style.transform = 'translateY(-10px)';
+
+        setTimeout(() => {
+            compactView.style.display = 'none';
+            fullView.style.display = 'block';
+            fullView.style.opacity = '0';
+            fullView.style.transform = 'translateY(10px)';
+
+            // إظهار العرض الكامل بانتقال سلس
+            setTimeout(() => {
+                fullView.style.opacity = '1';
+                fullView.style.transform = 'translateY(0)';
+            }, 50);
+        }, 200);
+
+        console.log('📱 تم توسيع البطاقة:', cardId);
+
+        // تمرير لطيف للبطاقة الموسعة
+        setTimeout(() => {
+            card.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'nearest'
+            });
+        }, 400);
     }
 }
 

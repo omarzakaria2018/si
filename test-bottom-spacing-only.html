@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار المسافة السفلية فقط</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .test-header h1 {
+            color: #007bff;
+            margin: 0;
+            font-size: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .test-header p {
+            color: #666;
+            margin: 15px 0 0 0;
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        
+        .spacing-demo {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            border-left: 5px solid #2196f3;
+        }
+        
+        .spacing-demo h3 {
+            color: #1976d2;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+        }
+        
+        .spacing-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 25px 0;
+        }
+        
+        .spacing-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .spacing-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .spacing-card.before {
+            border-top: 4px solid #dc3545;
+        }
+        
+        .spacing-card.after {
+            border-top: 4px solid #28a745;
+        }
+        
+        .spacing-card h4 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .spacing-card.before h4 {
+            color: #dc3545;
+        }
+        
+        .spacing-card.after h4 {
+            color: #28a745;
+        }
+        
+        .spacing-visual {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 2px dashed #dee2e6;
+            text-align: center;
+        }
+        
+        .card-mockup {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .card-mockup.expanded {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .spacing-arrow {
+            color: #007bff;
+            font-size: 1.5rem;
+            margin: 5px 0;
+        }
+        
+        .spacing-label {
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .instructions {
+            background: #fff8e1;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 2px solid #ffcc02;
+        }
+        
+        .instructions h4 {
+            color: #f57c00;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+        }
+        
+        .instruction-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        
+        .instruction-list li {
+            margin: 15px 0;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .instruction-list .step-number {
+            background: #007bff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .instruction-list .step-text {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 25px auto;
+            text-decoration: none;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+        }
+        
+        .test-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        /* تحسينات للشاشات الصغيرة */
+        @media (max-width: 768px) {
+            .test-container {
+                margin: 10px;
+                padding: 20px;
+                border-radius: 10px;
+            }
+            
+            .test-header h1 {
+                font-size: 1.6rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .spacing-comparison {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>
+                <i class="fas fa-arrows-alt-v"></i>
+                المسافة السفلية فقط
+                <i class="fas fa-arrow-down"></i>
+            </h1>
+            <p>اختبار المسافة الإضافية في الأسفل فقط عند توسيع البطاقات</p>
+        </div>
+        
+        <div class="spacing-demo">
+            <h3><i class="fas fa-ruler-vertical"></i> كيف تعمل المسافات الجديدة</h3>
+            <div class="spacing-comparison">
+                <div class="spacing-card before">
+                    <h4><i class="fas fa-times-circle"></i> قبل التحديث</h4>
+                    <div class="spacing-visual">
+                        <div class="card-mockup">بطاقة عادية</div>
+                        <div class="spacing-arrow">↕️</div>
+                        <div class="spacing-label">مسافة عادية</div>
+                        <div class="card-mockup expanded">بطاقة موسعة</div>
+                        <div class="spacing-arrow">↕️</div>
+                        <div class="spacing-label">مسافة كبيرة في جميع الاتجاهات</div>
+                        <div class="card-mockup">بطاقة عادية</div>
+                    </div>
+                    <p style="color: #dc3545; font-size: 0.9rem; margin: 10px 0;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        مسافات كبيرة في الأعلى والأسفل
+                    </p>
+                </div>
+                
+                <div class="spacing-card after">
+                    <h4><i class="fas fa-check-circle"></i> بعد التحديث</h4>
+                    <div class="spacing-visual">
+                        <div class="card-mockup">بطاقة عادية</div>
+                        <div class="spacing-arrow">↕️</div>
+                        <div class="spacing-label">مسافة عادية (بدون تغيير)</div>
+                        <div class="card-mockup expanded">بطاقة موسعة</div>
+                        <div class="spacing-arrow" style="color: #28a745;">⬇️</div>
+                        <div class="spacing-label" style="color: #28a745; font-weight: 600;">مسافة كبيرة في الأسفل فقط</div>
+                        <div class="card-mockup">بطاقة عادية</div>
+                    </div>
+                    <p style="color: #28a745; font-size: 0.9rem; margin: 10px 0;">
+                        <i class="fas fa-check"></i>
+                        المسافة العلوية تبقى كما هي، الإضافة في الأسفل فقط
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h4><i class="fas fa-clipboard-list"></i> خطوات الاختبار المحددة</h4>
+            <ul class="instruction-list">
+                <li>
+                    <div class="step-number">1</div>
+                    <div class="step-text">افتح أدوات المطور (F12) وفعّل وضع الجوال</div>
+                </li>
+                <li>
+                    <div class="step-number">2</div>
+                    <div class="step-text">اختر حجم شاشة أقل من 768px (iPhone أو Samsung)</div>
+                </li>
+                <li>
+                    <div class="step-number">3</div>
+                    <div class="step-text">افتح الصفحة الرئيسية وشاهد البطاقات المضغوطة</div>
+                </li>
+                <li>
+                    <div class="step-number">4</div>
+                    <div class="step-text">انقر على بطاقة لتوسيعها ولاحظ المسافة العلوية (لا تتغير)</div>
+                </li>
+                <li>
+                    <div class="step-number">5</div>
+                    <div class="step-text">لاحظ المسافة السفلية الكبيرة بين البطاقة الموسعة والتالية</div>
+                </li>
+                <li>
+                    <div class="step-number">6</div>
+                    <div class="step-text">وسّع عدة بطاقات وشاهد كيف تتراكم المسافات السفلية</div>
+                </li>
+                <li>
+                    <div class="step-number">7</div>
+                    <div class="step-text">اطوِ البطاقات وشاهد عودة المسافات للوضع الطبيعي</div>
+                </li>
+            </ul>
+            
+            <a href="index.html" target="_blank" class="test-btn">
+                <i class="fas fa-play"></i> 
+                اختبار المسافة السفلية
+            </a>
+        </div>
+        
+        <div class="status-badge status-success" style="display: block; text-align: center; margin: 30px 0; padding: 20px; font-size: 1.1rem;">
+            <i class="fas fa-arrow-down"></i> 
+            <strong>تم التحديث:</strong> المسافة الإضافية في الأسفل فقط!
+        </div>
+        
+        <div class="status-badge status-info" style="display: block; text-align: center; margin: 20px 0; padding: 15px;">
+            <i class="fas fa-info-circle"></i> 
+            <strong>CSS المطبق:</strong> margin-bottom: 40px للبطاقات الموسعة فقط
+        </div>
+        
+        <div class="status-badge status-warning" style="display: block; text-align: center; margin: 20px 0; padding: 15px;">
+            <i class="fas fa-mobile-alt"></i> 
+            <strong>تذكير:</strong> هذا التأثير يظهر فقط في الشاشات الصغيرة (≤ 768px)
+        </div>
+    </div>
+
+    <script>
+        // رسالة ترحيب وتحقق من حجم الشاشة
+        window.addEventListener('load', () => {
+            console.log('📐 تم تحميل صفحة اختبار المسافة السفلية');
+            
+            const isMobile = window.innerWidth <= 768;
+            console.log('📏 حجم الشاشة الحالي:', window.innerWidth + 'px');
+            
+            if (isMobile) {
+                console.log('📱 الشاشة صغيرة - ستظهر المسافة السفلية عند التوسيع');
+                
+                setTimeout(() => {
+                    alert('🎯 رائع!\n\n✅ الشاشة مناسبة لاختبار:\n\n📐 المسافة السفلية الإضافية:\n• المسافة العلوية تبقى كما هي\n• المسافة السفلية تزيد عند التوسيع\n• margin-bottom: 40px للبطاقات الموسعة\n\nافتح الصفحة الرئيسية الآن!');
+                }, 1000);
+            } else {
+                console.log('🖥️ الشاشة كبيرة - لا توجد مسافات إضافية');
+                
+                setTimeout(() => {
+                    alert('🖥️ الشاشة كبيرة!\n\n✅ في هذا الحجم:\n• البطاقات بالوضع الأصلي\n• لا توجد مسافات إضافية\n• لا توجد ميزة التوسيع\n\n📱 لاختبار المسافة السفلية:\n1. اضغط F12\n2. فعّل وضع الجوال\n3. اختر حجم أقل من 768px\n4. وسّع البطاقات ولاحظ المسافة السفلية');
+                }, 1000);
+            }
+        });
+        
+        // مراقبة تغيير حجم الشاشة
+        window.addEventListener('resize', () => {
+            const isMobile = window.innerWidth <= 768;
+            console.log('📏 تغيير حجم الشاشة:', window.innerWidth + 'px');
+            
+            if (isMobile) {
+                console.log('✅ وضع الجوال - المسافة السفلية نشطة');
+                console.log('📐 عند التوسيع: margin-bottom: 40px');
+            } else {
+                console.log('🖥️ وضع سطح المكتب - بدون مسافات إضافية');
+                console.log('💻 الوضع الأصلي: مسافات عادية');
+            }
+        });
+        
+        // إضافة تأثيرات بصرية للصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('.spacing-card, .instruction-list li');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    el.style.transition = 'all 0.6s ease';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 150);
+            });
+        });
+    </script>
+</body>
+</html>
