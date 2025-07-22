@@ -280,9 +280,111 @@ function createFilterTag(filter) {
         <i class="fas fa-times"></i>
     `;
 
-    tag.onclick = () => removeFilter(filter.type, filter.value);
+    tag.onclick = () => removeFilterWithLoading(filter.type, filter.value, tag);
 
     return tag;
+}
+
+// إزالة فلتر مع مؤشر التحميل
+function removeFilterWithLoading(type, value, tagElement) {
+    console.log(`🗑️ إزالة فلتر مع loading: ${type} = ${value}`);
+
+    // إظهار مؤشر التحميل على التاغ المحدد
+    if (tagElement) {
+        // حفظ المحتوى الأصلي
+        tagElement.dataset.originalContent = tagElement.innerHTML;
+
+        // إضافة كلاس التحميل وتحديث المحتوى
+        tagElement.classList.add('loading');
+        tagElement.innerHTML = `
+            <i class="fas fa-spinner fa-spin" style="margin-left: 5px;"></i>
+            جاري الإزالة...
+        `;
+    }
+
+    // إظهار مؤشر التحميل على جميع أزرار مسح الفلاتر
+    showClearFiltersLoading(true);
+
+    // إضافة كلاس التحميل لجميع حاويات الفلاتر النشطة
+    const filterContainers = document.querySelectorAll('.active-filters-list, #activeFiltersList, #activeFiltersListMobile');
+    filterContainers.forEach(container => {
+        container.classList.add('active-filters-loading');
+    });
+
+    // تعطيل جميع تاجات الفلاتر النشطة الأخرى
+    const allFilterTags = document.querySelectorAll('.active-filter-tag');
+    allFilterTags.forEach(tag => {
+        if (tag !== tagElement) {
+            tag.style.opacity = '0.5';
+            tag.style.pointerEvents = 'none';
+        }
+    });
+
+    // تنفيذ إزالة الفلتر مع تأخير بصري
+    setTimeout(() => {
+        removeFilter(type, value);
+
+        // إظهار إشعار نجاح صغير
+        showMiniIconNotification('🗑️', '#28a745', 1500);
+
+        // إخفاء مؤشر التحميل بعد اكتمال العملية
+        setTimeout(() => {
+            showClearFiltersLoading(false);
+
+            // إزالة كلاس التحميل من حاويات الفلاتر
+            filterContainers.forEach(container => {
+                container.classList.remove('active-filters-loading');
+            });
+
+            // إعادة تفعيل جميع تاجات الفلاتر المتبقية
+            const remainingFilterTags = document.querySelectorAll('.active-filter-tag');
+            remainingFilterTags.forEach(tag => {
+                tag.classList.remove('loading');
+                tag.style.opacity = '1';
+                tag.style.pointerEvents = 'auto';
+                tag.style.cursor = 'pointer';
+            });
+        }, 300);
+    }, 600); // تأخير 600ms للتأثير البصري
+}
+
+// دالة مساعدة لإظهار رسالة نجاح إزالة الفلتر
+function showFilterRemovalSuccess(filterType, filterValue) {
+    let message = '';
+    switch (filterType) {
+        case 'city':
+            message = `تم إزالة فلتر المدينة: ${filterValue}`;
+            break;
+        case 'property':
+            message = `تم إزالة فلتر العقار: ${filterValue}`;
+            break;
+        case 'status':
+            message = `تم إزالة فلتر الحالة: ${filterValue}`;
+            break;
+        case 'contractType':
+            message = `تم إزالة فلتر نوع العقد: ${filterValue}`;
+            break;
+        case 'propertyType':
+            message = `تم إزالة فلتر نوع العقار: ${filterValue}`;
+            break;
+        case 'dateFilter':
+            message = `تم إزالة فلتر التاريخ`;
+            break;
+        case 'monthFilter':
+            message = `تم إزالة فلتر الشهر`;
+            break;
+        case 'multiProperty':
+            message = `تم إزالة فلتر العقارات المتعددة`;
+            break;
+        case 'owner':
+            message = `تم إزالة فلتر المالك: ${filterValue}`;
+            break;
+        default:
+            message = `تم إزالة الفلتر: ${filterValue}`;
+    }
+
+    console.log(`✅ ${message}`);
+    // يمكن إضافة إشعار مرئي هنا إذا أردت
 }
 
 // إزالة فلتر محدد مع الحفاظ على التسلسل الهرمي
@@ -383,6 +485,9 @@ function removeFilter(type, value) {
     renderData();
     updateActiveFiltersDisplay();
     saveAppState();
+
+    // إظهار رسالة نجاح
+    showFilterRemovalSuccess(type, value);
 
     console.log('✅ تم إزالة الفلتر وتحديث العرض');
 }
@@ -44080,7 +44185,8 @@ const users = {
             deleteAttachments: false, // Cannot delete attachments
             exportData: true,
             importData: true,
-            manageSettings: false
+            manageSettings: false,
+            clearFilters: true        // Can use clear filters functionality
         }
     }
 };
@@ -44600,6 +44706,61 @@ function applyUserPermissions() {
 
         alert(message);
         return testResults;
+    };
+
+    // دالة اختبار مسح الفلاتر للمستخدم أبو تميم (شركة السنيدي)
+    window.testAlSenidiClearFilters = function() {
+        if (currentUser !== '1234') {
+            alert('هذا الاختبار مخصص لمستخدم شركة السنيدي فقط');
+            return;
+        }
+
+        console.log('🧪 اختبار وظيفة مسح الفلاتر لشركة السنيدي...');
+
+        // فحص وجود أزرار مسح الفلاتر
+        const clearButtons = document.querySelectorAll('.clear-all-filters-btn');
+        console.log(`🔍 عدد أزرار مسح الفلاتر الموجودة: ${clearButtons.length}`);
+
+        clearButtons.forEach((btn, index) => {
+            console.log(`🔘 زر ${index + 1}: مرئي = ${btn.style.display !== 'none'}, معطل = ${btn.disabled}`);
+        });
+
+        // فحص صلاحية مسح الفلاتر
+        const hasPermission = users['1234'].permissions.clearFilters;
+        console.log(`✅ صلاحية مسح الفلاتر: ${hasPermission ? 'مسموح' : 'ممنوع'}`);
+
+        // اختبار تنفيذ وظيفة مسح الفلاتر
+        if (typeof clearAllFilters === 'function') {
+            console.log('✅ وظيفة clearAllFilters متوفرة');
+
+            // محاكاة تطبيق بعض الفلاتر أولاً
+            if (typeof selectCountry === 'function') {
+                selectCountry('الرياض');
+                console.log('🎭 تم تطبيق فلتر المدينة للاختبار');
+            }
+
+            setTimeout(() => {
+                // تنفيذ مسح الفلاتر
+                clearAllFilters();
+                console.log('🗑️ تم تنفيذ مسح الفلاتر بنجاح');
+
+                // فحص النتيجة
+                setTimeout(() => {
+                    const isCleared = !currentCountry && !currentProperty && !filterStatus;
+                    console.log(`📊 نتيجة الاختبار: ${isCleared ? 'نجح مسح الفلاتر' : 'فشل مسح الفلاتر'}`);
+                    alert(`اختبار مسح الفلاتر لشركة السنيدي: ${isCleared ? 'نجح ✅' : 'فشل ❌'}`);
+                }, 500);
+            }, 1000);
+        } else {
+            console.log('❌ وظيفة clearAllFilters غير متوفرة');
+            alert('❌ وظيفة مسح الفلاتر غير متوفرة');
+        }
+
+        return {
+            buttonsFound: clearButtons.length,
+            hasPermission: hasPermission,
+            functionAvailable: typeof clearAllFilters === 'function'
+        };
     };
 }
 

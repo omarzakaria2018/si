@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار مؤشر التحميل عند إزالة الفلاتر</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #495057;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+        }
+
+        .test-section h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+        .log-warning { color: #f6e05e; }
+        .log-info { color: #63b3ed; }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .demo-section {
+            background: #fff;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .demo-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .demo-filter-tag {
+            background: #dc3545;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .demo-filter-tag:hover {
+            background: #c82333;
+            transform: scale(1.05);
+        }
+
+        .demo-filter-tag.loading {
+            background: #6c757d !important;
+            cursor: wait !important;
+            pointer-events: none !important;
+            opacity: 0.7 !important;
+            animation: filterTagPulse 1.5s infinite;
+        }
+
+        @keyframes filterTagPulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 0.9; }
+            100% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏳ اختبار مؤشر التحميل عند إزالة الفلاتر</h1>
+
+        <div class="alert alert-info">
+            <h4>📋 الوظيفة الجديدة</h4>
+            <p>تم إضافة مؤشر تحميل يظهر عند النقر على أي فلتر نشط لإزالته في جميع الشاشات (الكمبيوتر والهاتف).</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 خطوات الاختبار</h3>
+            <ol>
+                <li>فتح التطبيق الرئيسي</li>
+                <li>تطبيق بعض الفلاتر (مدينة، عقار، حالة)</li>
+                <li>النقر على أي فلتر نشط لإزالته</li>
+                <li>مراقبة ظهور مؤشر التحميل</li>
+                <li>التحقق من إزالة الفلتر بنجاح</li>
+            </ol>
+        </div>
+
+        <div class="demo-section">
+            <h3>🎭 عرض توضيحي</h3>
+            <p>اضغط على أي فلتر أدناه لمشاهدة تأثير التحميل:</p>
+            
+            <div class="demo-filters" id="demoFilters">
+                <div class="demo-filter-tag" onclick="simulateFilterRemoval(this, 'الرياض')">
+                    الرياض
+                    <i class="fas fa-times"></i>
+                </div>
+                <div class="demo-filter-tag" onclick="simulateFilterRemoval(this, 'برج النخيل')">
+                    برج النخيل
+                    <i class="fas fa-times"></i>
+                </div>
+                <div class="demo-filter-tag" onclick="simulateFilterRemoval(this, 'مؤجر')">
+                    مؤجر
+                    <i class="fas fa-times"></i>
+                </div>
+                <div class="demo-filter-tag" onclick="simulateFilterRemoval(this, 'سكني')">
+                    سكني
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            
+            <button class="btn btn-info" onclick="resetDemo()">إعادة تعيين العرض التوضيحي</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🛠️ أدوات الاختبار</h3>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="openMainApp()">فتح التطبيق الرئيسي</button>
+                <button class="btn btn-success" onclick="testFilterRemoval()">اختبار إزالة الفلاتر</button>
+                <button class="btn btn-warning" onclick="simulateFiltersAndTest()">محاكاة فلاتر واختبار الإزالة</button>
+                <button class="btn btn-danger" onclick="clearLog()">مسح السجل</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 سجل الاختبارات</h3>
+            <div class="log-container" id="logContainer">
+                <div class="log-entry log-info">🔍 أداة اختبار مؤشر التحميل عند إزالة الفلاتر جاهزة...</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ الميزات المضافة</h3>
+            <ul class="feature-list">
+                <li>مؤشر تحميل على الفلتر المحدد عند النقر عليه</li>
+                <li>تعطيل جميع الفلاتر الأخرى أثناء الإزالة</li>
+                <li>مؤشر تحميل على أزرار "مسح جميع الفلاتر"</li>
+                <li>تأثيرات بصرية محسنة مع CSS</li>
+                <li>إشعار نجاح صغير بعد إزالة الفلتر</li>
+                <li>تأخير بصري مناسب للتأثير</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let testWindow = null;
+
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function simulateFilterRemoval(element, filterName) {
+            log(`🎭 محاكاة إزالة فلتر: ${filterName}`, 'info');
+            
+            // إضافة كلاس التحميل
+            element.classList.add('loading');
+            element.innerHTML = `
+                <i class="fas fa-spinner fa-spin"></i>
+                جاري الإزالة...
+            `;
+            
+            // تعطيل الفلاتر الأخرى
+            const otherFilters = document.querySelectorAll('.demo-filter-tag:not(.loading)');
+            otherFilters.forEach(filter => {
+                filter.style.opacity = '0.5';
+                filter.style.pointerEvents = 'none';
+            });
+            
+            // محاكاة الإزالة بعد تأخير
+            setTimeout(() => {
+                element.remove();
+                log(`✅ تم إزالة فلتر: ${filterName}`, 'success');
+                
+                // إعادة تفعيل الفلاتر الأخرى
+                otherFilters.forEach(filter => {
+                    filter.style.opacity = '1';
+                    filter.style.pointerEvents = 'auto';
+                });
+            }, 1500);
+        }
+
+        function resetDemo() {
+            const demoFilters = document.getElementById('demoFilters');
+            demoFilters.innerHTML = `
+                <div class="demo-filter-tag" onclick="simulateFilterRemoval(this, 'الرياض')">
+                    الرياض
+                    <i class="fas fa-times"></i>
+                </div>
+                <div class="demo-filter-tag" onclick="simulateFilterRemoval(this, 'برج النخيل')">
+                    برج النخيل
+                    <i class="fas fa-times"></i>
+                </div>
+                <div class="demo-filter-tag" onclick="simulateFilterRemoval(this, 'مؤجر')">
+                    مؤجر
+                    <i class="fas fa-times"></i>
+                </div>
+                <div class="demo-filter-tag" onclick="simulateFilterRemoval(this, 'سكني')">
+                    سكني
+                    <i class="fas fa-times"></i>
+                </div>
+            `;
+            log('🔄 تم إعادة تعيين العرض التوضيحي', 'info');
+        }
+
+        function openMainApp() {
+            log('🌐 فتح التطبيق الرئيسي...', 'info');
+            testWindow = window.open('index.html', 'mainApp', 'width=1200,height=800');
+            
+            if (testWindow) {
+                log('✅ تم فتح التطبيق الرئيسي بنجاح', 'success');
+                log('💡 طبق بعض الفلاتر ثم اضغط على أي فلتر نشط لإزالته', 'info');
+            } else {
+                log('❌ فشل في فتح التطبيق الرئيسي', 'error');
+            }
+        }
+
+        function testFilterRemoval() {
+            log('🧪 اختبار إزالة الفلاتر...', 'info');
+            
+            if (!testWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                return;
+            }
+
+            try {
+                // فحص وجود فلاتر نشطة
+                const activeFilters = testWindow.document.querySelectorAll('.active-filter-tag');
+                log(`📊 عدد الفلاتر النشطة: ${activeFilters.length}`, 'info');
+                
+                if (activeFilters.length === 0) {
+                    log('⚠️ لا توجد فلاتر نشطة للاختبار', 'warning');
+                    log('💡 طبق بعض الفلاتر أولاً', 'info');
+                    return;
+                }
+                
+                log('✅ تم العثور على فلاتر نشطة - يمكنك النقر عليها لاختبار التحميل', 'success');
+                
+            } catch (error) {
+                log('❌ خطأ في اختبار إزالة الفلاتر: ' + error.message, 'error');
+            }
+        }
+
+        function simulateFiltersAndTest() {
+            log('🎭 محاكاة تطبيق فلاتر واختبار الإزالة...', 'info');
+            
+            if (!testWindow) {
+                log('⚠️ يجب فتح التطبيق الرئيسي أولاً', 'warning');
+                return;
+            }
+
+            try {
+                // تطبيق فلتر مدينة
+                if (testWindow.selectCountry) {
+                    testWindow.selectCountry('الرياض');
+                    log('✅ تم تطبيق فلتر المدينة: الرياض', 'success');
+                }
+                
+                // تطبيق فلتر عقار بعد تأخير
+                setTimeout(() => {
+                    if (testWindow.selectProperty) {
+                        testWindow.selectProperty('برج النخيل');
+                        log('✅ تم تطبيق فلتر العقار: برج النخيل', 'success');
+                    }
+                    
+                    setTimeout(() => {
+                        log('💡 الآن يمكنك النقر على أي فلتر نشط لاختبار مؤشر التحميل', 'info');
+                    }, 1000);
+                }, 1000);
+                
+            } catch (error) {
+                log('❌ خطأ في محاكاة الفلاتر: ' + error.message, 'error');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '<div class="log-entry log-info">🔍 تم مسح السجل - جاهز للاختبار...</div>';
+            log('✅ تم مسح السجل', 'success');
+        }
+
+        // رسالة ترحيب
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔍 أداة اختبار مؤشر التحميل عند إزالة الفلاتر جاهزة', 'success');
+            log('💡 اضغط "فتح التطبيق الرئيسي" للبدء', 'info');
+        });
+    </script>
+</body>
+</html>

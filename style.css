@@ -24024,6 +24024,83 @@ body.limited-user .restricted-dropdown-item::before {
     font-size: 10px;
 }
 
+/* أنماط تاجات الفلاتر أثناء التحميل */
+.active-filter-tag.loading {
+    background: #6c757d !important;
+    cursor: wait !important;
+    pointer-events: none !important;
+    opacity: 0.7 !important;
+    animation: filterTagPulse 1.5s infinite;
+}
+
+.active-filter-tag.loading:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+@keyframes filterTagPulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 0.9; }
+    100% { opacity: 0.7; }
+}
+
+/* تأثير التحميل للفلاتر النشطة */
+.active-filters-loading {
+    position: relative;
+}
+
+.active-filters-loading::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.active-filters-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #007bff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 2;
+    pointer-events: none;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* تحسينات للهاتف المحمول */
+@media (max-width: 768px) {
+    .active-filter-tag.loading {
+        font-size: 11px;
+        padding: 5px 8px;
+    }
+
+    .active-filter-tag.loading i {
+        font-size: 9px;
+    }
+
+    .active-filters-loading::after {
+        width: 16px;
+        height: 16px;
+        border-width: 1.5px;
+    }
+}
+
 .clear-all-filters-btn {
     background: #6c757d;
     color: white;
