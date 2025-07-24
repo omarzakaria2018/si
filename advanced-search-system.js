@@ -3,7 +3,9 @@
 // قاموس المرادفات للحالات
 const statusSynonyms = {
     // مرادفات "فعال" و "على وشك"
-    'active': ['فعال', 'نشط', 'ساري', 'سارى', 'جاري', 'جارى', 'الحالي', 'الحالى', 'على وشك', 'علي وشك', 'وشك'],
+    'active': ['فعال', 'على وشك', 'علي وشك', 'وشك'],
+    // مرادفات "نشط عام" (فعال + على وشك)
+    'active_general': ['نشط', 'ساري', 'سارى', 'جاري', 'جارى', 'الحالي', 'الحالى'],
     
     // مرادفات "منتهي"
     'expired': ['منتهي', 'المنتهي', 'منتهى', 'انتهى', 'انتهي', 'مكتمل', 'مكتملة'],
@@ -355,7 +357,7 @@ function showSearchExamples() {
         {
             type: 'مرادفات',
             query: 'نشط',
-            description: 'البحث عن العقارات النشطة (يشمل: فعال، ساري، جاري، الحالي)'
+            description: 'البحث عن العقارات النشطة (يشمل: فعال، ساري، الحالي)'
         }
     ];
 
@@ -481,6 +483,7 @@ if (typeof window !== 'undefined') {
     window.testAdvancedSearch = testAdvancedSearch;
     window.advancedSearchInProperty = advancedSearchInProperty;
     window.findSynonymMatch = findSynonymMatch;
+    window.normalizeArabicTextAdvanced = normalizeArabicTextAdvanced;
 }
 
 console.log('✅ تم تحميل نظام البحث الهرمي والمتعدد المتقدم');

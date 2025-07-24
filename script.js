@@ -69,7 +69,7 @@ function updateActiveFiltersDisplay() {
 
     if (filterStatus && filterStatus !== 'الكل' && filterStatus !== null) {
         const statusLabels = {
-            'جاري': 'جاري',
+            'فعال': 'فعال',
             'منتهي': 'منتهي',
             'فارغ': 'فارغ',
             'على وشك الانتهاء': 'على وشك الانتهاء'
@@ -268,6 +268,34 @@ function createMissingClearButtons() {
         `;
         statisticsContainer.appendChild(clearBtn);
         console.log('✅ تم إنشاء زر مسح الفلاتر في قائمة الإحصائيات');
+    }
+
+    // فحص زر الشاشات الصغيرة (الجوالات)
+    const mobileContainer = document.getElementById('activeFiltersListMobile');
+    if (mobileContainer && !mobileContainer.querySelector('.clear-all-filters-btn')) {
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'clear-all-filters-btn mobile-clear-btn';
+        clearBtn.onclick = function() { clearAllFiltersWithLoading(this); };
+        clearBtn.innerHTML = `
+            <i class="fas fa-times-circle"></i>
+            <span>مسح جميع الفلاتر</span>
+        `;
+        mobileContainer.appendChild(clearBtn);
+        console.log('✅ تم إنشاء زر مسح الفلاتر للشاشات الصغيرة');
+    }
+
+    // فحص زر نافذة الفلاتر المحمولة
+    const mobileFiltersModal = document.querySelector('.mobile-filters-modal .modal-body');
+    if (mobileFiltersModal && !mobileFiltersModal.querySelector('.clear-all-filters-btn')) {
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'clear-all-filters-btn mobile-clear-btn';
+        clearBtn.onclick = function() { clearAllFiltersWithLoading(this); };
+        clearBtn.innerHTML = `
+            <i class="fas fa-times-circle"></i>
+            <span>مسح جميع الفلاتر</span>
+        `;
+        mobileFiltersModal.appendChild(clearBtn);
+        console.log('✅ تم إنشاء زر مسح الفلاتر في نافذة الفلاتر المحمولة');
     }
 }
 
@@ -934,6 +962,35 @@ function updateGenericFilterButtons() {
 // مسح جميع الفلاتر
 function clearAllFilters() {
     console.log('🗑️ مسح جميع الفلاتر...');
+
+    // فحص صلاحيات المستخدم
+    console.log('🔍 فحص صلاحيات المستخدم...');
+    console.log('👤 المستخدم الحالي:', currentUser);
+    console.log('📋 بيانات المستخدمين متوفرة:', !!users);
+
+    if (currentUser && users[currentUser]) {
+        console.log('✅ المستخدم موجود في النظام');
+        console.log('📋 صلاحيات المستخدم:', users[currentUser].permissions);
+
+        const hasPermission = users[currentUser].permissions.clearFilters;
+        console.log(`🔍 فحص صلاحية مسح الفلاتر للمستخدم ${currentUser}: ${hasPermission ? 'مسموح' : 'ممنوع'}`);
+
+        if (!hasPermission) {
+            console.log('❌ المستخدم لا يملك صلاحية مسح الفلاتر');
+            showNoPermissionMessage('عذراً، لا تملك صلاحية مسح الفلاتر');
+            return;
+        }
+
+        console.log('✅ المستخدم لديه صلاحية مسح الفلاتر - المتابعة...');
+    } else {
+        console.log('⚠️ لا يوجد مستخدم مسجل دخول أو المستخدم غير موجود');
+        if (!currentUser) {
+            console.log('❌ currentUser is null/undefined');
+        }
+        if (!users[currentUser]) {
+            console.log('❌ المستخدم غير موجود في قاعدة البيانات');
+        }
+    }
 
     // إظهار أيقونة التحميل على أزرار مسح الفلاتر
     showClearFiltersLoading(true);
@@ -3015,7 +3072,7 @@ function closeCitiesModal() {
 // عرض فلتر الحالة
 function showStatusFilter() {
     // أضف "الفارغ" إلى قائمة الحالات
-    const statuses = ['جاري', 'منتهى', 'على وشك', 'فارغ'];
+    const statuses = ['فعال', 'منتهى', 'على وشك', 'فارغ'];
     let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
         <div class="modal-box status-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
             <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -3043,7 +3100,7 @@ function showStatusFilter() {
     statuses.forEach(status => {
         const isActive = filterStatus === status;
         const statusColors = {
-            'جاري': '#28a745',
+            'فعال': '#28a745',
             'منتهى': '#dc3545',
             'على وشك': '#fd7e14',
             'فارغ': '#6c757d'
@@ -3300,10 +3357,10 @@ function initializeApp() {
                     if (!contractEndDate || installmentEndDate < contractEndDate) {
                         // حساب الحالة بناءً على تاريخ نهاية القسط
                         if (installmentDiffDays < 0) {
-                            // إذا انتهى تاريخ القسط الثاني والعقد لا يزال جاريًا
+                            // إذا انتهى تاريخ القسط الثاني والعقد لا يزال فعالاً
                             if (!contractEndDate || contractEndDate > today) {
-                                property['الحالة النهائية'] = 'جاري';
-                                property['الحالة الجديدة'] = 'الأقساط منتهية والعقد جاري';
+                                property['الحالة النهائية'] = 'فعال';
+                                property['الحالة الجديدة'] = 'الأقساط منتهية والعقد فعال';
                                 property['isInstallmentEnded'] = true;
                                 return;
                             } else {
@@ -3349,7 +3406,7 @@ function initializeApp() {
                     property['الحالة الجديدة'] = `سينتهي بعد ${diffDays} يوم`;
                     property['isInstallmentEnded'] = false;
                 } else {
-                    property['الحالة النهائية'] = 'جاري';
+                    property['الحالة النهائية'] = 'فعال';
                     property['الحالة الجديدة'] = 'فعال';
                     property['isInstallmentEnded'] = false;
                 }
@@ -3989,7 +4046,7 @@ function showNewSearchExamples() {
 🔗 البحث المتعدد OR (استخدم +):
    فعال+وشك
    منتهي+فارغ
-   نشط+ساري+جاري
+   نشط+ساري+فعال
 
 💡 أمثلة مختلطة:
    الرياض//نشط+فارغ (الرياض ثم النشطة أو الفارغة)
@@ -4166,7 +4223,7 @@ function showAllSynonyms() {
 🔍 دليل المرادفات المتاحة في البحث:
 
 📊 حالات العقود:
-   • فعال: نشط، ساري، جاري، الحالي، على وشك، وشك
+   • فعال: نشط، ساري، الحالي، على وشك، وشك
    • منتهي: المنتهي، انتهى، مكتمل
    • فارغ: شاغر، خالي، متاح
 
@@ -4512,6 +4569,104 @@ function hideSearchLoadingIndicator() {
     }
 }
 
+// قاموس كلمات الحالة المشترك
+const STATUS_KEYWORDS = {
+    'فعال': ['فعال'],
+    'نشط_عام': ['نشط', 'ساري', 'سارى', 'جاري', 'جارى', 'الحالي', 'الحالى'], // هذه تعطي فعال + على وشك
+    'على وشك': ['على وشك', 'علي وشك', 'وشك'],
+    'منتهى': ['منتهي', 'منتهى', 'انتهى', 'انتهي', 'مكتمل', 'مكتملة'],
+    'فارغ': ['فارغ', 'فارغة', 'شاغر', 'شاغرة', 'خالي', 'خالية', 'متاح', 'متاحة']
+};
+
+// متغير لتتبع ما إذا كان فلتر الحالة تم تطبيقه من البحث
+let statusFilterAppliedFromSearch = false;
+
+// دالة للكشف عن كلمة الحالة من النص
+function detectStatusKeyword(searchTerm) {
+    if (!searchTerm || searchTerm.trim() === '') return null;
+
+    const normalizedTerm = normalizeArabicTextAdvanced ? normalizeArabicTextAdvanced(searchTerm.trim()) : searchTerm.trim().toLowerCase();
+
+    // البحث عن تطابق مع كلمات الحالة
+    for (const [status, keywords] of Object.entries(STATUS_KEYWORDS)) {
+        for (const keyword of keywords) {
+            const normalizedKeyword = normalizeArabicTextAdvanced ? normalizeArabicTextAdvanced(keyword) : keyword.toLowerCase();
+            if (normalizedTerm === normalizedKeyword) {
+                return status;
+            }
+        }
+    }
+
+    return null;
+}
+
+// دالة لتطبيق بحث نشط عام (فعال + على وشك) باستخدام البحث المتقدم
+function applyActiveGeneralSearch(originalSearchTerm) {
+    console.log('🎯 تطبيق بحث نشط عام (فعال + على وشك) باستخدام البحث المتقدم');
+
+    // تسجيل أن البحث تم تطبيقه من كلمة حالة
+    statusFilterAppliedFromSearch = true;
+
+    // حفظ النص الأصلي في حالة البحث (ما يظهر للمستخدم)
+    // لكن استخدام البحث المتقدم داخلياً
+    searchState.global = originalSearchTerm || 'نشط';
+    searchState.isSearchActive = true;
+    searchState.internalAdvancedSearch = 'فعال + على وشك'; // البحث الداخلي المتقدم
+
+    // مسح أي فلاتر حالة موجودة لأننا نستخدم البحث
+    filterStatus = '';
+
+    // تطبيق البحث
+    renderData();
+
+    // تحديث عرض الفلاتر النشطة
+    updateActiveFiltersDisplay();
+
+    // تحديث حالة أزرار الفلاتر
+    updateAllFilterButtonsState();
+
+    // تحديث أزرار الحالة في الواجهة (لا نحدد حالة معينة لأنها بحث مركب)
+    updateStatusButtonsState('');
+
+    // حفظ الحالة
+    saveAppState();
+}
+
+// دالة للكشف عن كلمات الحالة وتطبيق الفلتر المناسب
+function detectAndApplyStatusFilter(searchTerm, clearSearchField = true) {
+    const detectedStatus = detectStatusKeyword(searchTerm);
+
+    if (detectedStatus) {
+        console.log(`🎯 تم اكتشاف كلمة حالة: "${searchTerm}" → تطبيق فلتر "${detectedStatus}"`);
+
+        // تسجيل أن فلتر الحالة تم تطبيقه من البحث
+        statusFilterAppliedFromSearch = true;
+
+        // تطبيق البحث أو الفلتر المناسب
+        if (detectedStatus === 'نشط_عام') {
+            // استخدام البحث المتقدم للحصول على نتائج شاملة
+            // لكن الاحتفاظ بالنص الأصلي في حقل البحث
+            applyActiveGeneralSearch(searchTerm);
+        } else {
+            setStatusFilter(detectedStatus, true);
+        }
+
+        // إظهار رسالة توضيحية
+        const searchInput = document.getElementById('globalSearch');
+        if (searchInput && typeof showSearchIndicator === 'function') {
+            if (detectedStatus === 'نشط_عام') {
+                showSearchIndicator(searchInput, `تم تطبيق بحث متقدم: "${searchTerm}" = فعال + على وشك (يمكنك حذف النص لإلغاء البحث)`, 'success');
+            } else {
+                showSearchIndicator(searchInput, `تم تطبيق فلتر الحالة: ${detectedStatus} (يمكنك حذف النص لإلغاء الفلتر)`, 'success');
+            }
+        }
+
+        return true; // تم تطبيق فلتر الحالة
+    }
+
+    return false; // لم يتم العثور على كلمة حالة
+}
+
 // تنفيذ البحث العام
 function performGlobalSearch() {
     const searchInput = document.getElementById('globalSearch');
@@ -4532,31 +4687,40 @@ function performGlobalSearch() {
         cancelBtn.innerHTML = '<i class="fas fa-times"></i><span class="btn-text">إلغاء</span>';
     }
 
-    // حفظ حالة البحث
-    searchState.global = searchTerm;
-    searchState.isSearchActive = searchTerm.length > 0;
-
     // تنفيذ البحث مع تأخير قصير لإظهار المؤشر
     setTimeout(() => {
         try {
-            renderData();
+            // أولاً: محاولة اكتشاف وتطبيق فلتر الحالة
+            const statusFilterApplied = detectAndApplyStatusFilter(searchTerm);
+
+            if (statusFilterApplied) {
+                // إذا تم تطبيق فلتر/بحث حالة، حالة البحث تم تحديثها بالفعل في الدالة
+                // لا نحتاج لفعل شيء هنا
+            } else {
+                // إذا لم يتم تطبيق فلتر حالة، تنفيذ البحث العادي
+                searchState.global = searchTerm;
+                searchState.isSearchActive = searchTerm.length > 0;
+
+                renderData();
+
+                // إظهار رسالة نجاح البحث
+                if (searchTerm) {
+                    const searchTerms = searchTerm.split('//').map(term => term.trim()).filter(term => term.length > 0);
+                    const isMultiSearch = searchTerms.length > 1;
+
+                    if (typeof showSearchIndicator === 'function') {
+                        if (isMultiSearch) {
+                            showSearchIndicator(searchInput, `تم البحث عن ${searchTerms.length} مصطلحات مختلفة`, 'success');
+                        } else {
+                            showSearchIndicator(searchInput, `تم العثور على النتائج`, 'success');
+                        }
+                    }
+                }
+            }
 
             // إخفاء مؤشر التحميل بعد انتهاء البحث
             hideSearchLoadingIndicator();
 
-            // إظهار رسالة نجاح البحث
-            if (searchTerm) {
-                const searchTerms = searchTerm.split('//').map(term => term.trim()).filter(term => term.length > 0);
-                const isMultiSearch = searchTerms.length > 1;
-
-                if (typeof showSearchIndicator === 'function') {
-                    if (isMultiSearch) {
-                        showSearchIndicator(searchInput, `تم البحث عن ${searchTerms.length} مصطلحات مختلفة`, 'success');
-                    } else {
-                        showSearchIndicator(searchInput, `تم العثور على النتائج`, 'success');
-                    }
-                }
-            }
         } catch (error) {
             console.error('❌ خطأ في البحث:', error);
             hideSearchLoadingIndicator();
@@ -4587,6 +4751,10 @@ function clearGlobalSearch() {
     // مسح حالة البحث العام
     searchState.global = '';
     searchState.isSearchActive = false;
+    searchState.internalAdvancedSearch = ''; // مسح البحث الداخلي المتقدم
+
+    // إعادة تعيين متغير تتبع فلتر الحالة من البحث
+    statusFilterAppliedFromSearch = false;
 
     // إعادة تعيين جميع متغيرات الفلاتر
     currentCountry = null;
@@ -4618,6 +4786,9 @@ function clearGlobalSearch() {
 
     const filterButtons = document.querySelectorAll('.filter-btn, .status-btn');
     filterButtons.forEach(btn => btn.classList.remove('active'));
+
+    // إعادة تعيين أزرار الحالة في الواجهة
+    updateStatusButtonsState('');
 
     // مسح فلاتر الجداول إذا كانت موجودة
     if (window.tableFilterSystem) {
@@ -4814,6 +4985,31 @@ function clearGlobalSearchOnly() {
     // مسح حالة البحث العام فقط
     searchState.global = '';
     searchState.isSearchActive = false;
+    searchState.internalAdvancedSearch = ''; // مسح البحث الداخلي المتقدم
+
+    // إذا كان فلتر/بحث الحالة مطبقاً من البحث، قم بمسحه أيضاً
+    if (statusFilterAppliedFromSearch) {
+        const wasAdvancedSearch = searchState.internalAdvancedSearch === 'فعال + على وشك';
+        console.log('🧹 مسح فلتر/بحث الحالة لأنه كان مطبقاً من البحث');
+
+        // مسح الفلتر والبحث
+        filterStatus = '';
+        statusFilterAppliedFromSearch = false;
+
+        // تحديث أزرار الحالة في الواجهة
+        updateStatusButtonsState('');
+
+        // تحديث عرض الفلاتر النشطة
+        if (typeof updateActiveFiltersDisplay === 'function') {
+            updateActiveFiltersDisplay();
+        }
+
+        // إظهار رسالة توضيحية
+        if (searchInput && typeof showSearchIndicator === 'function') {
+            const searchType = wasAdvancedSearch ? 'البحث المتقدم (فعال + على وشك)' : 'فلتر الحالة';
+            showSearchIndicator(searchInput, `تم مسح ${searchType} المطبق من البحث`, 'success');
+        }
+    }
 
     // تنفيذ renderData لعرض البيانات حسب الفلاتر الموجودة
     setTimeout(() => {
@@ -4880,11 +5076,33 @@ function performAutoPropertySearch() {
     const searchInput = document.getElementById('propertySearch');
     if (!searchInput) return;
 
-    const searchTerm = searchInput.value.trim().toLowerCase();
+    const searchTerm = searchInput.value.trim();
     console.log('🔍 البحث التلقائي في العقارات:', searchTerm);
 
+    // أولاً: محاولة اكتشاف وتطبيق فلتر الحالة
+    const statusFilterApplied = detectAndApplyStatusFilter(searchTerm, false); // لا نمسح حقل البحث في العقارات
+
+    if (statusFilterApplied) {
+        // إذا تم تطبيق فلتر حالة، الاحتفاظ بالنص وإظهار جميع العقارات
+        // لأن الفلتر سيطبق على مستوى البيانات
+        const propertyItems = document.querySelectorAll('#propertyList div:not(.no-properties)');
+        propertyItems.forEach(item => {
+            item.style.display = '';
+        });
+
+        // إظهار رسالة توضيحية
+        if (typeof showSearchIndicator === 'function') {
+            showSearchIndicator(searchInput, `تم تطبيق فلتر الحالة من البحث (يمكنك حذف النص لإلغاء الفلتر)`, 'success');
+        }
+
+        return;
+    }
+
+    // إذا لم يتم تطبيق فلتر حالة، تنفيذ البحث العادي
+    const searchTermLower = searchTerm.toLowerCase();
+
     // حفظ حالة البحث
-    searchState.property = searchTerm;
+    searchState.property = searchTermLower;
 
     // إظهار/إخفاء زر المسح
     const clearBtn = document.querySelector('.property-clear-btn');
@@ -4898,7 +5116,7 @@ function performAutoPropertySearch() {
 
     propertyItems.forEach(item => {
         const propertyName = item.textContent.toLowerCase();
-        const isVisible = !searchTerm || propertyName.includes(searchTerm);
+        const isVisible = !searchTermLower || propertyName.includes(searchTermLower);
 
         item.style.display = isVisible ? '' : 'none';
         if (isVisible) visibleCount++;
@@ -5098,7 +5316,17 @@ function restorePropertySearchState(searchTerm) {
 // تحديث دالة renderData لاستخدام حالة البحث المحفوظة
 function getGlobalSearchTerm() {
     // استخدام حالة البحث المحفوظة بدلاً من قراءة القيمة مباشرة
-    return searchState.isSearchActive ? searchState.global : '';
+    if (!searchState.isSearchActive) {
+        return '';
+    }
+
+    // إذا كان هناك بحث داخلي متقدم، استخدمه للبحث الفعلي
+    if (searchState.internalAdvancedSearch) {
+        return searchState.internalAdvancedSearch;
+    }
+
+    // وإلا استخدم البحث العادي
+    return searchState.global;
 }
 
 // تهيئة نظام البحث المحسن
@@ -5154,6 +5382,44 @@ function ensureSearchEnhancements() {
                     }
                 });
                 globalSearch.setAttribute('data-enter-initialized', 'true');
+            }
+
+            // إضافة مستمع لمراقبة مسح البحث يدوياً
+            if (!globalSearch.hasAttribute('data-input-initialized')) {
+                globalSearch.addEventListener('input', function(e) {
+                    const currentValue = e.target.value.trim();
+
+                    // إذا تم مسح البحث يدوياً وكان فلتر/بحث الحالة مطبقاً من البحث
+                    if (currentValue === '' && statusFilterAppliedFromSearch) {
+                        const wasAdvancedSearch = searchState.internalAdvancedSearch === 'فعال + على وشك';
+                        console.log('🧹 تم مسح البحث يدوياً - مسح فلتر/بحث الحالة المطبق من البحث');
+
+                        // مسح فلتر الحالة والبحث
+                        filterStatus = '';
+                        statusFilterAppliedFromSearch = false;
+                        searchState.internalAdvancedSearch = ''; // مسح البحث الداخلي المتقدم
+
+                        // تحديث أزرار الحالة في الواجهة
+                        updateStatusButtonsState('');
+
+                        // تحديث عرض الفلاتر النشطة
+                        if (typeof updateActiveFiltersDisplay === 'function') {
+                            updateActiveFiltersDisplay();
+                        }
+
+                        // إعادة عرض البيانات
+                        if (typeof renderData === 'function') {
+                            renderData();
+                        }
+
+                        // إظهار رسالة توضيحية
+                        if (typeof showSearchIndicator === 'function') {
+                            const searchType = wasAdvancedSearch ? 'البحث المتقدم (فعال + على وشك)' : 'فلتر الحالة';
+                            showSearchIndicator(e.target, `تم مسح ${searchType}`, 'success');
+                        }
+                    }
+                });
+                globalSearch.setAttribute('data-input-initialized', 'true');
             }
         }
 
@@ -5407,8 +5673,14 @@ function selectProperty(propertyName) {
 }
 
 // تعيين فلتر الحالة
-function setStatusFilter(status) {
+function setStatusFilter(status, fromSearch = false) {
     filterStatus = status;
+
+    // إذا لم يتم استدعاؤها من البحث، فهذا يعني أنها تم تطبيقها يدوياً
+    if (!fromSearch) {
+        statusFilterAppliedFromSearch = false;
+    }
+
     renderData();
 
     // تحديث عرض الفلاتر النشطة
@@ -5417,8 +5689,39 @@ function setStatusFilter(status) {
     // تحديث حالة أزرار الفلاتر
     updateAllFilterButtonsState();
 
+    // تحديث أزرار الحالة في الواجهة
+    updateStatusButtonsState(status);
+
     // حفظ الحالة بعد تغيير فلتر الحالة
     saveAppState();
+}
+
+// دالة لتحديث حالة أزرار الحالة في الواجهة
+function updateStatusButtonsState(activeStatus) {
+    // البحث عن جميع أزرار الحالة وتحديث حالتها
+    const statusButtons = document.querySelectorAll('.status-btn, .filter-btn[data-status]');
+
+    statusButtons.forEach(btn => {
+        const btnStatus = btn.getAttribute('data-status') || btn.textContent.trim();
+
+        if (btnStatus === activeStatus) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // تحديث أزرار الحالة في القائمة المنسدلة إذا كانت موجودة
+    const statusFilterButtons = document.querySelectorAll('.status-filter-modal .status-option');
+    statusFilterButtons.forEach(btn => {
+        const btnStatus = btn.getAttribute('data-status') || btn.textContent.trim();
+
+        if (btnStatus === activeStatus) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
 }
 
 // تبديل طريقة العرض
@@ -5459,6 +5762,11 @@ function toggleSidebar() {
         }
 
         sidebar.classList.toggle('active');
+
+        // تحسين ارتفاع النافذة للجوالات الصغيرة عند الفتح
+        if (sidebar.classList.contains('active') && window.innerWidth <= 480) {
+            setTimeout(() => adjustSidebarHeightForMobile(), 100);
+        }
 
         // إخفاء/إظهار الإحصائيات عند تبديل القائمة
         if (totalContainer) {
@@ -5553,13 +5861,99 @@ function initializeSidebar() {
     }
 }
 
+// دالة لتحسين ارتفاع النافذة للجوالات الصغيرة
+function adjustSidebarHeightForMobile() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar || !sidebar.classList.contains('active')) return;
+
+    // الحصول على ارتفاع الشاشة الفعلي
+    const viewportHeight = window.innerHeight;
+    const visualViewportHeight = window.visualViewport ? window.visualViewport.height : viewportHeight;
+
+    // تطبيق الارتفاع الفعلي
+    sidebar.style.height = `${Math.min(viewportHeight, visualViewportHeight)}px`;
+    sidebar.style.maxHeight = `${Math.min(viewportHeight, visualViewportHeight)}px`;
+
+    // تحديث ارتفاع قائمة العقارات
+    const propertyList = sidebar.querySelector('#propertyList');
+    if (propertyList) {
+        const headerHeight = sidebar.querySelector('.sidebar-header')?.offsetHeight || 60;
+        const searchHeight = sidebar.querySelector('.property-search-container')?.offsetHeight || 60;
+        const buttonHeight = sidebar.querySelector('.hide-sidebar-btn')?.offsetHeight || 48;
+
+        const availableHeight = Math.min(viewportHeight, visualViewportHeight) - headerHeight - searchHeight - buttonHeight - 20;
+        propertyList.style.maxHeight = `${Math.max(200, availableHeight)}px`;
+    }
+
+    console.log(`📱 تم تحسين ارتفاع النافذة: ${Math.min(viewportHeight, visualViewportHeight)}px`);
+}
+
 // مستمع لتغيير حجم الشاشة
 window.addEventListener('resize', function() {
     initializeSidebar();
+
+    // تحسين ارتفاع النافذة للجوالات الصغيرة عند تغيير الحجم
+    if (window.innerWidth <= 480) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar && sidebar.classList.contains('active')) {
+            setTimeout(() => adjustSidebarHeightForMobile(), 100);
+        }
+    }
+
     // تحديث عرض اسم العقار عند تغيير حجم النافذة
     setTimeout(() => {
         updateMobilePropertyName();
     }, 100);
+});
+
+// مستمع لتغيير ارتفاع الشاشة (للجوالات التي تخفي شريط العنوان)
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function() {
+        if (window.innerWidth <= 480) {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar && sidebar.classList.contains('active')) {
+                setTimeout(() => adjustSidebarHeightForMobile(), 50);
+            }
+        }
+    });
+}
+
+// ضمان ظهور أزرار مسح الفلاتر عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📱 تحميل الصفحة - فحص أزرار مسح الفلاتر...');
+
+    // تأخير قصير للتأكد من تحميل جميع العناصر
+    setTimeout(() => {
+        ensureClearButtonsVisibility();
+
+        // فحص إضافي للشاشات الصغيرة
+        if (window.innerWidth <= 768) {
+            const mobileContainer = document.getElementById('activeFiltersListMobile');
+            const mobileFiltersModal = document.querySelector('.mobile-filters-modal');
+
+            if (mobileContainer) {
+                console.log('📱 فحص حاوية الفلاتر المحمولة...');
+                const clearBtn = mobileContainer.querySelector('.clear-all-filters-btn');
+                if (clearBtn) {
+                    clearBtn.style.display = 'flex';
+                    clearBtn.style.visibility = 'visible';
+                    clearBtn.style.opacity = '1';
+                    console.log('✅ تم ضمان ظهور زر مسح الفلاتر في الشاشات الصغيرة');
+                }
+            }
+
+            if (mobileFiltersModal) {
+                console.log('📱 فحص نافذة الفلاتر المحمولة...');
+                const clearBtn = mobileFiltersModal.querySelector('.clear-all-filters-btn');
+                if (clearBtn) {
+                    clearBtn.style.display = 'flex';
+                    clearBtn.style.visibility = 'visible';
+                    clearBtn.style.opacity = '1';
+                    console.log('✅ تم ضمان ظهور زر مسح الفلاتر في نافذة الفلاتر المحمولة');
+                }
+            }
+        }
+    }, 500);
 });
 
 // حماية السايدبار من الإغلاق أثناء البحث
@@ -5967,7 +6361,7 @@ function renderTotals(data) {
             const status = calculateStatus(property);
             uniqueContractStatuses[contractKey] = status.final;
 
-            if (status.final === 'جاري') {
+            if (status.final === 'فعال') {
                 countActive++;
             } else if (status.final === 'منتهى') {
                 countExpired++;
@@ -5983,9 +6377,9 @@ function renderTotals(data) {
             // حساب عدد المستأجرين (جميع العقود بغض النظر عن الحالة)
             tenantsCount++;
 
-            // حساب الإجمالي المالي فقط للعقود النشطة (جاري + على وشك)
+            // حساب الإجمالي المالي فقط للعقود النشطة (فعال + على وشك)
             const status = calculateStatus(property);
-            if (status.final === 'جاري' || status.final === 'على وشك') {
+            if (status.final === 'فعال' || status.final === 'على وشك') {
                 const smartTotal = calculateSmartTotal(property);
                 const totalAmount = smartTotal.amount;
 
@@ -6016,7 +6410,7 @@ function renderTotals(data) {
     // تشخيص للتحقق من صحة الأرقام
     console.log('📊 تشخيص الإحصائيات:');
     console.log(`   عدد المستأجرين: ${tenantsCount}`);
-    console.log(`   الجاري: ${countActive}`);
+    console.log(`   الفعال: ${countActive}`);
     console.log(`   على وشك: ${countPending}`);
     console.log(`   المنتهي: ${countExpired}`);
     console.log(`   المجموع: ${countActive + countPending + countExpired}`);
@@ -6056,7 +6450,7 @@ function renderTotals(data) {
         statusCard.innerHTML = `
             <h3><i class="fas fa-chart-pie"></i> حالات العقود</h3>
             <div style="font-size: 11px; color: #6c757d; margin-bottom: 8px; text-align: center;">
-                <i class="fas fa-info-circle"></i> العدد الحالي يشمل: الجاري + على وشك الانتهاء
+                <i class="fas fa-info-circle"></i> العدد الحالي يشمل: الفعال + على وشك الانتهاء
             </div>
             <div class="stat-grid">
                 <div class="stat-item">
@@ -6065,7 +6459,7 @@ function renderTotals(data) {
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" style="color: #28a745;">${countActive}</div>
-                    <div class="stat-label">الجاري</div>
+                    <div class="stat-label">الفعال</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" style="color: #fd7e14;">${countPending}</div>
@@ -6085,7 +6479,7 @@ function renderTotals(data) {
         financialCard.innerHTML = `
             <h3><i class="fas fa-money-bill-wave"></i> الإجماليات المالية</h3>
             <div style="font-size: 12px; color: #6c757d; margin-bottom: 10px; text-align: center;">
-                <i class="fas fa-info-circle"></i> يشمل العقود الجارية وعلى وشك الانتهاء فقط
+                <i class="fas fa-info-circle"></i> يشمل العقود الفعالة وعلى وشك الانتهاء فقط
             </div>
             <div class="stat-grid">
                 <div class="stat-item">
@@ -6115,8 +6509,8 @@ function renderTotals(data) {
         addTotalItem(container, 'عدد الوحدات', totalUnits, 'units-stat');
         addTotalItem(container, 'عدد المستأجرين', tenantsCount, 'tenants-stat');
         addTotalItem(container, 'عدد الوحدات الفارغة', `<i class=\"fas fa-minus-circle\"></i> ${countEmpty}`, 'empty-stat clickable-empty-units');
-        addTotalItem(container, 'الحالي (جاري + على وشك)', `<i class=\"fas fa-users\" style=\"color:#28a745;\"></i> ${countActive + countPending}`, 'current-stat');
-        addTotalItem(container, 'الجاري', countActive, 'active-stat');
+        addTotalItem(container, 'الحالي (فعال + على وشك)', `<i class=\"fas fa-users\" style=\"color:#28a745;\"></i> ${countActive + countPending}`, 'current-stat');
+        addTotalItem(container, 'الفعال', countActive, 'active-stat');
         addTotalItem(container, 'المنتهي', countExpired, 'expired-stat');
         addTotalItem(container, 'على وشك', countPending, 'pending-stat');
         addTotalItem(container, 'إجمالي تجاري قبل الضريبة', `<i class=\"fas fa-cash-register\" style=\"color:#2a4b9b;\"></i> ${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'taxable-base-stat');
@@ -6239,7 +6633,7 @@ function renderMobileTotals(data) {
             const status = calculateStatus(property);
             uniqueContractStatuses[contractKey] = status.final;
 
-            if (status.final === 'جاري') {
+            if (status.final === 'فعال') {
                 countActive++;
             } else if (status.final === 'منتهى') {
                 countExpired++;
@@ -6252,9 +6646,9 @@ function renderMobileTotals(data) {
             uniqueContracts[contractKey] = true;
             tenantsCount++;
 
-            // حساب الإجمالي فقط للعقود الجارية وعلى وشك الانتهاء (استبعاد المنتهية)
+            // حساب الإجمالي فقط للعقود الفعالة وعلى وشك الانتهاء (استبعاد المنتهية)
             const status = calculateStatus(property);
-            if (status.final === 'جاري' || status.final === 'على وشك') {
+            if (status.final === 'فعال' || status.final === 'على وشك') {
                 const smartTotal = calculateSmartTotal(property);
                 const totalAmount = smartTotal.amount;
 
@@ -6286,8 +6680,8 @@ function renderMobileTotals(data) {
     addTotalItem(container, 'عدد الوحدات', totalUnits, 'units-stat');
     addTotalItem(container, 'عدد المستأجرين', tenantsCount, 'tenants-stat');
     addTotalItem(container, 'عدد الوحدات الفارغة', `<i class="fas fa-minus-circle"></i> ${countEmpty}`, 'empty-stat clickable-empty-units');
-    addTotalItem(container, 'الحالي (جاري + على وشك)', `<i class="fas fa-users" style="color:#28a745;"></i> ${countActive + countPending}`, 'current-stat');
-    addTotalItem(container, 'الجاري', countActive, 'active-stat');
+    addTotalItem(container, 'الحالي (فعال + على وشك)', `<i class="fas fa-users" style="color:#28a745;"></i> ${countActive + countPending}`, 'current-stat');
+    addTotalItem(container, 'الفعال', countActive, 'active-stat');
     addTotalItem(container, 'المنتهي', countExpired, 'expired-stat');
     addTotalItem(container, 'على وشك', countPending, 'pending-stat');
     addTotalItem(container, 'إجمالي تجاري قبل الضريبة', `<i class="fas fa-cash-register" style="color:#2a4b9b;"></i> ${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'taxable-base-stat');
@@ -6485,16 +6879,16 @@ function calculateStatus(property) {
                     };
                 }
             } else {
-                // جاري
+                // فعال
                 if (remainingInstallments > 0) {
                     return {
-                        final: 'جاري',
+                        final: 'فعال',
                         display: `فعال (متبقي ${remainingInstallments} أقساط)`,
                         isInstallmentEnded: false
                     };
                 } else {
                     return {
-                        final: 'جاري',
+                        final: 'فعال',
                         display: 'فعال',
                         isInstallmentEnded: false
                     };
@@ -6513,7 +6907,7 @@ function calculateStatus(property) {
             } else if (diffDays <= 60) {
                 return { final: 'على وشك', display: `سينتهي بعد ${diffDays} يوم`, isInstallmentEnded: false };
             } else {
-                return { final: 'جاري', display: 'فعال', isInstallmentEnded: false };
+                return { final: 'فعال', display: 'فعال', isInstallmentEnded: false };
             }
         }
     }
@@ -6618,7 +7012,7 @@ function renderTable(data) {
         const status = calculateStatus(property);
         let statusClass = '';
         if (status.isInstallmentEnded) statusClass = 'installment-ended-status';
-        else if (status.final === 'جاري') statusClass = 'active-status';
+        else if (status.final === 'فعال') statusClass = 'active-status';
         else if (status.final === 'منتهى') statusClass = 'expired-status';
         else if (status.final === 'على وشك') statusClass = 'pending-status';
         else if (status.final === 'فارغ') statusClass = 'empty-status';
@@ -6668,9 +7062,9 @@ function renderTable(data) {
             } else if (field === 'عدد الاقساط') {
                 if (property['عدد الاقساط']) {
                     const status = calculateStatus(property);
-                    const installmentClass = status.isInstallmentEnded ? 'installment-ended' : 
-                                            status.final === 'جاري' ? 'active' : 
-                                            status.final === 'منتهى' ? 'expired' : 
+                    const installmentClass = status.isInstallmentEnded ? 'installment-ended' :
+                                            status.final === 'فعال' ? 'active' :
+                                            status.final === 'منتهى' ? 'expired' :
                                             status.final === 'على وشك' ? 'pending' : 'empty';
                     html += `<td>
             <span class="installments-link installment-${installmentClass}" style="color:#2a4b9b;cursor:pointer;font-weight:bold;"
@@ -6763,7 +7157,7 @@ function renderCards(data) {
             badgeIcon = '<i class="fas fa-check-circle"></i>';
         } else {
             switch(status.final) {
-                case 'جاري': headerClass = 'active-status'; badgeClass = 'active-badge'; badgeIcon = '<i class="fas fa-check-circle"></i>'; break;
+                case 'فعال': headerClass = 'active-status'; badgeClass = 'active-badge'; badgeIcon = '<i class="fas fa-check-circle"></i>'; break;
                 case 'منتهى': headerClass = 'expired-status'; badgeClass = 'expired-badge'; badgeIcon = '<i class="fas fa-times-circle"></i>'; break;
                 case 'على وشك': headerClass = 'pending-status'; badgeClass = 'pending-badge'; badgeIcon = '<i class="fas fa-exclamation-circle"></i>'; break;
                 case 'فارغ': headerClass = 'empty-status'; badgeClass = 'empty-badge'; badgeIcon = '<i class="fas fa-minus-circle"></i>'; break;
@@ -6775,7 +7169,7 @@ function renderCards(data) {
             endColor = 'background:#f3e5f5;color:#9c27b0;';
         } else {
             switch(status.final) {
-                case 'جاري': startColor = 'background:#e8f7ef;color:#2a4b9b;'; endColor = 'background:#e8f7ef;color:#2a4b9b;'; break;
+                case 'فعال': startColor = 'background:#e8f7ef;color:#2a4b9b;'; endColor = 'background:#e8f7ef;color:#2a4b9b;'; break;
                 case 'منتهى': startColor = 'background:#fbeee6;color:#e74c3c;'; endColor = 'background:#fbeee6;color:#e74c3c;'; break;
                 case 'على وشك': startColor = 'background:#fffbe6;color:#f39c12;'; endColor = 'background:#fffbe6;color:#f39c12;'; break;
                 default: startColor = 'background:#f6f6f6;color:#333;'; endColor = 'background:#f6f6f6;color:#333;';
@@ -6935,7 +7329,7 @@ function renderCards(data) {
                 <div class="card-row">
                     <span class="card-label">عدد الأقساط:</span>
                     <span class="card-value">
-                        <span class="installments-count-badge installment-${status.isInstallmentEnded ? 'installment-ended' : status.final === 'جاري' ? 'active' : status.final === 'منتهى' ? 'expired' : status.final === 'على وشك' ? 'pending' : 'empty'}"
+                        <span class="installments-count-badge installment-${status.isInstallmentEnded ? 'installment-ended' : status.final === 'فعال' ? 'active' : status.final === 'منتهى' ? 'expired' : status.final === 'على وشك' ? 'pending' : 'empty'}"
                               onclick="showInstallmentsDetails('${property['رقم العقد']}', '${property['اسم العقار']}')"
                               title="انقر لعرض تفاصيل جميع الأقساط">
                             <i class="fas fa-calendar-check"></i>
@@ -7008,7 +7402,7 @@ function showPropertyDetails(index) {
     if (status.isInstallmentEnded) {
         statusClass = 'installment-ended-status';
         badgeIcon = '<i class="fas fa-money-bill-wave"></i>';
-    } else if (status.final === 'جاري') {
+    } else if (status.final === 'فعال') {
         statusClass = 'active-status';
         badgeIcon = '<i class="fas fa-check-circle"></i>';
     } else if (status.final === 'منتهى') {
@@ -7139,7 +7533,7 @@ function showPropertyDetails(index) {
 
     // إضافة الحالة بشكل مخصص
     let statusColor = '#6c757d';
-    if (status.final === 'جاري') statusColor = '#28a745';
+    if (status.final === 'فعال') statusColor = '#28a745';
     else if (status.final === 'منتهى') statusColor = '#dc3545';
     else if (status.final === 'على وشك') statusColor = '#ffc107';
 
@@ -7388,7 +7782,7 @@ function showInstallmentsDetails(contractNumber, propertyName) {
        if (statusObj.isInstallmentEnded) {
         status = 'installment-ended';
     } else if (prop['الحالة النهائية']) {
-        if (prop['الحالة النهائية'] === 'جاري') status = 'active';
+        if (prop['الحالة النهائية'] === 'فعال') status = 'active';
         else if (prop['الحالة النهائية'] === 'منتهى') status = 'expired';
         else if (prop['الحالة النهائية'] === 'على وشك') status = 'pending';
         else if (prop['الحالة النهائية'] === 'فارغ') status = 'empty';
@@ -7464,7 +7858,7 @@ function showInstallmentsDetails(contractNumber, propertyName) {
     if (propertyStatus.isInstallmentEnded) {
         statusClass = 'installment-ended-status';
         badgeIcon = '<i class="fas fa-money-bill-wave"></i>';
-    } else if (propertyStatus.final === 'جاري') {
+    } else if (propertyStatus.final === 'فعال') {
         statusClass = 'active-status';
         badgeIcon = '<i class="fas fa-check-circle"></i>';
     } else if (propertyStatus.final === 'منتهى') {
@@ -8412,7 +8806,7 @@ function showInstallmentsDetails(contractNumber, propertyName) {
     if (statusObj.isInstallmentEnded) {
         status = 'installment-ended';
     } else if (prop['الحالة النهائية']) {
-        if (prop['الحالة النهائية'] === 'جاري') status = 'active';
+        if (prop['الحالة النهائية'] === 'فعال') status = 'active';
         else if (prop['الحالة النهائية'] === 'منتهى') status = 'expired';
         else if (prop['الحالة النهائية'] === 'على وشك') status = 'pending';
         else if (prop['الحالة النهائية'] === 'فارغ') status = 'empty';
@@ -22932,7 +23326,7 @@ async function emptyAllUnits() {
 // الحصول على فئة حالة الوحدة للتبويب
 function getUnitStatusClass(unit) {
     const status = calculateStatus(unit);
-    if (status.final === 'جاري') return 'status-active';
+    if (status.final === 'فعال') return 'status-active';
     if (status.final === 'منتهى') return 'status-expired';
     if (status.final === 'على وشك') return 'status-pending';
     if (status.final === 'فارغ') return 'status-empty';
@@ -24925,7 +25319,7 @@ function viewPropertyUnits(propertyName) {
                     ${propertyUnits.map(unit => {
                         const status = calculateStatus(unit);
                         let statusClass = '';
-                        if (status.final === 'جاري') statusClass = 'unit-active';
+                        if (status.final === 'فعال') statusClass = 'unit-active';
                         else if (status.final === 'منتهى') statusClass = 'unit-expired';
                         else if (status.final === 'على وشك') statusClass = 'unit-pending';
                         else if (status.final === 'فارغ') statusClass = 'unit-empty';
@@ -32181,7 +32575,7 @@ function showStatusFilterFromDropdown() {
                 <div class="status-filter-container">
                     <select id="statusFilter" onchange="setStatusFilter(this.value === '' ? null : this.value)" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
                         <option value="">جميع الحالات</option>
-                        <option value="جاري">جاري</option>
+                        <option value="فعال">فعال</option>
                         <option value="منتهى">منتهى</option>
                         <option value="على وشك">على وشك</option>
                         <option value="فارغ">فارغ</option>
@@ -47995,7 +48389,7 @@ function testFilterResetOnLogin() {
         // تعيين فلاتر مختلفة للاختبار
         currentCountry = 'الرياض';
         currentProperty = 'عمارة النخيل';
-        filterStatus = 'جاري';
+        filterStatus = 'فعال';
         if (typeof contractTypeFilter !== 'undefined') {
             contractTypeFilter = 'سكني';
         }
@@ -50667,6 +51061,45 @@ function showMobileTotalsInMenu() {
     }
 
     console.log('✅ تم إظهار الإحصائيات في القائمة الرئيسية');
+}
+
+// دالة اختبار مسح الفلاتر للمستخدم السنيدي
+function testClearAllFilters(button) {
+    console.log('🧪 اختبار زر مسح الفلاتر للمستخدم السنيدي...');
+    console.log('👤 المستخدم الحالي:', currentUser);
+
+    if (currentUser === '1234') {
+        console.log('✅ المستخدم السنيدي - تنفيذ مسح الفلاتر');
+
+        // تغيير نص الزر مؤقتاً
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المسح...';
+        button.disabled = true;
+
+        // تنفيذ مسح الفلاتر
+        setTimeout(() => {
+            try {
+                clearAllFilters();
+                console.log('✅ تم تنفيذ مسح الفلاتر بنجاح');
+
+                // إعادة النص الأصلي
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 1000);
+
+            } catch (error) {
+                console.error('❌ خطأ في مسح الفلاتر:', error);
+                button.innerHTML = originalText;
+                button.disabled = false;
+                alert('حدث خطأ في مسح الفلاتر: ' + error.message);
+            }
+        }, 500);
+
+    } else {
+        console.log('❌ مستخدم غير مخول');
+        alert('هذه الوظيفة مخصصة للمستخدم السنيدي فقط');
+    }
 }
 
 // دالة مسح الفلاتر مع تأثير loading محسن

@@ -331,12 +331,21 @@ class TableFilterSystem {
     // فحص تطابق الصف مع مصطلح البحث
     matchesSearchTerm(row, searchTerm) {
         const cells = row.querySelectorAll('td');
-        const searchLower = searchTerm.toLowerCase();
 
-        // البحث في جميع خلايا الصف
+        // البحث في جميع خلايا الصف باستخدام نظام المرادفات المتقدم
         for (const cell of cells) {
-            if (cell.textContent.toLowerCase().includes(searchLower)) {
-                return true;
+            const cellText = cell.textContent.trim();
+
+            // استخدام نظام البحث المتقدم مع المرادفات
+            if (typeof window.findSynonymMatch === 'function') {
+                if (window.findSynonymMatch(searchTerm, cellText)) {
+                    return true;
+                }
+            } else {
+                // البحث العادي كبديل
+                if (cellText.toLowerCase().includes(searchTerm.toLowerCase())) {
+                    return true;
+                }
             }
         }
 
