@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار شامل لميزة الاستبعاد (-)</title>
+    <style>
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            background: #f8f9fa;
+            border: 2px solid #007bff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .example-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .example-title {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .example-query {
+            background: #f1f3f4;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 اختبار شامل لميزة الاستبعاد (-)</h1>
+        
+        <div class="test-section">
+            <h3>🎯 الهدف: التأكد من عمل الاستبعاد مع جميع أنواع البحث</h3>
+            <p>ميزة الاستبعاد (-) يجب أن تعمل مع:</p>
+            <ul>
+                <li>البحث العادي</li>
+                <li>البحث الهرمي (//)</li>
+                <li>البحث المتعدد (+)</li>
+                <li>البحث AND (&&)</li>
+            </ul>
+        </div>
+
+        <div class="example-grid">
+            <div class="example-card">
+                <div class="example-title">🔍 البحث العادي مع الاستبعاد</div>
+                <div class="example-query">الرياض -منتهي</div>
+                <div class="example-query">نشط -منتهي-فارغ</div>
+                <button class="test-button" onclick="testBasicExclusion()">اختبار</button>
+            </div>
+
+            <div class="example-card">
+                <div class="example-title">🔗 البحث الهرمي مع الاستبعاد</div>
+                <div class="example-query">الرياض//نشط -منتهي</div>
+                <div class="example-query">ضريبي//الرياض -فارغ</div>
+                <button class="test-button" onclick="testHierarchicalExclusion()">اختبار</button>
+            </div>
+
+            <div class="example-card">
+                <div class="example-title">➕ البحث المتعدد مع الاستبعاد</div>
+                <div class="example-query">فعال+وشك -منتهي</div>
+                <div class="example-query">نشط+فارغ -منتهي</div>
+                <button class="test-button" onclick="testMultipleExclusion()">اختبار</button>
+            </div>
+
+            <div class="example-card">
+                <div class="example-title">🔗 البحث AND مع الاستبعاد</div>
+                <div class="example-query">ضريبي&&الرياض -فارغ</div>
+                <div class="example-query">سكني&&نشط -منتهي</div>
+                <button class="test-button" onclick="testAndExclusion()">اختبار</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبارات شاملة:</h3>
+            <button class="test-button" onclick="testAllExclusionTypes()">اختبار جميع الأنواع</button>
+            <button class="test-button" onclick="testComplexExclusion()">اختبار معقد</button>
+            <button class="test-button" onclick="testEdgeCases()">اختبار الحالات الحدية</button>
+            <button class="test-button" onclick="showExclusionExamples()">عرض الأمثلة</button>
+            <button class="test-button" onclick="clearConsole()">مسح</button>
+        </div>
+
+        <div>
+            <h3>📊 مخرجات الاختبار:</h3>
+            <div id="consoleOutput" class="console-output">
+                اضغط على أي زر لبدء الاختبار الشامل لميزة الاستبعاد...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // بيانات اختبار شاملة
+        const completeTestData = [
+            // وحدات نشطة في الرياض
+            {
+                'اسم العقار': 'مجمع الشمس',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '101',
+                'اسم المستأجر': 'أحمد محمد',
+                'المالك': 'شركة السنيدي',
+                'نوع العقد': 'ضريبي',
+                'نوع العقار': 'سكني',
+                'تاريخ النهاية': '2025-12-31'
+            },
+            {
+                'اسم العقار': 'مجمع النور',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '102',
+                'اسم المستأجر': 'سارة أحمد',
+                'المالك': 'شركة السنيدي',
+                'نوع العقد': 'ضريبي',
+                'نوع العقار': 'تجاري',
+                'تاريخ نهاية القسط': '2025-02-15'
+            },
+            // وحدات منتهية في الرياض
+            {
+                'اسم العقار': 'برج الأعمال',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '201',
+                'اسم المستأجر': 'محمد علي',
+                'المالك': 'شركة السنيدي',
+                'نوع العقد': 'ضريبي',
+                'نوع العقار': 'سكني',
+                'تاريخ النهاية': '2023-12-31'
+            },
+            {
+                'اسم العقار': 'مجمع التجارة',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '301',
+                'اسم المستأجر': 'فاطمة سالم',
+                'المالك': 'شركة السنيدي',
+                'نوع العقد': 'عادي',
+                'نوع العقار': 'تجاري',
+                'تاريخ نهاية القسط': '2023-11-30'
+            },
+            // وحدات فارغة في الرياض
+            {
+                'اسم العقار': 'مجمع الحديقة',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '401',
+                'اسم المستأجر': '',
+                'المالك': '',
+                'نوع العقد': '',
+                'نوع العقار': 'سكني'
+            },
+            {
+                'اسم العقار': 'مجمع الصناعة',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '501',
+                'اسم المستأجر': '',
+                'المالك': '',
+                'نوع العقد': '',
+                'نوع العقار': 'صناعي'
+            },
+            // وحدات في جدة
+            {
+                'اسم العقار': 'برج جدة',
+                'المدينة': 'جدة',
+                'رقم  الوحدة ': '601',
+                'اسم المستأجر': 'عبدالله سالم',
+                'المالك': 'شركة السنيدي',
+                'نوع العقد': 'ضريبي',
+                'نوع العقار': 'سكني',
+                'تاريخ النهاية': '2025-06-30'
+            },
+            {
+                'اسم العقار': 'مجمع جدة',
+                'المدينة': 'جدة',
+                'رقم  الوحدة ': '701',
+                'اسم المستأجر': '',
+                'المالك': '',
+                'نوع العقد': '',
+                'نوع العقار': 'تجاري'
+            },
+            // وحدة منتهية في جدة
+            {
+                'اسم العقار': 'برج البحر',
+                'المدينة': 'جدة',
+                'رقم  الوحدة ': '801',
+                'اسم المستأجر': 'خالد أحمد',
+                'المالك': 'شركة السنيدي',
+                'نوع العقد': 'عادي',
+                'نوع العقار': 'سكني',
+                'تاريخ النهاية': '2023-08-31'
+            }
+        ];
+
+        // دالة حساب الحالة
+        function calculateStatus(property) {
+            if (!property['اسم المستأجر'] || !property['المالك']) {
+                return { final: 'فارغ', display: 'فارغ' };
+            }
+
+            const today = new Date();
+
+            // التحقق من تاريخ نهاية القسط
+            if (property['تاريخ نهاية القسط']) {
+                const installmentEndDate = new Date(property['تاريخ نهاية القسط']);
+                if (!isNaN(installmentEndDate.getTime())) {
+                    const diffDays = Math.floor((installmentEndDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays < 0) {
+                        return { final: 'منتهى', display: `أقساط منتهية منذ ${Math.abs(diffDays)} يوم` };
+                    } else if (diffDays <= 60) {
+                        return { final: 'على وشك', display: `أقساط على وشك الانتهاء بعد ${diffDays} يوم` };
+                    } else {
+                        return { final: 'فعال', display: 'فعال' };
+                    }
+                }
+            }
+
+            // التحقق من تاريخ النهاية
+            if (property['تاريخ النهاية']) {
+                const contractDate = new Date(property['تاريخ النهاية']);
+                if (!isNaN(contractDate.getTime())) {
+                    const diffDays = Math.floor((contractDate - today) / (1000 * 60 * 60 * 24));
+                    if (diffDays < 0) {
+                        return { final: 'منتهى', display: `منتهي منذ ${Math.abs(diffDays)} يوم` };
+                    } else if (diffDays <= 60) {
+                        return { final: 'على وشك', display: `سينتهي بعد ${diffDays} يوم` };
+                    } else {
+                        return { final: 'فعال', display: 'فعال' };
+                    }
+                }
+            }
+
+            return { final: 'فعال', display: 'فعال' };
+        }
+
+        // تعيين البيانات للنافذة العامة
+        window.allData = completeTestData;
+        window.calculateStatus = calculateStatus;
+
+        // إعادة توجيه console.log إلى الواجهة
+        const originalConsoleLog = console.log;
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            consoleOutput.textContent += message + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+
+        function clearConsole() {
+            consoleOutput.textContent = '';
+        }
+
+        function showAllData() {
+            console.log('📊 جميع البيانات المتاحة:');
+            completeTestData.forEach((item, index) => {
+                const status = calculateStatus(item);
+                const statusIcon = status.final === 'منتهى' ? '❌' : 
+                                 status.final === 'فارغ' ? '⚪' : '✅';
+                console.log(`${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${item['المدينة']} - ${item['نوع العقد']} - ${item['نوع العقار']} - ${status.final} ${statusIcon}`);
+            });
+        }
+
+        function testQuery(query, description) {
+            console.log(`\n🔍 ${description}: "${query}"`);
+            if (typeof performAdvancedSearch === 'function') {
+                const results = performAdvancedSearch(query, completeTestData);
+                console.log(`📊 النتائج: ${results.length} عقار`);
+                
+                results.forEach((item, index) => {
+                    const status = calculateStatus(item);
+                    console.log(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${item['المدينة']} - ${status.final}`);
+                });
+                return results;
+            } else {
+                console.log('❌ دالة البحث المتقدم غير متوفرة');
+                return [];
+            }
+        }
+
+        function testBasicExclusion() {
+            clearConsole();
+            console.log('🧪 اختبار البحث العادي مع الاستبعاد');
+            console.log('=' .repeat(60));
+            showAllData();
+            
+            testQuery('الرياض -منتهي', 'البحث في الرياض مع استبعاد المنتهي');
+            testQuery('نشط -منتهي-فارغ', 'البحث عن النشط مع استبعاد المنتهي والفارغ');
+            testQuery('ضريبي -فارغ', 'البحث عن الضريبي مع استبعاد الفارغ');
+        }
+
+        function testHierarchicalExclusion() {
+            clearConsole();
+            console.log('🧪 اختبار البحث الهرمي مع الاستبعاد');
+            console.log('=' .repeat(60));
+            showAllData();
+            
+            testQuery('الرياض//نشط -منتهي', 'بحث هرمي: الرياض ثم النشط مع استبعاد المنتهي');
+            testQuery('ضريبي//الرياض -فارغ', 'بحث هرمي: الضريبي ثم الرياض مع استبعاد الفارغ');
+            testQuery('سكني//نشط -منتهي-فارغ', 'بحث هرمي: السكني ثم النشط مع استبعاد المنتهي والفارغ');
+        }
+
+        function testMultipleExclusion() {
+            clearConsole();
+            console.log('🧪 اختبار البحث المتعدد مع الاستبعاد');
+            console.log('=' .repeat(60));
+            showAllData();
+            
+            testQuery('فعال+وشك -منتهي', 'بحث متعدد: الفعال أو على وشك مع استبعاد المنتهي');
+            testQuery('نشط+فارغ -منتهي', 'بحث متعدد: النشط أو الفارغ مع استبعاد المنتهي');
+            testQuery('سكني+تجاري -فارغ', 'بحث متعدد: السكني أو التجاري مع استبعاد الفارغ');
+        }
+
+        function testAndExclusion() {
+            clearConsole();
+            console.log('🧪 اختبار البحث AND مع الاستبعاد');
+            console.log('=' .repeat(60));
+            showAllData();
+            
+            testQuery('ضريبي&&الرياض -فارغ', 'بحث AND: الضريبي والرياض مع استبعاد الفارغ');
+            testQuery('سكني&&نشط -منتهي', 'بحث AND: السكني والنشط مع استبعاد المنتهي');
+            testQuery('الرياض&&فعال -فارغ', 'بحث AND: الرياض والفعال مع استبعاد الفارغ');
+        }
+
+        function testAllExclusionTypes() {
+            clearConsole();
+            console.log('🧪 اختبار جميع أنواع البحث مع الاستبعاد');
+            console.log('=' .repeat(80));
+            showAllData();
+            
+            const queries = [
+                { query: 'الرياض -منتهي', type: 'عادي' },
+                { query: 'الرياض//نشط -منتهي', type: 'هرمي' },
+                { query: 'فعال+وشك -منتهي', type: 'متعدد' },
+                { query: 'ضريبي&&الرياض -فارغ', type: 'AND' }
+            ];
+            
+            queries.forEach(item => {
+                testQuery(item.query, `بحث ${item.type}`);
+            });
+        }
+
+        function testComplexExclusion() {
+            clearConsole();
+            console.log('🧪 اختبار الاستبعاد المعقد');
+            console.log('=' .repeat(60));
+            showAllData();
+            
+            testQuery('الرياض//ضريبي//سكني -منتهي-فارغ', 'بحث معقد: الرياض ثم الضريبي ثم السكني مع استبعاد المنتهي والفارغ');
+            testQuery('نشط+فارغ//الرياض -منتهي', 'بحث معقد: (النشط أو الفارغ) في الرياض مع استبعاد المنتهي');
+        }
+
+        function testEdgeCases() {
+            clearConsole();
+            console.log('🧪 اختبار الحالات الحدية');
+            console.log('=' .repeat(60));
+            showAllData();
+            
+            testQuery('الرياض -', 'استبعاد فارغ');
+            testQuery(' -منتهي', 'بحث فارغ مع استبعاد');
+            testQuery('الرياض -منتهي-', 'استبعاد ينتهي بشرطة');
+            testQuery('الرياض -منتهي-فارغ-', 'استبعادات متعددة تنتهي بشرطة');
+        }
+
+        function showExclusionExamples() {
+            clearConsole();
+            console.log('📚 أمثلة شاملة على البحث مع الاستبعاد');
+            console.log('=' .repeat(80));
+            
+            if (typeof showSearchExamples === 'function') {
+                showSearchExamples();
+            } else {
+                console.log('❌ دالة عرض الأمثلة غير متوفرة');
+            }
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', function() {
+            console.log('🚀 تم تحميل صفحة الاختبار الشامل لميزة الاستبعاد');
+            console.log('💡 الميزة تدعم الآن جميع أنواع البحث:');
+            console.log('   • البحث العادي: الرياض -منتهي');
+            console.log('   • البحث الهرمي: الرياض//نشط -منتهي');
+            console.log('   • البحث المتعدد: فعال+وشك -منتهي');
+            console.log('   • البحث AND: ضريبي&&الرياض -فارغ');
+            
+            if (typeof performAdvancedSearch === 'function') {
+                console.log('✅ نظام البحث المتقدم متوفر');
+            } else {
+                console.log('❌ نظام البحث المتقدم غير متوفر');
+            }
+        });
+    </script>
+
+    <!-- تحميل نظام البحث المتقدم -->
+    <script src="advanced-search-system.js"></script>
+</body>
+</html>

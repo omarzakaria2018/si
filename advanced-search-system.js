@@ -6,9 +6,9 @@ const statusSynonyms = {
     'active': ['فعال', 'على وشك', 'علي وشك', 'وشك'],
     // مرادفات "نشط عام" (فعال + على وشك)
     'active_general': ['نشط', 'ساري', 'سارى', 'جاري', 'جارى', 'الحالي', 'الحالى'],
-    
-    // مرادفات "منتهي"
-    'expired': ['منتهي', 'المنتهي', 'منتهى', 'انتهى', 'انتهي', 'مكتمل', 'مكتملة'],
+
+    // مرادفات "منتهي" - تشمل جميع الأشكال المختلفة
+    'expired': ['منتهي', 'المنتهي', 'منتهى', 'المنتهى', 'انتهى', 'انتهي', 'مكتمل', 'مكتملة'],
 
     // مرادفات "فارغ"
     'empty': ['فارغ', 'فارغة', 'شاغر', 'شاغرة', 'خالي', 'خالية', 'متاح', 'متاحة'],
@@ -52,7 +52,7 @@ function normalizeArabicTextAdvanced(text) {
         .replace(/\s+/g, ' ');
 }
 
-// دالة البحث عن المرادفات المحسنة
+// دالة البحث عن المرادفات المحسنة (للحقول العادية فقط - ليس للحالات)
 function findSynonymMatch(searchTerm, targetText) {
     const normalizedSearch = normalizeArabicTextAdvanced(searchTerm);
     const normalizedTarget = normalizeArabicTextAdvanced(targetText);
@@ -62,8 +62,29 @@ function findSynonymMatch(searchTerm, targetText) {
         return true;
     }
 
-    // البحث في المرادفات
-    for (const [category, synonyms] of Object.entries(statusSynonyms)) {
+    // البحث في المرادفات (فقط للأنواع وليس للحالات)
+    const nonStatusSynonyms = {
+        // مرادفات أنواع العقود
+        'tax': statusSynonyms.tax,
+        'residential': statusSynonyms.residential,
+        'commercial': statusSynonyms.commercial,
+
+        // مرادفات أنواع العقارات
+        'shop': statusSynonyms.shop,
+        'warehouse': statusSynonyms.warehouse,
+        'apartment': statusSynonyms.apartment,
+        'factory': statusSynonyms.factory,
+        'villa': statusSynonyms.villa,
+        'building': statusSynonyms.building,
+        'showroom': statusSynonyms.showroom,
+        'office': statusSynonyms.office,
+        'workshop': statusSynonyms.workshop,
+        'farm': statusSynonyms.farm
+    };
+
+    for (const [category, synonyms] of Object.entries(nonStatusSynonyms)) {
+        if (!synonyms) continue;
+
         const normalizedSynonyms = synonyms.map(s => normalizeArabicTextAdvanced(s));
 
         // إذا كان مصطلح البحث من هذه الفئة
@@ -80,21 +101,84 @@ function findSynonymMatch(searchTerm, targetText) {
 function findStatusMatch(searchTerm, property) {
     const normalizedSearch = normalizeArabicTextAdvanced(searchTerm);
 
+    if (typeof calculateStatus !== 'function') {
+        return false;
+    }
+
+    const status = calculateStatus(property);
+    const statusFinal = normalizeArabicTextAdvanced(status.final);
+    const statusDisplay = normalizeArabicTextAdvanced(status.display);
+
     // إذا كان البحث عن "نشط" أو مرادفاته، نحتاج للبحث في الحالة المحسوبة
     const activeGeneralSynonyms = statusSynonyms.active_general || [];
     const normalizedActiveGeneral = activeGeneralSynonyms.map(s => normalizeArabicTextAdvanced(s));
 
     if (normalizedActiveGeneral.includes(normalizedSearch)) {
-        // البحث عن "نشط" يعني البحث عن "فعال" أو "على وشك"
-        if (typeof calculateStatus === 'function') {
-            const status = calculateStatus(property);
-            const statusFinal = normalizeArabicTextAdvanced(status.final);
+        // البحث عن "نشط" يعني البحث عن "فعال" أو "على وشك" فقط
+        console.log(`🔍 البحث عن "نشط" - الحالة المحسوبة: "${status.final}" (${statusFinal})`);
 
-            // تحقق من أن الحالة "فعال" أو "على وشك"
-            const activeSynonyms = statusSynonyms.active || [];
-            const normalizedActive = activeSynonyms.map(s => normalizeArabicTextAdvanced(s));
+        // استبعاد صريح للحالات المنتهية والفارغة
+        const expiredSynonyms = statusSynonyms.expired || [];
+        const emptySynonyms = statusSynonyms.empty || [];
+        const normalizedExpired = expiredSynonyms.map(s => normalizeArabicTextAdvanced(s));
+        const normalizedEmpty = emptySynonyms.map(s => normalizeArabicTextAdvanced(s));
 
-            return normalizedActive.some(synonym => statusFinal.includes(synonym));
+        // تحقق أولاً من أن الحالة ليست منتهية أو فارغة
+        const isExpired = normalizedExpired.some(synonym =>
+            statusFinal.includes(synonym) || statusDisplay.includes(synonym)
+        );
+        const isEmpty = normalizedEmpty.some(synonym =>
+            statusFinal.includes(synonym) || statusDisplay.includes(synonym)
+        );
+
+        if (isExpired) {
+            console.log(`   ❌ العقار منتهي (مستبعد): ${property['اسم العقار']}-${property['رقم  الوحدة ']} (${status.final})`);
+            return false;
+        }
+
+        if (isEmpty) {
+            console.log(`   ❌ العقار فارغ (مستبعد): ${property['اسم العقار']}-${property['رقم  الوحدة ']} (${status.final})`);
+            return false;
+        }
+
+        // الآن تحقق من أن الحالة نشطة (فعال أو على وشك)
+        const activeSynonyms = statusSynonyms.active || [];
+        const normalizedActive = activeSynonyms.map(s => normalizeArabicTextAdvanced(s));
+
+        const isActive = normalizedActive.some(synonym =>
+            statusFinal.includes(synonym) || statusDisplay.includes(synonym)
+        );
+
+        if (isActive) {
+            console.log(`   ✅ العقار نشط: ${property['اسم العقار']}-${property['رقم  الوحدة ']} (${status.final})`);
+        } else {
+            console.log(`   ❌ العقار غير نشط: ${property['اسم العقار']}-${property['رقم  الوحدة ']} (${status.final})`);
+        }
+
+        return isActive;
+    }
+
+    // البحث في المرادفات الأخرى للحالات
+    for (const [category, synonyms] of Object.entries(statusSynonyms)) {
+        if (category === 'active_general') continue; // تم التعامل معها أعلاه
+
+        const normalizedSynonyms = synonyms.map(s => normalizeArabicTextAdvanced(s));
+
+        if (normalizedSynonyms.includes(normalizedSearch)) {
+            console.log(`🔍 البحث عن "${searchTerm}" في فئة "${category}" - الحالة: "${status.final}"`);
+
+            // تحقق من تطابق الحالة مع المرادفات
+            const isMatch = normalizedSynonyms.some(synonym =>
+                statusFinal.includes(synonym) || statusDisplay.includes(synonym)
+            );
+
+            if (isMatch) {
+                console.log(`   ✅ تطابق: ${property['اسم العقار']}-${property['رقم  الوحدة ']} (${status.final})`);
+            } else {
+                console.log(`   ❌ لا يطابق: ${property['اسم العقار']}-${property['رقم  الوحدة ']} (${status.final})`);
+            }
+
+            return isMatch;
         }
     }
 
@@ -106,8 +190,55 @@ function cleanFieldName(fieldName) {
     return fieldName ? fieldName.toString().trim() : '';
 }
 
-// دالة البحث المتقدمة في بيانات العقار
-function advancedSearchInProperty(property, searchTerm) {
+// دالة معالجة البحث مع الاستبعاد (-)
+function processSearchWithExclusion(property, searchTerm) {
+    console.log(`🔍 معالجة البحث مع الاستبعاد: "${searchTerm}"`);
+
+    // تقسيم النص إلى جزء البحث وأجزاء الاستبعاد
+    const parts = searchTerm.split(' -');
+    const searchPart = parts[0].trim(); // الجزء الأول هو البحث
+    const exclusionParts = parts.slice(1); // الباقي هو الاستبعاد
+
+    console.log(`   🔍 جزء البحث: "${searchPart}"`);
+    console.log(`   ❌ أجزاء الاستبعاد: [${exclusionParts.join(', ')}]`);
+
+    // أولاً: تحقق من تطابق جزء البحث
+    let matchesSearch = false;
+    if (searchPart) {
+        matchesSearch = advancedSearchInPropertyBasic(property, searchPart);
+    }
+
+    if (!matchesSearch) {
+        console.log(`   ❌ لا يطابق جزء البحث "${searchPart}"`);
+        return false;
+    }
+
+    console.log(`   ✅ يطابق جزء البحث "${searchPart}"`);
+
+    // ثانياً: تحقق من عدم تطابق أي من أجزاء الاستبعاد
+    for (const exclusionPart of exclusionParts) {
+        const trimmedExclusion = exclusionPart.trim();
+        if (!trimmedExclusion) continue;
+
+        // تقسيم جزء الاستبعاد إذا كان يحتوي على عدة مصطلحات مفصولة بـ -
+        const exclusionTerms = trimmedExclusion.split('-').map(term => term.trim()).filter(term => term.length > 0);
+
+        for (const exclusionTerm of exclusionTerms) {
+            const matchesExclusion = advancedSearchInPropertyBasic(property, exclusionTerm);
+            if (matchesExclusion) {
+                console.log(`   ❌ مستبعد بسبب تطابق "${exclusionTerm}"`);
+                return false;
+            }
+            console.log(`   ✅ لا يطابق المستبعد "${exclusionTerm}"`);
+        }
+    }
+
+    console.log(`   🎯 النتيجة النهائية: مقبول (يطابق البحث ولا يطابق أي استبعاد)`);
+    return true;
+}
+
+// دالة البحث الأساسية (بدون معالجة الاستبعاد)
+function advancedSearchInPropertyBasic(property, searchTerm) {
     if (!property || !searchTerm) return false;
 
     const normalizedSearchTerm = normalizeArabicTextAdvanced(searchTerm);
@@ -137,26 +268,35 @@ function advancedSearchInProperty(property, searchTerm) {
     }
 
     // البحث في جميع قيم الخصائص (للتأكد من عدم تفويت أي حقل)
-    for (const [key, value] of Object.entries(property)) {
-        if (value && (typeof value === 'string' || typeof value === 'number')) {
-            const stringValue = value.toString().trim();
-            if (stringValue && findSynonymMatch(searchTerm, stringValue)) {
-                console.log(`🔍 وجد في الحقل "${key}": "${stringValue}"`);
-                return true;
+    // لكن نستبعد البحث عن مرادفات الحالات في الحقول العادية
+    const statusTerms = ['نشط', 'ساري', 'جاري', 'فعال', 'على وشك', 'منتهي', 'منتهى', 'فارغ', 'شاغر', 'خالي'];
+    const isStatusSearch = statusTerms.some(term => normalizeArabicTextAdvanced(term) === normalizedSearchTerm);
+
+    if (!isStatusSearch) {
+        for (const [key, value] of Object.entries(property)) {
+            if (value && (typeof value === 'string' || typeof value === 'number')) {
+                const stringValue = value.toString().trim();
+                if (stringValue && findSynonymMatch(searchTerm, stringValue)) {
+                    return true;
+                }
             }
         }
     }
 
-    // البحث في الحالة المحسوبة (البحث العادي)
-    if (typeof calculateStatus === 'function') {
-        const status = calculateStatus(property);
-        const statusText = `${status.final} ${status.display}`;
-        if (findSynonymMatch(searchTerm, statusText)) {
-            return true;
-        }
+    return false;
+}
+
+// دالة البحث المتقدمة في بيانات العقار
+function advancedSearchInProperty(property, searchTerm) {
+    if (!property || !searchTerm) return false;
+
+    // معالجة البحث مع الاستبعاد (-)
+    if (searchTerm.includes('-')) {
+        return processSearchWithExclusion(property, searchTerm);
     }
 
-    return false;
+    // استخدام الدالة الأساسية للبحث العادي
+    return advancedSearchInPropertyBasic(property, searchTerm);
 }
 
 // دالة البحث الهرمي المتقدم مع دعم AND في المستوى الأخير
@@ -194,6 +334,67 @@ function performHierarchicalSearchAdvanced(searchTerms, data) {
             // بحث عادي
             currentResults = currentResults.filter(property => {
                 return advancedSearchInProperty(property, term);
+            });
+        }
+
+        const newCount = currentResults.length;
+        console.log(`📊 نتائج المستوى ${i + 1}: ${newCount} سجل (تم تصفية ${previousCount - newCount})`);
+
+        // إذا لم تعد هناك نتائج، توقف عن البحث
+        if (currentResults.length === 0) {
+            console.log(`⚠️ لا توجد نتائج في المستوى ${i + 1}، توقف البحث`);
+            break;
+        }
+    }
+
+    return currentResults;
+}
+
+// دالة البحث الهرمي المحسن - تدعم ترتيب المصطلحات بأي شكل
+function performImprovedHierarchicalSearch(searchTerms, data) {
+    console.log(`🔍 البحث الهرمي المحسن: ${searchTerms.length} مستويات:`, searchTerms);
+
+    let currentResults = [...data];
+
+    for (let i = 0; i < searchTerms.length; i++) {
+        const term = searchTerms[i].trim();
+        if (!term) continue;
+
+        console.log(`🔍 المستوى ${i + 1}: البحث عن "${term}" في ${currentResults.length} سجل`);
+
+        const previousCount = currentResults.length;
+
+        // إذا كان هذا المستوى يحتوي على +، استخدم OR logic
+        if (term.includes('+')) {
+            const orTerms = term.split('+').map(t => t.trim()).filter(t => t.length > 0);
+            console.log(`🔗 المستوى ${i + 1} يحتوي على ${orTerms.length} خيارات OR:`, orTerms);
+
+            currentResults = currentResults.filter(property => {
+                // يجب أن تحقق العقار أي من الشروط (OR logic)
+                return orTerms.some(orTerm => {
+                    const matches = advancedSearchInProperty(property, orTerm);
+                    if (matches) {
+                        console.log(`   ✅ "${orTerm}" موجود في ${property['اسم العقار']}-${property['رقم  الوحدة ']}`);
+                    }
+                    return matches;
+                });
+            });
+
+            console.log(`📊 نتائج البحث OR: ${currentResults.length} سجل يحقق أي من الشروط`);
+        } else {
+            // بحث عادي مع تحسين خاص للحالات
+            currentResults = currentResults.filter(property => {
+                const matches = advancedSearchInProperty(property, term);
+
+                // إضافة تشخيص خاص للبحث عن "نشط"
+                if (term.toLowerCase().includes('نشط') || term.toLowerCase().includes('ساري')) {
+                    if (typeof calculateStatus === 'function') {
+                        const status = calculateStatus(property);
+                        console.log(`🔍 فحص "${term}" في ${property['اسم العقار']}-${property['رقم  الوحدة ']}: الحالة="${status.final}", النتيجة=${matches}`);
+                    }
+                }
+
+                return matches;
             });
         }
 
@@ -314,10 +515,17 @@ function performAdvancedSearch(searchQuery, data) {
     // تحديد نوع البحث وتنفيذه
     let results;
 
-    if (query.includes('//')) {
+    if (query.includes(' -')) {
+        // بحث مع استبعاد (-) - يدعم جميع أنواع البحث مع الاستبعاد
+        results = performExclusionSearch(query, data);
+        console.log(`🎯 البحث مع الاستبعاد اكتمل: ${results.length} نتيجة`);
+
+    } else if (query.includes('//')) {
         // بحث هرمي - معالجة خاصة للمستوى الأخير (كان ///)
         const terms = query.split('//').map(term => term.trim()).filter(term => term.length > 0);
-        results = performHierarchicalSearchAdvanced(terms, data);
+
+        // تحسين البحث الهرمي - دعم ترتيب المصطلحات بأي شكل
+        results = performImprovedHierarchicalSearch(terms, data);
 
         // إضافة معلومات إضافية للنتائج
         console.log(`🎯 البحث الهرمي اكتمل: ${results.length} نتيجة نهائية`);
@@ -349,6 +557,101 @@ function performAdvancedSearch(searchQuery, data) {
     }
 
     return results;
+}
+
+// دالة البحث مع الاستبعاد المتقدم
+function performExclusionSearch(searchQuery, data) {
+    console.log(`🔍 البحث مع الاستبعاد: "${searchQuery}"`);
+
+    // تقسيم الاستعلام إلى جزء البحث وأجزاء الاستبعاد
+    const parts = searchQuery.split(' -');
+    const searchPart = parts[0].trim();
+    const exclusionParts = parts.slice(1);
+
+    console.log(`   🔍 جزء البحث: "${searchPart}"`);
+    console.log(`   ❌ أجزاء الاستبعاد: [${exclusionParts.join(', ')}]`);
+
+    // أولاً: تطبيق البحث الأساسي
+    let results = [];
+    if (searchPart) {
+        if (searchPart.includes('//')) {
+            // بحث هرمي
+            const terms = searchPart.split('//').map(term => term.trim()).filter(term => term.length > 0);
+            results = performImprovedHierarchicalSearch(terms, data);
+        } else if (searchPart.includes('&&')) {
+            // بحث AND
+            const terms = searchPart.split('&&').map(term => term.trim()).filter(term => term.length > 0);
+            results = performAndSearch(terms, data);
+        } else if (searchPart.includes('+')) {
+            // بحث OR
+            const terms = searchPart.split('+').map(term => term.trim()).filter(term => term.length > 0);
+            results = performMultiSearch(terms, data);
+        } else {
+            // بحث عادي
+            results = data.filter(property => advancedSearchInPropertyBasic(property, searchPart));
+        }
+    } else {
+        results = [...data];
+    }
+
+    console.log(`📊 نتائج البحث الأولية: ${results.length} سجل`);
+
+    // ثانياً: تطبيق الاستبعادات
+    for (const exclusionPart of exclusionParts) {
+        const trimmedExclusion = exclusionPart.trim();
+        if (!trimmedExclusion) continue;
+
+        // تقسيم جزء الاستبعاد إذا كان يحتوي على عدة مصطلحات مفصولة بـ -
+        const exclusionTerms = trimmedExclusion.split('-').map(term => term.trim()).filter(term => term.length > 0);
+
+        for (const exclusionTerm of exclusionTerms) {
+            const beforeCount = results.length;
+            results = results.filter(property => {
+                const matches = advancedSearchInPropertyBasic(property, exclusionTerm);
+                return !matches; // استبعاد العناصر التي تطابق
+            });
+            const afterCount = results.length;
+            console.log(`   ❌ استبعاد "${exclusionTerm}": تم إزالة ${beforeCount - afterCount} سجل`);
+        }
+    }
+
+    console.log(`📊 النتائج النهائية بعد الاستبعاد: ${results.length} سجل`);
+    return results;
+}
+
+// دالة اختبار البحث الهرمي المحسن
+function testImprovedHierarchicalSearch() {
+    console.log('🧪 اختبار البحث الهرمي المحسن...');
+
+    if (!window.allData || window.allData.length === 0) {
+        console.log('❌ لا توجد بيانات للاختبار');
+        return;
+    }
+
+    const testQueries = [
+        'الرياض//نشط',
+        'نشط//الرياض',
+        'الرياض//فعال',
+        'فعال//الرياض',
+        'الرياض//منتهي',
+        'منتهي//الرياض'
+    ];
+
+    testQueries.forEach(query => {
+        console.log(`\n🔍 اختبار: "${query}"`);
+        const results = performAdvancedSearch(query, window.allData);
+        console.log(`📊 النتائج: ${results.length} عقار`);
+
+        if (results.length > 0) {
+            console.log('📋 أمثلة على النتائج:');
+            results.slice(0, 3).forEach((item, index) => {
+                const status = typeof calculateStatus === 'function' ? calculateStatus(item) : { final: 'غير محدد' };
+                console.log(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${item['المدينة']} - ${status.final}`);
+            });
+        }
+    });
+
+    console.log('\n✅ انتهى اختبار البحث الهرمي المحسن');
 }
 
 // دالة لعرض أمثلة البحث
@@ -388,6 +691,36 @@ function showSearchExamples() {
             type: 'مرادفات',
             query: 'نشط',
             description: 'البحث عن العقارات النشطة (يشمل: فعال، ساري، الحالي)'
+        },
+        {
+            type: 'استبعاد أساسي',
+            query: 'الرياض -منتهي',
+            description: 'البحث في الرياض مع استبعاد العقارات المنتهية'
+        },
+        {
+            type: 'استبعاد متعدد',
+            query: 'الرياض -منتهي-فارغ',
+            description: 'البحث في الرياض مع استبعاد العقارات المنتهية والفارغة'
+        },
+        {
+            type: 'استبعاد مع نشط',
+            query: 'نشط -منتهي-فارغ',
+            description: 'البحث عن العقارات النشطة مع استبعاد المنتهية والفارغة'
+        },
+        {
+            type: 'استبعاد هرمي',
+            query: 'الرياض//نشط -منتهي',
+            description: 'بحث هرمي في الرياض عن النشط مع استبعاد المنتهي'
+        },
+        {
+            type: 'استبعاد مع OR',
+            query: 'فعال+وشك -منتهي',
+            description: 'البحث عن الفعال أو على وشك مع استبعاد المنتهي'
+        },
+        {
+            type: 'استبعاد مع AND',
+            query: 'ضريبي&&الرياض -فارغ',
+            description: 'البحث عن الضريبي في الرياض مع استبعاد الفارغ'
         }
     ];
 
@@ -412,7 +745,11 @@ function testAdvancedSearch() {
         'فعال+وشك',
         'نشط',
         'منتهي+فارغ',
-        'سكني//الرياض'
+        'سكني//الرياض',
+        'الرياض -منتهي',
+        'نشط -منتهي-فارغ',
+        'الرياض//نشط -منتهي',
+        'فعال+وشك -منتهي'
     ];
 
     testQueries.forEach(query => {

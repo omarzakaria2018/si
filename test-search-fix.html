@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح البحث الهرمي</title>
+    <style>
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .results {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .search-input {
+            width: 300px;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        .status-active { color: #28a745; font-weight: bold; }
+        .status-expired { color: #dc3545; font-weight: bold; }
+        .status-empty { color: #6c757d; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 اختبار إصلاح البحث الهرمي</h1>
+        
+        <div class="test-section">
+            <h3>📋 المشكلة المطلوب حلها:</h3>
+            <ul>
+                <li>البحث عن "نشط" بشكل عام يعمل ✅</li>
+                <li>البحث عن "الرياض//نشط" يُظهر وحدات منتهية ❌</li>
+                <li>البحث لا يدعم "نشط//الرياض" ❌</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبارات البحث:</h3>
+            <button class="test-button" onclick="testBasicSearch()">اختبار البحث الأساسي</button>
+            <button class="test-button" onclick="testHierarchicalSearch()">اختبار البحث الهرمي</button>
+            <button class="test-button" onclick="testReversedSearch()">اختبار البحث المعكوس</button>
+            <button class="test-button" onclick="testAllSearchTypes()">اختبار شامل</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 بحث مخصص:</h3>
+            <input type="text" class="search-input" id="customSearch" placeholder="أدخل استعلام البحث...">
+            <button class="test-button" onclick="testCustomSearch()">تنفيذ البحث</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 النتائج:</h3>
+            <div id="results" class="results">
+                <p>اضغط على أي زر لبدء الاختبار...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- تحميل الملفات المطلوبة -->
+    <script>
+        // بيانات اختبار محسنة لتغطية جميع الحالات
+        const testData = [
+            {
+                'اسم العقار': 'مجمع الشمس',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '101',
+                'اسم المستأجر': 'أحمد محمد',
+                'المالك': 'شركة السنيدي',
+                'تاريخ البداية': '2024-01-01',
+                'تاريخ النهاية': '2025-12-31',
+                'نوع العقد': 'ضريبي'
+            },
+            {
+                'اسم العقار': 'مجمع النور',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '102',
+                'اسم المستأجر': '',
+                'المالك': '',
+                'تاريخ البداية': '',
+                'تاريخ النهاية': '',
+                'نوع العقد': 'سكني'
+            },
+            {
+                'اسم العقار': 'برج الأعمال',
+                'المدينة': 'جدة',
+                'رقم  الوحدة ': '201',
+                'اسم المستأجر': 'سارة أحمد',
+                'المالك': 'شركة السنيدي',
+                'تاريخ البداية': '2023-01-01',
+                'تاريخ النهاية': '2023-12-31',
+                'نوع العقد': 'تجاري'
+            },
+            {
+                'اسم العقار': 'مجمع الشمس',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '103',
+                'اسم المستأجر': 'محمد علي',
+                'المالك': 'شركة السنيدي',
+                'تاريخ البداية': '2023-06-01',
+                'تاريخ النهاية': '2025-01-15',
+                'نوع العقد': 'ضريبي'
+            },
+            {
+                'اسم العقار': 'مجمع الشمس',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '104',
+                'اسم المستأجر': 'فاطمة سالم',
+                'المالك': 'شركة السنيدي',
+                'تاريخ البداية': '2024-01-01',
+                'تاريخ النهاية': '2024-12-31',
+                'تاريخ نهاية القسط': '2025-01-10',
+                'نوع العقد': 'ضريبي'
+            }
+        ];
+
+        // دالة تحليل التاريخ
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        // دالة حساب الحالة المطابقة للنظام الحقيقي
+        function calculateStatus(property) {
+            if (!property['اسم المستأجر'] || !property['المالك']) {
+                return { final: 'فارغ', display: 'فارغ', isInstallmentEnded: false };
+            }
+
+            const today = new Date();
+
+            // أولاً: التحقق من تاريخ نهاية القسط
+            if (property['تاريخ نهاية القسط']) {
+                const installmentEndDate = parseDate(property['تاريخ نهاية القسط']);
+                if (installmentEndDate) {
+                    const diffDays = Math.floor((installmentEndDate - today) / (1000 * 60 * 60 * 24));
+
+                    if (diffDays < 0) {
+                        return {
+                            final: 'منتهى',
+                            display: `أقساط منتهية منذ ${Math.abs(diffDays)} يوم`,
+                            isInstallmentEnded: true
+                        };
+                    } else if (diffDays <= 60) {
+                        return {
+                            final: 'على وشك',
+                            display: `أقساط على وشك الانتهاء بعد ${diffDays} يوم`,
+                            isInstallmentEnded: false,
+                            isPending: true
+                        };
+                    } else {
+                        return {
+                            final: 'فعال',
+                            display: 'فعال',
+                            isInstallmentEnded: false
+                        };
+                    }
+                }
+            }
+
+            // إذا لم يوجد أقساط، استخدم تاريخ النهاية
+            if (property['تاريخ النهاية']) {
+                const contractDate = parseDate(property['تاريخ النهاية']);
+                if (contractDate) {
+                    const diffDays = Math.floor((contractDate - today) / (1000 * 60 * 60 * 24));
+                    if (diffDays < 0) {
+                        return { final: 'منتهى', display: `منتهي منذ ${Math.abs(diffDays)} يوم`, isInstallmentEnded: false };
+                    } else if (diffDays <= 60) {
+                        return { final: 'على وشك', display: `سينتهي بعد ${diffDays} يوم`, isInstallmentEnded: false };
+                    } else {
+                        return { final: 'فعال', display: 'فعال', isInstallmentEnded: false };
+                    }
+                }
+            }
+
+            return { final: 'فعال', display: 'فعال', isInstallmentEnded: false };
+        }
+
+        // تعيين البيانات للنافذة العامة
+        window.allData = testData;
+        window.calculateStatus = calculateStatus;
+
+        function logResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#007bff';
+            results.innerHTML += `<div style="color: ${color}; margin: 5px 0;">${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function testBasicSearch() {
+            clearResults();
+            logResult('🧪 اختبار البحث الأساسي...', 'info');
+            
+            const queries = ['نشط', 'فعال', 'منتهي', 'فارغ'];
+            
+            queries.forEach(query => {
+                logResult(`\n🔍 البحث عن: "${query}"`);
+                
+                if (typeof performAdvancedSearch === 'function') {
+                    const results = performAdvancedSearch(query, testData);
+                    logResult(`📊 النتائج: ${results.length} عقار`);
+                    
+                    results.forEach((item, index) => {
+                        const status = calculateStatus(item);
+                        logResult(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${status.final}`, 'success');
+                    });
+                } else {
+                    logResult('❌ دالة البحث المتقدم غير متوفرة', 'error');
+                }
+            });
+        }
+
+        function testHierarchicalSearch() {
+            clearResults();
+            logResult('🧪 اختبار البحث الهرمي...', 'info');
+            
+            const queries = [
+                'الرياض//نشط',
+                'الرياض//فعال', 
+                'الرياض//منتهي',
+                'الرياض//فارغ'
+            ];
+            
+            queries.forEach(query => {
+                logResult(`\n🔍 البحث عن: "${query}"`);
+                
+                if (typeof performAdvancedSearch === 'function') {
+                    const results = performAdvancedSearch(query, testData);
+                    logResult(`📊 النتائج: ${results.length} عقار`);
+                    
+                    results.forEach((item, index) => {
+                        const status = calculateStatus(item);
+                        logResult(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${item['المدينة']} - ${status.final}`, 'success');
+                    });
+                } else {
+                    logResult('❌ دالة البحث المتقدم غير متوفرة', 'error');
+                }
+            });
+        }
+
+        function testReversedSearch() {
+            clearResults();
+            logResult('🧪 اختبار البحث المعكوس...', 'info');
+            
+            const queries = [
+                'نشط//الرياض',
+                'فعال//الرياض', 
+                'منتهي//الرياض',
+                'فارغ//الرياض'
+            ];
+            
+            queries.forEach(query => {
+                logResult(`\n🔍 البحث عن: "${query}"`);
+                
+                if (typeof performAdvancedSearch === 'function') {
+                    const results = performAdvancedSearch(query, testData);
+                    logResult(`📊 النتائج: ${results.length} عقار`);
+                    
+                    results.forEach((item, index) => {
+                        const status = calculateStatus(item);
+                        logResult(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${item['المدينة']} - ${status.final}`, 'success');
+                    });
+                } else {
+                    logResult('❌ دالة البحث المتقدم غير متوفرة', 'error');
+                }
+            });
+        }
+
+        function testAllSearchTypes() {
+            clearResults();
+            logResult('🧪 اختبار شامل لجميع أنواع البحث...', 'info');
+            
+            testBasicSearch();
+            testHierarchicalSearch();
+            testReversedSearch();
+        }
+
+        function testCustomSearch() {
+            const query = document.getElementById('customSearch').value.trim();
+            if (!query) {
+                alert('يرجى إدخال استعلام البحث');
+                return;
+            }
+            
+            clearResults();
+            logResult(`🔍 البحث المخصص: "${query}"`, 'info');
+            
+            if (typeof performAdvancedSearch === 'function') {
+                const results = performAdvancedSearch(query, testData);
+                logResult(`📊 النتائج: ${results.length} عقار`);
+                
+                results.forEach((item, index) => {
+                    const status = calculateStatus(item);
+                    logResult(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${item['المدينة']} - ${status.final}`, 'success');
+                });
+            } else {
+                logResult('❌ دالة البحث المتقدم غير متوفرة', 'error');
+            }
+        }
+    </script>
+
+    <!-- تحميل نظام البحث المتقدم -->
+    <script src="advanced-search-system.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار سريع للبحث الهرمي</title>
+    <style>
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 اختبار سريع للبحث الهرمي</h1>
+        
+        <div class="status warning">
+            <h3>📋 المشكلة المطلوب حلها:</h3>
+            <ul>
+                <li>البحث عن "نشط" بشكل عام يعمل ✅</li>
+                <li>البحث عن "الرياض//نشط" يُظهر وحدات منتهية ❌</li>
+                <li>البحث لا يدعم "نشط//الرياض" ❌</li>
+            </ul>
+        </div>
+
+        <div>
+            <h3>🧪 اختبارات متاحة:</h3>
+            <button class="test-button" onclick="runFullTest()">اختبار شامل</button>
+            <button class="test-button" onclick="runSpecificTest()">اختبار المشكلة المحددة</button>
+            <button class="test-button" onclick="clearConsole()">مسح وحدة التحكم</button>
+            <button class="test-button" onclick="openDevTools()">فتح وحدة التحكم</button>
+        </div>
+
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <div>
+            <h3>📊 مخرجات وحدة التحكم:</h3>
+            <div id="consoleOutput" class="console-output">
+                اضغط على أي زر لبدء الاختبار...
+            </div>
+        </div>
+    </div>
+
+    <!-- تحميل الملفات المطلوبة -->
+    <script src="advanced-search-system.js"></script>
+    <script src="quick-search-test.js"></script>
+
+    <script>
+        // إعادة توجيه console.log إلى الواجهة
+        const originalConsoleLog = console.log;
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            consoleOutput.textContent += message + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function runFullTest() {
+            clearConsole();
+            showStatus('🧪 تشغيل الاختبار الشامل...', 'warning');
+            
+            try {
+                if (typeof runQuickSearchTest === 'function') {
+                    runQuickSearchTest();
+                    showStatus('✅ تم الانتهاء من الاختبار الشامل', 'success');
+                } else {
+                    console.log('❌ دالة الاختبار الشامل غير متوفرة');
+                    showStatus('❌ دالة الاختبار غير متوفرة', 'error');
+                }
+            } catch (error) {
+                console.log('❌ خطأ في الاختبار:', error.message);
+                showStatus('❌ حدث خطأ في الاختبار', 'error');
+            }
+        }
+
+        function runSpecificTest() {
+            clearConsole();
+            showStatus('🔍 تشغيل اختبار المشكلة المحددة...', 'warning');
+            
+            try {
+                if (typeof testSpecificIssue === 'function') {
+                    testSpecificIssue();
+                    showStatus('✅ تم الانتهاء من اختبار المشكلة المحددة', 'success');
+                } else {
+                    console.log('❌ دالة اختبار المشكلة المحددة غير متوفرة');
+                    showStatus('❌ دالة الاختبار غير متوفرة', 'error');
+                }
+            } catch (error) {
+                console.log('❌ خطأ في الاختبار:', error.message);
+                showStatus('❌ حدث خطأ في الاختبار', 'error');
+            }
+        }
+
+        function clearConsole() {
+            consoleOutput.textContent = '';
+        }
+
+        function openDevTools() {
+            showStatus('💡 اضغط F12 لفتح وحدة التحكم', 'warning');
+            console.log('💡 وحدة التحكم مفتوحة - يمكنك استخدام الدوال التالية:');
+            console.log('   • runQuickSearchTest()');
+            console.log('   • testSpecificIssue()');
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', function() {
+            console.log('🚀 تم تحميل صفحة الاختبار السريع');
+            console.log('📝 الدوال المتاحة:');
+            console.log('   • runQuickSearchTest() - اختبار شامل');
+            console.log('   • testSpecificIssue() - اختبار المشكلة المحددة');
+            
+            // التحقق من توفر نظام البحث المتقدم
+            if (typeof performAdvancedSearch === 'function') {
+                console.log('✅ نظام البحث المتقدم متوفر');
+            } else {
+                console.log('❌ نظام البحث المتقدم غير متوفر');
+            }
+        });
+    </script>
+</body>
+</html>

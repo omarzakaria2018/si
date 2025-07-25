@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الاختبار النهائي لإصلاح البحث عن "نشط"</title>
+    <style>
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        .critical-test {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .warning { color: #ffc107; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 الاختبار النهائي لإصلاح البحث عن "نشط"</h1>
+        
+        <div class="critical-test">
+            <h3>🎯 الهدف الأساسي:</h3>
+            <p><strong>استبعاد الوحدات المنتهية نهائياً عند البحث عن "نشط" في جميع الأحوال</strong></p>
+            <ul>
+                <li>البحث عن "نشط" = فقط الوحدات الفعالة وعلى وشك الانتهاء</li>
+                <li>البحث عن "الرياض//نشط" = فقط الوحدات النشطة في الرياض</li>
+                <li>البحث عن "نشط//الرياض" = نفس النتيجة السابقة</li>
+            </ul>
+        </div>
+
+        <div>
+            <h3>🧪 اختبارات حاسمة:</h3>
+            <button class="test-button" onclick="testCriticalActiveSearch()">اختبار حاسم: "نشط" يجب ألا يُظهر منتهي</button>
+            <button class="test-button" onclick="testRiyadhActiveSearch()">اختبار "الرياض//نشط"</button>
+            <button class="test-button" onclick="testReversedSearch()">اختبار "نشط//الرياض"</button>
+            <button class="test-button" onclick="clearConsole()">مسح وحدة التحكم</button>
+        </div>
+
+        <div>
+            <h3>📊 مخرجات الاختبار:</h3>
+            <div id="consoleOutput" class="console-output">
+                اضغط على أي زر لبدء الاختبار الحاسم...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // بيانات اختبار واقعية تحاكي المشكلة
+        const criticalTestData = [
+            // وحدات نشطة في الرياض (يجب أن تظهر)
+            {
+                'اسم العقار': 'مجمع الشمس',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '101',
+                'اسم المستأجر': 'أحمد محمد',
+                'المالك': 'شركة السنيدي',
+                'تاريخ النهاية': '2025-12-31'
+            },
+            {
+                'اسم العقار': 'مجمع النور',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '102',
+                'اسم المستأجر': 'سارة أحمد',
+                'المالك': 'شركة السنيدي',
+                'تاريخ نهاية القسط': '2025-02-15'
+            },
+            // وحدات منتهية في الرياض (يجب ألا تظهر أبداً عند البحث عن "نشط")
+            {
+                'اسم العقار': 'برج الأعمال',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '201',
+                'اسم المستأجر': 'محمد علي',
+                'المالك': 'شركة السنيدي',
+                'تاريخ النهاية': '2023-12-31'
+            },
+            {
+                'اسم العقار': 'مجمع التجارة',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '301',
+                'اسم المستأجر': 'فاطمة سالم',
+                'المالك': 'شركة السنيدي',
+                'تاريخ نهاية القسط': '2023-11-30'
+            },
+            {
+                'اسم العقار': 'مجمع الصناعة',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '401',
+                'اسم المستأجر': 'خالد أحمد',
+                'المالك': 'شركة السنيدي',
+                'تاريخ النهاية': '2022-06-30'
+            },
+            // وحدات فارغة في الرياض (يجب ألا تظهر عند البحث عن "نشط")
+            {
+                'اسم العقار': 'مجمع الحديقة',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': '501',
+                'اسم المستأجر': '',
+                'المالك': ''
+            },
+            // وحدات نشطة في مدن أخرى (للتأكد من عدم تأثر البحث العام)
+            {
+                'اسم العقار': 'برج جدة',
+                'المدينة': 'جدة',
+                'رقم  الوحدة ': '601',
+                'اسم المستأجر': 'عبدالله سالم',
+                'المالك': 'شركة السنيدي',
+                'تاريخ النهاية': '2025-06-30'
+            }
+        ];
+
+        // دالة حساب الحالة المطابقة للنظام الحقيقي
+        function calculateStatus(property) {
+            if (!property['اسم المستأجر'] || !property['المالك']) {
+                return { final: 'فارغ', display: 'فارغ' };
+            }
+
+            const today = new Date();
+
+            // التحقق من تاريخ نهاية القسط
+            if (property['تاريخ نهاية القسط']) {
+                const installmentEndDate = new Date(property['تاريخ نهاية القسط']);
+                if (!isNaN(installmentEndDate.getTime())) {
+                    const diffDays = Math.floor((installmentEndDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays < 0) {
+                        return { final: 'منتهى', display: `أقساط منتهية منذ ${Math.abs(diffDays)} يوم` };
+                    } else if (diffDays <= 60) {
+                        return { final: 'على وشك', display: `أقساط على وشك الانتهاء بعد ${diffDays} يوم` };
+                    } else {
+                        return { final: 'فعال', display: 'فعال' };
+                    }
+                }
+            }
+
+            // التحقق من تاريخ النهاية
+            if (property['تاريخ النهاية']) {
+                const contractDate = new Date(property['تاريخ النهاية']);
+                if (!isNaN(contractDate.getTime())) {
+                    const diffDays = Math.floor((contractDate - today) / (1000 * 60 * 60 * 24));
+                    if (diffDays < 0) {
+                        return { final: 'منتهى', display: `منتهي منذ ${Math.abs(diffDays)} يوم` };
+                    } else if (diffDays <= 60) {
+                        return { final: 'على وشك', display: `سينتهي بعد ${diffDays} يوم` };
+                    } else {
+                        return { final: 'فعال', display: 'فعال' };
+                    }
+                }
+            }
+
+            return { final: 'فعال', display: 'فعال' };
+        }
+
+        // تعيين البيانات للنافذة العامة
+        window.allData = criticalTestData;
+        window.calculateStatus = calculateStatus;
+
+        // إعادة توجيه console.log إلى الواجهة
+        const originalConsoleLog = console.log;
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            consoleOutput.textContent += message + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+
+        function clearConsole() {
+            consoleOutput.textContent = '';
+        }
+
+        function testCriticalActiveSearch() {
+            clearConsole();
+            console.log('🎯 الاختبار الحاسم: البحث عن "نشط" يجب ألا يُظهر أي وحدة منتهية');
+            console.log('=' .repeat(80));
+            
+            // عرض جميع الوحدات مع حالاتها
+            console.log('\n📊 جميع الوحدات المتاحة:');
+            criticalTestData.forEach((item, index) => {
+                const status = calculateStatus(item);
+                const statusIcon = status.final === 'منتهى' ? '❌' : 
+                                 status.final === 'فارغ' ? '⚪' : '✅';
+                console.log(`${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${item['المدينة']} - ${status.final} ${statusIcon}`);
+            });
+            
+            // اختبار البحث عن "نشط"
+            console.log('\n🔍 تنفيذ البحث عن "نشط":');
+            if (typeof performAdvancedSearch === 'function') {
+                const results = performAdvancedSearch('نشط', criticalTestData);
+                console.log(`\n📊 النتائج النهائية: ${results.length} عقار`);
+                
+                let hasExpiredUnits = false;
+                let hasEmptyUnits = false;
+                let activeCount = 0;
+                
+                if (results.length > 0) {
+                    console.log('\n📋 تحليل النتائج:');
+                    results.forEach((item, index) => {
+                        const status = calculateStatus(item);
+                        console.log(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${item['المدينة']} - ${status.final}`);
+                        
+                        if (status.final === 'منتهى') {
+                            console.log(`   🚨 خطأ فادح: وحدة منتهية ظهرت في البحث عن "نشط"!`);
+                            hasExpiredUnits = true;
+                        } else if (status.final === 'فارغ') {
+                            console.log(`   ⚠️ خطأ: وحدة فارغة ظهرت في البحث عن "نشط"`);
+                            hasEmptyUnits = true;
+                        } else {
+                            console.log(`   ✅ صحيح: وحدة نشطة`);
+                            activeCount++;
+                        }
+                    });
+                    
+                    console.log('\n🎯 تقييم النتائج:');
+                    if (!hasExpiredUnits && !hasEmptyUnits) {
+                        console.log(`🎉 ممتاز! جميع النتائج صحيحة - ${activeCount} وحدة نشطة فقط`);
+                    } else {
+                        if (hasExpiredUnits) {
+                            console.log(`🚨 فشل الاختبار: توجد وحدات منتهية في النتائج`);
+                        }
+                        if (hasEmptyUnits) {
+                            console.log(`⚠️ تحذير: توجد وحدات فارغة في النتائج`);
+                        }
+                    }
+                } else {
+                    console.log('\n⚠️ لا توجد نتائج - قد تكون هناك مشكلة في البحث');
+                }
+            } else {
+                console.log('❌ دالة البحث المتقدم غير متوفرة');
+            }
+        }
+
+        function testRiyadhActiveSearch() {
+            clearConsole();
+            console.log('🧪 اختبار "الرياض//نشط" - يجب ألا يُظهر وحدات منتهية في الرياض');
+            console.log('=' .repeat(80));
+            
+            // عرض الوحدات في الرياض
+            console.log('\n📊 الوحدات في الرياض:');
+            const riyadhUnits = criticalTestData.filter(item => item['المدينة'] === 'الرياض');
+            riyadhUnits.forEach((item, index) => {
+                const status = calculateStatus(item);
+                const statusIcon = status.final === 'منتهى' ? '❌' : 
+                                 status.final === 'فارغ' ? '⚪' : '✅';
+                console.log(`${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${status.final} ${statusIcon}`);
+            });
+            
+            // اختبار البحث
+            console.log('\n🔍 تنفيذ البحث "الرياض//نشط":');
+            if (typeof performAdvancedSearch === 'function') {
+                const results = performAdvancedSearch('الرياض//نشط', criticalTestData);
+                console.log(`\n📊 النتائج النهائية: ${results.length} عقار`);
+                
+                let hasExpiredUnits = false;
+                
+                if (results.length > 0) {
+                    console.log('\n📋 تحليل النتائج:');
+                    results.forEach((item, index) => {
+                        const status = calculateStatus(item);
+                        console.log(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${status.final}`);
+                        
+                        if (status.final === 'منتهى') {
+                            console.log(`   🚨 خطأ فادح: وحدة منتهية في الرياض ظهرت!`);
+                            hasExpiredUnits = true;
+                        } else {
+                            console.log(`   ✅ صحيح: وحدة نشطة في الرياض`);
+                        }
+                    });
+                    
+                    if (!hasExpiredUnits) {
+                        console.log('\n🎉 ممتاز! لا توجد وحدات منتهية في نتائج "الرياض//نشط"');
+                    } else {
+                        console.log('\n🚨 فشل الاختبار: توجد وحدات منتهية في النتائج');
+                    }
+                }
+            }
+        }
+
+        function testReversedSearch() {
+            clearConsole();
+            console.log('🧪 اختبار "نشط//الرياض" - يجب أن يعطي نفس نتيجة "الرياض//نشط"');
+            console.log('=' .repeat(80));
+            
+            if (typeof performAdvancedSearch === 'function') {
+                const results1 = performAdvancedSearch('الرياض//نشط', criticalTestData);
+                const results2 = performAdvancedSearch('نشط//الرياض', criticalTestData);
+                
+                console.log(`\n📊 نتائج "الرياض//نشط": ${results1.length} عقار`);
+                console.log(`📊 نتائج "نشط//الرياض": ${results2.length} عقار`);
+                
+                if (results1.length === results2.length) {
+                    console.log('\n✅ ممتاز! النتائج متطابقة');
+                } else {
+                    console.log('\n❌ خطأ: النتائج غير متطابقة');
+                }
+                
+                // فحص محتوى النتائج
+                const ids1 = results1.map(r => `${r['اسم العقار']}-${r['رقم  الوحدة ']}`).sort();
+                const ids2 = results2.map(r => `${r['اسم العقار']}-${r['رقم  الوحدة ']}`).sort();
+                
+                if (JSON.stringify(ids1) === JSON.stringify(ids2)) {
+                    console.log('✅ محتوى النتائج متطابق تماماً');
+                } else {
+                    console.log('❌ محتوى النتائج مختلف');
+                    console.log('الرياض//نشط:', ids1);
+                    console.log('نشط//الرياض:', ids2);
+                }
+            }
+        }
+
+        // تشغيل تلقائي عند تحميل الصفحة
+        window.addEventListener('load', function() {
+            console.log('🚀 تم تحميل صفحة الاختبار النهائي');
+            
+            if (typeof performAdvancedSearch === 'function') {
+                console.log('✅ نظام البحث المتقدم متوفر');
+                console.log('💡 اضغط على "اختبار حاسم" للتحقق من إصلاح المشكلة');
+            } else {
+                console.log('❌ نظام البحث المتقدم غير متوفر');
+            }
+        });
+    </script>
+
+    <!-- تحميل نظام البحث المتقدم -->
+    <script src="advanced-search-system.js"></script>
+</body>
+</html>
