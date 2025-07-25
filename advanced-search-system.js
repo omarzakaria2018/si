@@ -52,27 +52,52 @@ function normalizeArabicTextAdvanced(text) {
         .replace(/\s+/g, ' ');
 }
 
-// دالة البحث عن المرادفات
+// دالة البحث عن المرادفات المحسنة
 function findSynonymMatch(searchTerm, targetText) {
     const normalizedSearch = normalizeArabicTextAdvanced(searchTerm);
     const normalizedTarget = normalizeArabicTextAdvanced(targetText);
-    
+
     // البحث المباشر أولاً
     if (normalizedTarget.includes(normalizedSearch)) {
         return true;
     }
-    
+
     // البحث في المرادفات
     for (const [category, synonyms] of Object.entries(statusSynonyms)) {
         const normalizedSynonyms = synonyms.map(s => normalizeArabicTextAdvanced(s));
-        
+
         // إذا كان مصطلح البحث من هذه الفئة
         if (normalizedSynonyms.includes(normalizedSearch)) {
             // تحقق من وجود أي مرادف في النص المستهدف
             return normalizedSynonyms.some(synonym => normalizedTarget.includes(synonym));
         }
     }
-    
+
+    return false;
+}
+
+// دالة خاصة للبحث في الحالة مع دعم المرادفات المتقدم
+function findStatusMatch(searchTerm, property) {
+    const normalizedSearch = normalizeArabicTextAdvanced(searchTerm);
+
+    // إذا كان البحث عن "نشط" أو مرادفاته، نحتاج للبحث في الحالة المحسوبة
+    const activeGeneralSynonyms = statusSynonyms.active_general || [];
+    const normalizedActiveGeneral = activeGeneralSynonyms.map(s => normalizeArabicTextAdvanced(s));
+
+    if (normalizedActiveGeneral.includes(normalizedSearch)) {
+        // البحث عن "نشط" يعني البحث عن "فعال" أو "على وشك"
+        if (typeof calculateStatus === 'function') {
+            const status = calculateStatus(property);
+            const statusFinal = normalizeArabicTextAdvanced(status.final);
+
+            // تحقق من أن الحالة "فعال" أو "على وشك"
+            const activeSynonyms = statusSynonyms.active || [];
+            const normalizedActive = activeSynonyms.map(s => normalizeArabicTextAdvanced(s));
+
+            return normalizedActive.some(synonym => statusFinal.includes(synonym));
+        }
+    }
+
     return false;
 }
 
@@ -86,6 +111,11 @@ function advancedSearchInProperty(property, searchTerm) {
     if (!property || !searchTerm) return false;
 
     const normalizedSearchTerm = normalizeArabicTextAdvanced(searchTerm);
+
+    // البحث الخاص في الحالة أولاً (للتعامل مع "نشط" ومرادفاته)
+    if (findStatusMatch(searchTerm, property)) {
+        return true;
+    }
 
     // البحث في جميع حقول العقار
     const searchableFields = [
@@ -117,7 +147,7 @@ function advancedSearchInProperty(property, searchTerm) {
         }
     }
 
-    // البحث في الحالة المحسوبة
+    // البحث في الحالة المحسوبة (البحث العادي)
     if (typeof calculateStatus === 'function') {
         const status = calculateStatus(property);
         const statusText = `${status.final} ${status.display}`;
@@ -483,6 +513,7 @@ if (typeof window !== 'undefined') {
     window.testAdvancedSearch = testAdvancedSearch;
     window.advancedSearchInProperty = advancedSearchInProperty;
     window.findSynonymMatch = findSynonymMatch;
+    window.findStatusMatch = findStatusMatch;
     window.normalizeArabicTextAdvanced = normalizeArabicTextAdvanced;
 }
 

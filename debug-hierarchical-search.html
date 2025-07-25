@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تشخيص البحث الهرمي</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .debug-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .test-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .debug-output {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+        
+        .property-card {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+        }
+        
+        .status-active { border-left: 4px solid #28a745; }
+        .status-soon { border-left: 4px solid #ffc107; }
+        .status-expired { border-left: 4px solid #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 تشخيص البحث الهرمي</h1>
+        
+        <div class="debug-section">
+            <h3>🧪 اختبار مفصل</h3>
+            <input type="text" class="test-input" id="debugInput" 
+                   placeholder="أدخل استعلام البحث" value="رياض//نشط">
+            <br>
+            <button class="test-btn" onclick="debugSearch()">تشخيص البحث</button>
+            <button class="test-btn" onclick="testStatusMatch()">اختبار مطابقة الحالة</button>
+            <button class="test-btn" onclick="clearDebug()">مسح</button>
+            
+            <div id="debugOutput" class="debug-output" style="display: none;"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>📊 البيانات المتاحة</h3>
+            <div id="dataDisplay"></div>
+        </div>
+    </div>
+
+    <script src="advanced-search-system.js"></script>
+    
+    <script>
+        // بيانات اختبار
+        const debugData = [
+            {
+                'اسم العقار': 'مجمع الشمس',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': 'A101',
+                'اسم المستأجر': 'أحمد محمد',
+                'نوع العقد': 'ضريبي',
+                'تاريخ نهاية العقد': '2025/12/01'
+            },
+            {
+                'اسم العقار': 'برج النور',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': 'B201',
+                'اسم المستأجر': 'سارة أحمد',
+                'نوع العقد': 'سكني',
+                'تاريخ نهاية العقد': '2024/12/15'
+            },
+            {
+                'اسم العقار': 'مجمع القمر',
+                'المدينة': 'جدة',
+                'رقم  الوحدة ': 'C301',
+                'اسم المستأجر': 'محمد علي',
+                'نوع العقد': 'تجاري',
+                'تاريخ نهاية العقد': '2025/06/01'
+            }
+        ];
+
+        // محاكاة دالة calculateStatus
+        function calculateStatus(property) {
+            const endDate = new Date(property['تاريخ نهاية العقد']);
+            const today = new Date();
+            const diffTime = endDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) {
+                return { final: 'منتهي', display: 'منتهي' };
+            } else if (diffDays <= 30) {
+                return { final: 'على وشك', display: 'على وشك الانتهاء' };
+            } else {
+                return { final: 'فعال', display: 'فعال' };
+            }
+        }
+
+        window.calculateStatus = calculateStatus;
+
+        let debugLog = [];
+
+        function log(message) {
+            debugLog.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+            updateDebugOutput();
+        }
+
+        function updateDebugOutput() {
+            const output = document.getElementById('debugOutput');
+            output.textContent = debugLog.join('\n');
+            output.style.display = 'block';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function debugSearch() {
+            debugLog = [];
+            const input = document.getElementById('debugInput');
+            const query = input.value.trim();
+            
+            log(`🚀 بدء تشخيص البحث: "${query}"`);
+            
+            // تحليل الاستعلام
+            if (query.includes('//')) {
+                const terms = query.split('//').map(t => t.trim()).filter(t => t);
+                log(`📋 البحث الهرمي - المصطلحات: ${terms.join(' ← ')}`);
+                
+                // تشخيص كل مستوى
+                let currentResults = [...debugData];
+                
+                for (let i = 0; i < terms.length; i++) {
+                    const term = terms[i];
+                    log(`\n🔍 المستوى ${i + 1}: البحث عن "${term}"`);
+                    log(`📊 البيانات المتاحة: ${currentResults.length} عقار`);
+                    
+                    const beforeCount = currentResults.length;
+                    
+                    currentResults = currentResults.filter(property => {
+                        // تشخيص البحث في كل عقار
+                        const match = window.advancedSearchInProperty ? 
+                            window.advancedSearchInProperty(property, term) : false;
+                        
+                        if (match) {
+                            log(`   ✅ "${property['اسم العقار']}" - "${property['رقم  الوحدة ']}" يطابق "${term}"`);
+                        }
+                        
+                        return match;
+                    });
+                    
+                    const afterCount = currentResults.length;
+                    log(`📈 النتائج: ${afterCount} عقار (تم تصفية ${beforeCount - afterCount})`);
+                    
+                    if (currentResults.length === 0) {
+                        log(`⚠️ لا توجد نتائج في المستوى ${i + 1} - توقف البحث`);
+                        break;
+                    }
+                }
+                
+                log(`\n🎯 النتائج النهائية: ${currentResults.length} عقار`);
+                currentResults.forEach((item, index) => {
+                    const status = calculateStatus(item);
+                    log(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']}: ${status.final}`);
+                });
+                
+            } else {
+                log(`📋 بحث عادي: "${query}"`);
+            }
+        }
+
+        function testStatusMatch() {
+            debugLog = [];
+            log(`🧪 اختبار مطابقة الحالة مع "نشط"`);
+            
+            debugData.forEach((property, index) => {
+                const status = calculateStatus(property);
+                log(`\n📋 العقار ${index + 1}: ${property['اسم العقار']}`);
+                log(`   الحالة المحسوبة: ${status.final}`);
+                
+                // اختبار البحث بـ "نشط"
+                const matchesNashet = window.findStatusMatch ? 
+                    window.findStatusMatch('نشط', property) : false;
+                log(`   يطابق "نشط": ${matchesNashet ? '✅ نعم' : '❌ لا'}`);
+                
+                // اختبار البحث المباشر
+                const directMatch = window.advancedSearchInProperty ? 
+                    window.advancedSearchInProperty(property, 'نشط') : false;
+                log(`   البحث المباشر "نشط": ${directMatch ? '✅ نعم' : '❌ لا'}`);
+            });
+        }
+
+        function clearDebug() {
+            debugLog = [];
+            document.getElementById('debugOutput').style.display = 'none';
+        }
+
+        function displayData() {
+            const display = document.getElementById('dataDisplay');
+            let html = '';
+            
+            debugData.forEach((item, index) => {
+                const status = calculateStatus(item);
+                const statusClass = status.final === 'فعال' ? 'status-active' : 
+                                  status.final === 'على وشك' ? 'status-soon' : 'status-expired';
+                
+                html += `<div class="property-card ${statusClass}">
+                    <strong>${item['اسم العقار']}</strong> - ${item['رقم  الوحدة ']}<br>
+                    المدينة: ${item['المدينة']} | النوع: ${item['نوع العقد']}<br>
+                    المستأجر: ${item['اسم المستأجر'] || 'فارغ'}<br>
+                    الحالة: <strong>${status.final}</strong>
+                </div>`;
+            });
+            
+            display.innerHTML = html;
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            displayData();
+            log('✅ تم تحميل صفحة التشخيص');
+            updateDebugOutput();
+        });
+    </script>
+</body>
+</html>

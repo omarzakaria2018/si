@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إصلاح البحث الهرمي</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        
+        .test-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+        }
+        
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            background: white;
+            border: 1px solid #ddd;
+        }
+        
+        .result-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        
+        .test-data {
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 اختبار إصلاح البحث الهرمي</h1>
+        <p>هذا الاختبار يتحقق من إصلاح مشكلة البحث الهرمي مع كلمة "نشط"</p>
+        
+        <div class="test-section">
+            <h3>🧪 اختبار البحث الهرمي</h3>
+            <input type="text" class="test-input" id="testInput" 
+                   placeholder="أدخل استعلام البحث (مثل: رياض//نشط)" 
+                   value="رياض//نشط">
+            <br>
+            <button class="test-btn" onclick="testHierarchicalSearch()">اختبار البحث</button>
+            <button class="test-btn" onclick="runAllTests()">تشغيل جميع الاختبارات</button>
+            <button class="test-btn" onclick="clearResults()">مسح النتائج</button>
+            
+            <div id="results" class="results" style="display: none;"></div>
+        </div>
+        
+        <div class="test-data">
+            <h4>📊 بيانات الاختبار:</h4>
+            <div id="testDataDisplay"></div>
+        </div>
+    </div>
+
+    <!-- تحميل نظام البحث المتقدم -->
+    <script src="advanced-search-system.js"></script>
+    
+    <script>
+        // بيانات اختبار محاكية
+        const testData = [
+            {
+                'اسم العقار': 'مجمع الشمس',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': 'A101',
+                'اسم المستأجر': 'أحمد محمد',
+                'نوع العقد': 'ضريبي',
+                'تاريخ نهاية العقد': '2025/12/01' // نشط (فعال)
+            },
+            {
+                'اسم العقار': 'برج النور',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': 'B201',
+                'اسم المستأجر': 'سارة أحمد',
+                'نوع العقد': 'سكني',
+                'تاريخ نهاية العقد': '2024/12/15' // نشط (على وشك)
+            },
+            {
+                'اسم العقار': 'مجمع القمر',
+                'المدينة': 'جدة',
+                'رقم  الوحدة ': 'C301',
+                'اسم المستأجر': 'محمد علي',
+                'نوع العقد': 'تجاري',
+                'تاريخ نهاية العقد': '2025/06/01' // نشط (فعال)
+            },
+            {
+                'اسم العقار': 'برج الورود',
+                'المدينة': 'الرياض',
+                'رقم  الوحدة ': 'D401',
+                'اسم المستأجر': '',
+                'نوع العقد': 'سكني',
+                'تاريخ نهاية العقد': '2023/10/01' // منتهي
+            }
+        ];
+
+        // محاكاة دالة calculateStatus
+        function calculateStatus(property) {
+            const endDate = new Date(property['تاريخ نهاية العقد']);
+            const today = new Date();
+            const diffTime = endDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) {
+                return { final: 'منتهي', display: 'منتهي' };
+            } else if (diffDays <= 30) {
+                return { final: 'على وشك', display: 'على وشك الانتهاء' };
+            } else {
+                return { final: 'فعال', display: 'فعال' };
+            }
+        }
+
+        // تهيئة البيانات
+        window.calculateStatus = calculateStatus;
+        
+        function displayTestData() {
+            const display = document.getElementById('testDataDisplay');
+            let html = '<table border="1" style="width: 100%; border-collapse: collapse;">';
+            html += '<tr><th>العقار</th><th>المدينة</th><th>الوحدة</th><th>المستأجر</th><th>النوع</th><th>الحالة</th></tr>';
+            
+            testData.forEach(item => {
+                const status = calculateStatus(item);
+                html += `<tr>
+                    <td>${item['اسم العقار']}</td>
+                    <td>${item['المدينة']}</td>
+                    <td>${item['رقم  الوحدة ']}</td>
+                    <td>${item['اسم المستأجر'] || 'فارغ'}</td>
+                    <td>${item['نوع العقد']}</td>
+                    <td>${status.final}</td>
+                </tr>`;
+            });
+            
+            html += '</table>';
+            display.innerHTML = html;
+        }
+
+        function testHierarchicalSearch() {
+            const input = document.getElementById('testInput');
+            const query = input.value.trim();
+            
+            if (!query) {
+                alert('يرجى إدخال استعلام البحث');
+                return;
+            }
+            
+            console.log(`🧪 اختبار البحث الهرمي: "${query}"`);
+            
+            let results;
+            if (typeof performAdvancedSearch === 'function') {
+                results = performAdvancedSearch(query, testData);
+            } else {
+                results = [];
+            }
+            
+            displayResults(results, query);
+        }
+
+        function runAllTests() {
+            const testQueries = [
+                'رياض//نشط',
+                'نشط',
+                'رياض//فعال',
+                'رياض//وشك',
+                'جدة//نشط',
+                'رياض//ضريبي//نشط'
+            ];
+            
+            let allResults = '';
+            
+            testQueries.forEach(query => {
+                console.log(`\n🔍 اختبار: "${query}"`);
+                const results = performAdvancedSearch(query, testData);
+                
+                allResults += `<div class="result-item ${results.length > 0 ? 'success' : 'warning'}">
+                    <strong>🔍 "${query}"</strong><br>
+                    النتائج: ${results.length} عقار<br>
+                    ${results.map(r => `• ${r['اسم العقار']} - ${r['رقم  الوحدة ']}`).join('<br>')}
+                </div>`;
+            });
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = allResults;
+            resultsDiv.style.display = 'block';
+        }
+
+        function displayResults(results, query) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `<h4>🎯 نتائج البحث: "${query}"</h4>`;
+            html += `<p><strong>عدد النتائج:</strong> ${results.length}</p>`;
+            
+            if (results.length === 0) {
+                html += '<div class="result-item error">❌ لا توجد نتائج</div>';
+            } else {
+                results.forEach((item, index) => {
+                    const status = calculateStatus(item);
+                    html += `<div class="result-item success">
+                        <strong>${index + 1}. ${item['اسم العقار']}</strong><br>
+                        المدينة: ${item['المدينة']}<br>
+                        الوحدة: ${item['رقم  الوحدة ']}<br>
+                        المستأجر: ${item['اسم المستأجر'] || 'فارغ'}<br>
+                        النوع: ${item['نوع العقد']}<br>
+                        الحالة: ${status.final}
+                    </div>`;
+                });
+            }
+            
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+
+        function clearResults() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'none';
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            displayTestData();
+            console.log('✅ تم تحميل صفحة اختبار إصلاح البحث الهرمي');
+        });
+    </script>
+</body>
+</html>
