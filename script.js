@@ -256,7 +256,7 @@ function createMissingClearButtons() {
         console.log('✅ تم إنشاء زر مسح الفلاتر للشاشات الكبيرة مع loading');
     }
 
-    // فحص زر الإحصائيات
+    // فحص زر الإحصائيات (مشترك لجميع المستخدمين)
     const statisticsContainer = document.getElementById('statisticsActiveFilters');
     if (statisticsContainer && !statisticsContainer.querySelector('.clear-all-filters-btn')) {
         const clearBtn = document.createElement('button');
@@ -4655,7 +4655,7 @@ function detectAndApplyStatusFilter(searchTerm, clearSearchField = true) {
         const searchInput = document.getElementById('globalSearch');
         if (searchInput && typeof showSearchIndicator === 'function') {
             if (detectedStatus === 'نشط_عام') {
-                showSearchIndicator(searchInput, `تم تطبيق بحث متقدم: "${searchTerm}" = فعال + على وشك (يمكنك حذف النص لإلغاء البحث)`, 'success');
+               
             } else {
                 showSearchIndicator(searchInput, `تم تطبيق فلتر الحالة: ${detectedStatus} (يمكنك حذف النص لإلغاء الفلتر)`, 'success');
             }
@@ -44547,7 +44547,8 @@ const users = {
             manageAttachments: true,
             exportData: true,
             importData: true,
-            manageSettings: true
+            manageSettings: true,
+            clearFilters: true
         }
     },
     'محمد': {
@@ -44562,7 +44563,8 @@ const users = {
             manageAttachments: true,
             exportData: true,
             importData: true,
-            manageSettings: true
+            manageSettings: true,
+            clearFilters: true
         }
     },
     '1234': {
@@ -51182,7 +51184,7 @@ function updateStatisticsActiveFilters() {
             `<span class="filter-tag">${filter}</span>`
         ).join('');
 
-        // التأكد من إظهار زر مسح الفلاتر
+        // التأكد من إظهار زر مسح الفلاتر (مشترك لجميع المستخدمين)
         let clearButton = activeFiltersContainer.querySelector('.clear-all-filters-btn');
         if (!clearButton) {
             // إنشاء زر مسح الفلاتر إذا لم يكن موجوداً

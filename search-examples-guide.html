@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دليل أمثلة البحث الهرمي والمتعدد</title>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            direction: rtl;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 10px;
+            color: white;
+        }
+        .example-section {
+            margin: 25px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .example-section:hover {
+            border-color: #007bff;
+            box-shadow: 0 5px 15px rgba(0,123,255,0.1);
+        }
+        .example-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .search-example {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-right: 4px solid #007bff;
+        }
+        .search-query {
+            font-family: 'Courier New', monospace;
+            background: #2d3748;
+            color: #68d391;
+            padding: 8px 12px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        .explanation {
+            color: #495057;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .icon {
+            font-size: 1.5em;
+        }
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-right: 10px;
+        }
+        .copy-btn:hover {
+            background: #218838;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 دليل البحث الهرمي والمتعدد</h1>
+            <p>تعلم كيفية استخدام البحث المتقدم بالأمثلة العملية</p>
+        </div>
+
+        <div class="example-section">
+            <div class="example-title">
+                <span class="icon">🎯</span>
+                البحث الهرمي باستخدام //
+            </div>
+            
+            <div class="search-example">
+                <div class="search-query">نشط//ضريبي</div>
+                <button class="copy-btn" onclick="copyToClipboard('نشط//ضريبي')">نسخ</button>
+                <div class="explanation">
+                    ابحث عن جميع الوحدات النشطة أولاً، ثم من النتائج ابحث عن الضريبية فقط
+                </div>
+            </div>
+
+            <div class="search-example">
+                <div class="search-query">الرياض//ساري+فارغ</div>
+                <button class="copy-btn" onclick="copyToClipboard('الرياض//ساري+فارغ')">نسخ</button>
+                <div class="explanation">
+                    ابحث في الرياض أولاً، ثم من النتائج اعرض الوحدات الساري <strong>أو</strong> الفارغة
+                </div>
+            </div>
+
+            <div class="search-example">
+                <div class="search-query">مجمع الشمس//فعال//ضريبي</div>
+                <button class="copy-btn" onclick="copyToClipboard('مجمع الشمس//فعال//ضريبي')">نسخ</button>
+                <div class="explanation">
+                    ابحث في مجمع الشمس، ثم الفعالة، ثم الضريبية (ثلاث مستويات)
+                </div>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <div class="example-title">
+                <span class="icon">🔗</span>
+                البحث المتعدد باستخدام +
+            </div>
+            
+            <div class="search-example">
+                <div class="search-query">فعال+وشك+منتهي</div>
+                <button class="copy-btn" onclick="copyToClipboard('فعال+وشك+منتهي')">نسخ</button>
+                <div class="explanation">
+                    ابحث عن جميع الوحدات التي تكون فعالة <strong>أو</strong> على وشك <strong>أو</strong> منتهية
+                </div>
+            </div>
+
+            <div class="search-example">
+                <div class="search-query">ضريبي+سكني+تجاري</div>
+                <button class="copy-btn" onclick="copyToClipboard('ضريبي+سكني+تجاري')">نسخ</button>
+                <div class="explanation">
+                    ابحث عن جميع أنواع العقود: ضريبية أو سكنية أو تجارية
+                </div>
+            </div>
+
+            <div class="search-example">
+                <div class="search-query">شاغر+متاح+خالي</div>
+                <button class="copy-btn" onclick="copyToClipboard('شاغر+متاح+خالي')">نسخ</button>
+                <div class="explanation">
+                    ابحث عن الوحدات الفارغة بجميع مرادفاتها
+                </div>
+            </div>
+        </div>
+
+        <div class="example-section">
+            <div class="example-title">
+                <span class="icon">🎨</span>
+                أمثلة متقدمة (هرمي + متعدد)
+            </div>
+            
+            <div class="search-example">
+                <div class="search-query">الرياض//نشط+فارغ//ضريبي+سكني</div>
+                <button class="copy-btn" onclick="copyToClipboard('الرياض//نشط+فارغ//ضريبي+سكني')">نسخ</button>
+                <div class="explanation">
+                    في الرياض → (نشط أو فارغ) → (ضريبي أو سكني)
+                </div>
+            </div>
+
+            <div class="search-example">
+                <div class="search-query">مجمع//فعال+وشك</div>
+                <button class="copy-btn" onclick="copyToClipboard('مجمع//فعال+وشك')">نسخ</button>
+                <div class="explanation">
+                    ابحث عن كلمة "مجمع" في أي مكان، ثم اعرض الفعالة أو على وشك الانتهاء
+                </div>
+            </div>
+        </div>
+
+        <div class="highlight">
+            <h3>💡 المرادفات المدعومة:</h3>
+            <ul>
+                <li><strong>نشط:</strong> ساري، سارى، جاري، جارى، الحالي، الحالى</li>
+                <li><strong>فعال:</strong> نشط، ساري (يشمل فعال + على وشك)</li>
+                <li><strong>فارغ:</strong> فارغة، شاغر، شاغرة، خالي، خالية، متاح، متاحة</li>
+                <li><strong>منتهي:</strong> المنتهي، منتهى، انتهى، انتهي، مكتمل، مكتملة</li>
+                <li><strong>ضريبي:</strong> ضريبية، مع ضريبة، بضريبة</li>
+                <li><strong>سكني:</strong> سكنية، سكن</li>
+                <li><strong>تجاري:</strong> تجارية، تجارى</li>
+            </ul>
+        </div>
+
+        <div class="example-section">
+            <div class="example-title">
+                <span class="icon">🚀</span>
+                اختبار الأمثلة
+            </div>
+            <p>انقر على الأزرار أدناه لفتح التطبيق واختبار الأمثلة:</p>
+            <a href="index.html" target="_blank" class="test-btn">🌐 فتح التطبيق الرئيسي</a>
+            <a href="test-hierarchical-search.html" target="_blank" class="test-btn">🧪 صفحة الاختبار</a>
+        </div>
+
+        <div class="highlight">
+            <h3>📋 خطوات الاستخدام:</h3>
+            <ol>
+                <li>افتح التطبيق الرئيسي</li>
+                <li>انسخ أي من الأمثلة أعلاه</li>
+                <li>الصقها في حقل البحث</li>
+                <li>اضغط Enter أو انقر على زر البحث</li>
+                <li>شاهد النتائج المفلترة حسب البحث الهرمي/المتعدد</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // إظهار رسالة نجاح مؤقتة
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'تم النسخ!';
+                btn.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#28a745';
+                }, 1500);
+            }).catch(function(err) {
+                console.error('فشل في النسخ: ', err);
+                alert('تم نسخ النص: ' + text);
+            });
+        }
+
+        // إضافة تأثيرات بصرية
+        document.addEventListener('DOMContentLoaded', function() {
+            const examples = document.querySelectorAll('.search-example');
+            examples.forEach((example, index) => {
+                example.style.opacity = '0';
+                example.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    example.style.transition = 'all 0.5s ease';
+                    example.style.opacity = '1';
+                    example.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
