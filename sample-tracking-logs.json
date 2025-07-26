@@ -1,0 +1,248 @@
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "operation_type": "تحرير بيانات",
+    "timestamp": "2025-01-15T10:30:00Z",
+    "unit_number": "STR0020106",
+    "property_name": "مستودعات السعيد",
+    "contract_number": "20987227961",
+    "city": "الرياض",
+    "tenant_name": "شركة السنيدي للمقاولات",
+    "changes": {
+      "tenant_name": {
+        "old": "",
+        "new": "شركة السنيدي للمقاولات"
+      },
+      "start_date": {
+        "old": "2024-01-01",
+        "new": "2025-01-01"
+      }
+    },
+    "user_name": "أحمد محمد",
+    "description": "تحديث بيانات المستأجر وتاريخ البداية"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "operation_type": "تحرير بيانات",
+    "timestamp": "2025-01-15T10:32:00Z",
+    "unit_number": "STR0020107",
+    "property_name": "مستودعات السعيد",
+    "contract_number": "20987227961",
+    "city": "الرياض",
+    "tenant_name": "شركة السنيدي للمقاولات",
+    "changes": {
+      "tenant_name": {
+        "old": "",
+        "new": "شركة السنيدي للمقاولات"
+      },
+      "end_date": {
+        "old": "2024-12-31",
+        "new": "2025-12-31"
+      }
+    },
+    "user_name": "أحمد محمد",
+    "description": "تحديث بيانات المستأجر وتاريخ النهاية"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440003",
+    "operation_type": "تحرير بيانات",
+    "timestamp": "2025-01-15T10:35:00Z",
+    "unit_number": "STR0020108",
+    "property_name": "مستودعات السعيد",
+    "contract_number": "20987227961",
+    "city": "الرياض",
+    "tenant_name": "شركة السنيدي للمقاولات",
+    "changes": {
+      "tenant_name": {
+        "old": "",
+        "new": "شركة السنيدي للمقاولات"
+      },
+      "rent_value": {
+        "old": "50000",
+        "new": "55000"
+      }
+    },
+    "user_name": "أحمد محمد",
+    "description": "تحديث بيانات المستأجر وقيمة الإيجار"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440004",
+    "operation_type": "عميل جديد",
+    "timestamp": "2025-02-01T09:15:00Z",
+    "unit_number": "STR0040001",
+    "property_name": "المستودعات الصغيرة",
+    "contract_number": "20268866526",
+    "city": "الرياض",
+    "tenant_name": "فواكهة فرغلي للعصيرات",
+    "changes": {
+      "tenant_name": {
+        "old": "",
+        "new": "فواكهة فرغلي للعصيرات"
+      },
+      "contract_status": {
+        "old": "فارغ",
+        "new": "مؤجر"
+      }
+    },
+    "user_name": "سارة أحمد",
+    "description": "إضافة مستأجر جديد للوحدة"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440005",
+    "operation_type": "عميل جديد",
+    "timestamp": "2025-02-01T09:20:00Z",
+    "unit_number": "STR0040002",
+    "property_name": "المستودعات الصغيرة",
+    "contract_number": "20268866526",
+    "city": "الرياض",
+    "tenant_name": "فواكهة فرغلي للعصيرات",
+    "changes": {
+      "tenant_name": {
+        "old": "",
+        "new": "فواكهة فرغلي للعصيرات"
+      },
+      "unit_status": {
+        "old": "متاح",
+        "new": "مؤجر"
+      }
+    },
+    "user_name": "سارة أحمد",
+    "description": "ربط وحدة إضافية بنفس العقد"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440006",
+    "operation_type": "تعديل العقد",
+    "timestamp": "2025-03-10T14:45:00Z",
+    "unit_number": "STR0050001",
+    "property_name": "مستودعات بقشان",
+    "contract_number": "20573805537",
+    "city": "الرياض",
+    "tenant_name": "شركة الطاقة والتحكم للتجارة",
+    "changes": {
+      "contract_duration": {
+        "old": "12 شهر",
+        "new": "24 شهر"
+      },
+      "end_date": {
+        "old": "2025-08-31",
+        "new": "2026-08-31"
+      }
+    },
+    "user_name": "محمد علي",
+    "description": "تمديد مدة العقد"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440007",
+    "operation_type": "تعديل العقد",
+    "timestamp": "2025-03-10T14:50:00Z",
+    "unit_number": "STR0050002",
+    "property_name": "مستودعات بقشان",
+    "contract_number": "20573805537",
+    "city": "الرياض",
+    "tenant_name": "شركة الطاقة والتحكم للتجارة",
+    "changes": {
+      "rent_increase": {
+        "old": "0%",
+        "new": "5%"
+      },
+      "rent_value": {
+        "old": "45000",
+        "new": "47250"
+      }
+    },
+    "user_name": "محمد علي",
+    "description": "زيادة قيمة الإيجار السنوية"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440008",
+    "operation_type": "إفراغ وحدة",
+    "timestamp": "2025-04-05T11:20:00Z",
+    "unit_number": "STR0060005",
+    "property_name": "جوار الاستراحة",
+    "contract_number": "20729290468",
+    "city": "الرياض",
+    "tenant_name": "شركة عون الأمداد للتخزين 2",
+    "changes": {
+      "tenant_name": {
+        "old": "شركة عون الأمداد للتخزين 2",
+        "new": ""
+      },
+      "unit_status": {
+        "old": "مؤجر",
+        "new": "فارغ"
+      },
+      "contract_status": {
+        "old": "نشط",
+        "new": "منتهي"
+      }
+    },
+    "user_name": "فاطمة خالد",
+    "description": "إنهاء العقد وإفراغ الوحدة"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440009",
+    "operation_type": "إفراغ وحدة",
+    "timestamp": "2025-04-05T11:25:00Z",
+    "unit_number": "STR0060006",
+    "property_name": "جوار الاستراحة",
+    "contract_number": "20729290468",
+    "city": "الرياض",
+    "tenant_name": "شركة عون الأمداد للتخزين 2",
+    "changes": {
+      "tenant_name": {
+        "old": "شركة عون الأمداد للتخزين 2",
+        "new": ""
+      },
+      "final_reading": {
+        "old": "",
+        "new": "تم أخذ القراءة النهائية للكهرباء"
+      }
+    },
+    "user_name": "فاطمة خالد",
+    "description": "تسليم الوحدة وأخذ القراءة النهائية"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440010",
+    "operation_type": "تحديث بيانات",
+    "timestamp": "2025-05-12T16:30:00Z",
+    "unit_number": "STR0070001",
+    "property_name": "مستودعات السعيد",
+    "contract_number": "20987227961",
+    "city": "الرياض",
+    "tenant_name": "شركة السنيدي للمقاولات",
+    "changes": {
+      "phone_number": {
+        "old": "0501234567",
+        "new": "0507654321"
+      },
+      "contact_person": {
+        "old": "أحمد السنيدي",
+        "new": "محمد السنيدي"
+      }
+    },
+    "user_name": "عبدالله محمد",
+    "description": "تحديث بيانات الاتصال"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440011",
+    "operation_type": "تحديث بيانات",
+    "timestamp": "2025-05-12T16:35:00Z",
+    "unit_number": "STR0070003",
+    "property_name": "مستودعات السعيد",
+    "contract_number": "20987227961",
+    "city": "الرياض",
+    "tenant_name": "شركة السنيدي للمقاولات",
+    "changes": {
+      "email": {
+        "old": "info@senidi.com",
+        "new": "contracts@senidi.com"
+      },
+      "address": {
+        "old": "الرياض - حي الصناعية",
+        "new": "الرياض - حي الصناعية الجديدة"
+      }
+    },
+    "user_name": "عبدالله محمد",
+    "description": "تحديث البريد الإلكتروني والعنوان"
+  }
+]

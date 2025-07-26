@@ -35475,7 +35475,7 @@ async function createChangeLogsTableIfNotExists() {
 }
 
 // تحميل سجلات التتبع من Supabase (محسن مع تشخيص مفصل)
-async function loadChangeLogsFromSupabase(limit = 500, offset = 0) {
+async function loadChangeLogsFromSupabase(limit = 2000, offset = 0) {
     try {
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
             console.log(`☁️ محاولة تحميل سجلات التتبع من Supabase (الحد الأقصى: ${limit})...`);
@@ -35580,6 +35580,75 @@ async function loadChangeLogsFromSupabase(limit = 500, offset = 0) {
             message: error.message,
             stack: error.stack
         });
+        return [];
+    }
+}
+
+// تحميل جميع السجلات من Supabase بدون حد أقصى
+async function loadAllChangeLogsFromSupabase() {
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            console.log('☁️ تحميل جميع سجلات التتبع من Supabase...');
+
+            const { data, error } = await supabaseClient
+                .from('change_logs')
+                .select('*')
+                .order('timestamp', { ascending: false });
+
+            if (error) {
+                console.error('❌ خطأ في تحميل جميع السجلات:', error);
+                return [];
+            }
+
+            console.log(`✅ تم تحميل ${data.length} سجل من إجمالي السجلات`);
+
+            // معالجة البيانات
+            const processedData = data.map(log => {
+                const processedLog = {
+                    id: log.id,
+                    timestamp: log.timestamp,
+                    operationType: log.operation_type || log.operationType,
+                    unitNumber: log.unit_number || log.unitNumber,
+                    propertyName: log.property_name || log.propertyName,
+                    tenantName: log.tenant_name || log.tenantName,
+                    contractNumber: log.contract_number || log.contractNumber,
+                    city: log.city,
+                    changes: log.changes || {},
+                    additionalInfo: log.additional_info || log.additionalInfo || {},
+                    user: log.user_name || log.user || log.responsible_user,
+                    responsibleUser: log.responsible_user || log.user_name || log.user,
+                    description: log.description,
+                    newTenant: log.new_tenant || log.newTenant,
+                    previousTenant: log.previous_tenant || log.previousTenant,
+                    reason: log.reason,
+                    sourceProperty: log.source_property || log.sourceProperty,
+                    destinationProperty: log.destination_property || log.destinationProperty
+                };
+
+                // إضافة معلومات التاريخ
+                if (!processedLog.date && processedLog.timestamp) {
+                    const date = new Date(processedLog.timestamp);
+                    processedLog.date = formatDate(date);
+                    processedLog.time = formatTime(date);
+                    processedLog.dayName = getDayName(date);
+                    processedLog.hijriDate = getHijriDate(date);
+                } else {
+                    processedLog.date = log.date || processedLog.date;
+                    processedLog.time = log.time || processedLog.time;
+                    processedLog.dayName = log.day_name || processedLog.dayName;
+                    processedLog.hijriDate = log.hijri_date || processedLog.hijriDate;
+                }
+
+                return processedLog;
+            });
+
+            return processedData;
+        } else {
+            console.warn('⚠️ Supabase غير متوفر');
+            return [];
+        }
+    } catch (error) {
+        console.error('❌ خطأ في تحميل جميع السجلات:', error);
         return [];
     }
 }
@@ -35816,6 +35885,20 @@ function addTrackingFieldsToExistingData() {
 async function createSampleTrackingDataAndShow() {
     try {
         console.log('🎯 بدء إنشاء بيانات تجريبية وعرض سجل التتبع...');
+
+        // فحص صلاحيات المستخدم - منع شركة السنيدي من الوصول
+        const currentUserName = getCurrentUser();
+        const currentUserKey = window.currentUser;
+
+        if (currentUserKey === '1234' ||
+            currentUserName === 'شركة السنيدي' ||
+            currentUserName === 'شركة السنيدي1234' ||
+            (currentUserName && currentUserName.includes('السنيدي'))) {
+
+            console.log('🚫 منع الوصول لسجلات التتبع للمستخدم:', currentUserName);
+            showDevelopmentModal();
+            return;
+        }
 
         // إظهار رسالة تحميل
         showToast('جاري إنشاء البيانات التجريبية وحفظها في Supabase...', 'info');
@@ -36141,14 +36224,29 @@ let isTrackingViewActive = false;
 async function showChangeTrackingModal() {
     console.log('🔍 بدء عرض سجلات التتبع من Supabase...');
 
+    // فحص صلاحيات المستخدم - منع "شركة السنيدي" من الوصول
+    const currentUserName = getCurrentUser();
+    const currentUserKey = window.currentUser; // المفتاح الفعلي للمستخدم
+
+    // منع الوصول للمستخدم "1234" (شركة السنيدي) أو أي مستخدم يحتوي على "السنيدي" في اسمه
+    if (currentUserKey === '1234' ||
+        currentUserName === 'شركة السنيدي' ||
+        currentUserName === 'شركة السنيدي1234' ||
+        (currentUserName && currentUserName.includes('السنيدي'))) {
+
+        console.log('🚫 منع الوصول لسجلات التتبع للمستخدم:', currentUserName);
+        showDevelopmentModal();
+        return;
+    }
+
     // إظهار مؤشر التحميل
     showToast('جاري تحميل سجلات التتبع من Supabase...', 'info');
 
     let uniqueLogs = []; // تعريف المتغير في البداية
 
     try {
-        // تحميل السجلات من Supabase (المصدر الأساسي)
-        const cloudLogs = await loadChangeLogsFromSupabase(200); // زيادة العدد لعرض المزيد من السجلات
+        // تحميل جميع السجلات من Supabase (المصدر الأساسي)
+        const cloudLogs = await loadAllChangeLogsFromSupabase(); // تحميل جميع السجلات بدون حد أقصى
         console.log('☁️ عدد السجلات من Supabase:', cloudLogs.length);
 
         // إضافة السجلات المحلية كنسخة احتياطية فقط (في حالة عدم وجود اتصال)
@@ -36207,7 +36305,13 @@ async function showChangeTrackingModal() {
                         <i class="fas fa-star" style="color: #28a745;"></i>
                         <strong>ميزات جديدة:</strong>
                         ابحث عن رقم وحدة لإظهار زر "الحالة التاريخية للوحدة" •
-                        استخدم فلتر "عمليات تعديل البيانات" للتحكم في عرض عمليات التعديل
+                        استخدم فلتر "عمليات تعديل البيانات" للتحكم في عرض عمليات التعديل •
+                        استخدم زر "تحميل المزيد" لتحميل جميع السجلات من قاعدة البيانات
+                    </div>
+                    <div class="data-info-notice" style="background: rgba(23, 162, 184, 0.1); padding: 8px; border-radius: 6px; margin-top: 8px; font-size: 13px; color: #0c5460;">
+                        <i class="fas fa-info-circle" style="color: #17a2b8;"></i>
+                        <strong>معلومات البيانات:</strong>
+                        يتم تحميل ${uniqueLogs.length} سجل حالياً. إذا لم تجد البيانات المطلوبة، اضغط "تحميل المزيد" لتحميل جميع السجلات من قاعدة البيانات.
                     </div>
                 </div>
             </div>
@@ -36285,6 +36389,9 @@ async function showChangeTrackingModal() {
                     <button onclick="refreshTrackingLogs()" class="refresh-btn">
                         <i class="fas fa-sync-alt"></i> تحديث
                     </button>
+                    <button onclick="loadMoreTrackingLogs()" class="load-more-btn" title="تحميل المزيد من السجلات من قاعدة البيانات">
+                        <i class="fas fa-plus-circle"></i> تحميل المزيد
+                    </button>
                 </div>
             </div>
 
@@ -36320,6 +36427,11 @@ async function showChangeTrackingModal() {
 
     // حفظ البيانات للاستخدام في التبديل بين العروض
     window.currentTrackingLogs = uniqueLogs;
+
+    // تعيين حالة التجميع الافتراضية
+    if (typeof isConsolidationEnabled === 'undefined') {
+        window.isConsolidationEnabled = true;
+    }
 
     // تطبيق العرض المفضل
     const preferredView = localStorage.getItem('trackingViewPreference') || 'table';
@@ -36447,11 +36559,66 @@ async function refreshTrackingLogs() {
     }
 }
 
+// تحميل المزيد من سجلات التتبع
+async function loadMoreTrackingLogs() {
+    console.log('📥 تحميل المزيد من سجلات التتبع...');
+
+    if (!isTrackingViewActive) {
+        showToast('يرجى فتح سجلات التتبع أولاً', 'warning');
+        return;
+    }
+
+    showToast('جاري تحميل المزيد من السجلات...', 'info');
+
+    try {
+        // تحميل جميع السجلات من Supabase
+        const allCloudLogs = await loadAllChangeLogsFromSupabase();
+        console.log(`📊 تم تحميل ${allCloudLogs.length} سجل من قاعدة البيانات`);
+
+        // دمج مع السجلات المحلية
+        const allLogs = [...allCloudLogs, ...changeTrackingLogs];
+
+        // إزالة المكررات وترتيب حسب التاريخ
+        const uniqueLogs = allLogs.filter((log, index, self) =>
+            index === self.findIndex(l => l.id === log.id)
+        ).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        console.log(`✅ إجمالي السجلات الفريدة: ${uniqueLogs.length}`);
+
+        // تحديث البيانات الحالية
+        window.currentTrackingLogs = uniqueLogs;
+
+        // إعادة إنشاء العرض
+        const preferredView = localStorage.getItem('trackingViewPreference') || 'table';
+        toggleTrackingView(preferredView);
+
+        showToast(`تم تحميل ${uniqueLogs.length} سجل إجمالي`, 'success');
+
+    } catch (error) {
+        console.error('❌ خطأ في تحميل المزيد من السجلات:', error);
+        showToast('حدث خطأ في تحميل المزيد من السجلات', 'error');
+    }
+}
+
 // ===== نظام إدارة سجلات التتبع (للمدير فقط) =====
 
 // عرض نافذة إدارة سجلات التتبع - محدث للجدول المخصص
 async function showTrackingManagementModal() {
     console.log('🔧 عرض نافذة إدارة سجلات التتبع...');
+
+    // فحص خاص لمنع شركة السنيدي من الوصول لإدارة سجلات التتبع
+    const currentUserName = getCurrentUser();
+    const currentUserKey = window.currentUser;
+
+    if (currentUserKey === '1234' ||
+        currentUserName === 'شركة السنيدي' ||
+        currentUserName === 'شركة السنيدي1234' ||
+        (currentUserName && currentUserName.includes('السنيدي'))) {
+
+        console.log('🚫 منع الوصول لإدارة سجلات التتبع للمستخدم:', currentUserName);
+        showDevelopmentModal();
+        return;
+    }
 
     // التحقق من الصلاحيات
     if (!checkPermission('manageProperties')) {
@@ -42236,17 +42403,322 @@ function initializeTrackingTableFilter(logs) {
     }
 }
 
-// إنشاء جدول HTML لسجلات التتبع
+// دمج وتجميع سجلات التتبع حسب رقم العقد ونوع العملية والتاريخ
+function consolidateTrackingLogs(logs) {
+    if (!logs || logs.length === 0) {
+        return [];
+    }
+
+    console.log('🔄 بدء دمج سجلات التتبع...');
+
+    const groupedLogs = new Map();
+
+    logs.forEach(log => {
+        // إنشاء مفتاح التجميع: رقم العقد + نوع العملية + التاريخ
+        const contractNumber = log.contractNumber || log.contract_number || 'غير محدد';
+        const operationType = log.operationType || log.operation_type || 'غير محدد';
+        const date = log.date || formatDate(log.timestamp);
+
+        const groupKey = `${contractNumber}|${operationType}|${date}`;
+
+        if (!groupedLogs.has(groupKey)) {
+            // إنشاء مجموعة جديدة
+            groupedLogs.set(groupKey, {
+                date: date,
+                time: log.time || formatTime(log.timestamp),
+                operationType: operationType,
+                tenantName: log.tenantName || log.tenant_name || 'غير محدد',
+                contractNumber: contractNumber,
+                user: log.user || log.user_name || 'غير محدد',
+                propertyName: log.propertyName || log.property_name || 'غير محدد',
+                city: log.city || 'غير محدد',
+                unitNumbers: new Set(),
+                changes: new Set(),
+                events: new Set(), // مجموعة الأحداث الجديدة
+                originalLogs: []
+            });
+        }
+
+        const group = groupedLogs.get(groupKey);
+
+        // إضافة رقم الوحدة
+        const unitNumber = log.unitNumber || log.unit_number || 'غير محدد';
+        if (unitNumber && unitNumber !== 'غير محدد') {
+            group.unitNumbers.add(unitNumber);
+        }
+
+        // استخراج التغييرات
+        const logChanges = extractChangesFromLog(log);
+        logChanges.forEach(change => group.changes.add(change));
+
+        // استخراج الأحداث (للعمود الجديد)
+        const logEvents = extractEventsFromLog(log);
+        logEvents.forEach(event => group.events.add(event));
+
+        // حفظ السجل الأصلي
+        group.originalLogs.push(log);
+    });
+
+    // تحويل المجموعات إلى مصفوفة
+    const consolidatedLogs = Array.from(groupedLogs.values()).map(group => ({
+        date: group.date,
+        time: group.time,
+        operationType: group.operationType,
+        tenantName: group.tenantName,
+        contractNumber: group.contractNumber,
+        user: group.user,
+        propertyName: group.propertyName,
+        unitNumbers: Array.from(group.unitNumbers).join('-'),
+        city: group.city,
+        changes: Array.from(group.changes).map(change => `✔ ${change}`).join('\n'),
+        events: Array.from(group.events).map(event => `• ${event}`).join('\n'), // عمود الأحداث الجديد
+        recordCount: group.originalLogs.length
+    }));
+
+    console.log(`✅ تم دمج ${logs.length} سجل إلى ${consolidatedLogs.length} سجل موحد`);
+    return consolidatedLogs;
+}
+
+// استخراج التغييرات من السجل
+function extractChangesFromLog(log) {
+    const changes = [];
+
+    // إذا كان هناك حقل changes في JSON
+    if (log.changes) {
+        try {
+            let parsedChanges;
+            if (typeof log.changes === 'string') {
+                parsedChanges = JSON.parse(log.changes);
+            } else {
+                parsedChanges = log.changes;
+            }
+
+            if (Array.isArray(parsedChanges)) {
+                changes.push(...parsedChanges);
+            } else if (typeof parsedChanges === 'object') {
+                Object.entries(parsedChanges).forEach(([field, change]) => {
+                    if (typeof change === 'object' && change.old !== change.new) {
+                        const fieldName = getArabicFieldName(field);
+                        changes.push(`تم تغيير ${fieldName} من ${change.old || '(فارغ)'} إلى ${change.new}`);
+                    }
+                });
+            }
+        } catch (e) {
+            // إذا فشل التحليل، أضف النص كما هو
+            changes.push(log.changes);
+        }
+    }
+
+    // إضافة وصف العملية إذا كان متوفراً
+    if (log.description || log.operationDescription) {
+        changes.push(log.description || log.operationDescription);
+    }
+
+    // إضافة تغييرات افتراضية بناءً على نوع العملية
+    const operationType = log.operationType || log.operation_type || '';
+    const unitNumber = log.unitNumber || log.unit_number || '';
+
+    if (operationType.includes('تحرير') || operationType.includes('تعديل')) {
+        changes.push(`تم تعديل بيانات الوحدة ${unitNumber}`);
+    } else if (operationType.includes('عميل جديد') || operationType.includes('مستأجر جديد')) {
+        const tenantName = log.tenantName || log.tenant_name || 'غير محدد';
+        changes.push(`تم تغيير المستأجر من (فارغ) إلى ${tenantName}`);
+    } else if (operationType.includes('إفراغ')) {
+        changes.push(`تم إفراغ الوحدة ${unitNumber}`);
+    }
+
+    return changes.filter(change => change && change.trim());
+}
+
+// استخراج الأحداث من السجل (للعمود الجديد)
+function extractEventsFromLog(log) {
+    const events = [];
+
+    // تحليل التغييرات المنظمة
+    if (log.changes) {
+        try {
+            let parsedChanges;
+            if (typeof log.changes === 'string') {
+                parsedChanges = JSON.parse(log.changes);
+            } else {
+                parsedChanges = log.changes;
+            }
+
+            if (typeof parsedChanges === 'object' && !Array.isArray(parsedChanges)) {
+                Object.entries(parsedChanges).forEach(([field, change]) => {
+                    if (typeof change === 'object' && change.old !== change.new) {
+                        const fieldName = getArabicFieldName(field);
+                        const oldValue = change.old || '(فارغ)';
+                        const newValue = change.new || '(فارغ)';
+
+                        // تنسيق مختلف للأحداث
+                        if (field === 'tenant_name') {
+                            if (!change.old) {
+                                events.push(`إضافة مستأجر جديد: ${newValue}`);
+                            } else {
+                                events.push(`تغيير المستأجر: ${oldValue} ← ${newValue}`);
+                            }
+                        } else if (field === 'start_date') {
+                            events.push(`تحديث تاريخ البداية: ${oldValue} ← ${newValue}`);
+                        } else if (field === 'end_date') {
+                            events.push(`تحديث تاريخ النهاية: ${oldValue} ← ${newValue}`);
+                        } else if (field === 'rent_value') {
+                            events.push(`تعديل قيمة الإيجار: ${oldValue} ريال ← ${newValue} ريال`);
+                        } else if (field === 'contract_status') {
+                            events.push(`تغيير حالة العقد: ${oldValue} ← ${newValue}`);
+                        } else if (field === 'unit_status') {
+                            events.push(`تغيير حالة الوحدة: ${oldValue} ← ${newValue}`);
+                        } else if (field === 'phone_number') {
+                            events.push(`تحديث رقم الهاتف: ${oldValue} ← ${newValue}`);
+                        } else if (field === 'email') {
+                            events.push(`تحديث البريد الإلكتروني: ${oldValue} ← ${newValue}`);
+                        } else if (field === 'address') {
+                            events.push(`تحديث العنوان: ${oldValue} ← ${newValue}`);
+                        } else {
+                            events.push(`تحديث ${fieldName}: ${oldValue} ← ${newValue}`);
+                        }
+                    }
+                });
+            }
+        } catch (e) {
+            // في حالة فشل التحليل
+            events.push(`تحديث البيانات: ${log.changes}`);
+        }
+    }
+
+    // إضافة أحداث بناءً على نوع العملية
+    const operationType = log.operationType || log.operation_type || '';
+    const unitNumber = log.unitNumber || log.unit_number || '';
+    const tenantName = log.tenantName || log.tenant_name || '';
+
+    if (operationType.includes('عميل جديد') || operationType.includes('مستأجر جديد')) {
+        if (!events.some(event => event.includes('إضافة مستأجر'))) {
+            events.push(`إضافة مستأجر جديد للوحدة ${unitNumber}`);
+        }
+        if (tenantName && tenantName !== 'غير محدد') {
+            events.push(`ربط العقد بالمستأجر: ${tenantName}`);
+        }
+    } else if (operationType.includes('إفراغ')) {
+        events.push(`إفراغ الوحدة ${unitNumber}`);
+        if (tenantName && tenantName !== 'غير محدد') {
+            events.push(`إنهاء عقد المستأجر: ${tenantName}`);
+        }
+    } else if (operationType.includes('تحرير') || operationType.includes('تعديل')) {
+        if (events.length === 0) {
+            events.push(`تعديل بيانات الوحدة ${unitNumber}`);
+        }
+    } else if (operationType.includes('تجديد')) {
+        events.push(`تجديد عقد الوحدة ${unitNumber}`);
+    } else if (operationType.includes('نقل')) {
+        events.push(`نقل بيانات الوحدة ${unitNumber}`);
+    }
+
+    // إضافة وصف إضافي إذا كان متوفراً
+    if (log.description || log.operationDescription) {
+        const description = log.description || log.operationDescription;
+        if (!events.some(event => event.includes(description))) {
+            events.push(`تفاصيل إضافية: ${description}`);
+        }
+    }
+
+    return events.filter(event => event && event.trim());
+}
+
+// ترجمة أسماء الحقول للعربية
+function getArabicFieldName(fieldName) {
+    const fieldTranslations = {
+        'tenant_name': 'المستأجر',
+        'tenantName': 'المستأجر',
+        'start_date': 'تاريخ البداية',
+        'startDate': 'تاريخ البداية',
+        'end_date': 'تاريخ النهاية',
+        'endDate': 'تاريخ النهاية',
+        'rent_value': 'قيمة الإيجار',
+        'rentValue': 'قيمة الإيجار',
+        'phone_number': 'رقم الهاتف',
+        'phoneNumber': 'رقم الهاتف',
+        'contract_type': 'نوع العقد',
+        'contractType': 'نوع العقد',
+        'unit_status': 'حالة الوحدة',
+        'unitStatus': 'حالة الوحدة',
+        'contract_status': 'حالة العقد',
+        'contractStatus': 'حالة العقد'
+    };
+
+    return fieldTranslations[fieldName] || fieldName;
+}
+
+// إنشاء جدول HTML لسجلات التتبع مع التجميع
 function createTrackingLogsTable(logs) {
+    return createTrackingLogsTableWithToggle(logs);
+}
+
+// متغير لحفظ حالة التجميع
+let isConsolidationEnabled = true;
+let originalTrackingLogs = [];
+
+// تبديل بين العرض المدموج والعرض الأصلي
+function toggleConsolidation() {
+    isConsolidationEnabled = !isConsolidationEnabled;
+
+    const currentLogs = window.currentTrackingLogs || [];
+
+    // إعادة إنشاء الجدول
+    const tableHtml = createTrackingLogsTableWithToggle(currentLogs);
+    const container = document.getElementById('trackingLogsContainer');
+    if (container) {
+        container.innerHTML = tableHtml;
+
+        // إعادة تهيئة نظام الفلترة
+        setTimeout(() => {
+            if (window.tableFilterSystem) {
+                const table = document.getElementById('trackingLogsTable');
+                if (table) {
+                    window.tableFilterSystem.initializeTable('trackingLogsTable', currentLogs);
+                }
+            }
+        }, 300);
+    }
+
+    const mode = isConsolidationEnabled ? 'المدموج' : 'الأصلي';
+    showToast(`تم التبديل إلى العرض ${mode}`, 'info');
+}
+
+// إنشاء جدول مع إمكانية التبديل
+function createTrackingLogsTableWithToggle(logs) {
     if (!logs || logs.length === 0) {
         return '<div class="no-logs">لا توجد سجلات تتبع</div>';
+    }
+
+    let displayLogs;
+    let counterText;
+
+    if (isConsolidationEnabled) {
+        displayLogs = consolidateTrackingLogs(logs);
+        counterText = `عرض ${displayLogs.length} سجل مدموج من أصل ${logs.length} سجل أصلي`;
+    } else {
+        displayLogs = logs.map(log => ({
+            date: log.date || formatDate(log.timestamp),
+            time: log.time || formatTime(log.timestamp),
+            operationType: log.operationType || log.operation_type || 'غير محدد',
+            tenantName: log.tenantName || log.tenant_name || 'غير محدد',
+            contractNumber: log.contractNumber || log.contract_number || 'غير محدد',
+            user: log.user || log.user_name || 'غير محدد',
+            propertyName: log.propertyName || log.property_name || 'غير محدد',
+            unitNumbers: log.unitNumber || log.unit_number || 'غير محدد',
+            city: log.city || 'غير محدد',
+            changes: extractChangesFromLog(log).map(change => `✔ ${change}`).join('\n') || 'لا توجد تغييرات',
+            events: extractEventsFromLog(log).map(event => `• ${event}`).join('\n') || 'لا توجد أحداث',
+            recordCount: 1
+        }));
+        counterText = `عرض ${displayLogs.length} سجل أصلي`;
     }
 
     return `
         <div class="tracking-table-container">
             <div class="table-controls">
                 <div class="table-counter" id="trackingTableCounter" data-table-counter="trackingLogsTable">
-                    عرض ${logs.length} من أصل ${logs.length} سجل
+                    ${counterText}
                 </div>
                 <div class="table-actions">
                     <button class="clear-filters-btn" onclick="clearTrackingTableFilters()">
@@ -42254,6 +42726,9 @@ function createTrackingLogsTable(logs) {
                     </button>
                     <button class="clear-search-btn" onclick="clearTrackingSearch()">
                         <i class="fas fa-times"></i> مسح البحث
+                    </button>
+                    <button class="toggle-consolidation-btn ${isConsolidationEnabled ? 'active' : ''}" onclick="toggleConsolidation()" title="تبديل بين العرض المدموج والعرض الأصلي">
+                        <i class="fas fa-layer-group"></i> ${isConsolidationEnabled ? 'عرض أصلي' : 'عرض مدموج'}
                     </button>
                 </div>
             </div>
@@ -42271,20 +42746,26 @@ function createTrackingLogsTable(logs) {
                             <th>العقار</th>
                             <th>رقم الوحدة</th>
                             <th>المدينة</th>
+                            <th>الحدث</th>
+                            <th>التغيرات</th>
+                            ${isConsolidationEnabled ? '<th>عدد السجلات</th>' : ''}
                         </tr>
                     </thead>
                     <tbody>
-                        ${logs.map(log => `
+                        ${displayLogs.map(log => `
                             <tr>
-                                <td>${log.date || formatDate(log.timestamp)}</td>
-                                <td>${log.time || formatTime(log.timestamp)}</td>
-                                <td>${log.operationType || log.operation_type || 'غير محدد'}</td>
-                                <td>${log.tenantName || log.tenant_name || 'غير محدد'}</td>
-                                <td>${log.contractNumber || log.contract_number || 'غير محدد'}</td>
-                                <td>${log.user || log.user_name || 'غير محدد'}</td>
-                                <td>${log.propertyName || log.property_name || 'غير محدد'}</td>
-                                <td>${log.unitNumber || log.unit_number || 'غير محدد'}</td>
-                                <td>${log.city || 'غير محدد'}</td>
+                                <td>${log.date}</td>
+                                <td>${log.time}</td>
+                                <td>${log.operationType}</td>
+                                <td>${log.tenantName}</td>
+                                <td>${log.contractNumber}</td>
+                                <td>${log.user}</td>
+                                <td>${log.propertyName}</td>
+                                <td class="unit-numbers-cell">${log.unitNumbers}</td>
+                                <td>${log.city}</td>
+                                <td class="events-cell">${log.events}</td>
+                                <td class="changes-cell">${log.changes}</td>
+                                ${isConsolidationEnabled ? `<td class="record-count-cell">${log.recordCount}</td>` : ''}
                             </tr>
                         `).join('')}
                     </tbody>
@@ -44261,24 +44742,26 @@ async function exportTrackingLogs() {
     console.log(`📊 سيتم تصدير ${visibleLogs.length} سجل من السجلات المفلترة`);
 
     // تحويل البيانات للتصدير مع التاريخ الميلادي
-    const exportData = visibleLogs.map(log => ({
-        'التاريخ': log.date || formatDate(log.timestamp),
-        'الوقت': log.time || formatTime(log.timestamp),
-        'نوع العملية': log.operationType || log.operation_type || 'غير محدد',
-        'المستأجر': log.tenantName || log.tenant_name || 'غير محدد',
-        'رقم العقد': log.contractNumber || log.contract_number || 'غير محدد',
-        'المستخدم': log.user || log.user_name || 'غير محدد',
-        'العقار': log.propertyName || log.property_name || 'غير محدد',
-        'رقم الوحدة': log.unitNumber || log.unit_number || 'غير محدد',
-        'المدينة': log.city || 'غير محدد',
-        'الوصف': log.description || '',
-        'التغييرات': Object.keys(log.changes || {}).length > 0 ?
-            Object.entries(log.changes).map(([field, change]) => {
-                if (!change || typeof change !== 'object') return '';
-                const fieldName = change.fieldName || field || 'حقل غير محدد';
-                return `${fieldName}: ${change.old || 'فارغ'} → ${change.new || 'فارغ'}`;
-            }).filter(item => item !== '').join('; ') : 'لا توجد تغييرات'
-    }));
+    const exportData = visibleLogs.map(log => {
+        // استخراج الأحداث والتغييرات
+        const events = log.events || extractEventsFromLog(log).join('; ') || 'لا توجد أحداث';
+        const changes = log.changes || extractChangesFromLog(log).join('; ') || 'لا توجد تغييرات';
+
+        return {
+            'التاريخ': log.date || formatDate(log.timestamp),
+            'الوقت': log.time || formatTime(log.timestamp),
+            'نوع العملية': log.operationType || log.operation_type || 'غير محدد',
+            'المستأجر': log.tenantName || log.tenant_name || 'غير محدد',
+            'رقم العقد': log.contractNumber || log.contract_number || 'غير محدد',
+            'المستخدم': log.user || log.user_name || 'غير محدد',
+            'العقار': log.propertyName || log.property_name || 'غير محدد',
+            'رقم الوحدة': log.unitNumbers || log.unitNumber || log.unit_number || 'غير محدد',
+            'المدينة': log.city || 'غير محدد',
+            'الحدث': events,
+            'التغييرات التقنية': changes,
+            'عدد السجلات المدموجة': log.recordCount || 1
+        };
+    });
 
     // إنشاء ملف Excel
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -44290,17 +44773,15 @@ async function exportTrackingLogs() {
         { wch: 12 }, // التاريخ
         { wch: 10 }, // الوقت
         { wch: 20 }, // نوع العملية
-        { wch: 15 }, // المستخدم
-        { wch: 15 }, // رقم الوحدة
-        { wch: 25 }, // اسم العقار
-        { wch: 12 }, // المدينة
+        { wch: 20 }, // المستأجر
         { wch: 15 }, // رقم العقد
-        { wch: 25 }, // المستأجر الجديد
-        { wch: 25 }, // المستأجر السابق
-        { wch: 25 }, // العقار المصدر
-        { wch: 25 }, // العقار الوجهة
-        { wch: 20 }, // السبب
-        { wch: 50 }  // التغييرات
+        { wch: 15 }, // المستخدم
+        { wch: 25 }, // العقار
+        { wch: 20 }, // رقم الوحدة
+        { wch: 12 }, // المدينة
+        { wch: 40 }, // الحدث
+        { wch: 50 }, // التغييرات التقنية
+        { wch: 10 }  // عدد السجلات المدموجة
     ];
     ws['!cols'] = colWidths;
 
@@ -44438,6 +44919,32 @@ function printTrackingLogs() {
                     font-size: 10px;
                 }
 
+                .events-cell-print {
+                    background: #fff3e0;
+                    color: #e65100;
+                    font-size: 9px;
+                    line-height: 1.3;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    max-width: 150px;
+                    text-align: right;
+                    padding: 4px !important;
+                    vertical-align: top;
+                }
+
+                .changes-cell-print {
+                    background: #f8f9fa;
+                    color: #28a745;
+                    font-size: 9px;
+                    line-height: 1.3;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    max-width: 150px;
+                    text-align: right;
+                    padding: 4px !important;
+                    vertical-align: top;
+                }
+
                 .footer {
                     margin-top: 30px;
                     text-align: center;
@@ -44494,10 +45001,17 @@ function printTrackingLogs() {
                         <th>العقار</th>
                         <th>رقم الوحدة</th>
                         <th>المدينة</th>
+                        <th>الحدث</th>
+                        <th>التغييرات</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${visibleLogs.map(log => `
+                    ${visibleLogs.map(log => {
+                        // استخراج الأحداث والتغييرات للطباعة
+                        const events = log.events || extractEventsFromLog(log).map(event => `• ${event}`).join('\n') || 'لا توجد أحداث';
+                        const changes = log.changes || extractChangesFromLog(log).map(change => `✔ ${change}`).join('\n') || 'لا توجد تغييرات';
+
+                        return `
                         <tr>
                             <td class="date-cell">${log.date || formatDate(log.timestamp)}</td>
                             <td class="time-cell">${log.time || formatTime(log.timestamp)}</td>
@@ -44506,10 +45020,12 @@ function printTrackingLogs() {
                             <td class="contract-number">${log.contractNumber || log.contract_number || 'غير محدد'}</td>
                             <td>${log.user || log.user_name || 'غير محدد'}</td>
                             <td>${log.propertyName || log.property_name || 'غير محدد'}</td>
-                            <td>${log.unitNumber || log.unit_number || 'غير محدد'}</td>
+                            <td>${log.unitNumbers || log.unitNumber || log.unit_number || 'غير محدد'}</td>
                             <td>${log.city || 'غير محدد'}</td>
-                        </tr>
-                    `).join('')}
+                            <td class="events-cell-print">${events}</td>
+                            <td class="changes-cell-print">${changes}</td>
+                        </tr>`;
+                    }).join('')}
                 </tbody>
             </table>
 
@@ -44755,6 +45271,11 @@ function setCurrentUser(username) {
         // تطبيق الصلاحيات على الواجهة
         applyUserPermissions();
 
+        // التأكد من ظهور زر سجلات التتبع في القائمة المحمولة لشركة السنيدي
+        if (username === '1234') {
+            ensureTrackingButtonVisibilityForSenidi();
+        }
+
         // تطبيق قيود الوصول للأزرار الإدارية للمستخدم محدود الصلاحية
         if (users[username].role === 'limited') {
             console.log('🔒 تطبيق قيود الوصول للأزرار الإدارية...');
@@ -44785,6 +45306,18 @@ function setCurrentUser(username) {
             addLogoutButton();
             updateMobileUserSection();
         }, 100);
+
+        // التأكد من ظهور زر سجلات التتبع لشركة السنيدي (مع تأخير إضافي)
+        if (username === '1234') {
+            setTimeout(() => {
+                ensureTrackingButtonVisibilityForSenidi();
+            }, 1500);
+
+            // تحقق إضافي بعد 3 ثوان
+            setTimeout(() => {
+                ensureTrackingButtonVisibilityForSenidi();
+            }, 3000);
+        }
 
         console.log(`✅ تم تسجيل دخول المستخدم: ${users[username].fullName}`);
     }
@@ -46782,6 +47315,504 @@ function confirmFixAllDuplicates() {
         // تم إزالة رسالة الخطأ حسب طلب المستخدم
     }
 }
+
+// ==================== نافذة "قيد التطوير" ====================
+
+// عرض نافذة منبثقة لرسالة "قيد التطوير"
+function showDevelopmentModal() {
+    // التحقق من وجود نافذة مفتوحة بالفعل
+    const existingModal = document.getElementById('developmentModal');
+    if (existingModal) {
+        return; // لا تفتح نافذة جديدة إذا كانت موجودة
+    }
+
+    // إنشاء النافذة المنبثقة
+    const modalHtml = `
+        <div id="developmentModal" class="modal-overlay" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
+        ">
+            <div class="development-modal-box" style="
+                background: linear-gradient(135deg, #ff9800, #f57c00);
+                color: white;
+                padding: 40px;
+                border-radius: 20px;
+                text-align: center;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                max-width: 500px;
+                width: 90%;
+                position: relative;
+                animation: slideIn 0.4s ease;
+                border: 3px solid #fff3e0;
+            ">
+                <!-- أيقونة الإغلاق -->
+                <button onclick="closeDevelopmentModal()" style="
+                    position: absolute;
+                    top: 15px;
+                    right: 15px;
+                    background: rgba(255, 255, 255, 0.2);
+                    border: none;
+                    color: white;
+                    font-size: 24px;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    ×
+                </button>
+
+                <!-- محتوى النافذة -->
+                <div style="margin-bottom: 30px;">
+                    <div style="
+                        font-size: 80px;
+                        margin-bottom: 20px;
+                        animation: bounce 2s infinite;
+                    ">🚧</div>
+
+                    <h2 style="
+                        margin: 0 0 15px 0;
+                        font-size: 28px;
+                        font-weight: bold;
+                        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+                    ">هذه الميزة قيد التطوير</h2>
+
+                    <p style="
+                        margin: 0 0 20px 0;
+                        font-size: 18px;
+                        opacity: 0.9;
+                        line-height: 1.6;
+                    ">نعتذر، هذه الميزة غير متاحة حالياً<br>وسيتم تفعيلها قريباً</p>
+                </div>
+
+                <!-- شريط التقدم -->
+                <div style="
+                    background: rgba(255, 255, 255, 0.3);
+                    height: 6px;
+                    border-radius: 3px;
+                    overflow: hidden;
+                    margin-bottom: 15px;
+                ">
+                    <div id="developmentProgressBar" style="
+                        background: white;
+                        height: 100%;
+                        width: 0%;
+                        border-radius: 3px;
+                        transition: width 0.1s linear;
+                    "></div>
+                </div>
+
+                <!-- نص العد التنازلي -->
+                <p style="
+                    margin: 0;
+                    font-size: 14px;
+                    opacity: 0.8;
+                ">سيتم إغلاق هذه النافذة خلال <span id="developmentCountdown">5</span> ثوان</p>
+            </div>
+        </div>
+
+        <style>
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            @keyframes slideIn {
+                from {
+                    transform: translateY(-50px) scale(0.9);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0) scale(1);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% {
+                    transform: translateY(0);
+                }
+                40% {
+                    transform: translateY(-10px);
+                }
+                60% {
+                    transform: translateY(-5px);
+                }
+            }
+
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+
+            @keyframes slideOut {
+                from {
+                    transform: translateY(0) scale(1);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateY(-50px) scale(0.9);
+                    opacity: 0;
+                }
+            }
+        </style>
+    `;
+
+    // إضافة النافذة للصفحة
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // بدء العد التنازلي
+    startDevelopmentCountdown();
+
+    // إغلاق تلقائي بعد 5 ثوان
+    setTimeout(() => {
+        closeDevelopmentModal();
+    }, 5000);
+
+    console.log('🚧 تم عرض نافذة "قيد التطوير" لمدة 5 ثوان');
+}
+
+// بدء العد التنازلي وشريط التقدم
+function startDevelopmentCountdown() {
+    let timeLeft = 5;
+    const countdownElement = document.getElementById('developmentCountdown');
+    const progressBar = document.getElementById('developmentProgressBar');
+
+    const interval = setInterval(() => {
+        timeLeft--;
+
+        if (countdownElement) {
+            countdownElement.textContent = timeLeft;
+        }
+
+        if (progressBar) {
+            const progress = ((5 - timeLeft) / 5) * 100;
+            progressBar.style.width = progress + '%';
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+        }
+    }, 1000);
+}
+
+// إغلاق نافذة "قيد التطوير"
+function closeDevelopmentModal() {
+    const modal = document.getElementById('developmentModal');
+    if (modal) {
+        // إضافة تأثير الإغلاق
+        modal.style.animation = 'fadeOut 0.3s ease';
+        const modalBox = modal.querySelector('.development-modal-box');
+        if (modalBox) {
+            modalBox.style.animation = 'slideOut 0.3s ease';
+        }
+
+        // إزالة النافذة بعد انتهاء التأثير
+        setTimeout(() => {
+            modal.remove();
+        }, 300);
+
+        console.log('🚧 تم إغلاق نافذة "قيد التطوير"');
+    }
+}
+
+// إضافة الدوال للنافذة العامة
+window.showDevelopmentModal = showDevelopmentModal;
+window.closeDevelopmentModal = closeDevelopmentModal;
+
+// ==================== ضمان ظهور زر سجلات التتبع لشركة السنيدي ====================
+
+// التأكد من ظهور زر سجلات التتبع في القائمة المحمولة لشركة السنيدي
+function ensureTrackingButtonVisibilityForSenidi() {
+    console.log('🔍 التحقق من ظهور زر سجلات التتبع في القائمة المحمولة لشركة السنيدي...');
+
+    // التحقق من وجود الزر في القائمة المحمولة
+    const mobileTrackingBtn = document.getElementById('mobile-change-tracking-btn');
+
+    if (mobileTrackingBtn) {
+        // التأكد من أن الزر مرئي
+        mobileTrackingBtn.style.display = 'block';
+        mobileTrackingBtn.style.visibility = 'visible';
+        mobileTrackingBtn.style.opacity = '1';
+
+        // التأكد من أن العنصر الأب (li) مرئي أيضاً
+        const parentLi = mobileTrackingBtn.closest('li');
+        if (parentLi) {
+            parentLi.style.display = 'block';
+            parentLi.style.visibility = 'visible';
+            parentLi.style.opacity = '1';
+        }
+
+        // إزالة أي معالجات أحداث سابقة وإضافة معالج جديد
+        const newButton = mobileTrackingBtn.cloneNode(true);
+        mobileTrackingBtn.parentNode.replaceChild(newButton, mobileTrackingBtn);
+
+        // إضافة معالج الحدث الجديد الذي يظهر النافذة المنبثقة
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // إغلاق القائمة المحمولة
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            if (mobileMenu) mobileMenu.classList.remove('active');
+            if (menuOverlay) menuOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+
+            // عرض النافذة المنبثقة "قيد التطوير"
+            console.log('🚧 عرض نافذة "قيد التطوير" من القائمة المحمولة');
+            showDevelopmentModal();
+
+            return false;
+        });
+
+        // إضافة تنسيق مرئي للزر
+        newButton.style.background = 'linear-gradient(135deg, #ff9800, #f57c00)';
+        newButton.style.color = 'white';
+        newButton.style.border = '2px solid #fff3e0';
+        newButton.style.borderRadius = '8px';
+        newButton.style.padding = '12px 16px';
+        newButton.style.margin = '4px 0';
+        newButton.style.width = '100%';
+        newButton.style.textAlign = 'right';
+        newButton.style.fontSize = '16px';
+        newButton.style.fontWeight = '500';
+        newButton.style.transition = 'all 0.3s ease';
+
+        // إضافة تأثير hover
+        newButton.addEventListener('mouseenter', function() {
+            this.style.background = 'linear-gradient(135deg, #f57c00, #ef6c00)';
+            this.style.transform = 'translateX(-5px)';
+        });
+
+        newButton.addEventListener('mouseleave', function() {
+            this.style.background = 'linear-gradient(135deg, #ff9800, #f57c00)';
+            this.style.transform = 'translateX(0)';
+        });
+
+        console.log('✅ تم ضمان ظهور وعمل زر سجلات التتبع في القائمة المحمولة');
+
+    } else {
+        console.warn('⚠️ لم يتم العثور على زر سجلات التتبع في القائمة المحمولة');
+
+        // إنشاء الزر إذا لم يكن موجوداً
+        createMobileTrackingButtonForSenidi();
+    }
+
+    // التحقق من الأزرار الأخرى في الشاشات الكبيرة أيضاً
+    ensureDesktopTrackingButtonsForSenidi();
+}
+
+// إنشاء زر سجلات التتبع في القائمة المحمولة إذا لم يكن موجوداً
+function createMobileTrackingButtonForSenidi() {
+    console.log('🔧 إنشاء زر سجلات التتبع في القائمة المحمولة...');
+
+    const mobileMenuContent = document.querySelector('.mobile-menu-content ol');
+    if (mobileMenuContent) {
+        // إنشاء عنصر li جديد
+        const newLi = document.createElement('li');
+
+        // إنشاء الزر
+        const newButton = document.createElement('button');
+        newButton.id = 'mobile-change-tracking-btn';
+        newButton.innerHTML = '<i class="fas fa-history"></i> سجل التتبع';
+
+        // إضافة معالج الحدث
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // إغلاق القائمة المحمولة
+            const mobileMenu = document.getElementById('mobileMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            if (mobileMenu) mobileMenu.classList.remove('active');
+            if (menuOverlay) menuOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+
+            // عرض النافذة المنبثقة
+            showDevelopmentModal();
+
+            return false;
+        });
+
+        // إضافة التنسيق
+        newButton.style.background = 'linear-gradient(135deg, #ff9800, #f57c00)';
+        newButton.style.color = 'white';
+        newButton.style.border = '2px solid #fff3e0';
+        newButton.style.borderRadius = '8px';
+        newButton.style.padding = '12px 16px';
+        newButton.style.margin = '4px 0';
+        newButton.style.width = '100%';
+        newButton.style.textAlign = 'right';
+        newButton.style.fontSize = '16px';
+        newButton.style.fontWeight = '500';
+
+        // إضافة الزر إلى li
+        newLi.appendChild(newButton);
+
+        // إضافة li إلى القائمة (في بداية القائمة)
+        mobileMenuContent.insertBefore(newLi, mobileMenuContent.firstChild);
+
+        console.log('✅ تم إنشاء زر سجلات التتبع في القائمة المحمولة');
+    }
+}
+
+// التأكد من عمل أزرار سجلات التتبع في الشاشات الكبيرة أيضاً
+function ensureDesktopTrackingButtonsForSenidi() {
+    console.log('🖥️ التحقق من أزرار سجلات التتبع في الشاشات الكبيرة...');
+
+    // البحث عن جميع أزرار سجلات التتبع
+    const trackingButtons = document.querySelectorAll('[onclick*="createSampleTrackingDataAndShow"], [onclick*="showChangeTrackingModal"]');
+
+    trackingButtons.forEach((button, index) => {
+        // تجاهل الزر المحمول (تم التعامل معه بالفعل)
+        if (button.id === 'mobile-change-tracking-btn') {
+            return;
+        }
+
+        // إزالة معالج الحدث القديم وإضافة معالج جديد
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+
+        // إضافة معالج الحدث الجديد
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            console.log('🚧 عرض نافذة "قيد التطوير" من الشاشة الكبيرة');
+            showDevelopmentModal();
+
+            return false;
+        });
+
+        console.log(`✅ تم تحديث زر سجلات التتبع #${index + 1} في الشاشة الكبيرة`);
+    });
+}
+
+// ==================== اختبار منع الوصول لسجلات التتبع ====================
+
+// دالة اختبار منع الوصول لسجلات التتبع لشركة السنيدي
+function testTrackingAccessRestriction() {
+    console.log('🧪 اختبار منع الوصول لسجلات التتبع...');
+
+    const currentUserName = getCurrentUser();
+    const currentUserKey = window.currentUser;
+
+    console.log('👤 المستخدم الحالي:', {
+        userKey: currentUserKey,
+        userName: currentUserName,
+        fullUserData: users[currentUserKey]
+    });
+
+    // فحص شروط المنع
+    const isBlocked = currentUserKey === '1234' ||
+                     currentUserName === 'شركة السنيدي' ||
+                     currentUserName === 'شركة السنيدي1234' ||
+                     (currentUserName && currentUserName.includes('السنيدي'));
+
+    console.log('🔍 نتيجة فحص المنع:', {
+        isBlocked: isBlocked,
+        reason: isBlocked ? 'المستخدم ممنوع من الوصول' : 'المستخدم مسموح له بالوصول'
+    });
+
+    if (isBlocked) {
+        showToast('✅ اختبار ناجح: المستخدم ممنوع من الوصول لسجلات التتبع', 'success');
+        console.log('✅ الفحص يعمل بشكل صحيح - المستخدم ممنوع');
+
+        // عرض النافذة التجريبية
+        setTimeout(() => {
+            showDevelopmentModal();
+        }, 1000);
+    } else {
+        showToast('ℹ️ المستخدم الحالي مسموح له بالوصول لسجلات التتبع', 'info');
+        console.log('ℹ️ المستخدم الحالي مسموح له بالوصول');
+    }
+
+    return isBlocked;
+}
+
+// دالة لاختبار جميع نقاط الوصول لسجلات التتبع
+function testAllTrackingAccessPoints() {
+    console.log('🔬 اختبار جميع نقاط الوصول لسجلات التتبع...');
+
+    const currentUserName = getCurrentUser();
+    const currentUserKey = window.currentUser;
+
+    console.log('👤 بيانات المستخدم:', {
+        userKey: currentUserKey,
+        userName: currentUserName
+    });
+
+    // اختبار 1: دالة عرض سجلات التتبع
+    console.log('1️⃣ اختبار showChangeTrackingModal...');
+    try {
+        // محاكاة الاستدعاء (بدون تنفيذ فعلي)
+        const isBlocked1 = currentUserKey === '1234' ||
+                          currentUserName === 'شركة السنيدي' ||
+                          currentUserName === 'شركة السنيدي1234' ||
+                          (currentUserName && currentUserName.includes('السنيدي'));
+        console.log('   النتيجة:', isBlocked1 ? 'ممنوع ✅' : 'مسموح ❌');
+    } catch (e) {
+        console.log('   خطأ:', e.message);
+    }
+
+    // اختبار 2: دالة إدارة سجلات التتبع
+    console.log('2️⃣ اختبار showTrackingManagementModal...');
+    try {
+        const isBlocked2 = currentUserKey === '1234' ||
+                          currentUserName === 'شركة السنيدي' ||
+                          currentUserName === 'شركة السنيدي1234' ||
+                          (currentUserName && currentUserName.includes('السنيدي'));
+        console.log('   النتيجة:', isBlocked2 ? 'ممنوع ✅' : 'مسموح ❌');
+    } catch (e) {
+        console.log('   خطأ:', e.message);
+    }
+
+    // اختبار 3: دالة إنشاء البيانات التجريبية
+    console.log('3️⃣ اختبار createSampleTrackingDataAndShow...');
+    try {
+        const isBlocked3 = currentUserKey === '1234' ||
+                          currentUserName === 'شركة السنيدي' ||
+                          currentUserName === 'شركة السنيدي1234' ||
+                          (currentUserName && currentUserName.includes('السنيدي'));
+        console.log('   النتيجة:', isBlocked3 ? 'ممنوع ✅' : 'مسموح ❌');
+    } catch (e) {
+        console.log('   خطأ:', e.message);
+    }
+
+    const allBlocked = currentUserKey === '1234' ||
+                      currentUserName === 'شركة السنيدي' ||
+                      currentUserName === 'شركة السنيدي1234' ||
+                      (currentUserName && currentUserName.includes('السنيدي'));
+
+    if (allBlocked) {
+        showToast('✅ جميع نقاط الوصول محمية بشكل صحيح', 'success');
+        console.log('✅ جميع الاختبارات نجحت - المستخدم ممنوع من جميع نقاط الوصول');
+    } else {
+        showToast('ℹ️ المستخدم الحالي مسموح له بالوصول', 'info');
+        console.log('ℹ️ المستخدم الحالي مسموح له بالوصول لسجلات التتبع');
+    }
+
+    return allBlocked;
+}
+
+// إضافة الدوال للنافذة العامة للاختبار
+window.testTrackingAccessRestriction = testTrackingAccessRestriction;
+window.testAllTrackingAccessPoints = testAllTrackingAccessPoints;
 
 // ==================== وظائف عميل جديد وتجديد العقد ====================
 

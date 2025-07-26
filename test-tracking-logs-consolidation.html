@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تجميع سجلات التتبع</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+        
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .log {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 اختبار تجميع سجلات التتبع</h1>
+            <p>اختبار الميزات الجديدة لدمج وتجميع سجلات التتبع</p>
+        </div>
+        
+        <div class="content">
+            <div class="test-section">
+                <h3>📊 اختبار دمج السجلات</h3>
+                <p>اختبار دمج السجلات التي لها نفس رقم العقد ونوع العملية والتاريخ</p>
+                <button class="btn" onclick="testConsolidation()">تشغيل اختبار الدمج</button>
+                <div class="results" id="consolidationResults" style="display: none;"></div>
+            </div>
+            
+            <div class="test-section">
+                <h3>🔧 اختبار استخراج التغييرات</h3>
+                <p>اختبار استخراج وتنسيق التغييرات من السجلات</p>
+                <button class="btn" onclick="testChangesExtraction()">تشغيل اختبار التغييرات</button>
+                <div class="results" id="changesResults" style="display: none;"></div>
+            </div>
+            
+            <div class="test-section">
+                <h3>📋 اختبار إنشاء الجدول</h3>
+                <p>اختبار إنشاء جدول HTML مع التجميع والتنسيق</p>
+                <button class="btn" onclick="testTableCreation()">تشغيل اختبار الجدول</button>
+                <div class="results" id="tableResults" style="display: none;"></div>
+            </div>
+            
+            <div class="log" id="testLog"></div>
+        </div>
+    </div>
+
+    <script>
+        let logMessages = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleString('ar-SA');
+            const logEntry = `[${timestamp}] ${message}`;
+            logMessages.push(logEntry);
+            
+            const logContainer = document.getElementById('testLog');
+            if (logContainer) {
+                logContainer.textContent = logMessages.join('\n');
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            console.log(logEntry);
+        }
+
+        // بيانات تجريبية للاختبار
+        const sampleLogs = [
+            {
+                id: '1',
+                contractNumber: '20987227961',
+                operationType: 'تحرير بيانات',
+                timestamp: '2025-01-15T10:30:00Z',
+                unitNumber: 'STR0020106',
+                propertyName: 'مستودعات السعيد',
+                tenantName: 'شركة السنيدي للمقاولات',
+                user: 'أحمد محمد',
+                city: 'الرياض',
+                changes: {
+                    tenant_name: { old: '', new: 'شركة السنيدي للمقاولات' },
+                    start_date: { old: '2024-01-01', new: '2025-01-01' }
+                }
+            },
+            {
+                id: '2',
+                contractNumber: '20987227961',
+                operationType: 'تحرير بيانات',
+                timestamp: '2025-01-15T10:32:00Z',
+                unitNumber: 'STR0020107',
+                propertyName: 'مستودعات السعيد',
+                tenantName: 'شركة السنيدي للمقاولات',
+                user: 'أحمد محمد',
+                city: 'الرياض',
+                changes: {
+                    tenant_name: { old: '', new: 'شركة السنيدي للمقاولات' },
+                    end_date: { old: '2024-12-31', new: '2025-12-31' }
+                }
+            },
+            {
+                id: '3',
+                contractNumber: '20987227961',
+                operationType: 'تحرير بيانات',
+                timestamp: '2025-01-15T10:35:00Z',
+                unitNumber: 'STR0020108',
+                propertyName: 'مستودعات السعيد',
+                tenantName: 'شركة السنيدي للمقاولات',
+                user: 'أحمد محمد',
+                city: 'الرياض',
+                changes: {
+                    tenant_name: { old: '', new: 'شركة السنيدي للمقاولات' },
+                    rent_value: { old: '50000', new: '55000' }
+                }
+            },
+            {
+                id: '4',
+                contractNumber: '20268866526',
+                operationType: 'عميل جديد',
+                timestamp: '2025-02-01T09:15:00Z',
+                unitNumber: 'STR0040001',
+                propertyName: 'المستودعات الصغيرة',
+                tenantName: 'فواكهة فرغلي للعصيرات',
+                user: 'سارة أحمد',
+                city: 'الرياض',
+                changes: {
+                    tenant_name: { old: '', new: 'فواكهة فرغلي للعصيرات' },
+                    contract_status: { old: 'فارغ', new: 'مؤجر' }
+                }
+            }
+        ];
+
+        // نسخ الدوال من script.js للاختبار
+        function formatDate(timestamp) {
+            if (!timestamp) return 'غير محدد';
+            try {
+                const date = new Date(timestamp);
+                if (isNaN(date.getTime())) return 'غير محدد';
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            } catch (error) {
+                return 'غير محدد';
+            }
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return 'غير محدد';
+            try {
+                const date = new Date(timestamp);
+                if (isNaN(date.getTime())) return 'غير محدد';
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                return `${hours}:${minutes}`;
+            } catch (error) {
+                return 'غير محدد';
+            }
+        }
+
+        function getArabicFieldName(fieldName) {
+            const fieldTranslations = {
+                'tenant_name': 'المستأجر',
+                'start_date': 'تاريخ البداية',
+                'end_date': 'تاريخ النهاية',
+                'rent_value': 'قيمة الإيجار',
+                'contract_status': 'حالة العقد'
+            };
+            return fieldTranslations[fieldName] || fieldName;
+        }
+
+        function extractChangesFromLog(log) {
+            const changes = [];
+
+            if (log.changes) {
+                try {
+                    let parsedChanges = log.changes;
+                    if (typeof log.changes === 'string') {
+                        parsedChanges = JSON.parse(log.changes);
+                    }
+
+                    if (typeof parsedChanges === 'object') {
+                        Object.entries(parsedChanges).forEach(([field, change]) => {
+                            if (typeof change === 'object' && change.old !== change.new) {
+                                const fieldName = getArabicFieldName(field);
+                                changes.push(`تم تغيير ${fieldName} من ${change.old || '(فارغ)'} إلى ${change.new}`);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    changes.push(log.changes);
+                }
+            }
+
+            const operationType = log.operationType || '';
+            const unitNumber = log.unitNumber || '';
+
+            if (operationType.includes('تحرير') || operationType.includes('تعديل')) {
+                changes.push(`تم تعديل بيانات الوحدة ${unitNumber}`);
+            } else if (operationType.includes('عميل جديد')) {
+                const tenantName = log.tenantName || 'غير محدد';
+                changes.push(`تم تغيير المستأجر من (فارغ) إلى ${tenantName}`);
+            }
+
+            return changes.filter(change => change && change.trim());
+        }
+
+        function extractEventsFromLog(log) {
+            const events = [];
+
+            if (log.changes) {
+                try {
+                    let parsedChanges = log.changes;
+                    if (typeof log.changes === 'string') {
+                        parsedChanges = JSON.parse(log.changes);
+                    }
+
+                    if (typeof parsedChanges === 'object') {
+                        Object.entries(parsedChanges).forEach(([field, change]) => {
+                            if (typeof change === 'object' && change.old !== change.new) {
+                                const fieldName = getArabicFieldName(field);
+                                const oldValue = change.old || '(فارغ)';
+                                const newValue = change.new || '(فارغ)';
+
+                                if (field === 'tenant_name') {
+                                    if (!change.old) {
+                                        events.push(`إضافة مستأجر جديد: ${newValue}`);
+                                    } else {
+                                        events.push(`تغيير المستأجر: ${oldValue} ← ${newValue}`);
+                                    }
+                                } else if (field === 'rent_value') {
+                                    events.push(`تعديل قيمة الإيجار: ${oldValue} ريال ← ${newValue} ريال`);
+                                } else {
+                                    events.push(`تحديث ${fieldName}: ${oldValue} ← ${newValue}`);
+                                }
+                            }
+                        });
+                    }
+                } catch (e) {
+                    events.push(`تحديث البيانات: ${log.changes}`);
+                }
+            }
+
+            const operationType = log.operationType || '';
+            const unitNumber = log.unitNumber || '';
+
+            if (operationType.includes('عميل جديد')) {
+                events.push(`إضافة مستأجر جديد للوحدة ${unitNumber}`);
+            } else if (operationType.includes('تحرير')) {
+                if (events.length === 0) {
+                    events.push(`تعديل بيانات الوحدة ${unitNumber}`);
+                }
+            }
+
+            return events.filter(event => event && event.trim());
+        }
+
+        function consolidateTrackingLogs(logs) {
+            if (!logs || logs.length === 0) return [];
+
+            const groupedLogs = new Map();
+
+            logs.forEach(log => {
+                const contractNumber = log.contractNumber || 'غير محدد';
+                const operationType = log.operationType || 'غير محدد';
+                const date = formatDate(log.timestamp);
+                
+                const groupKey = `${contractNumber}|${operationType}|${date}`;
+
+                if (!groupedLogs.has(groupKey)) {
+                    groupedLogs.set(groupKey, {
+                        date: date,
+                        time: formatTime(log.timestamp),
+                        operationType: operationType,
+                        tenantName: log.tenantName || 'غير محدد',
+                        contractNumber: contractNumber,
+                        user: log.user || 'غير محدد',
+                        propertyName: log.propertyName || 'غير محدد',
+                        city: log.city || 'غير محدد',
+                        unitNumbers: new Set(),
+                        changes: new Set(),
+                        events: new Set(),
+                        originalLogs: []
+                    });
+                }
+
+                const group = groupedLogs.get(groupKey);
+                
+                const unitNumber = log.unitNumber || 'غير محدد';
+                if (unitNumber && unitNumber !== 'غير محدد') {
+                    group.unitNumbers.add(unitNumber);
+                }
+
+                const logChanges = extractChangesFromLog(log);
+                logChanges.forEach(change => group.changes.add(change));
+
+                const logEvents = extractEventsFromLog(log);
+                logEvents.forEach(event => group.events.add(event));
+
+                group.originalLogs.push(log);
+            });
+
+            return Array.from(groupedLogs.values()).map(group => ({
+                date: group.date,
+                time: group.time,
+                operationType: group.operationType,
+                tenantName: group.tenantName,
+                contractNumber: group.contractNumber,
+                user: group.user,
+                propertyName: group.propertyName,
+                unitNumbers: Array.from(group.unitNumbers).join('-'),
+                city: group.city,
+                changes: Array.from(group.changes).map(change => `✔ ${change}`).join('\n'),
+                events: Array.from(group.events).map(event => `• ${event}`).join('\n'),
+                recordCount: group.originalLogs.length
+            }));
+        }
+
+        // اختبار دمج السجلات
+        function testConsolidation() {
+            log('🔄 بدء اختبار دمج السجلات...');
+            
+            const consolidated = consolidateTrackingLogs(sampleLogs);
+            
+            const resultsDiv = document.getElementById('consolidationResults');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = `
+                <h4>نتائج الدمج:</h4>
+                <p><strong>السجلات الأصلية:</strong> ${sampleLogs.length}</p>
+                <p><strong>السجلات المدموجة:</strong> ${consolidated.length}</p>
+                <p><strong>نسبة الضغط:</strong> ${((1 - consolidated.length / sampleLogs.length) * 100).toFixed(1)}%</p>
+                <pre>${JSON.stringify(consolidated, null, 2)}</pre>
+            `;
+            
+            log(`✅ تم دمج ${sampleLogs.length} سجل إلى ${consolidated.length} سجل موحد`);
+        }
+
+        // اختبار استخراج التغييرات
+        function testChangesExtraction() {
+            log('🔧 بدء اختبار استخراج التغييرات...');
+            
+            const resultsDiv = document.getElementById('changesResults');
+            resultsDiv.style.display = 'block';
+            
+            let html = '<h4>التغييرات المستخرجة:</h4>';
+            
+            sampleLogs.forEach((log, index) => {
+                const changes = extractChangesFromLog(log);
+                html += `
+                    <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #dee2e6; border-radius: 6px;">
+                        <strong>السجل ${index + 1} (${log.unitNumber}):</strong>
+                        <ul>
+                            ${changes.map(change => `<li>✔ ${change}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+            log('✅ تم استخراج التغييرات من جميع السجلات');
+        }
+
+        // اختبار إنشاء الجدول
+        function testTableCreation() {
+            log('📋 بدء اختبار إنشاء الجدول...');
+            
+            const consolidated = consolidateTrackingLogs(sampleLogs);
+            
+            const tableHtml = `
+                <h4>الجدول المدموج:</h4>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #2c3e50; color: white;">
+                                <th style="padding: 8px; border: 1px solid #ddd;">التاريخ</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">نوع العملية</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">رقم العقد</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">أرقام الوحدات</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">الحدث</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">التغيرات</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">عدد السجلات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${consolidated.map(log => `
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">${log.date}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">${log.operationType}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">${log.contractNumber}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd; background: #e8f4fd;">${log.unitNumbers}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd; background: #fff3e0; white-space: pre-line; max-width: 280px; color: #e65100;">${log.events}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd; background: #f8f9fa; white-space: pre-line; max-width: 300px;">${log.changes}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; background: #fff3cd;">${log.recordCount}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            const resultsDiv = document.getElementById('tableResults');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = tableHtml;
+            
+            log('✅ تم إنشاء الجدول المدموج بنجاح');
+        }
+
+        // رسالة الترحيب
+        log('🚀 أداة اختبار تجميع سجلات التتبع جاهزة');
+    </script>
+</body>
+</html>

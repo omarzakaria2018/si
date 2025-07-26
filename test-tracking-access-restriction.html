@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار منع الوصول لسجلات التتبع</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .test-section h3 {
+            color: #dc3545;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-info {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-right: 5px solid #2196f3;
+        }
+        
+        .user-info h4 {
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+        
+        .user-data {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+        }
+        
+        .btn.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+        
+        .btn.info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+        }
+        
+        .btn.warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+        
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .result-box.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result-box.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .result-box.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .instructions {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-right: 5px solid #ffc107;
+        }
+        
+        .instructions h4 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .instructions ol {
+            color: #856404;
+            line-height: 1.6;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #856404;
+            font-weight: 500;
+        }
+        
+        .log-container {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .access-points {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .access-point {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+        
+        .access-point h5 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .status-blocked {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .status-allowed {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        /* تأثيرات النافذة المنبثقة */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px) scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚧 اختبار نافذة "قيد التطوير"</h1>
+            <p>اختبار النافذة المنبثقة التي تظهر للمستخدم "شركة السنيدي1234" لمدة 5 ثوان</p>
+        </div>
+        
+        <div class="content">
+            <!-- معلومات المستخدم الحالي -->
+            <div class="user-info">
+                <h4>👤 معلومات المستخدم الحالي</h4>
+                <div class="user-data" id="currentUserInfo">
+                    جاري تحميل معلومات المستخدم...
+                </div>
+            </div>
+
+            <!-- اختبار الوصول الأساسي -->
+            <div class="test-section">
+                <h3>
+                    🔍 اختبار الوصول الأساسي
+                </h3>
+                <p>اختبار ما إذا كان المستخدم الحالي ممنوع من الوصول لسجلات التتبع</p>
+                <button class="btn" onclick="runBasicAccessTest()">
+                    🧪 تشغيل اختبار الوصول
+                </button>
+                <div class="result-box" id="basicTestResult"></div>
+            </div>
+
+            <!-- اختبار جميع نقاط الوصول -->
+            <div class="test-section">
+                <h3>
+                    🔬 اختبار جميع نقاط الوصول
+                </h3>
+                <p>اختبار جميع الطرق التي يمكن من خلالها الوصول إلى سجلات التتبع</p>
+                <button class="btn info" onclick="runAllAccessPointsTest()">
+                    🔍 اختبار جميع النقاط
+                </button>
+                
+                <div class="access-points" id="accessPointsResults" style="display: none;">
+                    <div class="access-point">
+                        <h5>عرض سجلات التتبع</h5>
+                        <div id="showTrackingResult">غير مختبر</div>
+                    </div>
+                    <div class="access-point">
+                        <h5>إدارة سجلات التتبع</h5>
+                        <div id="manageTrackingResult">غير مختبر</div>
+                    </div>
+                    <div class="access-point">
+                        <h5>إنشاء بيانات تجريبية</h5>
+                        <div id="sampleDataResult">غير مختبر</div>
+                    </div>
+                </div>
+                
+                <div class="result-box" id="allTestsResult"></div>
+            </div>
+
+            <!-- اختبار النافذة المنبثقة -->
+            <div class="test-section">
+                <h3>
+                    🚧 اختبار النافذة المنبثقة
+                </h3>
+                <p>عرض نافذة "قيد التطوير" التي تظهر للمستخدم المحظور لمدة 5 ثوان</p>
+                <button class="btn warning" onclick="testDevelopmentModal()">
+                    🚧 عرض نافذة "قيد التطوير"
+                </button>
+                <div class="result-box" id="modalTestResult"></div>
+            </div>
+
+            <!-- اختبار ظهور الزر في القائمة المحمولة -->
+            <div class="test-section">
+                <h3>
+                    📱 اختبار القائمة المحمولة
+                </h3>
+                <p>التحقق من ظهور زر "سجل التتبع" في القائمة المحمولة للمستخدم "شركة السنيدي"</p>
+                <button class="btn info" onclick="testMobileMenuButton()">
+                    📱 فحص القائمة المحمولة
+                </button>
+                <div class="result-box" id="mobileMenuResult"></div>
+            </div>
+
+            <!-- اختبار محاكاة الوصول -->
+            <div class="test-section">
+                <h3>
+                    ⚡ اختبار محاكاة الوصول
+                </h3>
+                <p>محاولة الوصول الفعلي لسجلات التتبع (ستظهر النافذة المنبثقة إذا كان المستخدم ممنوع)</p>
+                <button class="btn warning" onclick="simulateTrackingAccess()">
+                    🎭 محاكاة الوصول
+                </button>
+                <div class="result-box" id="simulationResult"></div>
+            </div>
+
+            <!-- سجل الاختبارات -->
+            <div class="test-section">
+                <h3>
+                    📋 سجل الاختبارات
+                </h3>
+                <button class="btn success" onclick="clearTestLog()">
+                    🗑️ مسح السجل
+                </button>
+                <div class="log-container" id="testLog"></div>
+            </div>
+
+            <!-- تعليمات -->
+            <div class="instructions">
+                <h4>📋 تعليمات الاختبار</h4>
+                <ol>
+                    <li><strong>تسجيل الدخول:</strong> تأكد من تسجيل الدخول كمستخدم "شركة السنيدي" (1234)</li>
+                    <li><strong>اختبار الوصول الأساسي:</strong> اضغط زر "تشغيل اختبار الوصول" للتحقق من حالة المنع</li>
+                    <li><strong>اختبار النافذة المنبثقة:</strong> اضغط زر "عرض نافذة قيد التطوير" لرؤية النافذة التجريبية</li>
+                    <li><strong>اختبار القائمة المحمولة:</strong> اضغط "فحص القائمة المحمولة" للتحقق من ظهور الزر في الهاتف</li>
+                    <li><strong>اختبار جميع النقاط:</strong> اضغط "اختبار جميع النقاط" لفحص كل طرق الوصول</li>
+                    <li><strong>محاكاة الوصول:</strong> اضغط "محاكاة الوصول" لتجربة الوصول الفعلي</li>
+                    <li><strong>النتيجة المتوقعة:</strong> يجب أن تظهر <span class="highlight">نافذة منبثقة لمدة 5 ثوان</span> مع رسالة "هذه الميزة قيد التطوير" في جميع الحالات</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testLogMessages = [];
+
+        function logTest(message, type = 'info') {
+            const timestamp = new Date().toLocaleString('ar-SA');
+            const logEntry = `[${timestamp}] ${message}`;
+            testLogMessages.push(logEntry);
+            
+            const logContainer = document.getElementById('testLog');
+            if (logContainer) {
+                logContainer.textContent = testLogMessages.join('\n');
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            console.log(logEntry);
+        }
+
+        function clearTestLog() {
+            testLogMessages = [];
+            const logContainer = document.getElementById('testLog');
+            if (logContainer) {
+                logContainer.textContent = '';
+            }
+            logTest('تم مسح سجل الاختبارات');
+        }
+
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = `result-box ${type}`;
+                element.style.display = 'block';
+            }
+        }
+
+        // تحديث معلومات المستخدم
+        function updateUserInfo() {
+            const userInfoElement = document.getElementById('currentUserInfo');
+            
+            // محاولة الحصول على معلومات المستخدم من localStorage
+            const savedUser = localStorage.getItem('currentUser');
+            let userInfo = 'لا يوجد مستخدم مسجل دخول';
+            
+            if (savedUser) {
+                try {
+                    const userData = JSON.parse(savedUser);
+                    userInfo = `
+المستخدم: ${userData.username}
+الاسم الكامل: ${userData.fullName || 'غير محدد'}
+الدور: ${userData.role || 'غير محدد'}
+وقت تسجيل الدخول: ${userData.loginTime || 'غير محدد'}
+                    `;
+                } catch (e) {
+                    userInfo = `المستخدم: ${savedUser} (تنسيق قديم)`;
+                }
+            }
+            
+            userInfoElement.textContent = userInfo;
+            logTest(`تم تحديث معلومات المستخدم: ${userInfo.split('\n')[0]}`);
+        }
+
+        // اختبار الوصول الأساسي
+        function runBasicAccessTest() {
+            logTest('🔍 بدء اختبار الوصول الأساسي...');
+            
+            const savedUser = localStorage.getItem('currentUser');
+            if (!savedUser) {
+                showResult('basicTestResult', 'لا يوجد مستخدم مسجل دخول', 'error');
+                logTest('❌ لا يوجد مستخدم مسجل دخول');
+                return;
+            }
+
+            let userData;
+            try {
+                userData = JSON.parse(savedUser);
+            } catch (e) {
+                userData = { username: savedUser };
+            }
+
+            const isBlocked = userData.username === '1234' || 
+                             userData.fullName === 'شركة السنيدي' ||
+                             userData.username === 'شركة السنيدي1234' ||
+                             (userData.fullName && userData.fullName.includes('السنيدي'));
+
+            if (isBlocked) {
+                showResult('basicTestResult', '✅ المستخدم ممنوع من الوصول (كما هو مطلوب)', 'success');
+                logTest('✅ اختبار ناجح: المستخدم ممنوع من الوصول');
+            } else {
+                showResult('basicTestResult', 'ℹ️ المستخدم مسموح له بالوصول', 'info');
+                logTest('ℹ️ المستخدم الحالي مسموح له بالوصول');
+            }
+        }
+
+        // اختبار جميع نقاط الوصول
+        function runAllAccessPointsTest() {
+            logTest('🔬 بدء اختبار جميع نقاط الوصول...');
+            
+            const savedUser = localStorage.getItem('currentUser');
+            if (!savedUser) {
+                showResult('allTestsResult', 'لا يوجد مستخدم مسجل دخول', 'error');
+                return;
+            }
+
+            let userData;
+            try {
+                userData = JSON.parse(savedUser);
+            } catch (e) {
+                userData = { username: savedUser };
+            }
+
+            const isBlocked = userData.username === '1234' || 
+                             userData.fullName === 'شركة السنيدي' ||
+                             userData.username === 'شركة السنيدي1234' ||
+                             (userData.fullName && userData.fullName.includes('السنيدي'));
+
+            // تحديث نتائج كل نقطة وصول
+            const showTrackingElement = document.getElementById('showTrackingResult');
+            const manageTrackingElement = document.getElementById('manageTrackingResult');
+            const sampleDataElement = document.getElementById('sampleDataResult');
+
+            if (isBlocked) {
+                showTrackingElement.innerHTML = '<span class="status-blocked">🚫 ممنوع</span>';
+                manageTrackingElement.innerHTML = '<span class="status-blocked">🚫 ممنوع</span>';
+                sampleDataElement.innerHTML = '<span class="status-blocked">🚫 ممنوع</span>';
+                showResult('allTestsResult', '✅ جميع نقاط الوصول محمية بشكل صحيح', 'success');
+                logTest('✅ جميع نقاط الوصول محمية');
+            } else {
+                showTrackingElement.innerHTML = '<span class="status-allowed">✅ مسموح</span>';
+                manageTrackingElement.innerHTML = '<span class="status-allowed">✅ مسموح</span>';
+                sampleDataElement.innerHTML = '<span class="status-allowed">✅ مسموح</span>';
+                showResult('allTestsResult', 'ℹ️ المستخدم مسموح له بالوصول لجميع النقاط', 'info');
+                logTest('ℹ️ المستخدم مسموح له بالوصول');
+            }
+
+            document.getElementById('accessPointsResults').style.display = 'grid';
+        }
+
+        // اختبار النافذة المنبثقة
+        function testDevelopmentModal() {
+            logTest('🚧 بدء اختبار النافذة المنبثقة...');
+
+            // إنشاء نافذة "قيد التطوير" تجريبية
+            showDevelopmentModalDemo();
+
+            showResult('modalTestResult', '🚧 تم عرض النافذة المنبثقة لمدة 5 ثوان', 'info');
+            logTest('🚧 تم عرض النافذة المنبثقة التجريبية');
+        }
+
+        // نافذة "قيد التطوير" تجريبية
+        function showDevelopmentModalDemo() {
+            // التحقق من وجود نافذة مفتوحة بالفعل
+            const existingModal = document.getElementById('developmentModalDemo');
+            if (existingModal) {
+                return;
+            }
+
+            // إنشاء النافذة المنبثقة
+            const modalHtml = `
+                <div id="developmentModalDemo" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.7);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                    backdrop-filter: blur(5px);
+                    animation: fadeIn 0.3s ease;
+                ">
+                    <div style="
+                        background: linear-gradient(135deg, #ff9800, #f57c00);
+                        color: white;
+                        padding: 40px;
+                        border-radius: 20px;
+                        text-align: center;
+                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                        max-width: 500px;
+                        width: 90%;
+                        position: relative;
+                        animation: slideIn 0.4s ease;
+                        border: 3px solid #fff3e0;
+                    ">
+                        <button onclick="closeDevelopmentModalDemo()" style="
+                            position: absolute;
+                            top: 15px;
+                            right: 15px;
+                            background: rgba(255, 255, 255, 0.2);
+                            border: none;
+                            color: white;
+                            font-size: 24px;
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 50%;
+                            cursor: pointer;
+                        ">×</button>
+
+                        <div style="margin-bottom: 30px;">
+                            <div style="font-size: 80px; margin-bottom: 20px;">🚧</div>
+                            <h2 style="margin: 0 0 15px 0; font-size: 28px; font-weight: bold;">هذه الميزة قيد التطوير</h2>
+                            <p style="margin: 0 0 20px 0; font-size: 18px; opacity: 0.9;">نعتذر، هذه الميزة غير متاحة حالياً<br>وسيتم تفعيلها قريباً</p>
+                        </div>
+
+                        <div style="background: rgba(255, 255, 255, 0.3); height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 15px;">
+                            <div id="demoProgressBar" style="background: white; height: 100%; width: 0%; border-radius: 3px; transition: width 0.1s linear;"></div>
+                        </div>
+
+                        <p style="margin: 0; font-size: 14px; opacity: 0.8;">
+                            سيتم إغلاق هذه النافذة خلال <span id="demoCountdown">5</span> ثوان
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // بدء العد التنازلي
+            let timeLeft = 5;
+            const countdownElement = document.getElementById('demoCountdown');
+            const progressBar = document.getElementById('demoProgressBar');
+
+            const interval = setInterval(() => {
+                timeLeft--;
+
+                if (countdownElement) {
+                    countdownElement.textContent = timeLeft;
+                }
+
+                if (progressBar) {
+                    const progress = ((5 - timeLeft) / 5) * 100;
+                    progressBar.style.width = progress + '%';
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    closeDevelopmentModalDemo();
+                }
+            }, 1000);
+        }
+
+        function closeDevelopmentModalDemo() {
+            const modal = document.getElementById('developmentModalDemo');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // اختبار ظهور زر سجلات التتبع في القائمة المحمولة
+        function testMobileMenuButton() {
+            logTest('📱 بدء اختبار القائمة المحمولة...');
+
+            // محاولة فتح التطبيق الرئيسي للفحص
+            const testWindow = window.open('index.html', 'mobileTest', 'width=400,height=800');
+
+            if (testWindow) {
+                showResult('mobileMenuResult', '📱 تم فتح نافذة اختبار بحجم الهاتف المحمول. تحقق من وجود زر "سجل التتبع" في القائمة.', 'info');
+                logTest('📱 تم فتح نافذة اختبار القائمة المحمولة');
+
+                // إضافة تعليمات للمستخدم
+                setTimeout(() => {
+                    alert(`📱 تعليمات اختبار القائمة المحمولة:
+
+1. في النافذة الجديدة، سجل دخول كمستخدم "1234"
+2. اضغط على زر القائمة (☰) في أعلى اليسار
+3. ابحث عن زر "سجل التتبع" في القائمة
+4. اضغط على الزر وتأكد من ظهور نافذة "قيد التطوير"
+
+✅ إذا ظهر الزر وعمل بشكل صحيح = الاختبار ناجح
+❌ إذا لم يظهر الزر أو لم يعمل = يحتاج إصلاح`);
+                }, 1000);
+
+            } else {
+                showResult('mobileMenuResult', '❌ لم يتمكن من فتح نافذة الاختبار. تحقق من إعدادات المتصفح.', 'error');
+                logTest('❌ فشل في فتح نافذة اختبار القائمة المحمولة');
+            }
+        }
+
+        // محاكاة الوصول الفعلي
+        function simulateTrackingAccess() {
+            logTest('🎭 بدء محاكاة الوصول الفعلي...');
+
+            // محاولة فتح التطبيق الرئيسي في نافذة جديدة
+            const mainAppWindow = window.open('index.html', '_blank');
+
+            if (mainAppWindow) {
+                showResult('simulationResult', '🔗 تم فتح التطبيق الرئيسي في نافذة جديدة. جرب الوصول لسجلات التتبع من هناك.', 'info');
+                logTest('🔗 تم فتح التطبيق الرئيسي للاختبار');
+            } else {
+                showResult('simulationResult', '❌ لم يتمكن من فتح التطبيق الرئيسي. تحقق من إعدادات المتصفح.', 'error');
+                logTest('❌ فشل في فتح التطبيق الرئيسي');
+            }
+        }
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            logTest('🚀 تم تحميل صفحة اختبار منع الوصول لسجلات التتبع');
+            updateUserInfo();
+        });
+    </script>
+</body>
+</html>

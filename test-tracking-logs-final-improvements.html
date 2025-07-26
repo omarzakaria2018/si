@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار التحسينات النهائية لسجلات التتبع</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .improvement-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            background: #f8f9fa;
+            position: relative;
+        }
+        
+        .improvement-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 0 12px 12px 0;
+        }
+        
+        .improvement-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .improvement-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .feature-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .feature-icon.new {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+        
+        .feature-icon.improved {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+        }
+        
+        .feature-icon.fixed {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+        }
+        
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 12px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .demo-table th {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .demo-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: center;
+            vertical-align: top;
+        }
+        
+        .demo-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .demo-table tbody tr:hover {
+            background: #e3f2fd;
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+        
+        .events-cell-demo {
+            background: #fff3e0;
+            color: #e65100;
+            font-weight: 500;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-width: 200px;
+            text-align: right;
+        }
+        
+        .changes-cell-demo {
+            background: #f8f9fa;
+            color: #28a745;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-width: 200px;
+            text-align: right;
+        }
+        
+        .unit-numbers-cell-demo {
+            background: #e8f4fd;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .record-count-cell-demo {
+            background: #fff3cd;
+            color: #856404;
+            font-weight: bold;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+        }
+        
+        .btn.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+        
+        .btn.warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+        
+        .btn.info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+        }
+        
+        .instructions {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-right: 5px solid #2196f3;
+        }
+        
+        .instructions h4 {
+            color: #1565c0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .instructions ol {
+            color: #0d47a1;
+            line-height: 1.6;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #856404;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 التحسينات النهائية لسجلات التتبع</h1>
+            <p>اختبار جميع الميزات الجديدة: عمود الأحداث، خاصية الـ wrap، طباعة PDF محسنة، وحل مشكلة البيانات المفقودة</p>
+        </div>
+        
+        <div class="content">
+            <!-- التحسين الأول: عمود الأحداث -->
+            <div class="improvement-section">
+                <h3>
+                    <div class="improvement-icon">🎯</div>
+                    عمود الأحداث الجديد
+                </h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-icon new">✓</span>
+                        <div>
+                            <strong>عمود "الحدث" جديد:</strong> يعرض ملخص سريع للأحداث الرئيسية بتنسيق نقاط (•)
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon new">✓</span>
+                        <div>
+                            <strong>تنسيق ذكي:</strong> تحويل التغييرات التقنية إلى أحداث مفهومة بسهولة
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon new">✓</span>
+                        <div>
+                            <strong>خلفية مميزة:</strong> لون برتقالي فاتح مع نص برتقالي داكن للتمييز
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- التحسين الثاني: خاصية الـ wrap -->
+            <div class="improvement-section">
+                <h3>
+                    <div class="improvement-icon">📝</div>
+                    تحسين خاصية الـ wrap
+                </h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-icon improved">↑</span>
+                        <div>
+                            <strong>white-space: pre-wrap:</strong> عرض النصوص الطويلة بشكل صحيح مع الحفاظ على التنسيق
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon improved">↑</span>
+                        <div>
+                            <strong>word-wrap: break-word:</strong> كسر الكلمات الطويلة لتجنب تجاوز حدود الخلايا
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon improved">↑</span>
+                        <div>
+                            <strong>hyphens: auto:</strong> إضافة شرطات تلقائية للكلمات المكسورة
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- التحسين الثالث: طباعة PDF -->
+            <div class="improvement-section">
+                <h3>
+                    <div class="improvement-icon">🖨️</div>
+                    طباعة PDF محسنة
+                </h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-icon fixed">✓</span>
+                        <div>
+                            <strong>عمود الأحداث في PDF:</strong> إضافة عمود الأحداث إلى ملف PDF المطبوع
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon fixed">✓</span>
+                        <div>
+                            <strong>عمود التغييرات في PDF:</strong> إضافة عمود التغييرات التقنية إلى PDF
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon improved">↑</span>
+                        <div>
+                            <strong>تنسيق محسن:</strong> خلفيات ملونة وتنسيق نصوص محسن في الطباعة
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon improved">↑</span>
+                        <div>
+                            <strong>تصدير Excel محسن:</strong> إضافة عمودي الأحداث والتغييرات إلى ملف Excel
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- التحسين الرابع: حل مشكلة البيانات -->
+            <div class="improvement-section">
+                <h3>
+                    <div class="improvement-icon">🔍</div>
+                    حل مشكلة البيانات المفقودة
+                </h3>
+                <ul class="feature-list">
+                    <li>
+                        <span class="feature-icon fixed">✓</span>
+                        <div>
+                            <strong>زيادة الحد الأقصى:</strong> تحميل 2000 سجل بدلاً من 200 سجل افتراضياً
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon new">✓</span>
+                        <div>
+                            <strong>دالة تحميل جميع السجلات:</strong> <span class="highlight">loadAllChangeLogsFromSupabase()</span> لتحميل جميع السجلات بدون حد أقصى
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon new">✓</span>
+                        <div>
+                            <strong>زر "تحميل المزيد":</strong> زر جديد في الواجهة لتحميل جميع السجلات من قاعدة البيانات
+                        </div>
+                    </li>
+                    <li>
+                        <span class="feature-icon improved">↑</span>
+                        <div>
+                            <strong>إشعارات معلوماتية:</strong> عرض عدد السجلات المحملة وإرشادات للمستخدم
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- جدول توضيحي -->
+            <div class="improvement-section">
+                <h3>
+                    <div class="improvement-icon">📊</div>
+                    مثال على الجدول المحسن
+                </h3>
+                <table class="demo-table">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>نوع العملية</th>
+                            <th>رقم العقد</th>
+                            <th>رقم الوحدة</th>
+                            <th>الحدث</th>
+                            <th>التغييرات</th>
+                            <th>عدد السجلات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>15/01/2025</td>
+                            <td>تحرير بيانات</td>
+                            <td>20987227961</td>
+                            <td class="unit-numbers-cell-demo">STR0020106-STR0020107-STR0020108</td>
+                            <td class="events-cell-demo">• إضافة مستأجر جديد: شركة السنيدي
+• تعديل قيمة الإيجار: 50000 ← 55000 ريال
+• تحديث تاريخ النهاية: 2024-12-31 ← 2025-12-31</td>
+                            <td class="changes-cell-demo">✔ تم تغيير المستأجر من (فارغ) إلى شركة السنيدي للمقاولات
+✔ تم تغيير قيمة الإيجار من 50000 إلى 55000
+✔ تم تعديل بيانات الوحدة STR0020108</td>
+                            <td class="record-count-cell-demo">3</td>
+                        </tr>
+                        <tr>
+                            <td>01/02/2025</td>
+                            <td>عميل جديد</td>
+                            <td>20268866526</td>
+                            <td class="unit-numbers-cell-demo">STR0040001</td>
+                            <td class="events-cell-demo">• إضافة مستأجر جديد للوحدة STR0040001
+• ربط العقد بالمستأجر: فواكهة فرغلي للعصيرات</td>
+                            <td class="changes-cell-demo">✔ تم تغيير المستأجر من (فارغ) إلى فواكهة فرغلي للعصيرات
+✔ تم تغيير حالة العقد من فارغ إلى مؤجر</td>
+                            <td class="record-count-cell-demo">1</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- تعليمات الاختبار -->
+            <div class="instructions">
+                <h4>📋 تعليمات اختبار التحسينات</h4>
+                <ol>
+                    <li><strong>اختبار عمود الأحداث:</strong> افتح سجلات التتبع وتحقق من وجود عمود "الحدث" بخلفية برتقالية</li>
+                    <li><strong>اختبار الـ wrap:</strong> ابحث عن سجلات بنصوص طويلة وتحقق من عرضها الصحيح</li>
+                    <li><strong>اختبار الطباعة:</strong> اضغط زر "طباعة المفلتر" وتحقق من وجود عمودي الأحداث والتغييرات في PDF</li>
+                    <li><strong>اختبار التصدير:</strong> اضغط زر "تصدير المفلتر" وتحقق من وجود العمودين الجديدين في Excel</li>
+                    <li><strong>اختبار تحميل المزيد:</strong> اضغط زر "تحميل المزيد" وتحقق من زيادة عدد السجلات</li>
+                    <li><strong>اختبار البحث:</strong> ابحث عن اسم مستأجر وتحقق من ظهور النتائج</li>
+                </ol>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn success" onclick="window.open('index.html', '_blank')">
+                    🚀 فتح التطبيق الرئيسي
+                </button>
+                <button class="btn info" onclick="window.print()">
+                    🖨️ طباعة هذا التقرير
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🎉 صفحة اختبار التحسينات النهائية جاهزة!');
+        console.log('📋 التحسينات المطبقة:');
+        console.log('1. ✅ عمود الأحداث الجديد');
+        console.log('2. ✅ تحسين خاصية الـ wrap');
+        console.log('3. ✅ طباعة PDF محسنة مع العمودين الجديدين');
+        console.log('4. ✅ حل مشكلة البيانات المفقودة');
+        console.log('5. ✅ زر تحميل المزيد من السجلات');
+        console.log('6. ✅ إشعارات معلوماتية للمستخدم');
+    </script>
+</body>
+</html>
