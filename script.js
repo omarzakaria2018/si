@@ -28,6 +28,9 @@ let activeFilters = {
 function updateActiveFiltersDisplay() {
     console.log('🔄 تحديث عرض الفلاتر النشطة...');
 
+    // إعادة تعيين حالة أزرار مسح الفلاتر أولاً
+    resetClearFiltersButtonsState();
+
     const desktopList = document.getElementById('activeFiltersList');
     const mobileList = document.getElementById('activeFiltersListMobile');
     const desktopClearBtn = document.getElementById('clearAllFiltersBtn');
@@ -241,6 +244,9 @@ function ensureClearButtonsVisibility() {
 function createMissingClearButtons() {
     console.log('🔧 فحص الأزرار المفقودة...');
 
+    // إعادة تعيين حالة الأزرار الموجودة أولاً
+    resetClearFiltersButtonsState();
+
     // فحص زر الشاشات الكبيرة
     const desktopContainer = document.getElementById('activeFiltersDesktop');
     if (desktopContainer && !desktopContainer.querySelector('.clear-all-filters-btn')) {
@@ -250,7 +256,7 @@ function createMissingClearButtons() {
         clearBtn.onclick = function() { clearAllFiltersWithLoading(this); };
         clearBtn.innerHTML = `
             <i class="fas fa-times-circle"></i>
-            مسح جميع الفلاتر
+            <span>مسح جميع الفلاتر</span>
         `;
         desktopContainer.appendChild(clearBtn);
         console.log('✅ تم إنشاء زر مسح الفلاتر للشاشات الكبيرة مع loading');
@@ -1016,6 +1022,41 @@ function clearAllFilters() {
         owner: ''
     };
 
+    // إلغاء الفلاتر النشطة فقط (كأننا نقرنا عليها مرة أخرى)
+    console.log('🔄 إلغاء الفلاتر النشطة...');
+
+    // إلغاء فلتر الحالة إذا كان نشطاً
+    if (filterStatus && filterStatus !== 'الكل') {
+        console.log(`🔄 إلغاء فلتر الحالة: ${filterStatus}`);
+        if (typeof toggleStatusFilter === 'function') {
+            toggleStatusFilter(filterStatus);
+        }
+    }
+
+    // إلغاء فلتر نوع العقار إذا كان نشطاً
+    if (propertyTypeFilter && propertyTypeFilter !== 'الكل') {
+        console.log(`🔄 إلغاء فلتر نوع العقار: ${propertyTypeFilter}`);
+        if (typeof togglePropertyTypeFilter === 'function') {
+            togglePropertyTypeFilter(propertyTypeFilter);
+        }
+    }
+
+    // إلغاء فلتر نوع العقد إذا كان نشطاً
+    if (contractTypeFilter && contractTypeFilter !== 'الكل') {
+        console.log(`🔄 إلغاء فلتر نوع العقد: ${contractTypeFilter}`);
+        if (typeof toggleContractTypeFilter === 'function') {
+            toggleContractTypeFilter(contractTypeFilter);
+        }
+    }
+
+    // إلغاء فلتر المالك إذا كان نشطاً
+    if (activeFilters.owner && activeFilters.owner !== '' && activeFilters.owner !== 'الكل') {
+        console.log(`🔄 إلغاء فلتر المالك: ${activeFilters.owner}`);
+        if (typeof toggleOwnerFilter === 'function') {
+            toggleOwnerFilter(activeFilters.owner);
+        }
+    }
+
     // إعادة تعيين واجهة المستخدم
     const countryButtons = document.querySelectorAll('.country-btn, .city-btn');
     countryButtons.forEach(btn => btn.classList.remove('active'));
@@ -1113,11 +1154,46 @@ function showClearFiltersLoading(show) {
             // إعادة النص الأصلي
             if (btn.dataset.originalText) {
                 btn.innerHTML = btn.dataset.originalText;
+            } else {
+                // إذا لم يكن النص الأصلي محفوظاً، استخدم النص الافتراضي
+                btn.innerHTML = `
+                    <i class="fas fa-times-circle"></i>
+                    <span>مسح جميع الفلاتر</span>
+                `;
             }
             btn.disabled = false;
             btn.style.opacity = '1';
+            btn.classList.remove('loading');
+            btn.style.transform = 'scale(1)';
         }
     });
+}
+
+// دالة إعادة تعيين حالة أزرار مسح الفلاتر
+function resetClearFiltersButtonsState() {
+    console.log('🔄 إعادة تعيين حالة أزرار مسح الفلاتر...');
+
+    const clearButtons = document.querySelectorAll('.clear-all-filters-btn');
+    clearButtons.forEach(btn => {
+        // إزالة حالة التحميل
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.classList.remove('loading');
+        btn.style.transform = 'scale(1)';
+
+        // إعادة النص الأصلي إذا كان في حالة تحميل
+        if (btn.innerHTML.includes('جاري المسح') || btn.innerHTML.includes('fa-spinner')) {
+            btn.innerHTML = `
+                <i class="fas fa-times-circle"></i>
+                <span>مسح جميع الفلاتر</span>
+            `;
+        }
+
+        // مسح البيانات المحفوظة
+        delete btn.dataset.originalText;
+    });
+
+    console.log('✅ تم إعادة تعيين حالة أزرار مسح الفلاتر');
 }
 
 // إظهار/إخفاء مؤشر تحميل الملفات
@@ -3085,7 +3161,7 @@ function showStatusFilter() {
     // إضافة خيار "الكل"
     const isAllActive = filterStatus === null;
     html += `
-        <button onclick="setStatusFilter(null); closeStatusFilterModal();"
+        <button onclick="if(filterStatus) { toggleStatusFilter(filterStatus); } closeStatusFilterModal();"
                 class="status-btn ${isAllActive ? 'active' : ''}"
                 style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
                        transition: all 0.3s ease; border: 1px solid #e9ecef;
@@ -3108,7 +3184,7 @@ function showStatusFilter() {
         const statusColor = statusColors[status] || '#007bff';
 
         html += `
-            <button onclick="setStatusFilter('${status}'); closeStatusFilterModal();"
+            <button onclick="toggleStatusFilter('${status}'); closeStatusFilterModal();"
                     class="status-btn ${isActive ? 'active' : ''}"
                     style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
                            transition: all 0.3s ease; border: 1px solid #e9ecef;
@@ -3554,6 +3630,9 @@ function initCountryButtons() {
 // متغير لحفظ ترتيب العقارات الثابت
 let fixedPropertyOrder = JSON.parse(localStorage.getItem('fixedPropertyOrder')) || [];
 
+// متغير لحفظ فلتر نوع العقار الحالي
+let currentPropertyTypeFilter = null; // null = الكل، 'buildings' = المباني، 'lands' = الأراضي
+
 // تهيئة قائمة العقارات مع ترتيب ثابت
 function initPropertyList(selectedCountry = null) {
     // ✅ الحصول على العقارات من مصدرين: properties و propertyDefinitions
@@ -3602,7 +3681,16 @@ function initPropertyList(selectedCountry = null) {
     }
     container.innerHTML = '';
 
-    sortedPropertyNames.forEach(propertyName => {
+    // تحديث حالة فلاتر نوع العقار
+    updatePropertyTypeFiltersState();
+
+    // تطبيق فلتر نوع العقار إذا كان نشطاً
+    let displayedPropertyNames = sortedPropertyNames;
+    if (currentPropertyTypeFilter) {
+        displayedPropertyNames = filterPropertiesByTypeLogic(sortedPropertyNames, currentPropertyTypeFilter);
+    }
+
+    displayedPropertyNames.forEach(propertyName => {
         // تجاهل الأسماء الفارغة أو غير المعرفة
         if (!propertyName || propertyName.trim() === '') return;
         const div = document.createElement('div');
@@ -3617,15 +3705,229 @@ function initPropertyList(selectedCountry = null) {
     });
 
     // إضافة رسالة إذا لم تكن هناك عقارات
-    if (sortedPropertyNames.filter(name => name && name.trim() !== '').length === 0) {
+    if (displayedPropertyNames.filter(name => name && name.trim() !== '').length === 0) {
         const noProperties = document.createElement('div');
         noProperties.className = 'no-properties';
-        noProperties.textContent = 'لا توجد عقارات في هذا المدينة';
+        const filterText = currentPropertyTypeFilter === 'buildings' ? 'المباني' :
+                          currentPropertyTypeFilter === 'lands' ? 'الأراضي' : 'العقارات';
+        noProperties.textContent = `لا توجد ${filterText} في هذه المدينة`;
         noProperties.style.textAlign = 'center';
         noProperties.style.padding = '1rem';
         noProperties.style.color = '#666';
         container.appendChild(noProperties);
     }
+}
+
+// دالة فلترة العقارات حسب النوع
+function filterPropertiesByType(filterType) {
+    console.log(`🏗️ تطبيق فلتر نوع العقار: ${filterType}`);
+
+    // تحديث الفلتر الحالي
+    if (currentPropertyTypeFilter === filterType) {
+        // إلغاء الفلتر إذا تم الضغط على نفس الزر
+        currentPropertyTypeFilter = null;
+        console.log('🔄 تم إلغاء فلتر نوع العقار');
+    } else {
+        currentPropertyTypeFilter = filterType;
+        console.log(`✅ تم تطبيق فلتر: ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}`);
+    }
+
+    // إعادة تحديث قائمة العقارات
+    initPropertyList(currentCountry);
+
+    // تحديث حالة الأزرار
+    updatePropertyTypeFiltersState();
+
+    // إعادة عرض البيانات
+    renderData();
+}
+
+// دالة منطق فلترة العقارات حسب النوع
+function filterPropertiesByTypeLogic(propertyNames, filterType) {
+    if (!filterType) return propertyNames;
+
+    const filteredProperties = [];
+
+    propertyNames.forEach(propertyName => {
+        // البحث عن العقار في البيانات لمعرفة نوعه
+        const propertyData = properties.find(p => p['اسم العقار'] === propertyName);
+
+        if (propertyData) {
+            const propertyType = propertyData['نوع العقار'];
+            const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+
+            if (filterType === 'lands' && isLandType) {
+                filteredProperties.push(propertyName);
+            } else if (filterType === 'buildings' && !isLandType) {
+                filteredProperties.push(propertyName);
+            }
+        } else {
+            // إذا لم نجد البيانات، نتحقق من propertyDefinitions
+            const propDef = propertyDefinitions?.find(def => def.name === propertyName);
+            if (propDef) {
+                const propertyType = propDef.type;
+                const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+
+                if (filterType === 'lands' && isLandType) {
+                    filteredProperties.push(propertyName);
+                } else if (filterType === 'buildings' && !isLandType) {
+                    filteredProperties.push(propertyName);
+                }
+            } else {
+                // إذا لم نجد معلومات النوع، نعتبره مبنى افتراضياً
+                if (filterType === 'buildings') {
+                    filteredProperties.push(propertyName);
+                }
+            }
+        }
+    });
+
+    console.log(`📊 فلترة ${filterType}: ${filteredProperties.length} من أصل ${propertyNames.length} عقار`);
+    return filteredProperties;
+}
+
+// دالة فلترة العقارات في الشاشات الصغيرة
+function filterMobilePropertiesByType(filterType) {
+    console.log(`📱 تطبيق فلتر نوع العقار في الموبايل: ${filterType}`);
+
+    // تحديث الفلتر الحالي
+    if (currentPropertyTypeFilter === filterType) {
+        // إلغاء الفلتر إذا تم الضغط على نفس الزر
+        currentPropertyTypeFilter = null;
+        console.log('🔄 تم إلغاء فلتر نوع العقار');
+    } else {
+        currentPropertyTypeFilter = filterType;
+        console.log(`✅ تم تطبيق فلتر: ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}`);
+    }
+
+    // إعادة إنشاء النافذة مع الفلتر الجديد
+    showMobilePropertiesModal();
+
+    // تحديث قائمة العقارات الجانبية أيضاً
+    initPropertyList(currentCountry);
+}
+
+// دالة إعادة تعيين فلتر نوع العقار
+function resetPropertyTypeFilter() {
+    currentPropertyTypeFilter = null;
+    console.log('🔄 تم إعادة تعيين فلتر نوع العقار');
+}
+
+// دالة اختبار لإجبار إظهار فلاتر نوع العقار
+function forceShowPropertyTypeFilters() {
+    console.log('🔧 إجبار إظهار فلاتر نوع العقار...');
+
+    const container = document.getElementById('propertyList');
+    if (!container) {
+        console.error('❌ عنصر propertyList غير موجود');
+        return;
+    }
+
+    // البحث عن الفلاتر الموجودة
+    let existingFilters = container.querySelector('.property-type-filters');
+    if (existingFilters) {
+        console.log('🔍 تم العثور على فلاتر موجودة، سيتم إزالتها وإعادة إنشاؤها');
+        existingFilters.remove();
+    }
+
+    // إنشاء الفلاتر من جديد
+    const filtersContainer = document.createElement('div');
+    filtersContainer.className = 'property-type-filters';
+    filtersContainer.style.cssText = `
+        display: flex !important;
+        gap: 8px !important;
+        margin-bottom: 15px !important;
+        padding: 0 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        background: #f8f9fa !important;
+        border-radius: 8px !important;
+        padding: 10px !important;
+    `;
+
+    // زر المباني
+    const buildingsBtn = document.createElement('button');
+    buildingsBtn.innerHTML = '<i class="fas fa-building"></i> المباني';
+    buildingsBtn.style.cssText = `
+        flex: 1 !important;
+        padding: 10px 15px !important;
+        border: 2px solid #007bff !important;
+        background: ${currentPropertyTypeFilter === 'buildings' ? '#007bff' : 'white'} !important;
+        color: ${currentPropertyTypeFilter === 'buildings' ? 'white' : '#007bff'} !important;
+        border-radius: 8px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+    `;
+    buildingsBtn.onclick = () => filterPropertiesByType('buildings');
+
+    // زر الأراضي
+    const landsBtn = document.createElement('button');
+    landsBtn.innerHTML = '<i class="fas fa-mountain"></i> الأراضي';
+    landsBtn.style.cssText = `
+        flex: 1 !important;
+        padding: 10px 15px !important;
+        border: 2px solid #28a745 !important;
+        background: ${currentPropertyTypeFilter === 'lands' ? '#28a745' : 'white'} !important;
+        color: ${currentPropertyTypeFilter === 'lands' ? 'white' : '#28a745'} !important;
+        border-radius: 8px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+    `;
+    landsBtn.onclick = () => filterPropertiesByType('lands');
+
+    filtersContainer.appendChild(buildingsBtn);
+    filtersContainer.appendChild(landsBtn);
+
+    // إضافة الفلاتر في بداية الحاوية
+    container.insertBefore(filtersContainer, container.firstChild);
+
+    console.log('✅ تم إجبار إظهار فلاتر نوع العقار');
+}
+
+// استدعاء الدالة تلقائياً عند تحميل الصفحة
+if (typeof window !== 'undefined') {
+    window.forceShowPropertyTypeFilters = forceShowPropertyTypeFilters;
+}
+
+// دالة تحديث حالة فلاتر نوع العقار
+function updatePropertyTypeFiltersState() {
+    console.log('🔄 تحديث حالة فلاتر نوع العقار...');
+
+    // البحث عن أزرار الفلاتر
+    const buildingsBtn = document.querySelector('.property-filter-btn.buildings-filter');
+    const landsBtn = document.querySelector('.property-filter-btn.lands-filter');
+
+    if (buildingsBtn) {
+        // تحديث زر المباني
+        const isActive = currentPropertyTypeFilter === 'buildings';
+        buildingsBtn.style.background = isActive ? '#007bff' : 'white';
+        buildingsBtn.style.color = isActive ? 'white' : '#007bff';
+        console.log('🏢 تم تحديث زر المباني:', isActive ? 'نشط' : 'غير نشط');
+    } else {
+        console.warn('⚠️ زر المباني غير موجود');
+    }
+
+    if (landsBtn) {
+        // تحديث زر الأراضي
+        const isActive = currentPropertyTypeFilter === 'lands';
+        landsBtn.style.background = isActive ? '#28a745' : 'white';
+        landsBtn.style.color = isActive ? 'white' : '#28a745';
+        console.log('🏔️ تم تحديث زر الأراضي:', isActive ? 'نشط' : 'غير نشط');
+    } else {
+        console.warn('⚠️ زر الأراضي غير موجود');
+    }
+
+    console.log('✅ تم تحديث حالة فلاتر نوع العقار');
 }
 
 // دالة تطبيق الترتيب الثابت للعقارات
@@ -5518,6 +5820,9 @@ function selectCountry(country) {
     // مسح البحث العام تلقائياً عند تغيير المدينة
     clearGlobalSearchOnNavigation();
 
+    // إعادة تعيين فلتر نوع العقار عند تغيير المدينة
+    resetPropertyTypeFilter();
+
     // عند اختيار "الكل" أزل كل الفلاتر
     if (!country || country === 'الكل') {
         currentCountry = null;
@@ -5674,6 +5979,8 @@ function selectProperty(propertyName) {
 
 // تعيين فلتر الحالة
 function setStatusFilter(status, fromSearch = false) {
+    console.log(`🔄 تطبيق فلتر الحالة: ${status}`);
+
     filterStatus = status;
 
     // إذا لم يتم استدعاؤها من البحث، فهذا يعني أنها تم تطبيقها يدوياً
@@ -5681,6 +5988,10 @@ function setStatusFilter(status, fromSearch = false) {
         statusFilterAppliedFromSearch = false;
     }
 
+    // تحديث activeFilters أيضاً
+    activeFilters.status = status || '';
+
+    // تحديث البيانات فوراً
     renderData();
 
     // تحديث عرض الفلاتر النشطة
@@ -5694,6 +6005,42 @@ function setStatusFilter(status, fromSearch = false) {
 
     // حفظ الحالة بعد تغيير فلتر الحالة
     saveAppState();
+
+    console.log(`✅ تم تطبيق فلتر الحالة: ${status || 'الكل'}`);
+}
+
+// متغير لمنع التداخل في تطبيق فلاتر الحالة
+let statusFilterProcessing = false;
+
+// دالة toggle لفلتر الحالة مع منع التداخل
+function toggleStatusFilter(status) {
+    // منع التداخل
+    if (statusFilterProcessing) {
+        console.log('⏳ فلتر الحالة قيد المعالجة، تجاهل النقر...');
+        return;
+    }
+
+    statusFilterProcessing = true;
+    console.log(`🔄 Toggle فلتر الحالة: ${status}`);
+
+    try {
+        // إذا كان الفلتر نشطاً، قم بإلغائه
+        if (filterStatus === status) {
+            console.log(`❌ إلغاء فلتر الحالة: ${status}`);
+            setStatusFilter(null);
+        } else {
+            // إذا لم يكن نشطاً، قم بتطبيقه
+            console.log(`✅ تطبيق فلتر الحالة: ${status}`);
+            setStatusFilter(status);
+        }
+    } catch (error) {
+        console.error('❌ خطأ في toggle فلتر الحالة:', error);
+    } finally {
+        // إعادة تعيين المتغير بعد تأخير قصير
+        setTimeout(() => {
+            statusFilterProcessing = false;
+        }, 300);
+    }
 }
 
 // دالة لتحديث حالة أزرار الحالة في الواجهة
@@ -6326,6 +6673,57 @@ function updateMobileMenuCounts(data) {
     updateAllFilterButtonsState();
 }
 
+// دالة لحساب إحصائيات فئة معينة (مباني أو أراضي)
+function calculateCategoryStats(data, isLandCategory) {
+    let totalUnits = 0;
+    let emptyUnits = 0;
+    let tenants = 0;
+    let rentedUnits = 0;
+
+    // تجميع الوحدات الفريدة
+    const uniqueUnits = new Set();
+    const uniqueContracts = {};
+
+    data.forEach(property => {
+        const propertyType = property['نوع العقار'];
+        const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+
+        // تصفية حسب الفئة المطلوبة
+        if (isLandCategory !== isLandType) {
+            return; // تخطي هذا العقار إذا لم يكن من الفئة المطلوبة
+        }
+
+        // حساب عدد الوحدات الفريدة
+        const unitKey = `${property['اسم العقار']}_${property['رقم  الوحدة ']}`;
+        if (property['رقم  الوحدة '] && property['رقم  الوحدة '].toString().trim() !== '') {
+            uniqueUnits.add(unitKey);
+        }
+
+        // حساب الوحدات الفارغة
+        if (!property['اسم المستأجر'] || property['اسم المستأجر'].toString().trim() === '') {
+            emptyUnits++;
+            return;
+        }
+
+        // حساب المستأجرين (عقود فريدة)
+        const contractKey = property['رقم العقد'];
+        if (contractKey && contractKey.toString().trim() !== '' && !uniqueContracts[contractKey]) {
+            uniqueContracts[contractKey] = true;
+            tenants++;
+        }
+    });
+
+    totalUnits = uniqueUnits.size;
+    rentedUnits = totalUnits - emptyUnits;
+
+    return {
+        totalUnits,
+        emptyUnits,
+        tenants,
+        rentedUnits
+    };
+}
+
 // عرض الإحصائيات - مع حساب ذكي للإجمالي
 function renderTotals(data) {
     const container = document.getElementById('totalContainer');
@@ -6416,33 +6814,64 @@ function renderTotals(data) {
     console.log(`   المجموع: ${countActive + countPending + countExpired}`);
     console.log(`   الفرق: ${tenantsCount - (countActive + countPending + countExpired)}`);
 
-    // إنشاء 3 بطاقات إحصائيات للشاشات الكبيرة
+    // إنشاء جدول إحصائيات المباني والأراضي للشاشات الكبيرة
     if (window.innerWidth > 900) {
-        // البطاقة الأولى: إحصائيات الوحدات
-        const unitsCard = document.createElement('div');
-        unitsCard.className = 'total-card';
-        unitsCard.innerHTML = `
-            <h3><i class="fas fa-building"></i> إحصائيات الوحدات</h3>
-            <div class="stat-grid">
-                <div class="stat-item">
-                    <div class="stat-value">${totalUnits}</div>
-                    <div class="stat-label">عدد الوحدات</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${tenantsCount}</div>
-                    <div class="stat-label">عدد المستأجرين</div>
-                </div>
-                <div class="stat-item clickable-empty-units" style="cursor: pointer;">
-                    <div class="stat-value">${countEmpty}</div>
-                    <div class="stat-label">الوحدات الفارغة</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${activeCount}</div>
-                    <div class="stat-label">الوحدات المؤجرة</div>
-                </div>
+        console.log('🏗️ إنشاء جدول إحصائيات المباني والأراضي للشاشات الكبيرة');
+        console.log('📊 عدد البيانات المرسلة:', data.length);
+
+        // حساب الإحصائيات حسب نوع العقار (مباني vs أراضي)
+        const buildingStats = calculateCategoryStats(data, false); // مباني (ليس أرض أو حوش)
+        const landStats = calculateCategoryStats(data, true); // أراضي (أرض أو حوش)
+
+        console.log('📊 إحصائيات المباني:', buildingStats);
+        console.log('📊 إحصائيات الأراضي:', landStats);
+        console.log('📊 إجمالي الوحدات:', buildingStats.totalUnits + landStats.totalUnits);
+
+        // إنشاء جدول إحصائيات المباني والأراضي
+        const buildingLandStatsCard = document.createElement('div');
+        buildingLandStatsCard.className = 'total-card building-land-stats';
+        buildingLandStatsCard.innerHTML = `
+            <h3><i class="fas fa-chart-bar"></i> إحصائيات المباني والأراضي</h3>
+            <div class="building-land-table-container">
+                <table class="building-land-stats-table">
+                    <thead>
+                        <tr>
+                            <th class="metric-header">المؤشر</th>
+                            <th class="buildings-header">المباني</th>
+                            <th class="lands-header">الأراضي</th>
+                            <th class="total-header">الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="metric-label">عدد الوحدات</td>
+                            <td class="buildings-value">${buildingStats.totalUnits}</td>
+                            <td class="lands-value">${landStats.totalUnits}</td>
+                            <td class="total-value">${buildingStats.totalUnits + landStats.totalUnits}</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-label">عدد الفارغة</td>
+                            <td class="buildings-value">${buildingStats.emptyUnits}</td>
+                            <td class="lands-value">${landStats.emptyUnits}</td>
+                            <td class="total-value">${buildingStats.emptyUnits + landStats.emptyUnits}</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-label">عدد المستأجرين</td>
+                            <td class="buildings-value">${buildingStats.tenants}</td>
+                            <td class="lands-value">${landStats.tenants}</td>
+                            <td class="total-value">${buildingStats.tenants + landStats.tenants}</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-label">الوحدات المؤجرة</td>
+                            <td class="buildings-value">${buildingStats.rentedUnits}</td>
+                            <td class="lands-value">${landStats.rentedUnits}</td>
+                            <td class="total-value">${buildingStats.rentedUnits + landStats.rentedUnits}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         `;
-        container.appendChild(unitsCard);
+        container.appendChild(buildingLandStatsCard);
 
         // البطاقة الثانية: حالات العقود
         const statusCard = document.createElement('div');
@@ -6518,11 +6947,14 @@ function renderTotals(data) {
         addTotalItem(container, 'إجمالي تجاري بعد الضريبة', `<i class=\"fas fa-coins\" style=\"color:#05940e;\"></i> ${afterTaxCommercial.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'after-taxonly-stat');
         addTotalItem(container, 'إجمالي سكني', `<i class=\"fas fa-home\" style=\"color:#f59e42;\"></i> ${totalResidential.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'residential-stat');
     }
-    // رقم الصك ومساحة الصك عند تحديد عقار
+    // رقم الصك ومساحة الصك عند تحديد عقار (بدون شرط رقم العقد)
     const uniqueContractsList = {};
     data.forEach(property => {
-        if (property['رقم العقد'] && property['اسم العقار']) {
-            const key = `${property['رقم العقد']}_${property['اسم العقار']}`;
+        // تغيير الشرط: يكفي وجود اسم العقار فقط، لا نحتاج رقم عقد
+        if (property['اسم العقار']) {
+            // استخدام اسم العقار كمفتاح أساسي، مع رقم العقد إذا وُجد
+            const contractKey = property['رقم العقد'] || 'no_contract';
+            const key = `${contractKey}_${property['اسم العقار']}`;
             if (!uniqueContractsList[key]) uniqueContractsList[key] = property;
         }
     });
@@ -6595,6 +7027,8 @@ function updateMobilePropertyName() {
         propertyHeaderContainer.style.opacity = '0';
     }
 }
+
+
 
 // عرض الإحصائيات للجوال - مع حساب ذكي للإجمالي
 function renderMobileTotals(data) {
@@ -6676,54 +7110,213 @@ function renderMobileTotals(data) {
     const vat = taxableBase * 0.15;
     const afterTaxCommercial = taxableBase + vat;
 
-    // إضافة نفس الإحصائيات للموبايل
-    addTotalItem(container, 'عدد الوحدات', totalUnits, 'units-stat');
-    addTotalItem(container, 'عدد المستأجرين', tenantsCount, 'tenants-stat');
-    addTotalItem(container, 'عدد الوحدات الفارغة', `<i class="fas fa-minus-circle"></i> ${countEmpty}`, 'empty-stat clickable-empty-units');
-    addTotalItem(container, 'الحالي (فعال + على وشك)', `<i class="fas fa-users" style="color:#28a745;"></i> ${countActive + countPending}`, 'current-stat');
-    addTotalItem(container, 'الفعال', countActive, 'active-stat');
-    addTotalItem(container, 'المنتهي', countExpired, 'expired-stat');
-    addTotalItem(container, 'على وشك', countPending, 'pending-stat');
-    addTotalItem(container, 'إجمالي تجاري قبل الضريبة', `<i class="fas fa-cash-register" style="color:#2a4b9b;"></i> ${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'taxable-base-stat');
-    addTotalItem(container, 'ضريبة التجاري', `<i class="fas fa-receipt" style="color:#e46e6d;"></i> ${vat.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'vat-stat');
-    addTotalItem(container, 'إجمالي تجاري بعد الضريبة', `<i class="fas fa-coins" style="color:#05940e;"></i> ${afterTaxCommercial.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'after-taxonly-stat');
-    addTotalItem(container, 'إجمالي سكني', `<i class="fas fa-home" style="color:#f59e42;"></i> ${totalResidential.toLocaleString(undefined, {maximumFractionDigits:2})} ريال`, 'residential-stat');
+    // 1. إحصائيات المباني والأراضي (الجزء الأول) - جدول من 4 أعمدة
+    console.log('🏗️ إنشاء جدول إحصائيات المباني والأراضي للشاشات الصغيرة');
+    console.log('📊 عدد البيانات المرسلة:', data.length);
 
+    // حساب الإحصائيات حسب نوع العقار (مباني vs أراضي)
+    const buildingStats = calculateCategoryStats(data, false); // مباني (ليس أرض أو حوش)
+    const landStats = calculateCategoryStats(data, true); // أراضي (أرض أو حوش)
+
+    console.log('📊 إحصائيات المباني:', buildingStats);
+    console.log('📊 إحصائيات الأراضي:', landStats);
+    console.log('📊 إجمالي الوحدات:', buildingStats.totalUnits + landStats.totalUnits);
+
+    const unitsSection = document.createElement('div');
+    unitsSection.className = 'mobile-stats-section units-section';
+    unitsSection.innerHTML = `
+        <div class="section-header">
+            <h3><i class="fas fa-chart-bar"></i> إحصائيات المباني والأراضي</h3>
+        </div>
+        <div class="section-content">
+            <div class="building-land-table-container">
+                <table class="building-land-stats-table mobile-table">
+                    <thead>
+                        <tr>
+                            <th class="metric-header">المؤشر</th>
+                            <th class="buildings-header">المباني</th>
+                            <th class="lands-header">الأراضي</th>
+                            <th class="total-header">الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="metric-label">عدد الوحدات</td>
+                            <td class="buildings-value">${buildingStats.totalUnits}</td>
+                            <td class="lands-value">${landStats.totalUnits}</td>
+                            <td class="total-value">${buildingStats.totalUnits + landStats.totalUnits}</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-label">عدد الفارغة</td>
+                            <td class="buildings-value">${buildingStats.emptyUnits}</td>
+                            <td class="lands-value">${landStats.emptyUnits}</td>
+                            <td class="total-value clickable-empty-units" style="cursor: pointer;">
+                                <i class="fas fa-minus-circle"></i> ${buildingStats.emptyUnits + landStats.emptyUnits}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="metric-label">عدد المستأجرين</td>
+                            <td class="buildings-value">${buildingStats.tenants}</td>
+                            <td class="lands-value">${landStats.tenants}</td>
+                            <td class="total-value">${buildingStats.tenants + landStats.tenants}</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-label">الوحدات المؤجرة</td>
+                            <td class="buildings-value">${buildingStats.rentedUnits}</td>
+                            <td class="lands-value">${landStats.rentedUnits}</td>
+                            <td class="total-value">${buildingStats.rentedUnits + landStats.rentedUnits}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    container.appendChild(unitsSection);
+
+    // إضافة خط فاصل
+    const divider1 = document.createElement('div');
+    divider1.className = 'mobile-stats-divider';
+    container.appendChild(divider1);
+
+    // 2. إحصائيات العقود (الجزء الثاني) - Grid من عمودين
+    const contractsSection = document.createElement('div');
+    contractsSection.className = 'mobile-stats-section contracts-section';
+    contractsSection.innerHTML = `
+        <div class="section-header">
+            <h3><i class="fas fa-file-contract"></i> إحصائيات العقود</h3>
+        </div>
+        <div class="section-content grid-two-columns">
+            <div class="total-item current-stat">
+                <span class="total-label">الحالي (فعال + على وشك)</span>
+                <span class="total-value"><i class="fas fa-users" style="color:#28a745;"></i> ${countActive + countPending}</span>
+            </div>
+            <div class="total-item active-stat">
+                <span class="total-label">الفعال</span>
+                <span class="total-value">${countActive}</span>
+            </div>
+            <div class="total-item pending-stat">
+                <span class="total-label">على وشك</span>
+                <span class="total-value">${countPending}</span>
+            </div>
+            <div class="total-item expired-stat">
+                <span class="total-label">المنتهي</span>
+                <span class="total-value">${countExpired}</span>
+            </div>
+        </div>
+    `;
+    container.appendChild(contractsSection);
+
+    // إضافة خط فاصل
+    const divider2 = document.createElement('div');
+    divider2.className = 'mobile-stats-divider';
+    container.appendChild(divider2);
+
+    // 3. الإحصائيات المالية (الجزء الثالث) - Grid من عمودين
+    const financialSection = document.createElement('div');
+    financialSection.className = 'mobile-stats-section financial-section';
+    financialSection.innerHTML = `
+        <div class="section-header">
+            <h3><i class="fas fa-money-bill-wave"></i> الإحصائيات المالية</h3>
+        </div>
+        <div class="section-content grid-two-columns">
+            <div class="total-item taxable-base-stat">
+                <span class="total-label">إجمالي تجاري قبل الضريبة</span>
+                <span class="total-value"><i class="fas fa-cash-register" style="color:#2a4b9b;"></i> ${taxableBase.toLocaleString(undefined, {maximumFractionDigits:2})} ريال</span>
+            </div>
+            <div class="total-item vat-stat">
+                <span class="total-label">ضريبة التجاري</span>
+                <span class="total-value"><i class="fas fa-receipt" style="color:#e46e6d;"></i> ${vat.toLocaleString(undefined, {maximumFractionDigits:2})} ريال</span>
+            </div>
+            <div class="total-item after-taxonly-stat">
+                <span class="total-label">إجمالي تجاري بعد الضريبة</span>
+                <span class="total-value"><i class="fas fa-coins" style="color:#05940e;"></i> ${afterTaxCommercial.toLocaleString(undefined, {maximumFractionDigits:2})} ريال</span>
+            </div>
+            <div class="total-item residential-stat">
+                <span class="total-label">إجمالي سكني</span>
+                <span class="total-value"><i class="fas fa-home" style="color:#f59e42;"></i> ${totalResidential.toLocaleString(undefined, {maximumFractionDigits:2})} ريال</span>
+            </div>
+        </div>
+    `;
+    container.appendChild(financialSection);
+
+    // إضافة خط فاصل
+    const divider3 = document.createElement('div');
+    divider3.className = 'mobile-stats-divider';
+    container.appendChild(divider3);
+
+    // 4. معلومات الصكوك (الجزء الرابع)
     // إضافة معلومات الصك للشاشات الكبيرة دائماً، وللجوال عند اختيار عقار محدد
     const shouldShowDeedInfo = !isMobileDevice() || currentProperty;
 
     console.log(`📱 معلومات الصك - الجهاز: ${isMobileDevice() ? 'جوال' : 'شاشة كبيرة'}, العقار المختار: ${currentProperty || 'لا يوجد'}, سيتم العرض: ${shouldShowDeedInfo}`);
 
     if (shouldShowDeedInfo) {
-        // 🆕 إضافة تفاصيل الصك للإحصائيات
+        // جمع البيانات الفريدة للصكوك (بدون شرط رقم العقد)
         const uniqueContractsList = {};
         data.forEach(property => {
-            if (property['رقم العقد'] && property['اسم العقار']) {
-                const key = `${property['رقم العقد']}_${property['اسم العقار']}`;
+            // تغيير الشرط: يكفي وجود اسم العقار فقط، لا نحتاج رقم عقد
+            if (property['اسم العقار']) {
+                // استخدام اسم العقار كمفتاح أساسي، مع رقم العقد إذا وُجد
+                const contractKey = property['رقم العقد'] || 'no_contract';
+                const key = `${contractKey}_${property['اسم العقار']}`;
                 if (!uniqueContractsList[key]) uniqueContractsList[key] = property;
             }
         });
         const uniqueList = Object.values(uniqueContractsList);
 
-        // إضافة رقم الصك إذا وُجد في البيانات المعروضة
+        // البحث عن معلومات الصك
         const firstDeedNumber = uniqueList.find(p => p['رقم الصك'] && p['رقم الصك'].toString().trim() !== '');
-        if (firstDeedNumber && firstDeedNumber['رقم الصك']) {
-            const cssClass = isMobileDevice() ? 'deed-number-stat mobile-deed-info' : 'deed-number-stat desktop-deed-info';
-            addTotalItem(container, 'رقم الصك', `<i class="fas fa-file-contract" style="color:#dc3545;"></i> ${firstDeedNumber['رقم الصك']}`, cssClass);
-        }
-
-        // إضافة مساحة الصك إذا وُجدت في البيانات المعروضة
         const firstDeedArea = uniqueList.find(p => p['مساحةالصك'] && !isNaN(parseFloat(p['مساحةالصك'])));
-        if (firstDeedArea && firstDeedArea['مساحةالصك']) {
-            const cssClass = isMobileDevice() ? 'deed-area-stat mobile-deed-info' : 'deed-area-stat desktop-deed-info';
-            addTotalItem(container, 'مساحة الصك', `<i class="fas fa-ruler-combined" style="color:#fd7e14;"></i> ${parseFloat(firstDeedArea['مساحةالصك']).toLocaleString()} م²`, cssClass);
-        }
-
-        // إضافة السجل العيني إذا وُجد في البيانات المعروضة
         const firstSijil = uniqueList.find(p => p['السجل العيني '] && p['السجل العيني '].toString().trim() !== '');
-        if (firstSijil && firstSijil['السجل العيني ']) {
-            const cssClass = isMobileDevice() ? 'registry-stat mobile-deed-info' : 'registry-stat desktop-deed-info';
-            addTotalItem(container, 'السجل العيني', `<i class="fas fa-clipboard-list" style="color:#28a745;"></i> ${firstSijil['السجل العيني '].toString().trim()}`, cssClass);
+
+        // إنشاء قسم الصكوك فقط إذا وُجدت معلومات
+        if (firstDeedNumber || firstDeedArea || firstSijil) {
+            const deedsSection = document.createElement('div');
+            deedsSection.className = 'mobile-stats-section deeds-section';
+
+            let deedsContent = `
+                <div class="section-header">
+                    <h3><i class="fas fa-file-alt"></i> معلومات الصكوك</h3>
+                </div>
+                <div class="section-content grid-two-columns">
+            `;
+
+            // إضافة رقم الصك إذا وُجد
+            if (firstDeedNumber && firstDeedNumber['رقم الصك']) {
+                deedsContent += `
+                    <div class="total-item deed-number-stat">
+                        <span class="total-label">رقم الصك</span>
+                        <span class="total-value"><i class="fas fa-file-contract" style="color:#dc3545;"></i> ${firstDeedNumber['رقم الصك']}</span>
+                    </div>
+                `;
+            }
+
+            // إضافة مساحة الصك إذا وُجدت
+            if (firstDeedArea && firstDeedArea['مساحةالصك']) {
+                deedsContent += `
+                    <div class="total-item deed-area-stat">
+                        <span class="total-label">مساحة الصك</span>
+                        <span class="total-value"><i class="fas fa-ruler-combined" style="color:#fd7e14;"></i> ${parseFloat(firstDeedArea['مساحةالصك']).toLocaleString()} م²</span>
+                    </div>
+                `;
+            }
+
+            // إضافة السجل العيني إذا وُجد
+            if (firstSijil && firstSijil['السجل العيني ']) {
+                deedsContent += `
+                    <div class="total-item registry-stat">
+                        <span class="total-label">السجل العيني</span>
+                        <span class="total-value"><i class="fas fa-clipboard-list" style="color:#28a745;"></i> ${firstSijil['السجل العيني '].toString().trim()}</span>
+                    </div>
+                `;
+            }
+
+            deedsContent += `
+                </div>
+            `;
+
+            deedsSection.innerHTML = deedsContent;
+            container.appendChild(deedsSection);
         }
     }
 
@@ -7149,12 +7742,24 @@ function renderCards(data) {
     sortedData.forEach(property => {
         const status = calculateStatus(property);
         let headerClass = '', badgeClass = 'badge-empty', badgeIcon = '', displayStatus = status.display;
-        
+
+        // التحقق من وجود اسم مستأجر بدون تاريخ بداية أو نهاية (حالة سماوية)
+        const hasTenantName = property['اسم المستأجر'] && property['اسم المستأجر'].trim() !== '';
+        const hasNoStartDate = !property['تاريخ البداية'] || property['تاريخ البداية'].trim() === '';
+        const hasNoEndDate = !property['تاريخ النهاية'] || property['تاريخ النهاية'].trim() === '';
+        const isSkyBlueCase = hasTenantName && (hasNoStartDate || hasNoEndDate);
+
         // إضافة حالة جديدة للقسط المنتهي مع استمرار العقد
         if (status.isInstallmentEnded) {
             headerClass = 'installment-ended-status';
             badgeClass = 'installment-ended-badge';
             badgeIcon = '<i class="fas fa-check-circle"></i>';
+        } else if (isSkyBlueCase) {
+            // حالة جديدة: اسم مستأجر موجود ولكن لا يوجد تاريخ - لون سماوي
+            headerClass = 'sky-blue-status';
+            badgeClass = 'sky-blue-badge';
+            badgeIcon = '<i class="fas fa-user"></i>';
+            displayStatus = 'مستأجر بدون تاريخ';
         } else {
             switch(status.final) {
                 case 'فعال': headerClass = 'active-status'; badgeClass = 'active-badge'; badgeIcon = '<i class="fas fa-check-circle"></i>'; break;
@@ -8183,7 +8788,7 @@ function showContractTypeFilter() {
     // إضافة خيار "الكل"
     const isAllActive = !contractTypeFilter;
     html += `
-        <button onclick="setContractTypeFilter(null); closeContractTypeFilterModal();"
+        <button onclick="if(contractTypeFilter) { toggleContractTypeFilter(contractTypeFilter); } closeContractTypeFilterModal();"
                 class="contract-type-btn ${isAllActive ? 'active' : ''}"
                 style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
                        transition: all 0.3s ease; border: 1px solid #e9ecef;
@@ -8198,7 +8803,7 @@ function showContractTypeFilter() {
     contractTypes.forEach(type => {
         const isActive = contractTypeFilter === type;
         html += `
-            <button onclick="setContractTypeFilter('${type}'); closeContractTypeFilterModal();"
+            <button onclick="toggleContractTypeFilter('${type}'); closeContractTypeFilterModal();"
                     class="contract-type-btn ${isActive ? 'active' : ''}"
                     style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
                            transition: all 0.3s ease; border: 1px solid #e9ecef;
@@ -9684,7 +10289,20 @@ async function updateCardAttachmentCount(cardElement, cardKey) {
 // نافذة اختيار المدينة لإدارة المرفقات
 function showAttachmentsManager() {
     closeModal();
+
+    // فحص تحميل البيانات
+    console.log('🔍 فحص تحميل البيانات لإدارة المرفقات:');
+    console.log('📊 عدد العقارات المحملة:', properties.length);
+    console.log('🏙️ عينة من البيانات:', properties.slice(0, 3));
+
+    if (properties.length === 0) {
+        console.warn('⚠️ لا توجد بيانات محملة! قد تحتاج لانتظار تحميل البيانات.');
+        alert('يرجى انتظار تحميل البيانات أولاً، ثم المحاولة مرة أخرى.');
+        return;
+    }
+
     const cities = getUniqueCountries().filter(c => c !== 'الكل');
+    console.log('🏙️ المدن المتاحة:', cities);
     let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
         <div class="modal-box attachments-manager-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
             <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -9755,14 +10373,39 @@ function closeAttachmentsManagerModal() {
 
 function showAttachmentsProperties(city) {
     closeModal();
-    const props = properties.filter(p => p.المدينة === city)
+
+    // تسجيل تشخيصي للدالة الأصلية
+    console.log(`🔍 showAttachmentsProperties تم استدعاؤها للمدينة: ${city}`);
+    console.log('📊 إجمالي العقارات في قاعدة البيانات:', properties.length);
+
+    const cityProperties = properties.filter(p => p.المدينة === city);
+    console.log(`🏙️ عقارات ${city}:`, cityProperties.length);
+
+    // عرض عينة من أنواع الوحدات
+    const unitTypes = cityProperties.map(p => p['نوع الوحدة']).filter(t => t);
+    console.log('🏠 أنواع الوحدات في المدينة:', [...new Set(unitTypes)]);
+
+    const props = cityProperties
         .map(p => p['اسم العقار'])
         .filter((v, i, arr) => v && arr.indexOf(v) === i);
+
+    console.log('📋 العقارات الفريدة:', props);
 
     let html = `<div class="modal-overlay" style="display:flex;">
         <div class="modal-box" style="max-width:420px;">
             <button class="close-modal" onclick="closeModal()" title="إغلاق">×</button>
             <h3>عقارات مدينة <span style="color:#2a4b9b">${city}</span></h3>
+
+            <!-- أزرار المباني والأراضي في الأعلى -->
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button onclick="showAttachmentsBuildingsModal('${city}')" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-city" style="margin-left: 5px;"></i>المباني
+                </button>
+                <button onclick="showAttachmentsLandsModal('${city}')" style="flex: 1; padding: 10px; background: #ffc107; color: #212529; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-map" style="margin-left: 5px;"></i>الأراضي
+                </button>
+            </div>
+
             <input type="text" id="attachmentsPropertySearch" placeholder="بحث عن عقار..." style="width:100%;margin-bottom:12px;padding:10px 12px;border-radius:8px;border:1.5px solid #d1d5db;font-size:1.05rem;">
             <div id="attachmentsPropertyList" style="max-height:350px;overflow:auto;display:flex;flex-direction:column;gap:8px;">`;
     props.forEach(prop => {
@@ -9791,6 +10434,172 @@ function showAttachmentsProperties(city) {
         if (e.target === this) closeModal();
     });
 }
+
+// دالة إدارة مرفقات المباني
+function showAttachmentsBuildingsModal(city) {
+    closeModal();
+
+    console.log(`🏗️ إدارة مرفقات المباني في ${city}`);
+
+    // الحصول على جميع العقارات في المدينة
+    const cityProperties = properties.filter(p => p.المدينة === city);
+    const allPropertyNames = [...new Set(cityProperties.map(p => p['اسم العقار']).filter(name => name))];
+
+    console.log(`📊 إجمالي العقارات في ${city}:`, allPropertyNames.length);
+
+    // استخدام نفس منطق فلترة المباني من النظام الأساسي
+    const buildingProperties = filterPropertiesByTypeLogic(allPropertyNames, 'buildings');
+
+    console.log(`🏗️ المباني المفلترة في ${city}:`, buildingProperties.length);
+    console.log('📋 قائمة المباني:', buildingProperties);
+
+    let html = `<div class="modal-overlay" style="display:flex;">
+        <div class="modal-box" style="max-width:420px;">
+            <button class="close-modal" onclick="closeModal()" title="إغلاق">×</button>
+            <h3 style="color: #28a745;">
+                <i class="fas fa-city" style="margin-left: 8px;"></i>
+                مرفقات المباني - <span style="color:#2a4b9b">${city}</span>
+                <span class="badge" style="background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${buildingProperties.length}</span>
+            </h3>
+
+            <!-- أزرار التنقل الثابتة -->
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button onclick="showAttachmentsBuildingsModal('${city}')" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; opacity: 1;">
+                    <i class="fas fa-city" style="margin-left: 5px;"></i>المباني
+                </button>
+                <button onclick="showAttachmentsLandsModal('${city}')" style="flex: 1; padding: 10px; background: #ffc107; color: #212529; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; opacity: 0.7;">
+                    <i class="fas fa-map" style="margin-left: 5px;"></i>الأراضي
+                </button>
+            </div>
+
+            <input type="text" id="attachmentsBuildingSearch" placeholder="بحث عن مبنى..." style="width:100%;margin-bottom:12px;padding:10px 12px;border-radius:8px;border:1.5px solid #d1d5db;font-size:1.05rem;">
+            <div id="attachmentsBuildingList" style="max-height:350px;overflow:auto;display:flex;flex-direction:column;gap:8px;">`;
+
+    if (buildingProperties.length === 0) {
+        html += `<div style="text-align: center; padding: 40px; color: #6c757d;">
+            <i class="fas fa-city" style="font-size: 3rem; color: #28a745; margin-bottom: 20px;"></i>
+            <p style="font-size: 1.1rem; margin-bottom: 10px;">لا توجد مباني</p>
+            <p style="font-size: 0.9rem;">لا توجد عقارات تحتوي على مباني في ${city}</p>
+        </div>`;
+    } else {
+        buildingProperties.forEach(prop => {
+            html += `<button onclick="showAttachmentsModal('${city}','${prop}')" class="filter-btn" style="width:100%;margin-bottom:0;text-align:right;font-weight:bold;font-size:1.1em;">
+                <i class="fas fa-city" style="color:#28a745;margin-left:8px;"></i>${prop}
+            </button>`;
+        });
+    }
+
+    html += `</div>
+        <div class="modal-actions">
+            <button onclick="closeModal()" class="modal-action-btn close-btn">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+        </div>
+    </div></div>`;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // بحث ديناميكي
+    setTimeout(() => {
+        const searchInput = document.getElementById('attachmentsBuildingSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const term = this.value.trim().toLowerCase();
+                document.querySelectorAll('#attachmentsBuildingList button').forEach(btn => {
+                    btn.style.display = btn.textContent.toLowerCase().includes(term) ? '' : 'none';
+                });
+            });
+        }
+
+        document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    }, 100);
+}
+
+// دالة إدارة مرفقات الأراضي
+function showAttachmentsLandsModal(city) {
+    closeModal();
+
+    console.log(`🗺️ إدارة مرفقات الأراضي في ${city}`);
+
+    // الحصول على جميع العقارات في المدينة
+    const cityProperties = properties.filter(p => p.المدينة === city);
+    const allPropertyNames = [...new Set(cityProperties.map(p => p['اسم العقار']).filter(name => name))];
+
+    console.log(`📊 إجمالي العقارات في ${city}:`, allPropertyNames.length);
+
+    // استخدام نفس منطق فلترة الأراضي من النظام الأساسي
+    const landProperties = filterPropertiesByTypeLogic(allPropertyNames, 'lands');
+
+    console.log(`🗺️ الأراضي المفلترة في ${city}:`, landProperties.length);
+    console.log('📋 قائمة الأراضي:', landProperties);
+
+    let html = `<div class="modal-overlay" style="display:flex;">
+        <div class="modal-box" style="max-width:420px;">
+            <button class="close-modal" onclick="closeModal()" title="إغلاق">×</button>
+            <h3 style="color: #ffc107;">
+                <i class="fas fa-map" style="margin-left: 8px;"></i>
+                مرفقات الأراضي - <span style="color:#2a4b9b">${city}</span>
+                <span class="badge" style="background: #ffc107; color: #212529; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${landProperties.length}</span>
+            </h3>
+
+            <!-- أزرار التنقل الثابتة -->
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button onclick="showAttachmentsBuildingsModal('${city}')" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; opacity: 0.7;">
+                    <i class="fas fa-city" style="margin-left: 5px;"></i>المباني
+                </button>
+                <button onclick="showAttachmentsLandsModal('${city}')" style="flex: 1; padding: 10px; background: #ffc107; color: #212529; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; opacity: 1;">
+                    <i class="fas fa-map" style="margin-left: 5px;"></i>الأراضي
+                </button>
+            </div>
+
+            <input type="text" id="attachmentsLandSearch" placeholder="بحث عن أرض أو حوش..." style="width:100%;margin-bottom:12px;padding:10px 12px;border-radius:8px;border:1.5px solid #d1d5db;font-size:1.05rem;">
+            <div id="attachmentsLandList" style="max-height:350px;overflow:auto;display:flex;flex-direction:column;gap:8px;">`;
+
+    if (landProperties.length === 0) {
+        html += `<div style="text-align: center; padding: 40px; color: #6c757d;">
+            <i class="fas fa-map" style="font-size: 3rem; color: #ffc107; margin-bottom: 20px;"></i>
+            <p style="font-size: 1.1rem; margin-bottom: 10px;">لا توجد أراضي</p>
+            <p style="font-size: 0.9rem;">لا توجد عقارات تحتوي على أراضي أو حوش في ${city}</p>
+        </div>`;
+    } else {
+        landProperties.forEach(prop => {
+            html += `<button onclick="showAttachmentsModal('${city}','${prop}')" class="filter-btn" style="width:100%;margin-bottom:0;text-align:right;font-weight:bold;font-size:1.1em;">
+                <i class="fas fa-map" style="color:#ffc107;margin-left:8px;"></i>${prop}
+            </button>`;
+        });
+    }
+
+    html += `</div>
+        <div class="modal-actions">
+            <button onclick="closeModal()" class="modal-action-btn close-btn">
+                <i class="fas fa-times"></i> إغلاق
+            </button>
+        </div>
+    </div></div>`;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // بحث ديناميكي
+    setTimeout(() => {
+        const searchInput = document.getElementById('attachmentsLandSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const term = this.value.trim().toLowerCase();
+                document.querySelectorAll('#attachmentsLandList button').forEach(btn => {
+                    btn.style.display = btn.textContent.toLowerCase().includes(term) ? '' : 'none';
+                });
+            });
+        }
+
+        document.querySelector('.modal-overlay:last-child').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    }, 100);
+}
+
+
 
 // دالة التكيف التلقائي مع المحتوى
 function adjustModalSizeBasedOnContent(attachmentCount) {
@@ -30972,7 +31781,7 @@ function showPropertyTypeFilter() {
     // إضافة خيار "الكل"
     const isAllActive = !propertyTypeFilter;
     html += `
-        <button onclick="setPropertyTypeFilter(null); closePropertyTypeFilterModal();"
+        <button onclick="if(propertyTypeFilter) { togglePropertyTypeFilter(propertyTypeFilter); } closePropertyTypeFilterModal();"
                 class="property-type-btn ${isAllActive ? 'active' : ''}"
                 style="width: 100%; padding: 12px; margin: 4px 0; border-radius: 8px; cursor: pointer;
                        transition: all 0.3s ease; border: 1px solid #e9ecef;
@@ -30987,7 +31796,7 @@ function showPropertyTypeFilter() {
     propertyTypes.forEach(type => {
         const isActive = propertyTypeFilter === type;
         html += `
-            <button onclick="setPropertyTypeFilter('${type}'); closePropertyTypeFilterModal();"
+            <button onclick="togglePropertyTypeFilter('${type}'); closePropertyTypeFilterModal();"
                     class="property-type-btn ${isActive ? 'active' : ''}"
                     style="width: 100%; padding: 12px; margin: 4px 0; border-radius: 8px; cursor: pointer;
                            transition: all 0.3s ease; border: 1px solid #e9ecef;
@@ -31061,6 +31870,57 @@ function setPropertyTypeFilter(type) {
     console.log(`🏷️ تم تطبيق فلتر نوع العقار: ${type || 'الكل'}`);
 }
 
+// دالة toggle لفلتر نوع العقار
+function togglePropertyTypeFilter(type) {
+    console.log(`🔄 Toggle فلتر نوع العقار: ${type}`);
+
+    // إذا كان الفلتر نشطاً، قم بإلغائه
+    if (propertyTypeFilter === type) {
+        console.log(`❌ إلغاء فلتر نوع العقار: ${type}`);
+        setPropertyTypeFilter(null);
+        window.currentPropertyType = 'الكل';
+    } else {
+        // إذا لم يكن نشطاً، قم بتطبيقه
+        console.log(`✅ تطبيق فلتر نوع العقار: ${type}`);
+        setPropertyTypeFilter(type);
+        window.currentPropertyType = type;
+    }
+}
+
+// دالة toggle لفلتر نوع العقد
+function toggleContractTypeFilter(type) {
+    console.log(`🔄 Toggle فلتر نوع العقد: ${type}`);
+
+    // إذا كان الفلتر نشطاً، قم بإلغائه
+    if (contractTypeFilter === type) {
+        console.log(`❌ إلغاء فلتر نوع العقد: ${type}`);
+        setContractTypeFilter(null);
+        window.currentContractType = 'الكل';
+    } else {
+        // إذا لم يكن نشطاً، قم بتطبيقه
+        console.log(`✅ تطبيق فلتر نوع العقد: ${type}`);
+        setContractTypeFilter(type);
+        window.currentContractType = type;
+    }
+}
+
+// دالة toggle لفلتر المالك
+function toggleOwnerFilter(owner) {
+    console.log(`🔄 Toggle فلتر المالك: ${owner}`);
+
+    // إذا كان الفلتر نشطاً، قم بإلغائه
+    if (ownerFilter === owner) {
+        console.log(`❌ إلغاء فلتر المالك: ${owner}`);
+        setOwnerFilter(null);
+        window.currentOwner = 'الكل';
+    } else {
+        // إذا لم يكن نشطاً، قم بتطبيقه
+        console.log(`✅ تطبيق فلتر المالك: ${owner}`);
+        setOwnerFilter(owner);
+        window.currentOwner = owner;
+    }
+}
+
 // دالة لاستدعاء فلتر نوع العقار من القائمة المنسدلة
 function showPropertyTypeFilterFromDropdown() {
     showPropertyTypeFilter();
@@ -31093,7 +31953,7 @@ function showOwnerFilter() {
     // إضافة خيار "الكل"
     const isAllActive = !activeFilters.owner || activeFilters.owner === '';
     html += `
-        <button onclick="setOwnerFilter(''); closeOwnerFilterModal();"
+        <button onclick="if(activeFilters.owner && activeFilters.owner !== '') { toggleOwnerFilter(activeFilters.owner); } closeOwnerFilterModal();"
                 class="owner-btn ${isAllActive ? 'active' : ''}"
                 style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
                        transition: all 0.3s ease; border: 1px solid #e9ecef;
@@ -31108,7 +31968,7 @@ function showOwnerFilter() {
     owners.forEach(owner => {
         const isActive = activeFilters.owner === owner;
         html += `
-            <button onclick="setOwnerFilter('${owner}'); closeOwnerFilterModal();"
+            <button onclick="toggleOwnerFilter('${owner}'); closeOwnerFilterModal();"
                     class="owner-btn ${isActive ? 'active' : ''}"
                     style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
                            transition: all 0.3s ease; border: 1px solid #e9ecef;
@@ -51524,17 +52384,47 @@ function showMobilePropertiesModal() {
     // ترتيب العقارات
     propertyNames.sort();
 
+    // تطبيق فلتر نوع العقار إذا كان نشطاً
+    let displayedPropertyNames = propertyNames;
+    if (currentPropertyTypeFilter) {
+        displayedPropertyNames = filterPropertiesByTypeLogic(propertyNames, currentPropertyTypeFilter);
+    }
+
     // إنشاء HTML للنافذة
     const cityText = currentCountry && currentCountry !== 'الكل' ? currentCountry : 'جميع المدن';
+    const filterText = currentPropertyTypeFilter === 'buildings' ? ' - المباني' :
+                      currentPropertyTypeFilter === 'lands' ? ' - الأراضي' : '';
+
+    // تحديد أبعاد النافذة حسب حجم الشاشة
+    const screenHeight = window.innerHeight;
+    const screenWidth = window.innerWidth;
+    const isVerySmallScreen = screenHeight <= 700 && screenWidth <= 500;
+    const isExtraSmallScreen = screenHeight <= 600 && screenWidth <= 500;
+
+    let modalOverlayStyle = "display: flex; z-index: 10000;";
+    let modalBoxStyle = "max-width: 500px; position: relative;";
+    let propertiesListStyle = "max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px;";
+
+    if (isExtraSmallScreen) {
+        modalOverlayStyle += " padding: 5px; align-items: flex-start; padding-top: 10px;";
+        modalBoxStyle += " max-height: calc(100vh - 20px); min-height: calc(100vh - 20px); margin: 0; display: flex; flex-direction: column; border-radius: 8px;";
+        propertiesListStyle = "flex: 1; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px; min-height: 250px;";
+    } else if (isVerySmallScreen) {
+        modalOverlayStyle += " padding: 10px; align-items: flex-start; padding-top: 20px;";
+        modalBoxStyle += " max-height: calc(100vh - 40px); min-height: calc(100vh - 40px); margin: 0; display: flex; flex-direction: column;";
+        propertiesListStyle = "flex: 1; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px; min-height: 300px;";
+    } else {
+        modalBoxStyle += " max-height: 80vh;";
+    }
 
     let html = `
-        <div class="modal-overlay" style="display: flex; z-index: 10000;">
-            <div class="modal-box properties-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+        <div class="modal-overlay" style="${modalOverlayStyle}">
+            <div class="modal-box properties-modal" style="${modalBoxStyle}">
 
                 <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
                     <i class="fas fa-building" style="color: #007bff;"></i>
-                    العقارات - ${cityText}
-                    <span class="badge" style="background: #007bff; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${propertyNames.length}</span>
+                    العقارات - ${cityText}${filterText}
+                    <span class="badge" style="background: #007bff; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${displayedPropertyNames.length}</span>
                 </h3>
 
                 <!-- قسم الفلاتر النشطة -->
@@ -51550,23 +52440,45 @@ function showMobilePropertiesModal() {
                     </button>
                 </div>
 
+                <!-- فلاتر نوع العقار -->
+                <div class="mobile-property-type-filters" style="display: flex; gap: 8px; margin-bottom: 15px;">
+                    <button class="mobile-property-filter-btn buildings-filter" onclick="filterMobilePropertiesByType('buildings')"
+                            style="flex: 1; padding: 10px 12px; border: 2px solid #007bff;
+                                   background: ${currentPropertyTypeFilter === 'buildings' ? '#007bff' : 'white'};
+                                   color: ${currentPropertyTypeFilter === 'buildings' ? 'white' : '#007bff'};
+                                   border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+                                   transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fas fa-building"></i> المباني
+                    </button>
+                    <button class="mobile-property-filter-btn lands-filter" onclick="filterMobilePropertiesByType('lands')"
+                            style="flex: 1; padding: 10px 12px; border: 2px solid #28a745;
+                                   background: ${currentPropertyTypeFilter === 'lands' ? '#28a745' : 'white'};
+                                   color: ${currentPropertyTypeFilter === 'lands' ? 'white' : '#28a745'};
+                                   border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+                                   transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fas fa-mountain"></i> الأراضي
+                    </button>
+                </div>
+
                 <div class="property-search-container" style="margin-bottom: 15px;">
                     <input type="text" id="mobilePropertiesSearch" placeholder="بحث في العقارات..."
                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
                 </div>
 
-                <div id="mobilePropertiesList" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px;">
+                <div id="mobilePropertiesList" style="${propertiesListStyle}">
     `;
 
-    if (propertyNames.length === 0) {
+    if (displayedPropertyNames.length === 0) {
+        const filterText = currentPropertyTypeFilter === 'buildings' ? 'مباني' :
+                          currentPropertyTypeFilter === 'lands' ? 'أراضي' : 'عقارات';
         html += `
             <div style="text-align: center; padding: 40px; color: #6c757d;">
                 <i class="fas fa-building" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i>
-                <p>لا توجد عقارات متاحة</p>
+                <p>لا توجد ${filterText} متاحة</p>
             </div>
         `;
     } else {
-        propertyNames.forEach(propertyName => {
+        displayedPropertyNames.forEach(propertyName => {
             const isActive = currentProperty === propertyName;
             const activeClass = isActive ? 'active' : '';
             const activeStyle = isActive ? 'background: #007bff; color: white;' : '';

@@ -2562,6 +2562,126 @@ main {
     font-weight: 500;
   }
 
+  /* أنماط جدول إحصائيات المباني والأراضي */
+  .building-land-stats {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .building-land-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+
+  .building-land-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: white;
+  }
+
+  .building-land-stats-table thead {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+  }
+
+  .building-land-stats-table th {
+    padding: 15px 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .building-land-stats-table th:last-child {
+    border-right: none;
+  }
+
+  .building-land-stats-table tbody tr {
+    transition: background-color 0.2s ease;
+  }
+
+  .building-land-stats-table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+
+  .building-land-stats-table tbody tr:hover {
+    background-color: #e3f2fd;
+  }
+
+  .building-land-stats-table td {
+    padding: 12px;
+    text-align: center;
+    border-right: 1px solid #e9ecef;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
+  }
+
+  .building-land-stats-table td:last-child {
+    border-right: none;
+  }
+
+  .building-land-stats-table .metric-label {
+    font-weight: 600;
+    color: #495057;
+    text-align: right;
+    background-color: #f1f3f4;
+  }
+
+  .building-land-stats-table .buildings-value {
+    color: #28a745;
+    font-weight: 600;
+  }
+
+  .building-land-stats-table .lands-value {
+    color: #fd7e14;
+    font-weight: 600;
+  }
+
+  .building-land-stats-table .total-value {
+    color: #007bff;
+    font-weight: 700;
+    background-color: #f8f9fa;
+  }
+
+  /* تحسينات للشاشات الصغيرة */
+  @media (max-width: 768px) {
+    .building-land-stats-table {
+      font-size: 0.8rem;
+    }
+
+    .building-land-stats-table th,
+    .building-land-stats-table td {
+      padding: 8px 6px;
+    }
+
+    .building-land-table-container {
+      margin: 0 -10px;
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   /* إخفاء زر إخفاء الـ sidebar في الشاشات الكبيرة فقط */
   .hide-sidebar-btn {
     display: none !important;
@@ -6625,43 +6745,166 @@ footer {
   
   /* تحسين عرض الإحصائيات على الشاشات الصغيرة */
   .mobile-totals {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    display: flex !important;
+    flex-direction: column;
+    gap: 0;
     justify-content: center;
     padding: 15px 20px;
     margin: 0 15px 15px 15px;
     max-width: calc(100% - 30px);
   }
-  
-  .mobile-totals .total-item {
+
+  /* أقسام الإحصائيات الجديدة */
+  .mobile-stats-section {
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(42,75,155,0.08);
-    padding: 12px 8px !important;
-    font-size: 0.9em;
+    margin-bottom: 15px;
+    overflow: hidden;
+    border: 1px solid #f3f4f6;
+  }
+
+  .mobile-stats-section .section-header {
+    background: linear-gradient(135deg, #2a4b9b, #1e3a8a);
+    color: white;
+    padding: 12px 15px;
+    margin: 0;
+  }
+
+  .mobile-stats-section .section-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white !important;
+  }
+
+  .mobile-stats-section .section-content {
+    padding: 10px;
     display: flex;
     flex-direction: column;
+    gap: 8px;
+  }
+
+  /* تخطيط Grid من عمودين للأقسام */
+  .mobile-stats-section .section-content.grid-two-columns {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  /* ضمان العرض الكامل للجدول */
+  .mobile-stats-section .section-content .building-land-table-container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* خطوط الفصل بين الأقسام */
+  .mobile-stats-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+    margin: 10px 0;
+    opacity: 0.7;
+  }
+
+  .mobile-totals .total-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 10px 12px !important;
+    font-size: 0.9em;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 5px;
-    border: 1px solid #f3f4f6;
-    min-height: 75px;
+    text-align: left;
+    gap: 10px;
+    border: 1px solid #e9ecef;
+    min-height: auto;
+    transition: all 0.2s ease;
+  }
+
+  /* تحسين عناصر الإحصائيات داخل الأقسام */
+  .mobile-stats-section .total-item {
+    background: #f8f9fa !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    padding: 10px 12px !important;
+    font-size: 0.9em !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 10px !important;
+    border: 1px solid #e9ecef !important;
+    min-height: auto !important;
+    transition: all 0.2s ease !important;
+    margin: 0 !important;
+  }
+
+  /* تحسين العناصر في Grid من عمودين */
+  .mobile-stats-section .grid-two-columns .total-item {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 6px !important;
+    padding: 12px 8px !important;
+    min-height: 70px !important;
+  }
+
+  .mobile-stats-section .grid-two-columns .total-item .total-label {
+    font-size: 0.75em !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    flex: none !important;
+  }
+
+  .mobile-stats-section .grid-two-columns .total-item .total-value {
+    font-size: 0.85em !important;
+    line-height: 1.3 !important;
+    text-align: center !important;
+    font-weight: 700 !important;
   }
   .mobile-totals .total-item .total-label {
-    font-weight: bold;
-    color: #2a4b9b;
-    font-size: 0.75em;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.85em;
     margin: 0;
-    line-height: 1.2;
+    line-height: 1.3;
+    flex: 1;
   }
   .mobile-totals .total-item .total-value {
-    font-weight: bold;
-    color: #222;
-    font-size: 1.15em;
+    font-weight: 700;
+    color: #212529;
+    font-size: 0.9em;
     margin: 0;
-    line-height: 1.1;
+    line-height: 1.2;
+    text-align: right;
+  }
+
+  /* تحسين النصوص داخل الأقسام */
+  .mobile-stats-section .total-item .total-label {
+    font-weight: 600 !important;
+    color: #495057 !important;
+    font-size: 0.85em !important;
+    margin: 0 !important;
+    line-height: 1.3 !important;
+    flex: 1 !important;
+  }
+  .mobile-stats-section .total-item .total-value {
+    font-weight: 700 !important;
+    color: #212529 !important;
+    font-size: 0.9em !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+    text-align: right !important;
   }
 
   /* التأكد من أن الروابط والأزرار تعمل بشكل صحيح */
@@ -6761,6 +7004,234 @@ footer {
   .mobile-totals .residential-stat { background: #dc5f0d !important; border-color: #f59e42 !important; }
   .mobile-totals .deed-number-stat { background: #f0f2f5 !important; border-color: #2a4b9b !important; }
   .mobile-totals .deed-area-stat { background: #f0f2f5 !important; border-color: #2a4b9b !important; }
+
+  /* ألوان مخصصة للأقسام الجديدة */
+  .units-section .section-header { background: linear-gradient(135deg, #6366f1, #4f46e5) !important; }
+  .contracts-section .section-header { background: linear-gradient(135deg, #059669, #047857) !important; }
+  .financial-section .section-header { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; }
+  .deeds-section .section-header { background: linear-gradient(135deg, #7c3aed, #6d28d9) !important; }
+
+  /* ضمان اللون الأبيض لجميع عناوين الأقسام */
+  .units-section .section-header h3,
+  .contracts-section .section-header h3,
+  .financial-section .section-header h3,
+  .deeds-section .section-header h3 {
+    color: white !important;
+  }
+
+  /* ضمان اللون الأبيض للأيقونات أيضاً */
+  .mobile-stats-section .section-header h3 i {
+    color: white !important;
+  }
+
+  /* تلوين محتوى المالية بالأبيض */
+  .mobile-stats-section.financial-section .total-item .total-label,
+  .mobile-stats-section.financial-section .total-item .total-value {
+    color: white !important;
+  }
+
+  /* تكبير خط محتوى الأقسام الثلاثة إلى 1.2rem */
+  .mobile-stats-section.contracts-section .total-item,
+  .mobile-stats-section.financial-section .total-item,
+  .mobile-stats-section.deeds-section .total-item {
+    font-size: 1.2rem !important;
+  }
+
+  .mobile-stats-section.contracts-section .total-item .total-label,
+  .mobile-stats-section.financial-section .total-item .total-label,
+  .mobile-stats-section.deeds-section .total-item .total-label {
+    font-size: 1rem !important;
+  }
+
+  .mobile-stats-section.contracts-section .total-item .total-value,
+  .mobile-stats-section.financial-section .total-item .total-value,
+  .mobile-stats-section.deeds-section .total-item .total-value {
+    font-size: 1.1rem !important;
+  }
+
+  /* تحسين hover للعناصر */
+  .mobile-stats-section .total-item:hover {
+    background: #e9ecef !important;
+    transform: translateX(-2px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+  }
+
+  /* أنماط جدول المباني والأراضي للشاشات الصغيرة */
+  .mobile-stats-section .building-land-table-container {
+    overflow-x: auto;
+    margin: 0;
+    border-radius: 8px;
+    background: #fff;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table {
+    width: 100%;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    table-layout: fixed;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #495057;
+    font-weight: 600;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    word-wrap: break-word;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table td {
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    background: #fff;
+    word-wrap: break-word;
+  }
+
+  /* توزيع عرض الأعمدة */
+  .mobile-stats-section .building-land-stats-table.mobile-table th:nth-child(1),
+  .mobile-stats-section .building-land-stats-table.mobile-table td:nth-child(1) {
+    width: 35%;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table th:nth-child(2),
+  .mobile-stats-section .building-land-stats-table.mobile-table td:nth-child(2) {
+    width: 20%;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table th:nth-child(3),
+  .mobile-stats-section .building-land-stats-table.mobile-table td:nth-child(3) {
+    width: 20%;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table th:nth-child(4),
+  .mobile-stats-section .building-land-stats-table.mobile-table td:nth-child(4) {
+    width: 25%;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table .metric-label {
+    background: #f8f9fa !important;
+    font-weight: 700;
+    color: #495057;
+    text-align: right;
+    padding-right: 12px;
+    font-size: 0.8rem;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table .buildings-value {
+    background: #e3f2fd !important;
+    color: #1565c0;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table .lands-value {
+    background: #f3e5f5 !important;
+    color: #7b1fa2;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table .total-value {
+    background: #e8f5e8 !important;
+    color: #2e7d32;
+    font-weight: 800;
+    font-size: 0.95rem;
+  }
+
+  /* تحسين عناوين الأعمدة */
+  .mobile-stats-section .building-land-stats-table.mobile-table .metric-header {
+    background: #f8f9fa !important;
+    color: #495057;
+    font-weight: 700;
+    text-align: right;
+    padding-right: 12px;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table .buildings-header {
+    background: #e3f2fd !important;
+    color: #1565c0;
+    font-weight: 700;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table .lands-header {
+    background: #f3e5f5 !important;
+    color: #7b1fa2;
+    font-weight: 700;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table .total-header {
+    background: #e8f5e8 !important;
+    color: #2e7d32;
+    font-weight: 800;
+  }
+
+  /* تحسين hover للجدول */
+  .mobile-stats-section .building-land-stats-table.mobile-table tbody tr:hover {
+    background: rgba(0,123,255,0.05) !important;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table tbody tr:hover td {
+    background: rgba(0,123,255,0.05) !important;
+  }
+
+  /* تحسين الخطوط والحدود */
+  .mobile-stats-section .building-land-stats-table.mobile-table {
+    border: 2px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table th:first-child,
+  .mobile-stats-section .building-land-stats-table.mobile-table td:first-child {
+    border-right: 2px solid #dee2e6;
+  }
+
+  .mobile-stats-section .building-land-stats-table.mobile-table th:last-child,
+  .mobile-stats-section .building-land-stats-table.mobile-table td:last-child {
+    border-left: 2px solid #dee2e6;
+  }
+
+  /* تحسين عرض الجدول في الشاشات الصغيرة جداً */
+  @media (max-width: 400px) {
+    .mobile-stats-section .building-land-stats-table.mobile-table {
+      font-size: 0.75rem;
+    }
+
+    .mobile-stats-section .building-land-stats-table.mobile-table th {
+      padding: 8px 6px;
+      font-size: 0.7rem;
+    }
+
+    .mobile-stats-section .building-land-stats-table.mobile-table td {
+      padding: 8px 6px;
+      font-size: 0.75rem;
+    }
+
+    .mobile-stats-section .building-land-stats-table.mobile-table .metric-label {
+      font-size: 0.7rem;
+      padding-right: 8px;
+    }
+
+    .mobile-stats-section .building-land-stats-table.mobile-table .buildings-value,
+    .mobile-stats-section .building-land-stats-table.mobile-table .lands-value {
+      font-size: 0.8rem;
+    }
+
+    .mobile-stats-section .building-land-stats-table.mobile-table .total-value {
+      font-size: 0.85rem;
+    }
+  }
   
   /* تحسين أزرار الإجراءات في المودال */
   .modal-actions {
@@ -6778,24 +7249,82 @@ footer {
 @media (max-width: 500px) {
   /* تحسين الإحصائيات للشاشات الصغيرة جداً */
   .mobile-totals {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    padding: 12px 15px;
+    padding: 10px 15px;
     margin: 0 10px 12px 10px;
   }
 
-  .mobile-totals .total-item {
-    padding: 8px 6px !important;
-    font-size: 0.85em;
-    min-height: 65px;
+  .mobile-stats-section {
+    margin-bottom: 12px;
   }
 
-  .mobile-totals .total-item .total-label {
-    font-size: 0.7em;
+  .mobile-stats-section .section-header {
+    padding: 10px 12px;
   }
 
-  .mobile-totals .total-item .total-value {
-    font-size: 1.05em;
+  .mobile-stats-section .section-header h3 {
+    font-size: 0.9rem;
+  }
+
+  .mobile-stats-section .section-content {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .mobile-stats-section .section-content.grid-two-columns {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .mobile-totals .total-item,
+  .mobile-stats-section .total-item {
+    padding: 8px 10px !important;
+    font-size: 0.85em !important;
+  }
+
+  .mobile-stats-section .grid-two-columns .total-item {
+    padding: 10px 6px !important;
+    min-height: 60px !important;
+  }
+
+  .mobile-totals .total-item .total-label,
+  .mobile-stats-section .total-item .total-label {
+    font-size: 0.8em !important;
+  }
+
+  .mobile-stats-section .grid-two-columns .total-item .total-label {
+    font-size: 0.7em !important;
+  }
+
+  .mobile-totals .total-item .total-value,
+  .mobile-stats-section .total-item .total-value {
+    font-size: 0.85em !important;
+  }
+
+  .mobile-stats-section .grid-two-columns .total-item .total-value {
+    font-size: 0.8em !important;
+  }
+
+  /* تعديل أحجام الخطوط للأقسام الثلاثة في الشاشات الصغيرة جداً */
+  .mobile-stats-section.contracts-section .total-item,
+  .mobile-stats-section.financial-section .total-item,
+  .mobile-stats-section.deeds-section .total-item {
+    font-size: 1rem !important;
+  }
+
+  .mobile-stats-section.contracts-section .total-item .total-label,
+  .mobile-stats-section.financial-section .total-item .total-label,
+  .mobile-stats-section.deeds-section .total-item .total-label {
+    font-size: 0.85rem !important;
+  }
+
+  .mobile-stats-section.contracts-section .total-item .total-value,
+  .mobile-stats-section.financial-section .total-item .total-value,
+  .mobile-stats-section.deeds-section .total-item .total-value {
+    font-size: 0.9rem !important;
+  }
+
+  .mobile-stats-divider {
+    margin: 8px 0;
   }
 
   /* تنسيق اسم العقار للشاشات الصغيرة جداً */
@@ -28085,44 +28614,425 @@ body.limited-user .restricted-dropdown-item::before {
 .statistics-totals {
     padding: 15px 20px;
     margin: 0 15px 15px 15px;
-    display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    display: flex !important;
+    flex-direction: column;
+    gap: 0;
     justify-content: center;
     max-width: calc(100% - 30px);
 }
 
-.statistics-totals .total-item {
+/* أقسام الإحصائيات في القائمة المنفصلة */
+.statistics-totals .mobile-stats-section {
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(42,75,155,0.08);
-    padding: 12px 8px !important;
-    font-size: 0.9em;
+    margin-bottom: 15px;
+    overflow: hidden;
+    border: 1px solid #f3f4f6;
+}
+
+.statistics-totals .mobile-stats-section .section-header {
+    background: linear-gradient(135deg, #2a4b9b, #1e3a8a);
+    color: white;
+    padding: 12px 15px;
+    margin: 0;
+}
+
+.statistics-totals .mobile-stats-section .section-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white !important;
+}
+
+.statistics-totals .mobile-stats-section .section-content {
+    padding: 10px;
     display: flex;
     flex-direction: column;
+    gap: 8px;
+}
+
+/* تخطيط Grid من عمودين للأقسام في قائمة الإحصائيات المنفصلة */
+.statistics-totals .mobile-stats-section .section-content.grid-two-columns {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px;
+}
+
+/* ضمان العرض الكامل للجدول في قائمة الإحصائيات المنفصلة */
+.statistics-totals .section-content .building-land-table-container {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.statistics-totals .total-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 10px 12px !important;
+    font-size: 0.9em;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 5px;
-    border: 1px solid #f3f4f6;
-    min-height: 75px;
+    text-align: left;
+    gap: 10px;
+    border: 1px solid #e9ecef;
+    min-height: auto;
     transition: all 0.3s ease;
+    margin: 0;
+}
+
+/* تحسين العناصر في Grid من عمودين - قائمة الإحصائيات المنفصلة */
+.statistics-totals .grid-two-columns .total-item {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 6px !important;
+    padding: 12px 8px !important;
+    min-height: 70px !important;
+}
+
+.statistics-totals .grid-two-columns .total-item .total-label {
+    font-size: 0.75em !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    flex: none !important;
+}
+
+.statistics-totals .grid-two-columns .total-item .total-value {
+    font-size: 0.85em !important;
+    line-height: 1.3 !important;
+    text-align: center !important;
+    font-weight: 700 !important;
 }
 
 .statistics-totals .total-item .total-label {
-    font-weight: bold;
-    color: #2a4b9b;
-    font-size: 1.2rem;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.85em;
     margin: 0;
-    line-height: 1.2;
+    line-height: 1.3;
+    flex: 1;
 }
 
 .statistics-totals .total-item .total-value {
-    font-weight: bold;
-    color: #222;
-    font-size: 1.15em;
+    font-weight: 700;
+    color: #212529;
+    font-size: 0.9em;
     margin: 0;
-    line-height: 1.1;
+    line-height: 1.2;
+    text-align: right;
+}
+
+/* خطوط الفصل في قائمة الإحصائيات المنفصلة */
+.statistics-totals .mobile-stats-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+    margin: 10px 0;
+    opacity: 0.7;
+}
+
+/* ألوان مخصصة للأقسام في قائمة الإحصائيات المنفصلة */
+.statistics-totals .units-section .section-header { background: linear-gradient(135deg, #6366f1, #4f46e5) !important; }
+.statistics-totals .contracts-section .section-header { background: linear-gradient(135deg, #059669, #047857) !important; }
+.statistics-totals .financial-section .section-header { background: linear-gradient(135deg, #dc2626, #b91c1c) !important; }
+.statistics-totals .deeds-section .section-header { background: linear-gradient(135deg, #7c3aed, #6d28d9) !important; }
+
+/* ضمان اللون الأبيض لجميع عناوين الأقسام في قائمة الإحصائيات المنفصلة */
+.statistics-totals .units-section .section-header h3,
+.statistics-totals .contracts-section .section-header h3,
+.statistics-totals .financial-section .section-header h3,
+.statistics-totals .deeds-section .section-header h3 {
+    color: white !important;
+}
+
+/* ضمان اللون الأبيض للأيقونات أيضاً في قائمة الإحصائيات المنفصلة */
+.statistics-totals .mobile-stats-section .section-header h3 i {
+    color: white !important;
+}
+
+/* أنماط فلاتر نوع العقار في الشاشات الكبيرة */
+.property-type-filters {
+    display: flex !important;
+    gap: 8px !important;
+    margin-bottom: 15px !important;
+    padding: 0 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.property-filter-btn {
+    flex: 1 !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    min-height: 36px !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+}
+
+.property-filter-btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+
+.property-filter-btn.buildings-filter {
+    border: 2px solid #007bff !important;
+}
+
+.property-filter-btn.lands-filter {
+    border: 2px solid #28a745 !important;
+}
+
+/* ضمان ظهور الفلاتر في جميع الحالات */
+#propertyList .property-type-filters {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* أنماط الحالة الجديدة - اللون السماوي للمستأجر بدون تاريخ */
+.sky-blue-status {
+    background: linear-gradient(135deg, #87CEEB, #4682B4) !important;
+    color: white !important;
+}
+
+.sky-blue-badge {
+    background: linear-gradient(135deg, #87CEEB, #4682B4) !important;
+    color: white !important;
+    border: 1px solid #4682B4 !important;
+}
+
+/* تحسين نافذة العقارات للشاشات الصغيرة جداً */
+@media (max-height: 700px) and (max-width: 500px) {
+    .modal-overlay {
+        padding: 10px !important;
+        align-items: flex-start !important;
+        padding-top: 20px !important;
+    }
+
+    .modal-box.properties-modal {
+        max-height: calc(100vh - 40px) !important;
+        height: auto !important;
+        min-height: calc(100vh - 40px) !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    #mobilePropertiesList {
+        flex: 1 !important;
+        max-height: none !important;
+        height: auto !important;
+        min-height: 300px !important;
+        overflow-y: auto !important;
+    }
+}
+
+/* للشاشات الصغيرة جداً (ارتفاع أقل من 600px) */
+@media (max-height: 600px) and (max-width: 500px) {
+    .modal-overlay {
+        padding: 5px !important;
+        padding-top: 10px !important;
+    }
+
+    .modal-box.properties-modal {
+        max-height: calc(100vh - 20px) !important;
+        min-height: calc(100vh - 20px) !important;
+        border-radius: 8px !important;
+    }
+
+    .modal-box.properties-modal h3 {
+        font-size: 1rem !important;
+        margin-bottom: 15px !important;
+        padding: 10px 0 !important;
+    }
+
+    .mobile-property-type-filters {
+        margin-bottom: 10px !important;
+    }
+
+    .property-search-container {
+        margin-bottom: 10px !important;
+    }
+
+    .property-search-container input {
+        padding: 10px !important;
+        font-size: 14px !important;
+    }
+
+    #mobilePropertiesList {
+        min-height: 250px !important;
+    }
+
+    .modal-actions {
+        margin-top: 10px !important;
+        padding-top: 10px !important;
+        border-top: 1px solid #e9ecef !important;
+    }
+}
+
+/* تلوين محتوى المالية بالأبيض في قائمة الإحصائيات المنفصلة */
+.statistics-totals .mobile-stats-section.financial-section .total-item .total-label,
+.statistics-totals .mobile-stats-section.financial-section .total-item .total-value {
+    color: white !important;
+}
+
+/* تكبير خط محتوى الأقسام الثلاثة إلى 1.2rem في قائمة الإحصائيات المنفصلة */
+.statistics-totals .mobile-stats-section.contracts-section .total-item,
+.statistics-totals .mobile-stats-section.financial-section .total-item,
+.statistics-totals .mobile-stats-section.deeds-section .total-item {
+    font-size: 1.2rem !important;
+}
+
+.statistics-totals .mobile-stats-section.contracts-section .total-item .total-label,
+.statistics-totals .mobile-stats-section.financial-section .total-item .total-label,
+.statistics-totals .mobile-stats-section.deeds-section .total-item .total-label {
+    font-size: 1rem !important;
+}
+
+.statistics-totals .mobile-stats-section.contracts-section .total-item .total-value,
+.statistics-totals .mobile-stats-section.financial-section .total-item .total-value,
+.statistics-totals .mobile-stats-section.deeds-section .total-item .total-value {
+    font-size: 1.1rem !important;
+}
+
+/* أنماط جدول المباني والأراضي في قائمة الإحصائيات المنفصلة */
+.statistics-totals .building-land-table-container {
+    overflow-x: auto;
+    margin: 0;
+    border-radius: 8px;
+    background: #fff;
+    width: 100%;
+    max-width: 100%;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table {
+    width: 100%;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    table-layout: fixed;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table th {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #495057;
+    font-weight: 600;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    word-wrap: break-word;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table td {
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    background: #fff;
+    word-wrap: break-word;
+}
+
+/* توزيع عرض الأعمدة في قائمة الإحصائيات المنفصلة */
+.statistics-totals .building-land-stats-table.mobile-table th:nth-child(1),
+.statistics-totals .building-land-stats-table.mobile-table td:nth-child(1) {
+    width: 35%;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table th:nth-child(2),
+.statistics-totals .building-land-stats-table.mobile-table td:nth-child(2) {
+    width: 20%;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table th:nth-child(3),
+.statistics-totals .building-land-stats-table.mobile-table td:nth-child(3) {
+    width: 20%;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table th:nth-child(4),
+.statistics-totals .building-land-stats-table.mobile-table td:nth-child(4) {
+    width: 25%;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table .metric-label {
+    background: #f8f9fa !important;
+    font-weight: 700;
+    color: #495057;
+    text-align: right;
+    padding-right: 12px;
+    font-size: 0.8rem;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table .buildings-value {
+    background: #e3f2fd !important;
+    color: #1565c0;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table .lands-value {
+    background: #f3e5f5 !important;
+    color: #7b1fa2;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table .total-value {
+    background: #e8f5e8 !important;
+    color: #2e7d32;
+    font-weight: 800;
+    font-size: 0.95rem;
+}
+
+/* تحسين عناوين الأعمدة في قائمة الإحصائيات المنفصلة */
+.statistics-totals .building-land-stats-table.mobile-table .metric-header {
+    background: #f8f9fa !important;
+    color: #495057;
+    font-weight: 700;
+    text-align: right;
+    padding-right: 12px;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table .buildings-header {
+    background: #e3f2fd !important;
+    color: #1565c0;
+    font-weight: 700;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table .lands-header {
+    background: #f3e5f5 !important;
+    color: #7b1fa2;
+    font-weight: 700;
+}
+
+.statistics-totals .building-land-stats-table.mobile-table .total-header {
+    background: #e8f5e8 !important;
+    color: #2e7d32;
+    font-weight: 800;
 }
 
 .statistics-totals .total-item:hover {
@@ -28378,24 +29288,108 @@ body.limited-user .restricted-dropdown-item::before {
 /* تحسينات للشاشات الصغيرة جداً */
 @media (max-width: 500px) {
     .statistics-totals {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        padding: 12px 15px;
+        padding: 10px 15px;
         margin: 0 10px 12px 10px;
     }
 
+    .statistics-totals .mobile-stats-section {
+        margin-bottom: 12px;
+    }
+
+    .statistics-totals .mobile-stats-section .section-header {
+        padding: 10px 12px;
+    }
+
+    .statistics-totals .mobile-stats-section .section-header h3 {
+        font-size: 0.9rem;
+    }
+
+    .statistics-totals .mobile-stats-section .section-content {
+        padding: 8px;
+        gap: 6px;
+    }
+
+    .statistics-totals .mobile-stats-section .section-content.grid-two-columns {
+        gap: 6px;
+        padding: 8px;
+    }
+
     .statistics-totals .total-item {
-        padding: 8px 6px !important;
-        font-size: 0.85em;
-        min-height: 65px;
+        padding: 8px 10px !important;
+        font-size: 0.85em !important;
+    }
+
+    .statistics-totals .grid-two-columns .total-item {
+        padding: 10px 6px !important;
+        min-height: 60px !important;
     }
 
     .statistics-totals .total-item .total-label {
-        font-size: 1.1rem;
+        font-size: 0.8em !important;
+    }
+
+    .statistics-totals .grid-two-columns .total-item .total-label {
+        font-size: 0.7em !important;
     }
 
     .statistics-totals .total-item .total-value {
-        font-size: 1.2rem;
+        font-size: 0.85em !important;
+    }
+
+    .statistics-totals .grid-two-columns .total-item .total-value {
+        font-size: 0.8em !important;
+    }
+
+    /* تعديل أحجام الخطوط للأقسام الثلاثة في الشاشات الصغيرة جداً - قائمة الإحصائيات المنفصلة */
+    .statistics-totals .mobile-stats-section.contracts-section .total-item,
+    .statistics-totals .mobile-stats-section.financial-section .total-item,
+    .statistics-totals .mobile-stats-section.deeds-section .total-item {
+        font-size: 1rem !important;
+    }
+
+    .statistics-totals .mobile-stats-section.contracts-section .total-item .total-label,
+    .statistics-totals .mobile-stats-section.financial-section .total-item .total-label,
+    .statistics-totals .mobile-stats-section.deeds-section .total-item .total-label {
+        font-size: 0.85rem !important;
+    }
+
+    .statistics-totals .mobile-stats-section.contracts-section .total-item .total-value,
+    .statistics-totals .mobile-stats-section.financial-section .total-item .total-value,
+    .statistics-totals .mobile-stats-section.deeds-section .total-item .total-value {
+        font-size: 0.9rem !important;
+    }
+
+    .statistics-totals .mobile-stats-divider {
+        margin: 8px 0;
+    }
+
+    /* تحسين الجدول في الشاشات الصغيرة جداً - قائمة الإحصائيات المنفصلة */
+    .statistics-totals .building-land-stats-table.mobile-table {
+        font-size: 0.75rem;
+    }
+
+    .statistics-totals .building-land-stats-table.mobile-table th {
+        padding: 8px 6px;
+        font-size: 0.7rem;
+    }
+
+    .statistics-totals .building-land-stats-table.mobile-table td {
+        padding: 8px 6px;
+        font-size: 0.75rem;
+    }
+
+    .statistics-totals .building-land-stats-table.mobile-table .metric-label {
+        font-size: 0.7rem;
+        padding-right: 8px;
+    }
+
+    .statistics-totals .building-land-stats-table.mobile-table .buildings-value,
+    .statistics-totals .building-land-stats-table.mobile-table .lands-value {
+        font-size: 0.8rem;
+    }
+
+    .statistics-totals .building-land-stats-table.mobile-table .total-value {
+        font-size: 0.85rem;
     }
 
     .statistics-property-header {

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إحصائيات المباني والأراضي</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container" style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+        <h1>اختبار إحصائيات المباني والأراضي</h1>
+        
+        <div id="totalContainer" style="margin: 20px 0;"></div>
+        
+        <button onclick="testStats()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            اختبار الإحصائيات
+        </button>
+    </div>
+
+    <script>
+        // بيانات تجريبية
+        const testData = [
+            {
+                'اسم العقار': 'عقار 1',
+                'رقم  الوحدة ': '101',
+                'نوع العقار': 'شقة',
+                'اسم المستأجر': 'أحمد محمد',
+                'رقم العقد': 'C001'
+            },
+            {
+                'اسم العقار': 'عقار 1',
+                'رقم  الوحدة ': '102',
+                'نوع العقار': 'شقة',
+                'اسم المستأجر': '',
+                'رقم العقد': ''
+            },
+            {
+                'اسم العقار': 'عقار 2',
+                'رقم  الوحدة ': '201',
+                'نوع العقار': 'أرض',
+                'اسم المستأجر': 'سالم أحمد',
+                'رقم العقد': 'C002'
+            },
+            {
+                'اسم العقار': 'عقار 2',
+                'رقم  الوحدة ': '202',
+                'نوع العقار': 'حوش',
+                'اسم المستأجر': '',
+                'رقم العقد': ''
+            },
+            {
+                'اسم العقار': 'عقار 3',
+                'رقم  الوحدة ': '301',
+                'نوع العقار': 'مستودع',
+                'اسم المستأجر': 'خالد سعد',
+                'رقم العقد': 'C003'
+            }
+        ];
+
+        // دالة لحساب إحصائيات فئة معينة (مباني أو أراضي)
+        function calculateCategoryStats(data, isLandCategory) {
+            let totalUnits = 0;
+            let emptyUnits = 0;
+            let tenants = 0;
+            let rentedUnits = 0;
+            
+            // تجميع الوحدات الفريدة
+            const uniqueUnits = new Set();
+            const uniqueContracts = {};
+            
+            data.forEach(property => {
+                const propertyType = property['نوع العقار'];
+                const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+                
+                // تصفية حسب الفئة المطلوبة
+                if (isLandCategory !== isLandType) {
+                    return; // تخطي هذا العقار إذا لم يكن من الفئة المطلوبة
+                }
+                
+                // حساب عدد الوحدات الفريدة
+                const unitKey = `${property['اسم العقار']}_${property['رقم  الوحدة ']}`;
+                if (property['رقم  الوحدة '] && property['رقم  الوحدة '].toString().trim() !== '') {
+                    uniqueUnits.add(unitKey);
+                }
+                
+                // حساب الوحدات الفارغة
+                if (!property['اسم المستأجر'] || property['اسم المستأجر'].toString().trim() === '') {
+                    emptyUnits++;
+                    return;
+                }
+                
+                // حساب المستأجرين (عقود فريدة)
+                const contractKey = property['رقم العقد'];
+                if (contractKey && contractKey.toString().trim() !== '' && !uniqueContracts[contractKey]) {
+                    uniqueContracts[contractKey] = true;
+                    tenants++;
+                }
+            });
+            
+            totalUnits = uniqueUnits.size;
+            rentedUnits = totalUnits - emptyUnits;
+            
+            return {
+                totalUnits,
+                emptyUnits,
+                tenants,
+                rentedUnits
+            };
+        }
+
+        function testStats() {
+            const container = document.getElementById('totalContainer');
+            container.innerHTML = '';
+
+            // حساب الإحصائيات حسب نوع العقار (مباني vs أراضي)
+            const buildingStats = calculateCategoryStats(testData, false); // مباني (ليس أرض أو حوش)
+            const landStats = calculateCategoryStats(testData, true); // أراضي (أرض أو حوش)
+            
+            console.log('Building Stats:', buildingStats);
+            console.log('Land Stats:', landStats);
+            
+            // إنشاء جدول إحصائيات المباني والأراضي
+            const buildingLandStatsCard = document.createElement('div');
+            buildingLandStatsCard.className = 'total-card building-land-stats';
+            buildingLandStatsCard.innerHTML = `
+                <h3><i class="fas fa-chart-bar"></i> إحصائيات المباني والأراضي</h3>
+                <div class="building-land-table-container">
+                    <table class="building-land-stats-table">
+                        <thead>
+                            <tr>
+                                <th class="metric-header">المؤشر</th>
+                                <th class="buildings-header">المباني</th>
+                                <th class="lands-header">الأراضي</th>
+                                <th class="total-header">الإجمالي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="metric-label">عدد الوحدات</td>
+                                <td class="buildings-value">${buildingStats.totalUnits}</td>
+                                <td class="lands-value">${landStats.totalUnits}</td>
+                                <td class="total-value">${buildingStats.totalUnits + landStats.totalUnits}</td>
+                            </tr>
+                            <tr>
+                                <td class="metric-label">عدد الفارغة</td>
+                                <td class="buildings-value">${buildingStats.emptyUnits}</td>
+                                <td class="lands-value">${landStats.emptyUnits}</td>
+                                <td class="total-value">${buildingStats.emptyUnits + landStats.emptyUnits}</td>
+                            </tr>
+                            <tr>
+                                <td class="metric-label">عدد المستأجرين</td>
+                                <td class="buildings-value">${buildingStats.tenants}</td>
+                                <td class="lands-value">${landStats.tenants}</td>
+                                <td class="total-value">${buildingStats.tenants + landStats.tenants}</td>
+                            </tr>
+                            <tr>
+                                <td class="metric-label">الوحدات المؤجرة</td>
+                                <td class="buildings-value">${buildingStats.rentedUnits}</td>
+                                <td class="lands-value">${landStats.rentedUnits}</td>
+                                <td class="total-value">${buildingStats.rentedUnits + landStats.rentedUnits}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.appendChild(buildingLandStatsCard);
+        }
+
+        // تشغيل الاختبار عند تحميل الصفحة
+        window.addEventListener('load', testStats);
+    </script>
+</body>
+</html>

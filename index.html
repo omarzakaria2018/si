@@ -500,6 +500,23 @@
         <i class="fas fa-times"></i>
       </button>
     </div>
+
+    <!-- فلاتر نوع العقار -->
+    <div class="property-type-filters" style="display: flex; gap: 8px; margin-bottom: 15px; padding: 0 10px;">
+      <button class="property-filter-btn buildings-filter" onclick="filterPropertiesByType('buildings')"
+              style="flex: 1; padding: 8px 12px; border: 2px solid #007bff; background: white; color: #007bff;
+                     border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+                     transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 5px;">
+        <i class="fas fa-building"></i> المباني
+      </button>
+      <button class="property-filter-btn lands-filter" onclick="filterPropertiesByType('lands')"
+              style="flex: 1; padding: 8px 12px; border: 2px solid #28a745; background: white; color: #28a745;
+                     border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+                     transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 5px;">
+        <i class="fas fa-mountain"></i> الأراضي
+      </button>
+    </div>
+
     <div id="propertyList"></div>
   </aside>
 
