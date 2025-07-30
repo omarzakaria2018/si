@@ -84,6 +84,19 @@ function updateActiveFiltersDisplay() {
         });
     }
 
+    // إضافة فلتر نوع العقار (المباني/الأراضي)
+    if (currentPropertyTypeFilter && currentPropertyTypeFilter !== null) {
+        const typeLabels = {
+            'buildings': 'المباني',
+            'lands': 'الأراضي'
+        };
+        filters.push({
+            type: 'propertyTypeFilter',
+            label: `النوع: ${typeLabels[currentPropertyTypeFilter] || currentPropertyTypeFilter}`,
+            value: currentPropertyTypeFilter
+        });
+    }
+
     // إضافة فلاتر أخرى حسب الحاجة
     if (activeFilters.contractType) {
         filters.push({
@@ -512,6 +525,14 @@ function removeFilter(type, value) {
             // إزالة فلتر المالك
             activeFilters.owner = '';
             updateOwnerFilterButtonsState();
+            break;
+
+        case 'propertyTypeFilter':
+            // إزالة فلتر نوع العقار (المباني/الأراضي)
+            currentPropertyTypeFilter = null;
+            updatePropertyTypeFiltersState();
+            // إعادة تحديث قائمة العقارات
+            initPropertyList(currentCountry);
             break;
     }
 
@@ -1005,6 +1026,7 @@ function clearAllFilters() {
     currentCountry = null;
     currentProperty = null;
     filterStatus = null;
+    currentPropertyTypeFilter = null; // إضافة مسح فلتر المباني/الأراضي
 
     // إعادة تعيين الفلاتر النشطة
     activeFilters = {
@@ -1057,6 +1079,19 @@ function clearAllFilters() {
         }
     }
 
+    // إلغاء فلتر المباني/الأراضي إذا كان نشطاً
+    if (currentPropertyTypeFilter && currentPropertyTypeFilter !== null) {
+        console.log(`🔄 إلغاء فلتر نوع العقار (المباني/الأراضي): ${currentPropertyTypeFilter}`);
+        // تحديث حالة أزرار المباني/الأراضي
+        if (typeof updatePropertyTypeFiltersState === 'function') {
+            updatePropertyTypeFiltersState();
+        }
+        // إعادة تحديث قائمة العقارات
+        if (typeof initPropertyList === 'function') {
+            initPropertyList(currentCountry);
+        }
+    }
+
     // إعادة تعيين واجهة المستخدم
     const countryButtons = document.querySelectorAll('.country-btn, .city-btn');
     countryButtons.forEach(btn => btn.classList.remove('active'));
@@ -1067,6 +1102,18 @@ function clearAllFilters() {
     // إعادة تعيين أزرار الفلاتر الأخرى
     const filterButtons = document.querySelectorAll('.filter-btn, .status-btn');
     filterButtons.forEach(btn => btn.classList.remove('active'));
+
+    // إعادة تعيين أزرار المباني والأراضي بشكل مباشر
+    const buildingsBtn = document.querySelector('.property-filter-btn.buildings-filter');
+    const landsBtn = document.querySelector('.property-filter-btn.lands-filter');
+    if (buildingsBtn) {
+        buildingsBtn.classList.remove('active');
+        console.log('🏢 تم إزالة تنشيط زر المباني مباشرة');
+    }
+    if (landsBtn) {
+        landsBtn.classList.remove('active');
+        console.log('🏔️ تم إزالة تنشيط زر الأراضي مباشرة');
+    }
 
     // إعادة تحميل البيانات وتحديث العرض
     if (typeof renderData === 'function') {
@@ -1121,6 +1168,11 @@ function clearAllFilters() {
             updateTotals();
         }
         updateActiveFiltersDisplay();
+
+        // تحديث حالة أزرار المباني/الأراضي للتأكد من إزالة التنشيط البصري
+        if (typeof updatePropertyTypeFiltersState === 'function') {
+            updatePropertyTypeFiltersState();
+        }
 
         // إخفاء أيقونة التحميل بعد اكتمال العمليات
         setTimeout(() => {
@@ -1584,6 +1636,15 @@ function getSessionId() {
     return sessionId;
 }
 
+// مسح مربع البحث
+function clearSearchInput() {
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput) {
+        searchInput.value = '';
+        console.log('🔍 تم مسح مربع البحث');
+    }
+}
+
 // استعادة حالة التطبيق من localStorage مع التمييز بين الزيارة الجديدة وإعادة التحميل
 function restoreAppState() {
     try {
@@ -1603,11 +1664,18 @@ function restoreAppState() {
             currentProperty = null;
             filterStatus = null;
 
+            // مسح مربع البحث
+            clearSearchInput();
+
             // مسح أي حالة محفوظة قديمة
             localStorage.removeItem(STATE_STORAGE_KEY);
 
             return false;
         }
+
+        // إذا كانت إعادة تحميل، مسح مربع البحث أيضاً
+        console.log('🔄 إعادة تحميل - مسح مربع البحث');
+        clearSearchInput();
 
         // إذا كانت إعادة تحميل، حاول استعادة الحالة
         const savedState = localStorage.getItem(STATE_STORAGE_KEY);
@@ -4337,10 +4405,22 @@ function searchInPropertyData(property, searchTerm) {
 
     // البحث الخاص: إذا كان المصطلح "متعدد"، ابحث عن الوحدات المتعددة
     if (normalizedSearchTerm === 'متعدد') {
-        const unitNumber = property['رقم  الوحدة '];
-        if (unitNumber && unitNumber.toString().includes('وحدات')) {
-            console.log(`🔍 وجد وحدات متعددة: "${unitNumber}"`);
-            return true;
+        // البحث عن الوحدات التي لها نفس رقم العقد ونفس اسم العقار (الوحدات المربوطة)
+        const contractNumber = property['رقم العقد'];
+        const propertyName = property['اسم العقار'];
+
+        if (contractNumber && propertyName && typeof properties !== 'undefined') {
+            // عد الوحدات التي لها نفس رقم العقد ونفس اسم العقار
+            const relatedUnits = properties.filter(p =>
+                p['رقم العقد'] === contractNumber &&
+                p['اسم العقار'] === propertyName
+            );
+
+            // إذا كان هناك أكثر من وحدة واحدة، فهذه وحدات متعددة
+            if (relatedUnits.length > 1) {
+                console.log(`🔍 وجد وحدات متعددة: ${relatedUnits.length} وحدات في العقد ${contractNumber}`);
+                return true;
+            }
         }
     }
 
