@@ -71,8 +71,9 @@
             
             data.forEach(property => {
                 const propertyType = property['نوع العقار'];
-                const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
-                
+                // تحديث: "حوش" أصبح يُعتبر من المباني وليس من الأراضي
+                const isLandType = propertyType === 'أرض';
+
                 // تصفية حسب الفئة المطلوبة
                 if (isLandCategory !== isLandType) {
                     return; // تخطي هذا العقار إذا لم يكن من الفئة المطلوبة
@@ -114,8 +115,8 @@
             container.innerHTML = '';
 
             // حساب الإحصائيات حسب نوع العقار (مباني vs أراضي)
-            const buildingStats = calculateCategoryStats(testData, false); // مباني (ليس أرض أو حوش)
-            const landStats = calculateCategoryStats(testData, true); // أراضي (أرض أو حوش)
+            const buildingStats = calculateCategoryStats(testData, false); // مباني (تشمل حوش الآن)
+            const landStats = calculateCategoryStats(testData, true); // أراضي (أرض فقط)
             
             console.log('Building Stats:', buildingStats);
             console.log('Land Stats:', landStats);

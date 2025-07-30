@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إزالة فلتر العقار التلقائية</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .test-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .test-section:last-child {
+            border-bottom: none;
+        }
+
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.4);
+        }
+
+        .test-button.success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+
+        .test-button.warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .test-button.danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .test-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .scenario-box {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .scenario-box h4 {
+            color: #0066cc;
+            margin-bottom: 10px;
+        }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .step-list li:last-child {
+            border-bottom: none;
+        }
+
+        .step-list li::before {
+            content: "👉 ";
+            margin-left: 10px;
+        }
+
+        .filter-demo {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .filter-btn.buildings {
+            border-color: #007bff;
+            color: #007bff;
+            background: white;
+        }
+
+        .filter-btn.buildings.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .filter-btn.lands {
+            border-color: #28a745;
+            color: #28a745;
+            background: white;
+        }
+
+        .filter-btn.lands.active {
+            background: #28a745;
+            color: white;
+        }
+
+        .property-demo {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .property-demo.selected {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .property-demo.removed {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-removed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-magic"></i> اختبار إزالة فلتر العقار التلقائية</h1>
+            <p>التحقق من أن فلتر العقار يُزال تلقائياً عند تغيير نوع الفلتر (مباني ↔ أراضي)</p>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-info-circle"></i> الميزة الجديدة</h3>
+            <p><strong>المشكلة السابقة:</strong> عند اختيار عقار من فئة "المباني" ثم النقر على فلتر "الأراضي"، كان العقار يبقى محدداً رغم عدم انتمائه للأراضي.</p>
+            <p><strong>الحل الجديد:</strong> يتم إزالة فلتر العقار تلقائياً عند تغيير نوع الفلتر إذا كان العقار غير متوافق مع الفلتر الجديد.</p>
+            
+            <div class="scenario-box">
+                <h4>🎯 السيناريوهات المدعومة:</h4>
+                <ul class="step-list">
+                    <li>اختيار عقار من نوع "حوش" في فلتر المباني ← النقر على فلتر الأراضي ← إزالة العقار تلقائياً</li>
+                    <li>اختيار عقار من نوع "أرض" في فلتر الأراضي ← النقر على فلتر المباني ← إزالة العقار تلقائياً</li>
+                    <li>اختيار عقار من نوع "شقة" في فلتر المباني ← النقر على فلتر الأراضي ← إزالة العقار تلقائياً</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-vial"></i> محاكاة التفاعل</h3>
+            <p>محاكاة سيناريو اختيار عقار وتغيير فلتر النوع:</p>
+            
+            <div class="filter-demo">
+                <div class="filter-btn buildings" onclick="simulateFilterChange('buildings')">
+                    <i class="fas fa-building"></i> المباني
+                </div>
+                <div class="filter-btn lands" onclick="simulateFilterChange('lands')">
+                    <i class="fas fa-mountain"></i> الأراضي
+                </div>
+            </div>
+
+            <div id="propertySelection" style="margin: 20px 0;">
+                <h4>العقارات المتاحة:</h4>
+                <div class="property-demo" onclick="selectProperty('مجمع الأحواش', 'حوش')">
+                    مجمع الأحواش (نوع: حوش)
+                </div>
+                <div class="property-demo" onclick="selectProperty('أراضي الشمال', 'أرض')">
+                    أراضي الشمال (نوع: أرض)
+                </div>
+                <div class="property-demo" onclick="selectProperty('برج السكن', 'شقة')">
+                    برج السكن (نوع: شقة)
+                </div>
+            </div>
+
+            <div class="test-results" id="simulationResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-play"></i> اختبار تلقائي</h3>
+            <p>تشغيل اختبار تلقائي لجميع السيناريوهات:</p>
+            <button class="test-button" onclick="runAutomaticTest()">
+                <i class="fas fa-robot"></i> تشغيل الاختبار التلقائي
+            </button>
+            <div class="test-results" id="automaticTestResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+            <button class="test-button success" onclick="openMainApp()">
+                <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+            </button>
+            <button class="test-button warning" onclick="clearResults()">
+                <i class="fas fa-broom"></i> مسح النتائج
+            </button>
+            <button class="test-button danger" onclick="resetSimulation()">
+                <i class="fas fa-undo"></i> إعادة تعيين المحاكاة
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // حالة المحاكاة
+        let simulationState = {
+            currentFilter: null,
+            selectedProperty: null,
+            selectedPropertyType: null
+        };
+
+        // بيانات تجريبية
+        const testProperties = [
+            { name: 'مجمع الأحواش', type: 'حوش' },
+            { name: 'أراضي الشمال', type: 'أرض' },
+            { name: 'برج السكن', type: 'شقة' },
+            { name: 'مجمع المكاتب', type: 'مكتب' },
+            { name: 'أراضي الجنوب', type: 'أرض' }
+        ];
+
+        // محاكاة دالة التحقق من التوافق
+        function isPropertyCompatibleWithTypeFilter(propertyType, filterType) {
+            if (!propertyType) return true;
+            
+            const isLandType = propertyType === 'أرض';
+            
+            if (filterType === 'lands') {
+                return isLandType;
+            } else if (filterType === 'buildings') {
+                return !isLandType;
+            }
+            
+            return true;
+        }
+
+        // اختيار عقار
+        function selectProperty(propertyName, propertyType) {
+            simulationState.selectedProperty = propertyName;
+            simulationState.selectedPropertyType = propertyType;
+            
+            // تحديث العرض
+            updatePropertyDisplay();
+            
+            const resultsDiv = document.getElementById('simulationResults');
+            resultsDiv.textContent = `✅ تم اختيار العقار: ${propertyName} (نوع: ${propertyType})`;
+        }
+
+        // تغيير فلتر النوع
+        function simulateFilterChange(filterType) {
+            const resultsDiv = document.getElementById('simulationResults');
+            let output = '';
+            
+            output += `🔄 تغيير فلتر النوع إلى: ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}\n\n`;
+            
+            // التحقق من التوافق
+            if (simulationState.selectedProperty && simulationState.selectedPropertyType) {
+                const isCompatible = isPropertyCompatibleWithTypeFilter(simulationState.selectedPropertyType, filterType);
+                
+                output += `🔍 فحص التوافق:\n`;
+                output += `   العقار المحدد: ${simulationState.selectedProperty}\n`;
+                output += `   نوع العقار: ${simulationState.selectedPropertyType}\n`;
+                output += `   الفلتر الجديد: ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}\n`;
+                output += `   متوافق: ${isCompatible ? 'نعم ✅' : 'لا ❌'}\n\n`;
+                
+                if (!isCompatible) {
+                    output += `⚠️ العقار غير متوافق مع الفلتر الجديد\n`;
+                    output += `🔄 إزالة فلتر العقار تلقائياً...\n`;
+                    
+                    // إزالة العقار المحدد
+                    simulationState.selectedProperty = null;
+                    simulationState.selectedPropertyType = null;
+                    
+                    output += `✅ تم إزالة فلتر العقار تلقائياً\n`;
+                } else {
+                    output += `✅ العقار متوافق - يبقى محدداً\n`;
+                }
+            } else {
+                output += `ℹ️ لا يوجد عقار محدد\n`;
+            }
+            
+            // تحديث الفلتر الحالي
+            simulationState.currentFilter = filterType;
+            
+            // تحديث العرض
+            updateFilterDisplay();
+            updatePropertyDisplay();
+            
+            resultsDiv.textContent = output;
+        }
+
+        // تحديث عرض الفلاتر
+        function updateFilterDisplay() {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            
+            if (simulationState.currentFilter) {
+                const activeBtn = document.querySelector(`.filter-btn.${simulationState.currentFilter}`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                }
+            }
+        }
+
+        // تحديث عرض العقارات
+        function updatePropertyDisplay() {
+            document.querySelectorAll('.property-demo').forEach(property => {
+                property.classList.remove('selected', 'removed');
+                
+                const propertyName = property.textContent.split(' (')[0];
+                
+                if (simulationState.selectedProperty === propertyName) {
+                    property.classList.add('selected');
+                }
+            });
+        }
+
+        // اختبار تلقائي
+        function runAutomaticTest() {
+            const resultsDiv = document.getElementById('automaticTestResults');
+            let output = '';
+            
+            output += '🤖 بدء الاختبار التلقائي...\n\n';
+            
+            const testScenarios = [
+                { property: 'مجمع الأحواش', type: 'حوش', fromFilter: 'buildings', toFilter: 'lands', shouldRemove: true },
+                { property: 'أراضي الشمال', type: 'أرض', fromFilter: 'lands', toFilter: 'buildings', shouldRemove: true },
+                { property: 'برج السكن', type: 'شقة', fromFilter: 'buildings', toFilter: 'lands', shouldRemove: true },
+                { property: 'مجمع الأحواش', type: 'حوش', fromFilter: 'buildings', toFilter: 'buildings', shouldRemove: false }
+            ];
+            
+            testScenarios.forEach((scenario, index) => {
+                output += `📋 اختبار ${index + 1}: ${scenario.property} (${scenario.type})\n`;
+                output += `   من فلتر: ${scenario.fromFilter === 'buildings' ? 'المباني' : 'الأراضي'}\n`;
+                output += `   إلى فلتر: ${scenario.toFilter === 'buildings' ? 'المباني' : 'الأراضي'}\n`;
+                
+                // محاكاة الاختبار
+                const isCompatible = isPropertyCompatibleWithTypeFilter(scenario.type, scenario.toFilter);
+                const willRemove = !isCompatible;
+                
+                output += `   النتيجة المتوقعة: ${scenario.shouldRemove ? 'إزالة العقار' : 'الاحتفاظ بالعقار'}\n`;
+                output += `   النتيجة الفعلية: ${willRemove ? 'إزالة العقار' : 'الاحتفاظ بالعقار'}\n`;
+                
+                if (willRemove === scenario.shouldRemove) {
+                    output += `   ✅ نجح الاختبار\n\n`;
+                } else {
+                    output += `   ❌ فشل الاختبار\n\n`;
+                }
+            });
+            
+            output += '🎉 انتهى الاختبار التلقائي';
+            resultsDiv.textContent = output;
+        }
+
+        // إعادة تعيين المحاكاة
+        function resetSimulation() {
+            simulationState = {
+                currentFilter: null,
+                selectedProperty: null,
+                selectedPropertyType: null
+            };
+            
+            updateFilterDisplay();
+            updatePropertyDisplay();
+            
+            document.getElementById('simulationResults').textContent = '🔄 تم إعادة تعيين المحاكاة';
+        }
+
+        // مسح النتائج
+        function clearResults() {
+            document.getElementById('simulationResults').textContent = '';
+            document.getElementById('automaticTestResults').textContent = '';
+        }
+
+        // فتح التطبيق الرئيسي
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+
+        // تشغيل اختبار تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('simulationResults').textContent = '👋 مرحباً! اختر عقار ثم غيّر فلتر النوع لرؤية الميزة الجديدة في العمل';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار البحث التلقائي لفلتر نوع العقار</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .test-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .test-section:last-child {
+            border-bottom: none;
+        }
+
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .test-button.secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+
+        .test-button.warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .test-button.danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .test-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .keyword-demo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .keyword-card {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .keyword-card:hover {
+            border-color: #28a745;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .keyword-card.lands {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        }
+
+        .keyword-card.buildings {
+            border-color: #007bff;
+            background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+        }
+
+        .keyword-card h4 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .keyword-card .keywords {
+            font-size: 0.9rem;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .search-demo {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .search-demo h4 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+
+        .search-input-demo {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input-demo:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+
+        .filter-result {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .filter-result.active {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .status-working {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-testing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .example-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .example-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .example-list li:last-child {
+            border-bottom: none;
+        }
+
+        .example-list li::before {
+            content: "🔍";
+            font-size: 1.2rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .comparison-table .before {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .comparison-table .after {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-search-plus"></i> اختبار البحث التلقائي لفلتر نوع العقار</h1>
+            <p>البحث عن كلمات الأراضي والمباني يطبق الفلتر المناسب تلقائياً</p>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-info-circle"></i> الميزة الجديدة</h3>
+            <p><strong>الهدف:</strong> عندما يبحث المستخدم عن كلمات مثل "أرض" أو "أراضي" أو "مباني"، يتم تطبيق فلتر نوع العقار المناسب تلقائياً.</p>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>الحالة</th>
+                        <th>قبل التحديث</th>
+                        <th>بعد التحديث</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>البحث عن "أرض"</strong></td>
+                        <td class="before">بحث عادي في النصوص</td>
+                        <td class="after">تطبيق فلتر الأراضي تلقائياً</td>
+                    </tr>
+                    <tr>
+                        <td><strong>البحث عن "مباني"</strong></td>
+                        <td class="before">بحث عادي في النصوص</td>
+                        <td class="after">تطبيق فلتر المباني تلقائياً</td>
+                    </tr>
+                    <tr>
+                        <td><strong>البحث عن "فعال"</strong></td>
+                        <td class="after">تطبيق فلتر الحالة (موجود مسبقاً)</td>
+                        <td class="after">تطبيق فلتر الحالة (كما هو)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-tags"></i> الكلمات المدعومة</h3>
+            <p>الكلمات التي تستدعي فلاتر نوع العقار تلقائياً:</p>
+            
+            <div class="keyword-demo">
+                <div class="keyword-card lands">
+                    <h4><i class="fas fa-mountain"></i> فلتر الأراضي</h4>
+                    <div class="keywords">
+                        ارض • أرض • اراضي • أراضي<br>
+                        اراضى • أراضى • الأراضي • الاراضي
+                    </div>
+                </div>
+                
+                <div class="keyword-card buildings">
+                    <h4><i class="fas fa-building"></i> فلتر المباني</h4>
+                    <div class="keywords">
+                        مباني • مبانى • المباني • المبانى<br>
+                        مبنى • مبني • بناء • ابنية • أبنية
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-vial"></i> محاكاة البحث</h3>
+            <p>جرب البحث بالكلمات المختلفة لرؤية كيف يعمل الفلتر التلقائي:</p>
+            
+            <div class="search-demo">
+                <h4>محاكاة حقل البحث:</h4>
+                <input type="text" class="search-input-demo" id="searchDemo" placeholder="اكتب كلمة مثل: أرض، أراضي، مباني، مبنى..." oninput="simulateSearch(this.value)">
+                
+                <div class="filter-result" id="filterResult">
+                    <strong>النتيجة:</strong> اكتب في حقل البحث لرؤية النتيجة
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-list-check"></i> أمثلة للاختبار</h3>
+            <p>أمثلة على كلمات يمكن اختبارها:</p>
+            
+            <ul class="example-list">
+                <li onclick="testKeyword('أرض')">أرض</li>
+                <li onclick="testKeyword('ارض')">ارض</li>
+                <li onclick="testKeyword('أراضي')">أراضي</li>
+                <li onclick="testKeyword('اراضي')">اراضي</li>
+                <li onclick="testKeyword('مباني')">مباني</li>
+                <li onclick="testKeyword('مبنى')">مبنى</li>
+                <li onclick="testKeyword('أبنية')">أبنية</li>
+                <li onclick="testKeyword('فعال')">فعال (للمقارنة)</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-play"></i> اختبار تلقائي</h3>
+            <p>تشغيل اختبار شامل لجميع الكلمات المدعومة:</p>
+            <button class="test-button" onclick="runComprehensiveTest()">
+                <i class="fas fa-robot"></i> تشغيل الاختبار الشامل
+            </button>
+            <div class="test-results" id="comprehensiveResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+            <button class="test-button" onclick="openMainApp()">
+                <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+            </button>
+            <button class="test-button secondary" onclick="testInConsole()">
+                <i class="fas fa-terminal"></i> اختبار في Console
+            </button>
+            <button class="test-button warning" onclick="showImplementationDetails()">
+                <i class="fas fa-code"></i> تفاصيل التنفيذ
+            </button>
+            <button class="test-button danger" onclick="clearResults()">
+                <i class="fas fa-broom"></i> مسح النتائج
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // محاكاة قواميس الكلمات
+        const PROPERTY_TYPE_KEYWORDS = {
+            'lands': ['ارض', 'أرض', 'اراضي', 'أراضي', 'اراضى', 'أراضى', 'الأراضي', 'الاراضي'],
+            'buildings': ['مباني', 'مبانى', 'المباني', 'المبانى', 'مبنى', 'مبني', 'بناء', 'ابنية', 'أبنية']
+        };
+
+        // محاكاة دالة تطبيع النص العربي
+        function normalizeArabicText(text) {
+            return text.replace(/[أإآ]/g, 'ا')
+                      .replace(/[ىي]/g, 'ي')
+                      .replace(/[ة]/g, 'ه')
+                      .toLowerCase()
+                      .trim();
+        }
+
+        // محاكاة دالة الكشف عن نوع العقار
+        function detectPropertyTypeKeyword(searchTerm) {
+            if (!searchTerm || searchTerm.trim() === '') return null;
+
+            const normalizedTerm = normalizeArabicText(searchTerm.trim());
+
+            for (const [propertyType, keywords] of Object.entries(PROPERTY_TYPE_KEYWORDS)) {
+                for (const keyword of keywords) {
+                    const normalizedKeyword = normalizeArabicText(keyword);
+                    if (normalizedTerm === normalizedKeyword) {
+                        return propertyType;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        // محاكاة البحث
+        function simulateSearch(searchTerm) {
+            const resultDiv = document.getElementById('filterResult');
+            
+            if (!searchTerm || searchTerm.trim() === '') {
+                resultDiv.innerHTML = '<strong>النتيجة:</strong> اكتب في حقل البحث لرؤية النتيجة';
+                resultDiv.className = 'filter-result';
+                return;
+            }
+
+            const detectedType = detectPropertyTypeKeyword(searchTerm);
+            
+            if (detectedType) {
+                const filterName = detectedType === 'lands' ? 'الأراضي' : 'المباني';
+                const icon = detectedType === 'lands' ? '🗺️' : '🏗️';
+                
+                resultDiv.innerHTML = `
+                    <strong>✅ تم اكتشاف كلمة نوع عقار!</strong><br>
+                    ${icon} <strong>الكلمة:</strong> "${searchTerm}"<br>
+                    🎯 <strong>الفلتر المطبق:</strong> ${filterName}<br>
+                    💡 <strong>الإجراء:</strong> سيتم تطبيق فلتر ${filterName} تلقائياً
+                `;
+                resultDiv.className = 'filter-result active';
+            } else {
+                resultDiv.innerHTML = `
+                    <strong>ℹ️ بحث عادي</strong><br>
+                    🔍 <strong>الكلمة:</strong> "${searchTerm}"<br>
+                    📝 <strong>الإجراء:</strong> بحث عادي في النصوص (لا يوجد فلتر تلقائي)
+                `;
+                resultDiv.className = 'filter-result';
+            }
+        }
+
+        // اختبار كلمة محددة
+        function testKeyword(keyword) {
+            const searchInput = document.getElementById('searchDemo');
+            searchInput.value = keyword;
+            simulateSearch(keyword);
+            
+            // تمييز الحقل لجذب الانتباه
+            searchInput.style.borderColor = '#28a745';
+            setTimeout(() => {
+                searchInput.style.borderColor = '#dee2e6';
+            }, 1000);
+        }
+
+        // اختبار شامل
+        function runComprehensiveTest() {
+            const resultsDiv = document.getElementById('comprehensiveResults');
+            let output = '🤖 بدء الاختبار الشامل...\n\n';
+            
+            // اختبار كلمات الأراضي
+            output += '🗺️ اختبار كلمات الأراضي:\n';
+            PROPERTY_TYPE_KEYWORDS.lands.forEach(keyword => {
+                const detected = detectPropertyTypeKeyword(keyword);
+                const status = detected === 'lands' ? '✅' : '❌';
+                output += `   ${status} "${keyword}" → ${detected || 'لم يتم اكتشافها'}\n`;
+            });
+            
+            output += '\n🏗️ اختبار كلمات المباني:\n';
+            PROPERTY_TYPE_KEYWORDS.buildings.forEach(keyword => {
+                const detected = detectPropertyTypeKeyword(keyword);
+                const status = detected === 'buildings' ? '✅' : '❌';
+                output += `   ${status} "${keyword}" → ${detected || 'لم يتم اكتشافها'}\n`;
+            });
+            
+            // اختبار كلمات عشوائية (يجب ألا تُكتشف)
+            output += '\n🔍 اختبار كلمات عشوائية (يجب ألا تُكتشف):\n';
+            const randomWords = ['شقة', 'محل', 'مكتب', 'فعال', 'نشط', 'الرياض'];
+            randomWords.forEach(keyword => {
+                const detected = detectPropertyTypeKeyword(keyword);
+                const status = !detected ? '✅' : '❌';
+                output += `   ${status} "${keyword}" → ${detected || 'لم يتم اكتشافها (صحيح)'}\n`;
+            });
+            
+            output += '\n🎉 انتهى الاختبار الشامل!';
+            resultsDiv.textContent = output;
+        }
+
+        // اختبار في Console
+        function testInConsole() {
+            console.log('🧪 اختبار دوال البحث التلقائي في Console...');
+            console.log('📋 الكلمات المدعومة:', PROPERTY_TYPE_KEYWORDS);
+            
+            // اختبار بعض الكلمات
+            const testWords = ['أرض', 'أراضي', 'مباني', 'مبنى', 'شقة'];
+            testWords.forEach(word => {
+                const result = detectPropertyTypeKeyword(word);
+                console.log(`🔍 "${word}" → ${result || 'غير مُكتشفة'}`);
+            });
+            
+            alert('تم تشغيل الاختبار في Console - افتح Developer Tools لرؤية النتائج');
+        }
+
+        // إظهار تفاصيل التنفيذ
+        function showImplementationDetails() {
+            const resultsDiv = document.getElementById('comprehensiveResults');
+            resultsDiv.textContent = `
+📋 تفاصيل التنفيذ:
+
+1️⃣ إضافة قاموس PROPERTY_TYPE_KEYWORDS:
+   - يحتوي على كلمات الأراضي والمباني
+   - يدعم الاختلافات الإملائية (أ/ا، ى/ي)
+
+2️⃣ دالة detectPropertyTypeKeyword():
+   - تطبع النص العربي
+   - تبحث في القاموس عن تطابق
+   - ترجع نوع العقار أو null
+
+3️⃣ دالة detectAndApplyPropertyTypeFilter():
+   - تستدعي detectPropertyTypeKeyword()
+   - تطبق فلتر نوع العقار المناسب
+   - تظهر رسالة توضيحية
+   - تمسح حقل البحث
+
+4️⃣ تحديث performGlobalSearch():
+   - تتحقق من فلاتر الحالة أولاً
+   - ثم تتحقق من فلاتر نوع العقار
+   - وأخيراً البحث العادي
+
+🎯 النتيجة: بحث ذكي يطبق الفلاتر تلقائياً!
+            `;
+        }
+
+        // فتح التطبيق الرئيسي
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+
+        // مسح النتائج
+        function clearResults() {
+            document.getElementById('comprehensiveResults').textContent = '';
+            document.getElementById('searchDemo').value = '';
+            document.getElementById('filterResult').innerHTML = '<strong>النتيجة:</strong> اكتب في حقل البحث لرؤية النتيجة';
+            document.getElementById('filterResult').className = 'filter-result';
+        }
+
+        // اختبار تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testKeyword('أرض');
+                setTimeout(() => {
+                    document.getElementById('searchDemo').value = '';
+                    simulateSearch('');
+                }, 2000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -3723,9 +3723,55 @@ function initPropertyList(selectedCountry = null) {
     }
 }
 
+// دالة للتحقق من نوع العقار المحدد
+function getSelectedPropertyType() {
+    if (!currentProperty) return null;
+
+    // البحث عن العقار في البيانات
+    const propertyData = properties.find(p => p['اسم العقار'] === currentProperty);
+    if (propertyData) {
+        return propertyData['نوع العقار'];
+    }
+
+    // البحث في تعريفات العقارات
+    const propDef = propertyDefinitions?.find(def => def.name === currentProperty);
+    if (propDef) {
+        return propDef.type;
+    }
+
+    return null;
+}
+
+// دالة للتحقق من تطابق العقار مع فلتر النوع
+function isPropertyCompatibleWithTypeFilter(propertyType, filterType) {
+    if (!propertyType) return true; // إذا لم نعرف النوع، نعتبره متوافق
+
+    const isLandType = propertyType === 'أرض';
+
+    if (filterType === 'lands') {
+        return isLandType;
+    } else if (filterType === 'buildings') {
+        return !isLandType;
+    }
+
+    return true;
+}
+
 // دالة فلترة العقارات حسب النوع
 function filterPropertiesByType(filterType) {
     console.log(`🏗️ تطبيق فلتر نوع العقار: ${filterType}`);
+
+    // التحقق من تطابق العقار المحدد مع الفلتر الجديد
+    if (currentProperty) {
+        const selectedPropertyType = getSelectedPropertyType();
+        const isCompatible = isPropertyCompatibleWithTypeFilter(selectedPropertyType, filterType);
+
+        if (!isCompatible) {
+            console.log(`⚠️ العقار المحدد "${currentProperty}" من نوع "${selectedPropertyType}" غير متوافق مع فلتر ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}`);
+            console.log(`🔄 إزالة فلتر العقار تلقائياً...`);
+            currentProperty = null;
+        }
+    }
 
     // تحديث الفلتر الحالي (دائماً تطبيق الفلتر المطلوب)
     currentPropertyTypeFilter = filterType;
@@ -3744,6 +3790,15 @@ function filterPropertiesByType(filterType) {
 
     // إعادة عرض البيانات
     renderData();
+
+    // تحديث عرض الفلاتر النشطة
+    updateActiveFiltersDisplay();
+
+    // تحديث عرض اسم العقار في الجوالات (في حالة تم إزالة العقار)
+    updateMobilePropertyName();
+
+    // حفظ الحالة
+    saveAppState();
 }
 
 // دالة منطق فلترة العقارات حسب النوع (مع مراعاة المدينة)
@@ -3762,7 +3817,8 @@ function filterPropertiesByTypeLogic(propertyNames, filterType, selectedCountry 
 
         if (propertyData) {
             const propertyType = propertyData['نوع العقار'];
-            const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+            // تحديث: "حوش" أصبح يُعتبر من المباني وليس من الأراضي
+            const isLandType = propertyType === 'أرض';
 
             if (filterType === 'lands' && isLandType) {
                 filteredProperties.push(propertyName);
@@ -3779,7 +3835,8 @@ function filterPropertiesByTypeLogic(propertyNames, filterType, selectedCountry 
 
             if (propDef) {
                 const propertyType = propDef.type;
-                const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+                // تحديث: "حوش" أصبح يُعتبر من المباني وليس من الأراضي
+                const isLandType = propertyType === 'أرض';
 
                 if (filterType === 'lands' && isLandType) {
                     filteredProperties.push(propertyName);
@@ -4884,6 +4941,12 @@ const STATUS_KEYWORDS = {
     'فارغ': ['فارغ', 'فارغة', 'شاغر', 'شاغرة', 'خالي', 'خالية', 'متاح', 'متاحة']
 };
 
+// قاموس كلمات نوع العقار
+const PROPERTY_TYPE_KEYWORDS = {
+    'lands': ['ارض', 'أرض', 'اراضي', 'أراضي', 'اراضى', 'أراضى', 'الأراضي', 'الاراضي'],
+    'buildings': ['مباني', 'مبانى', 'المباني', 'المبانى', 'مبنى', 'مبني', 'بناء', 'ابنية', 'أبنية']
+};
+
 // متغير لتتبع ما إذا كان فلتر الحالة تم تطبيقه من البحث
 let statusFilterAppliedFromSearch = false;
 
@@ -4899,6 +4962,25 @@ function detectStatusKeyword(searchTerm) {
             const normalizedKeyword = normalizeArabicTextAdvanced ? normalizeArabicTextAdvanced(keyword) : keyword.toLowerCase();
             if (normalizedTerm === normalizedKeyword) {
                 return status;
+            }
+        }
+    }
+
+    return null;
+}
+
+// دالة للكشف عن كلمة نوع العقار من النص
+function detectPropertyTypeKeyword(searchTerm) {
+    if (!searchTerm || searchTerm.trim() === '') return null;
+
+    const normalizedTerm = normalizeArabicTextAdvanced ? normalizeArabicTextAdvanced(searchTerm.trim()) : searchTerm.trim().toLowerCase();
+
+    // البحث عن تطابق مع كلمات نوع العقار
+    for (const [propertyType, keywords] of Object.entries(PROPERTY_TYPE_KEYWORDS)) {
+        for (const keyword of keywords) {
+            const normalizedKeyword = normalizeArabicTextAdvanced ? normalizeArabicTextAdvanced(keyword) : keyword.toLowerCase();
+            if (normalizedTerm === normalizedKeyword) {
+                return propertyType;
             }
         }
     }
@@ -4938,6 +5020,36 @@ function applyActiveGeneralSearch(originalSearchTerm) {
     saveAppState();
 }
 
+// دالة للكشف عن كلمات نوع العقار وتطبيق الفلتر المناسب
+function detectAndApplyPropertyTypeFilter(searchTerm, clearSearchField = true) {
+    const detectedPropertyType = detectPropertyTypeKeyword(searchTerm);
+
+    if (detectedPropertyType) {
+        console.log(`🏗️ تم اكتشاف كلمة نوع عقار: "${searchTerm}" → تطبيق فلتر "${detectedPropertyType}"`);
+
+        // تطبيق فلتر نوع العقار
+        filterPropertiesByType(detectedPropertyType);
+
+        // إظهار رسالة توضيحية
+        const searchInput = document.getElementById('globalSearch');
+        if (searchInput && typeof showSearchIndicator === 'function') {
+            const filterName = detectedPropertyType === 'lands' ? 'الأراضي' : 'المباني';
+            showSearchIndicator(searchInput, `تم تطبيق فلتر نوع العقار: ${filterName} (يمكنك حذف النص لإلغاء الفلتر)`, 'success');
+        }
+
+        // مسح حقل البحث إذا طُلب ذلك
+        if (clearSearchField && searchInput) {
+            searchInput.value = '';
+            searchState.global = '';
+            searchState.isSearchActive = false;
+        }
+
+        return true; // تم تطبيق فلتر نوع العقار
+    }
+
+    return false; // لم يتم العثور على كلمة نوع عقار
+}
+
 // دالة للكشف عن كلمات الحالة وتطبيق الفلتر المناسب
 function detectAndApplyStatusFilter(searchTerm, clearSearchField = true) {
     const detectedStatus = detectStatusKeyword(searchTerm);
@@ -4961,7 +5073,7 @@ function detectAndApplyStatusFilter(searchTerm, clearSearchField = true) {
         const searchInput = document.getElementById('globalSearch');
         if (searchInput && typeof showSearchIndicator === 'function') {
             if (detectedStatus === 'نشط_عام') {
-               
+
             } else {
                 showSearchIndicator(searchInput, `تم تطبيق فلتر الحالة: ${detectedStatus} (يمكنك حذف النص لإلغاء الفلتر)`, 'success');
             }
@@ -4999,11 +5111,14 @@ function performGlobalSearch() {
             // أولاً: محاولة اكتشاف وتطبيق فلتر الحالة
             const statusFilterApplied = detectAndApplyStatusFilter(searchTerm);
 
-            if (statusFilterApplied) {
-                // إذا تم تطبيق فلتر/بحث حالة، حالة البحث تم تحديثها بالفعل في الدالة
+            // ثانياً: إذا لم يتم تطبيق فلتر حالة، محاولة اكتشاف وتطبيق فلتر نوع العقار
+            const propertyTypeFilterApplied = !statusFilterApplied ? detectAndApplyPropertyTypeFilter(searchTerm) : false;
+
+            if (statusFilterApplied || propertyTypeFilterApplied) {
+                // إذا تم تطبيق أي فلتر، فقد تم التعامل مع البحث بالفعل
                 // لا نحتاج لفعل شيء هنا
             } else {
-                // إذا لم يتم تطبيق فلتر حالة، تنفيذ البحث العادي
+                // إذا لم يتم تطبيق أي فلتر، تنفيذ البحث العادي
                 searchState.global = searchTerm;
                 searchState.isSearchActive = searchTerm.length > 0;
 
@@ -6490,7 +6605,8 @@ function renderData() {
   if (currentPropertyTypeFilter) {
     filteredData = filteredData.filter(property => {
       const propertyType = property['نوع العقار'];
-      const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+      // تحديث: "حوش" أصبح يُعتبر من المباني وليس من الأراضي
+      const isLandType = propertyType === 'أرض';
 
       if (currentPropertyTypeFilter === 'lands') {
         return isLandType;
@@ -32004,7 +32120,7 @@ function toggleOwnerFilter(owner) {
     console.log(`🔄 Toggle فلتر المالك: ${owner}`);
 
     // إذا كان الفلتر نشطاً، قم بإلغائه
-    if (ownerFilter === owner) {
+    if (activeFilters.owner === owner) {
         console.log(`❌ إلغاء فلتر المالك: ${owner}`);
         setOwnerFilter(null);
         window.currentOwner = 'الكل';
@@ -32034,28 +32150,106 @@ function showOwnerFilter() {
         return;
     }
 
+    // إضافة أنماط CSS للشاشات المختلفة
+    if (!document.getElementById('owner-filter-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'owner-filter-styles';
+        styles.textContent = `
+            .owner-filter-overlay {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: rgba(0,0,0,0.5) !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                z-index: 10000 !important;
+            }
+
+            .owner-filter-modal {
+                background: white !important;
+                border-radius: 12px !important;
+                padding: 20px !important;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+                max-width: 90vw !important;
+                width: 500px !important;
+                max-height: 90vh !important;
+                overflow-y: auto !important;
+            }
+
+            .owner-btn {
+                transition: all 0.2s ease !important;
+            }
+
+            .owner-btn:hover {
+                transform: translateY(-1px) !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+            }
+
+            .owner-btn:active {
+                transform: translateY(0) !important;
+            }
+
+            @media (max-width: 768px) {
+                .owner-filter-modal {
+                    width: 95vw !important;
+                    max-width: 95vw !important;
+                    padding: 15px !important;
+                    margin: 10px !important;
+                }
+
+                .owner-btn {
+                    padding: 18px 15px !important;
+                    font-size: 1.2rem !important;
+                    min-height: 60px !important;
+                }
+
+                .filter-options {
+                    max-height: 60vh !important;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .owner-filter-modal {
+                    width: 98vw !important;
+                    padding: 12px !important;
+                }
+
+                .owner-btn {
+                    padding: 20px 12px !important;
+                    font-size: 1.1rem !important;
+                    min-height: 65px !important;
+                }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+
     const owners = ['أبو خالد', 'أبو تميم'];
-    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
-        <div class="modal-box owner-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
-            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+    let html = `<div class="modal-overlay owner-filter-overlay" style="display:flex; z-index: 10000; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+        <div class="modal-box owner-filter-modal" style="max-width: 90vw; width: 500px; max-height: 90vh; position: relative; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; font-size: 1.5rem;">
                 <i class="fas fa-user" style="color: #fd7e14;"></i>
                 فلتر المالك
                 <span class="badge" style="background: #fd7e14; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${owners.length + 1}</span>
             </h3>
-            <p style="color: #6c757d; margin-bottom: 15px;">اختر المالك المراد فلترة العقارات حسبه:</p>
-            <div class="filter-options" style="max-height: 300px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px;">`;
+            <p style="color: #6c757d; margin-bottom: 15px; font-size: 1rem;">اختر المالك المراد فلترة العقارات حسبه:</p>
+            <div class="filter-options" style="max-height: 50vh; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px;">`;
 
     // إضافة خيار "الكل"
     const isAllActive = !activeFilters.owner || activeFilters.owner === '';
     html += `
         <button onclick="if(activeFilters.owner && activeFilters.owner !== '') { toggleOwnerFilter(activeFilters.owner); } closeOwnerFilterModal();"
                 class="owner-btn ${isAllActive ? 'active' : ''}"
-                style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
-                       transition: all 0.3s ease; border: 1px solid #e9ecef;
+                style="width: 100%; padding: 15px 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                       transition: all 0.3s ease; border: 1px solid #e9ecef; font-family: inherit;
                        background: ${isAllActive ? '#fd7e14' : 'white'}; color: ${isAllActive ? 'white' : '#495057'};
-                       display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-weight: 700; font-size: 1.3rem;">الكل</span>
-            ${isAllActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-list" style="color: #fd7e14;"></i>'}
+                       display: flex; align-items: center; justify-content: space-between; min-height: 50px;
+                       font-size: 1.1rem; touch-action: manipulation;">
+            <span style="font-weight: 700;">الكل</span>
+            ${isAllActive ? '<i class="fas fa-check" style="color: white; font-size: 1rem;"></i>' : '<i class="fas fa-list" style="color: #fd7e14; font-size: 1rem;"></i>'}
         </button>
     `;
 
@@ -32065,12 +32259,13 @@ function showOwnerFilter() {
         html += `
             <button onclick="toggleOwnerFilter('${owner}'); closeOwnerFilterModal();"
                     class="owner-btn ${isActive ? 'active' : ''}"
-                    style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
-                           transition: all 0.3s ease; border: 1px solid #e9ecef;
+                    style="width: 100%; padding: 15px 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                           transition: all 0.3s ease; border: 1px solid #e9ecef; font-family: inherit;
                            background: ${isActive ? '#fd7e14' : 'white'}; color: ${isActive ? 'white' : '#495057'};
-                           display: flex; align-items: center; justify-content: space-between;">
-                <span style="font-weight: 700; font-size: 1.3rem;">${owner}</span>
-                ${isActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-user" style="color: #fd7e14;"></i>'}
+                           display: flex; align-items: center; justify-content: space-between; min-height: 50px;
+                           font-size: 1.1rem; touch-action: manipulation;">
+                <span style="font-weight: 700;">${owner}</span>
+                ${isActive ? '<i class="fas fa-check" style="color: white; font-size: 1rem;"></i>' : '<i class="fas fa-user" style="color: #fd7e14; font-size: 1rem;"></i>'}
             </button>
         `;
     });
@@ -32079,7 +32274,10 @@ function showOwnerFilter() {
             </div>
             <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
                 <button onclick="closeOwnerFilterModal();" class="modal-action-btn close-btn owner-filter-close-btn" id="ownerFilterCloseBtn"
-                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none;
+                               padding: 15px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;
+                               transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;
+                               min-height: 50px; touch-action: manipulation; font-family: inherit;">
                     <i class="fas fa-times"></i> إغلاق
                 </button>
             </div>
