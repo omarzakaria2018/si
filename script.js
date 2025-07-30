@@ -4950,6 +4950,9 @@ const PROPERTY_TYPE_KEYWORDS = {
 // متغير لتتبع ما إذا كان فلتر الحالة تم تطبيقه من البحث
 let statusFilterAppliedFromSearch = false;
 
+// متغير لتتبع ما إذا كان فلتر نوع العقار تم تطبيقه من البحث
+let propertyTypeFilterAppliedFromSearch = false;
+
 // دالة للكشف عن كلمة الحالة من النص
 function detectStatusKeyword(searchTerm) {
     if (!searchTerm || searchTerm.trim() === '') return null;
@@ -5021,11 +5024,14 @@ function applyActiveGeneralSearch(originalSearchTerm) {
 }
 
 // دالة للكشف عن كلمات نوع العقار وتطبيق الفلتر المناسب
-function detectAndApplyPropertyTypeFilter(searchTerm, clearSearchField = true) {
+function detectAndApplyPropertyTypeFilter(searchTerm, clearSearchField = false) {
     const detectedPropertyType = detectPropertyTypeKeyword(searchTerm);
 
     if (detectedPropertyType) {
         console.log(`🏗️ تم اكتشاف كلمة نوع عقار: "${searchTerm}" → تطبيق فلتر "${detectedPropertyType}"`);
+
+        // تسجيل أن فلتر نوع العقار تم تطبيقه من البحث
+        propertyTypeFilterAppliedFromSearch = true;
 
         // تطبيق فلتر نوع العقار
         filterPropertiesByType(detectedPropertyType);
@@ -5034,14 +5040,14 @@ function detectAndApplyPropertyTypeFilter(searchTerm, clearSearchField = true) {
         const searchInput = document.getElementById('globalSearch');
         if (searchInput && typeof showSearchIndicator === 'function') {
             const filterName = detectedPropertyType === 'lands' ? 'الأراضي' : 'المباني';
-            showSearchIndicator(searchInput, `تم تطبيق فلتر نوع العقار: ${filterName} (يمكنك حذف النص لإلغاء الفلتر)`, 'success');
+            showSearchIndicator(searchInput, `تم تطبيق فلتر نوع العقار: ${filterName} (احذف النص لإلغاء الفلتر)`, 'success');
         }
 
-        // مسح حقل البحث إذا طُلب ذلك
-        if (clearSearchField && searchInput) {
-            searchInput.value = '';
-            searchState.global = '';
-            searchState.isSearchActive = false;
+        // الاحتفاظ بالنص في حقل البحث (لا نمسحه تلقائياً)
+        // المستخدم يمكنه حذف النص بنفسه لإلغاء الفلتر
+        if (searchInput) {
+            searchState.global = searchTerm; // الاحتفاظ بالنص في الحالة
+            searchState.isSearchActive = true; // البحث نشط
         }
 
         return true; // تم تطبيق فلتر نوع العقار
@@ -5429,6 +5435,22 @@ function clearGlobalSearchOnly() {
         if (searchInput && typeof showSearchIndicator === 'function') {
             const searchType = wasAdvancedSearch ? 'البحث المتقدم (فعال + على وشك)' : 'فلتر الحالة';
             showSearchIndicator(searchInput, `تم مسح ${searchType} المطبق من البحث`, 'success');
+        }
+    }
+
+    // إذا كان فلتر نوع العقار مطبقاً من البحث، قم بمسحه أيضاً
+    if (propertyTypeFilterAppliedFromSearch) {
+        console.log('🧹 مسح فلتر نوع العقار لأنه كان مطبقاً من البحث');
+
+        // مسح فلتر نوع العقار
+        if (typeof resetPropertyTypeFilter === 'function') {
+            resetPropertyTypeFilter();
+        }
+        propertyTypeFilterAppliedFromSearch = false;
+
+        // إظهار رسالة توضيحية
+        if (searchInput && typeof showSearchIndicator === 'function') {
+            showSearchIndicator(searchInput, `تم مسح فلتر نوع العقار المطبق من البحث`, 'success');
         }
     }
 
@@ -52714,7 +52736,21 @@ function showMobilePropertiesModal() {
         <div class="modal-overlay" style="${modalOverlayStyle}">
             <div class="modal-box properties-modal" style="${modalBoxStyle}">
 
-                <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <!-- زر الإغلاق في الأعلى للجوال -->
+                <button onclick="closePropertiesModalDirect();" class="mobile-close-btn"
+                        style="position: absolute; top: 15px; left: 15px; background: rgba(108, 117, 125, 0.1);
+                               border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+                               transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;
+                               z-index: 1000; color: #6c757d; font-size: 1.3rem; touch-action: manipulation;
+                               box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                        onmouseover="this.style.background='rgba(108, 117, 125, 0.2)'; this.style.transform='scale(1.1)';"
+                        onmouseout="this.style.background='rgba(108, 117, 125, 0.1)'; this.style.transform='scale(1)';"
+                        ontouchstart="this.style.background='rgba(108, 117, 125, 0.3)';"
+                        ontouchend="this.style.background='rgba(108, 117, 125, 0.1)';">
+                    <i class="fas fa-times"></i>
+                </button>
+
+                <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-left: 50px;">
                     <i class="fas fa-building" style="color: #007bff;"></i>
                     العقارات - ${cityText}${filterText}
                     <span class="badge" style="background: #007bff; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${displayedPropertyNames.length}</span>
@@ -52790,13 +52826,6 @@ function showMobilePropertiesModal() {
     }
 
     html += `
-                </div>
-
-                <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
-                    <button onclick="closePropertiesModalDirect();" class="modal-action-btn close-btn properties-close-btn" id="propertiesCloseBtn"
-                            style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="fas fa-times"></i> إغلاق
-                    </button>
                 </div>
             </div>
         </div>
