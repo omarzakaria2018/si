@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تحديث إحصائيات الحوش</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #fd7e14, #e8590c);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .test-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .test-section:last-child {
+            border-bottom: none;
+        }
+
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #fd7e14, #e8590c);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(253, 126, 20, 0.4);
+        }
+
+        .test-button.success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+
+        .test-button.warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .test-button.danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .comparison-demo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .demo-card {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .demo-card.before {
+            border-color: #dc3545;
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        }
+
+        .demo-card.after {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        }
+
+        .demo-card h4 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .demo-card.before h4 {
+            color: #721c24;
+        }
+
+        .demo-card.after h4 {
+            color: #155724;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stats-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .stats-table .category-header {
+            background: #fd7e14;
+            color: white;
+            font-weight: bold;
+        }
+
+        .stats-table .buildings-row {
+            background: #e8f5e8;
+        }
+
+        .stats-table .lands-row {
+            background: #fff3cd;
+        }
+
+        .test-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .status-working {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-broken {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .code-example {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .example-data {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .example-data h4 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-demo {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-home"></i> اختبار تحديث إحصائيات الحوش</h1>
+            <p>الحوش أصبح يُعتبر من المباني في الإحصائيات</p>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-info-circle"></i> التحديث المطبق</h3>
+            <p><strong>المطلوب:</strong> جعل "الحوش" يُعتبر من "المباني" في الإحصائيات بدلاً من "الأراضي".</p>
+            
+            <div class="comparison-demo">
+                <div class="demo-card before">
+                    <h4><i class="fas fa-times-circle"></i> قبل التحديث</h4>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th class="category-header">الفئة</th>
+                                <th>الوحدات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="buildings-row">
+                                <td><strong>المباني</strong></td>
+                                <td>150 وحدة</td>
+                            </tr>
+                            <tr class="lands-row">
+                                <td><strong>الأراضي</strong></td>
+                                <td>75 وحدة (تشمل الحوش)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="color: #721c24; font-weight: bold;">❌ الحوش مصنف مع الأراضي</p>
+                </div>
+                
+                <div class="demo-card after">
+                    <h4><i class="fas fa-check-circle"></i> بعد التحديث</h4>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th class="category-header">الفئة</th>
+                                <th>الوحدات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="buildings-row">
+                                <td><strong>المباني</strong></td>
+                                <td>200 وحدة (تشمل الحوش)</td>
+                            </tr>
+                            <tr class="lands-row">
+                                <td><strong>الأراضي</strong></td>
+                                <td>25 وحدة (أرض فقط)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="color: #155724; font-weight: bold;">✅ الحوش مصنف مع المباني</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-code"></i> التغييرات التقنية</h3>
+            
+            <h4>التحديث في دالة calculateCategoryStats:</h4>
+            <div class="code-example">
+<span style="color: #dc3545;">// قبل التحديث:</span>
+const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+
+<span style="color: #28a745;">// بعد التحديث:</span>
+<span class="highlight">// تحديث: "حوش" أصبح يُعتبر من المباني وليس من الأراضي</span>
+const isLandType = propertyType === 'أرض';
+            </div>
+
+            <h4>تحديث التعليقات:</h4>
+            <div class="code-example">
+<span style="color: #dc3545;">// قبل:</span>
+const buildingStats = calculateCategoryStats(data, false); // مباني (ليس أرض أو حوش)
+const landStats = calculateCategoryStats(data, true); // أراضي (أرض أو حوش)
+
+<span style="color: #28a745;">// بعد:</span>
+const buildingStats = calculateCategoryStats(data, false); <span class="highlight">// مباني (تشمل حوش الآن)</span>
+const landStats = calculateCategoryStats(data, true); <span class="highlight">// أراضي (أرض فقط)</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-vial"></i> محاكاة الاختبار</h3>
+            <p>اختبار منطق التصنيف الجديد:</p>
+            
+            <div class="example-data">
+                <h4>بيانات تجريبية للاختبار:</h4>
+                <button class="test-button" onclick="runStatisticsTest()">
+                    <i class="fas fa-play"></i> تشغيل اختبار الإحصائيات
+                </button>
+                <div class="test-results" id="testResults"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-list-check"></i> خطوات التحقق</h3>
+            
+            <ol style="line-height: 2; font-size: 1.1rem;">
+                <li><strong>افتح التطبيق الرئيسي</strong> وتأكد من وجود عقارات من نوع "حوش"</li>
+                <li><strong>راجع الإحصائيات</strong> في الشاشة الرئيسية (جدول المباني والأراضي)</li>
+                <li><strong>تحقق من أن الحوش</strong> يظهر في عدد "المباني" وليس "الأراضي"</li>
+                <li><strong>اختبر فلتر المباني</strong> - يجب أن تظهر العقارات من نوع "حوش"</li>
+                <li><strong>اختبر فلتر الأراضي</strong> - يجب ألا تظهر العقارات من نوع "حوش"</li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+            <button class="test-button success" onclick="openMainApp()">
+                <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+            </button>
+            <button class="test-button warning" onclick="showExpectedResults()">
+                <i class="fas fa-chart-bar"></i> النتائج المتوقعة
+            </button>
+            <button class="test-button danger" onclick="showTroubleshooting()">
+                <i class="fas fa-bug"></i> استكشاف الأخطاء
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // بيانات تجريبية للاختبار
+        const testData = [
+            { 'نوع العقار': 'شقة', 'اسم العقار': 'برج السكن', 'رقم  الوحدة ': '101', 'اسم المستأجر': 'أحمد محمد' },
+            { 'نوع العقار': 'محل', 'اسم العقار': 'مجمع التجاري', 'رقم  الوحدة ': '201', 'اسم المستأجر': 'سالم علي' },
+            { 'نوع العقار': 'حوش', 'اسم العقار': 'مجمع الأحواش', 'رقم  الوحدة ': '301', 'اسم المستأجر': 'خالد أحمد' },
+            { 'نوع العقار': 'حوش', 'اسم العقار': 'مجمع الأحواش', 'رقم  الوحدة ': '302', 'اسم المستأجر': '' },
+            { 'نوع العقار': 'أرض', 'اسم العقار': 'أراضي الشمال', 'رقم  الوحدة ': '401', 'اسم المستأجر': 'محمد سالم' },
+            { 'نوع العقار': 'أرض', 'اسم العقار': 'أراضي الجنوب', 'رقم  الوحدة ': '501', 'اسم المستأجر': '' }
+        ];
+
+        // محاكاة دالة calculateCategoryStats المحدثة
+        function calculateCategoryStats(data, isLandCategory) {
+            let totalUnits = 0;
+            let emptyUnits = 0;
+            let tenants = 0;
+            let rentedUnits = 0;
+
+            const uniqueUnits = new Set();
+            const uniqueContracts = {};
+
+            data.forEach(property => {
+                const propertyType = property['نوع العقار'];
+                // المنطق الجديد: "حوش" أصبح يُعتبر من المباني وليس من الأراضي
+                const isLandType = propertyType === 'أرض';
+
+                // تصفية حسب الفئة المطلوبة
+                if (isLandCategory !== isLandType) {
+                    return; // تخطي هذا العقار إذا لم يكن من الفئة المطلوبة
+                }
+
+                // حساب عدد الوحدات الفريدة
+                const unitKey = `${property['اسم العقار']}_${property['رقم  الوحدة ']}`;
+                if (property['رقم  الوحدة '] && property['رقم  الوحدة '].toString().trim() !== '') {
+                    uniqueUnits.add(unitKey);
+                }
+
+                // حساب الوحدات الفارغة
+                if (!property['اسم المستأجر'] || property['اسم المستأجر'].toString().trim() === '') {
+                    emptyUnits++;
+                    return;
+                }
+
+                // حساب المستأجرين (عقود فريدة)
+                const contractKey = property['اسم المستأجر']; // تبسيط للاختبار
+                if (contractKey && contractKey.toString().trim() !== '' && !uniqueContracts[contractKey]) {
+                    uniqueContracts[contractKey] = true;
+                    tenants++;
+                }
+            });
+
+            totalUnits = uniqueUnits.size;
+            rentedUnits = totalUnits - emptyUnits;
+
+            return {
+                totalUnits,
+                emptyUnits,
+                tenants,
+                rentedUnits
+            };
+        }
+
+        function runStatisticsTest() {
+            const resultsDiv = document.getElementById('testResults');
+            let output = '🧪 تشغيل اختبار الإحصائيات...\n\n';
+
+            // حساب الإحصائيات حسب نوع العقار (مباني vs أراضي)
+            const buildingStats = calculateCategoryStats(testData, false); // مباني (تشمل حوش الآن)
+            const landStats = calculateCategoryStats(testData, true); // أراضي (أرض فقط)
+
+            output += '🏗️ إحصائيات المباني (تشمل الحوش):\n';
+            output += `   📊 إجمالي الوحدات: ${buildingStats.totalUnits}\n`;
+            output += `   👥 المستأجرين: ${buildingStats.tenants}\n`;
+            output += `   🏠 الوحدات المؤجرة: ${buildingStats.rentedUnits}\n`;
+            output += `   🔲 الوحدات الفارغة: ${buildingStats.emptyUnits}\n\n`;
+
+            output += '🗺️ إحصائيات الأراضي (أرض فقط):\n';
+            output += `   📊 إجمالي الوحدات: ${landStats.totalUnits}\n`;
+            output += `   👥 المستأجرين: ${landStats.tenants}\n`;
+            output += `   🏠 الوحدات المؤجرة: ${landStats.rentedUnits}\n`;
+            output += `   🔲 الوحدات الفارغة: ${landStats.emptyUnits}\n\n`;
+
+            // التحقق من النتائج
+            const courtyardInBuildings = testData.filter(p => p['نوع العقار'] === 'حوش').length;
+            const buildingUnitsIncludingCourtyard = testData.filter(p => p['نوع العقار'] !== 'أرض').length;
+            const landUnitsOnly = testData.filter(p => p['نوع العقار'] === 'أرض').length;
+
+            output += '🔍 التحقق من التحديث:\n';
+            output += `   ${buildingStats.totalUnits === 4 ? '✅' : '❌'} المباني تشمل الحوش (متوقع: 4، فعلي: ${buildingStats.totalUnits})\n`;
+            output += `   ${landStats.totalUnits === 2 ? '✅' : '❌'} الأراضي لا تشمل الحوش (متوقع: 2، فعلي: ${landStats.totalUnits})\n`;
+            output += `   ${courtyardInBuildings === 2 ? '✅' : '❌'} عدد وحدات الحوش في البيانات: ${courtyardInBuildings}\n`;
+
+            if (buildingStats.totalUnits === 4 && landStats.totalUnits === 2) {
+                output += '\n🎉 التحديث نجح! الحوش أصبح يُعتبر من المباني\n';
+            } else {
+                output += '\n⚠️ هناك مشكلة في التحديث\n';
+            }
+
+            output += '\n📋 تفاصيل البيانات التجريبية:\n';
+            testData.forEach((item, index) => {
+                const category = item['نوع العقار'] === 'أرض' ? 'أراضي' : 'مباني';
+                output += `   ${index + 1}. ${item['نوع العقار']} → ${category}\n`;
+            });
+
+            resultsDiv.textContent = output;
+        }
+
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+
+        function showExpectedResults() {
+            alert(`📊 النتائج المتوقعة بعد التحديث:
+
+🏗️ في جدول إحصائيات المباني والأراضي:
+• المباني: يجب أن تشمل جميع أنواع العقارات عدا "أرض"
+• الأراضي: يجب أن تشمل "أرض" فقط
+
+🔍 في فلاتر نوع العقار:
+• فلتر المباني: يظهر الحوش ✅
+• فلتر الأراضي: لا يظهر الحوش ❌
+
+📈 تأثير على الأرقام:
+• عدد وحدات المباني سيزيد
+• عدد وحدات الأراضي سينقص
+• الإجمالي العام يبقى كما هو`);
+        }
+
+        function showTroubleshooting() {
+            alert(`🔧 استكشاف الأخطاء:
+
+❌ الحوش ما زال يظهر في الأراضي:
+• تحقق من دالة calculateCategoryStats
+• تأكد من السطر: const isLandType = propertyType === 'أرض';
+• يجب ألا يحتوي على || propertyType === 'حوش'
+
+❌ الأرقام غير صحيحة:
+• تحقق من البيانات الأصلية
+• تأكد من وجود عقارات من نوع "حوش"
+• راجع منطق حساب الوحدات الفريدة
+
+❌ التحديث لا يظهر:
+• امسح cache المتصفح
+• أعد تحميل الصفحة
+• تحقق من console للأخطاء
+
+💡 للتشخيص:
+• افتح Developer Console
+• ابحث عن رسائل "📊 إحصائيات المباني" و "📊 إحصائيات الأراضي"
+• تحقق من الأرقام المطبوعة`);
+        }
+
+        // تشغيل اختبار تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                runStatisticsTest();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

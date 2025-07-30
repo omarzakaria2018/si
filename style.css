@@ -29097,12 +29097,12 @@ body.limited-user .restricted-dropdown-item::before {
 /* توزيع عرض الأعمدة في قائمة الإحصائيات المنفصلة */
 .statistics-totals .building-land-stats-table.mobile-table th:nth-child(1),
 .statistics-totals .building-land-stats-table.mobile-table td:nth-child(1) {
-    width: 35%;
-}
+    width: 29%;
+}ٍ
 
 .statistics-totals .building-land-stats-table.mobile-table th:nth-child(2),
 .statistics-totals .building-land-stats-table.mobile-table td:nth-child(2) {
-    width: 25%;
+    width: 28%;
 }
 
 .statistics-totals .building-land-stats-table.mobile-table th:nth-child(3),

@@ -4335,6 +4335,15 @@ function searchInPropertyData(property, searchTerm) {
     // النظام القديم كبديل
     const normalizedSearchTerm = normalizeArabicText(searchTerm);
 
+    // البحث الخاص: إذا كان المصطلح "متعدد"، ابحث عن الوحدات المتعددة
+    if (normalizedSearchTerm === 'متعدد') {
+        const unitNumber = property['رقم  الوحدة '];
+        if (unitNumber && unitNumber.toString().includes('وحدات')) {
+            console.log(`🔍 وجد وحدات متعددة: "${unitNumber}"`);
+            return true;
+        }
+    }
+
     // البحث في البيانات المخزنة
     const foundInData = Object.values(property).some(value => {
         if (!value) return false;
@@ -6842,6 +6851,8 @@ function calculateCategoryStats(data, isLandCategory) {
     let emptyUnits = 0;
     let tenants = 0;
     let rentedUnits = 0;
+    let commercialUnits = 0; // الوحدات الضريبية
+    let residentialUnits = 0; // الوحدات السكنية
 
     // تجميع الوحدات الفريدة
     const uniqueUnits = new Set();
@@ -6849,7 +6860,8 @@ function calculateCategoryStats(data, isLandCategory) {
 
     data.forEach(property => {
         const propertyType = property['نوع العقار'];
-        const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+        // تحديث: "حوش" أصبح يُعتبر من المباني وليس من الأراضي
+        const isLandType = propertyType === 'أرض';
 
         // تصفية حسب الفئة المطلوبة
         if (isLandCategory !== isLandType) {
@@ -6860,6 +6872,14 @@ function calculateCategoryStats(data, isLandCategory) {
         const unitKey = `${property['اسم العقار']}_${property['رقم  الوحدة ']}`;
         if (property['رقم  الوحدة '] && property['رقم  الوحدة '].toString().trim() !== '') {
             uniqueUnits.add(unitKey);
+        }
+
+        // حساب نوع العقد (ضريبي أو سكني)
+        const contractType = property['نوع العقد'];
+        if (contractType === 'ضريبي') {
+            commercialUnits++;
+        } else if (contractType === 'سكني') {
+            residentialUnits++;
         }
 
         // حساب الوحدات الفارغة
@@ -6883,7 +6903,9 @@ function calculateCategoryStats(data, isLandCategory) {
         totalUnits,
         emptyUnits,
         tenants,
-        rentedUnits
+        rentedUnits,
+        commercialUnits,
+        residentialUnits
     };
 }
 
@@ -6983,8 +7005,8 @@ function renderTotals(data) {
         console.log('📊 عدد البيانات المرسلة:', data.length);
 
         // حساب الإحصائيات حسب نوع العقار (مباني vs أراضي)
-        const buildingStats = calculateCategoryStats(data, false); // مباني (ليس أرض أو حوش)
-        const landStats = calculateCategoryStats(data, true); // أراضي (أرض أو حوش)
+        const buildingStats = calculateCategoryStats(data, false); // مباني (تشمل حوش الآن)
+        const landStats = calculateCategoryStats(data, true); // أراضي (أرض فقط)
 
         console.log('📊 إحصائيات المباني:', buildingStats);
         console.log('📊 إحصائيات الأراضي:', landStats);
@@ -7016,7 +7038,9 @@ function renderTotals(data) {
                             <td class="metric-label">عدد الفارغة</td>
                             <td class="buildings-value">${buildingStats.emptyUnits}</td>
                             <td class="lands-value">${landStats.emptyUnits}</td>
-                            <td class="total-value">${buildingStats.emptyUnits + landStats.emptyUnits}</td>
+                            <td class="total-value clickable-empty-units" style="cursor: pointer;">
+                                <i class="fas fa-minus-circle" style="color: #28a745; margin-left: 5px;"></i> ${buildingStats.emptyUnits + landStats.emptyUnits}
+                            </td>
                         </tr>
                         <tr>
                             <td class="metric-label">عدد المستأجرين</td>
@@ -7029,6 +7053,18 @@ function renderTotals(data) {
                             <td class="buildings-value">${buildingStats.rentedUnits}</td>
                             <td class="lands-value">${landStats.rentedUnits}</td>
                             <td class="total-value">${buildingStats.rentedUnits + landStats.rentedUnits}</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-label">الوحدات الضريبية</td>
+                            <td class="buildings-value">${buildingStats.commercialUnits}</td>
+                            <td class="lands-value">${landStats.commercialUnits}</td>
+                            <td class="total-value">${buildingStats.commercialUnits + landStats.commercialUnits}</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-label">الوحدات السكنية</td>
+                            <td class="buildings-value">${buildingStats.residentialUnits}</td>
+                            <td class="lands-value">${landStats.residentialUnits}</td>
+                            <td class="total-value">${buildingStats.residentialUnits + landStats.residentialUnits}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -7100,8 +7136,8 @@ function renderTotals(data) {
         // للشاشات الصغيرة: استخدم التصميم القديم
         addTotalItem(container, 'عدد الوحدات', totalUnits, 'units-stat');
         addTotalItem(container, 'عدد المستأجرين', tenantsCount, 'tenants-stat');
-        addTotalItem(container, 'عدد الوحدات الفارغة', `<i class=\"fas fa-minus-circle\"></i> ${countEmpty}`, 'empty-stat clickable-empty-units');
-        addTotalItem(container, 'الحالي (فعال + على وشك)', `<i class=\"fas fa-users\" style=\"color:#28a745;\"></i> ${countActive + countPending}`, 'current-stat');
+        addTotalItem(container, 'عدد الوحدات الفارغة', `<i class=\"fas fa-minus-circle\" style=\"color:#28a745; margin-left: .1px;\"></i> ${countEmpty}`, 'empty-stat clickable-empty-units');
+        addTotalItem(container, 'نشط (فعال + على وشك)', `<i class=\"fas fa-users\" style=\"color:#28a745;\"></i> ${countActive + countPending}`, 'current-stat');
         addTotalItem(container, 'الفعال', countActive, 'active-stat');
         addTotalItem(container, 'المنتهي', countExpired, 'expired-stat');
         addTotalItem(container, 'على وشك', countPending, 'pending-stat');
@@ -7278,18 +7314,30 @@ function renderMobileTotals(data) {
     console.log('📊 عدد البيانات المرسلة:', data.length);
 
     // حساب الإحصائيات حسب نوع العقار (مباني vs أراضي)
-    const buildingStats = calculateCategoryStats(data, false); // مباني (ليس أرض أو حوش)
-    const landStats = calculateCategoryStats(data, true); // أراضي (أرض أو حوش)
+    const buildingStats = calculateCategoryStats(data, false); // مباني (تشمل حوش الآن)
+    const landStats = calculateCategoryStats(data, true); // أراضي (أرض فقط)
 
     console.log('📊 إحصائيات المباني:', buildingStats);
     console.log('📊 إحصائيات الأراضي:', landStats);
     console.log('📊 إجمالي الوحدات:', buildingStats.totalUnits + landStats.totalUnits);
 
+    // تحديد النص المناسب للعنوان
+    let headerText = 'إحصائيات المباني والأراضي';
+    if (currentCountry && currentCountry !== 'الكل') {
+        if (currentProperty && currentProperty !== 'الكل') {
+            headerText = `إحصائيات ${currentProperty} - ${currentCountry}`;
+        } else {
+            headerText = `إحصائيات ${currentCountry}`;
+        }
+    } else if (currentProperty && currentProperty !== 'الكل') {
+        headerText = `إحصائيات ${currentProperty}`;
+    }
+
     const unitsSection = document.createElement('div');
     unitsSection.className = 'mobile-stats-section units-section';
     unitsSection.innerHTML = `
         <div class="section-header">
-            <h3><i class="fas fa-chart-bar"></i> إحصائيات المباني والأراضي</h3>
+            <h3><i class="fas fa-chart-bar"></i> ${headerText}</h3>
         </div>
         <div class="section-content">
             <div class="building-land-table-container">
@@ -7314,7 +7362,7 @@ function renderMobileTotals(data) {
                             <td class="buildings-value">${buildingStats.emptyUnits}</td>
                             <td class="lands-value">${landStats.emptyUnits}</td>
                             <td class="total-value clickable-empty-units" style="cursor: pointer;">
-                                <i class="fas fa-minus-circle"></i> ${buildingStats.emptyUnits + landStats.emptyUnits}
+                                <i class="fas fa-minus-circle" style="color: #28a745; margin-left: 5px;"></i> ${buildingStats.emptyUnits + landStats.emptyUnits}
                             </td>
                         </tr>
                         <tr>
@@ -7329,6 +7377,18 @@ function renderMobileTotals(data) {
                             <td class="lands-value">${landStats.rentedUnits}</td>
                             <td class="total-value">${buildingStats.rentedUnits + landStats.rentedUnits}</td>
                         </tr>
+                        <tr>
+                            <td class="metric-label">الوحدات الضريبية</td>
+                            <td class="buildings-value">${buildingStats.commercialUnits}</td>
+                            <td class="lands-value">${landStats.commercialUnits}</td>
+                            <td class="total-value">${buildingStats.commercialUnits + landStats.commercialUnits}</td>
+                        </tr>
+                        <tr>
+                            <td class="metric-label">الوحدات السكنية</td>
+                            <td class="buildings-value">${buildingStats.residentialUnits}</td>
+                            <td class="lands-value">${landStats.residentialUnits}</td>
+                            <td class="total-value">${buildingStats.residentialUnits + landStats.residentialUnits}</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -7342,15 +7402,26 @@ function renderMobileTotals(data) {
     container.appendChild(divider1);
 
     // 2. إحصائيات العقود (الجزء الثاني) - Grid من عمودين
+    let contractsHeaderText = 'إحصائيات العقود';
+    if (currentCountry && currentCountry !== 'الكل') {
+        if (currentProperty && currentProperty !== 'الكل') {
+            contractsHeaderText = `عقود ${currentProperty} - ${currentCountry}`;
+        } else {
+            contractsHeaderText = `عقود ${currentCountry}`;
+        }
+    } else if (currentProperty && currentProperty !== 'الكل') {
+        contractsHeaderText = `عقود ${currentProperty}`;
+    }
+
     const contractsSection = document.createElement('div');
     contractsSection.className = 'mobile-stats-section contracts-section';
     contractsSection.innerHTML = `
         <div class="section-header">
-            <h3><i class="fas fa-file-contract"></i> إحصائيات العقود</h3>
+            <h3><i class="fas fa-file-contract"></i> ${contractsHeaderText}</h3>
         </div>
         <div class="section-content grid-two-columns">
             <div class="total-item current-stat">
-                <span class="total-label">الحالي (فعال + على وشك)</span>
+                <span class="total-label">نشط (فعال + على وشك)</span>
                 <span class="total-value"><i class="fas fa-users" style="color:#28a745;"></i> ${countActive + countPending}</span>
             </div>
             <div class="total-item active-stat">
@@ -7375,11 +7446,22 @@ function renderMobileTotals(data) {
     container.appendChild(divider2);
 
     // 3. الإحصائيات المالية (الجزء الثالث) - Grid من عمودين
+    let financialHeaderText = 'الإحصائيات المالية';
+    if (currentCountry && currentCountry !== 'الكل') {
+        if (currentProperty && currentProperty !== 'الكل') {
+            financialHeaderText = `الماليات - ${currentProperty} - ${currentCountry}`;
+        } else {
+            financialHeaderText = `الماليات - ${currentCountry}`;
+        }
+    } else if (currentProperty && currentProperty !== 'الكل') {
+        financialHeaderText = `الماليات - ${currentProperty}`;
+    }
+
     const financialSection = document.createElement('div');
     financialSection.className = 'mobile-stats-section financial-section';
     financialSection.innerHTML = `
         <div class="section-header">
-            <h3><i class="fas fa-money-bill-wave"></i> الإحصائيات المالية</h3>
+            <h3><i class="fas fa-money-bill-wave"></i> ${financialHeaderText}</h3>
         </div>
         <div class="section-content grid-two-columns">
             <div class="total-item taxable-base-stat">
