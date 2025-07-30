@@ -1490,6 +1490,7 @@ function saveAppState() {
             currentCountry: currentCountry,
             currentProperty: currentProperty,
             filterStatus: filterStatus,
+            currentPropertyTypeFilter: currentPropertyTypeFilter,
 
             // الفلاتر النشطة
             activeFilters: {
@@ -1545,6 +1546,7 @@ function saveFiltersState() {
             currentCountry: currentCountry,
             currentProperty: currentProperty,
             filterStatus: filterStatus,
+            currentPropertyTypeFilter: currentPropertyTypeFilter,
             contractType: typeof contractTypeFilter !== 'undefined' ? contractTypeFilter : null,
             timestamp: Date.now()
         };
@@ -1633,12 +1635,14 @@ function restoreAppState() {
         currentCountry = state.currentCountry;
         currentProperty = state.currentProperty;
         filterStatus = state.filterStatus;
+        currentPropertyTypeFilter = state.currentPropertyTypeFilter;
 
         console.log('📊 تم استعادة الحالة:', {
             currentView,
             currentCountry,
             currentProperty,
-            filterStatus
+            filterStatus,
+            currentPropertyTypeFilter
         });
 
         // تطبيق الحالة المستعادة على الواجهة
@@ -3684,10 +3688,11 @@ function initPropertyList(selectedCountry = null) {
     // تحديث حالة فلاتر نوع العقار
     updatePropertyTypeFiltersState();
 
-    // تطبيق فلتر نوع العقار إذا كان نشطاً
+    // تطبيق فلتر نوع العقار إذا كان نشطاً (مع مراعاة المدينة المحددة)
     let displayedPropertyNames = sortedPropertyNames;
     if (currentPropertyTypeFilter) {
-        displayedPropertyNames = filterPropertiesByTypeLogic(sortedPropertyNames, currentPropertyTypeFilter);
+        displayedPropertyNames = filterPropertiesByTypeLogic(sortedPropertyNames, currentPropertyTypeFilter, selectedCountry);
+        console.log(`🏗️ فلترة ${currentPropertyTypeFilter === 'buildings' ? 'المباني' : 'الأراضي'} في ${selectedCountry || 'جميع المدن'}: ${displayedPropertyNames.length} عقار`);
     }
 
     displayedPropertyNames.forEach(propertyName => {
@@ -3722,14 +3727,13 @@ function initPropertyList(selectedCountry = null) {
 function filterPropertiesByType(filterType) {
     console.log(`🏗️ تطبيق فلتر نوع العقار: ${filterType}`);
 
-    // تحديث الفلتر الحالي
+    // تحديث الفلتر الحالي (دائماً تطبيق الفلتر المطلوب)
+    currentPropertyTypeFilter = filterType;
+    console.log(`✅ تم تطبيق فلتر: ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}`);
+
+    // إذا كان نفس الفلتر، أعد تطبيقه (لا نلغيه)
     if (currentPropertyTypeFilter === filterType) {
-        // إلغاء الفلتر إذا تم الضغط على نفس الزر
-        currentPropertyTypeFilter = null;
-        console.log('🔄 تم إلغاء فلتر نوع العقار');
-    } else {
-        currentPropertyTypeFilter = filterType;
-        console.log(`✅ تم تطبيق فلتر: ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}`);
+        console.log(`🔄 إعادة تطبيق فلتر ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}`);
     }
 
     // إعادة تحديث قائمة العقارات
@@ -3742,15 +3746,19 @@ function filterPropertiesByType(filterType) {
     renderData();
 }
 
-// دالة منطق فلترة العقارات حسب النوع
-function filterPropertiesByTypeLogic(propertyNames, filterType) {
+// دالة منطق فلترة العقارات حسب النوع (مع مراعاة المدينة)
+function filterPropertiesByTypeLogic(propertyNames, filterType, selectedCountry = null) {
     if (!filterType) return propertyNames;
 
     const filteredProperties = [];
 
     propertyNames.forEach(propertyName => {
-        // البحث عن العقار في البيانات لمعرفة نوعه
-        const propertyData = properties.find(p => p['اسم العقار'] === propertyName);
+        // البحث عن العقار في البيانات لمعرفة نوعه (مع مراعاة المدينة)
+        let propertyData = properties.find(p => {
+            const matchesName = p['اسم العقار'] === propertyName;
+            const matchesCity = selectedCountry ? p.المدينة === selectedCountry : true;
+            return matchesName && matchesCity;
+        });
 
         if (propertyData) {
             const propertyType = propertyData['نوع العقار'];
@@ -3762,8 +3770,13 @@ function filterPropertiesByTypeLogic(propertyNames, filterType) {
                 filteredProperties.push(propertyName);
             }
         } else {
-            // إذا لم نجد البيانات، نتحقق من propertyDefinitions
-            const propDef = propertyDefinitions?.find(def => def.name === propertyName);
+            // إذا لم نجد البيانات، نتحقق من propertyDefinitions (مع مراعاة المدينة)
+            const propDef = propertyDefinitions?.find(def => {
+                const matchesName = def.name === propertyName;
+                const matchesCity = selectedCountry ? def.city === selectedCountry : true;
+                return matchesName && matchesCity;
+            });
+
             if (propDef) {
                 const propertyType = propDef.type;
                 const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
@@ -3774,7 +3787,7 @@ function filterPropertiesByTypeLogic(propertyNames, filterType) {
                     filteredProperties.push(propertyName);
                 }
             } else {
-                // إذا لم نجد معلومات النوع، نعتبره مبنى افتراضياً
+                // إذا لم نجد معلومات النوع، نعتبره مبنى افتراضياً (فقط إذا كان في المدينة الصحيحة)
                 if (filterType === 'buildings') {
                     filteredProperties.push(propertyName);
                 }
@@ -3790,14 +3803,13 @@ function filterPropertiesByTypeLogic(propertyNames, filterType) {
 function filterMobilePropertiesByType(filterType) {
     console.log(`📱 تطبيق فلتر نوع العقار في الموبايل: ${filterType}`);
 
-    // تحديث الفلتر الحالي
+    // تحديث الفلتر الحالي (دائماً تطبيق الفلتر المطلوب)
+    currentPropertyTypeFilter = filterType;
+    console.log(`✅ تم تطبيق فلتر: ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}`);
+
+    // إذا كان نفس الفلتر، أعد تطبيقه (لا نلغيه)
     if (currentPropertyTypeFilter === filterType) {
-        // إلغاء الفلتر إذا تم الضغط على نفس الزر
-        currentPropertyTypeFilter = null;
-        console.log('🔄 تم إلغاء فلتر نوع العقار');
-    } else {
-        currentPropertyTypeFilter = filterType;
-        console.log(`✅ تم تطبيق فلتر: ${filterType === 'buildings' ? 'المباني' : 'الأراضي'}`);
+        console.log(`🔄 إعادة تطبيق فلتر ${filterType === 'buildings' ? 'المباني' : 'الأراضي'} في الموبايل`);
     }
 
     // إعادة إنشاء النافذة مع الفلتر الجديد
@@ -3848,43 +3860,28 @@ function forceShowPropertyTypeFilters() {
     // زر المباني
     const buildingsBtn = document.createElement('button');
     buildingsBtn.innerHTML = '<i class="fas fa-building"></i> المباني';
-    buildingsBtn.style.cssText = `
-        flex: 1 !important;
-        padding: 10px 15px !important;
-        border: 2px solid #007bff !important;
-        background: ${currentPropertyTypeFilter === 'buildings' ? '#007bff' : 'white'} !important;
-        color: ${currentPropertyTypeFilter === 'buildings' ? 'white' : '#007bff'} !important;
-        border-radius: 8px !important;
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-        cursor: pointer !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 8px !important;
-    `;
+    buildingsBtn.className = `property-filter-btn buildings-filter ${currentPropertyTypeFilter === 'buildings' ? 'active' : ''}`;
     buildingsBtn.onclick = () => filterPropertiesByType('buildings');
 
     // زر الأراضي
     const landsBtn = document.createElement('button');
     landsBtn.innerHTML = '<i class="fas fa-mountain"></i> الأراضي';
-    landsBtn.style.cssText = `
-        flex: 1 !important;
-        padding: 10px 15px !important;
-        border: 2px solid #28a745 !important;
-        background: ${currentPropertyTypeFilter === 'lands' ? '#28a745' : 'white'} !important;
-        color: ${currentPropertyTypeFilter === 'lands' ? 'white' : '#28a745'} !important;
-        border-radius: 8px !important;
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-        cursor: pointer !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 8px !important;
-    `;
+    landsBtn.className = `property-filter-btn lands-filter ${currentPropertyTypeFilter === 'lands' ? 'active' : ''}`;
     landsBtn.onclick = () => filterPropertiesByType('lands');
 
+    // زر عرض الكل (لإلغاء الفلتر)
+    const allBtn = document.createElement('button');
+    allBtn.innerHTML = '<i class="fas fa-list"></i> الكل';
+    allBtn.className = `property-filter-btn all-filter ${!currentPropertyTypeFilter ? 'active' : ''}`;
+    allBtn.onclick = () => {
+        currentPropertyTypeFilter = null;
+        console.log('🔄 تم إلغاء فلتر نوع العقار - عرض جميع العقارات');
+        initPropertyList(currentCountry);
+        updatePropertyTypeFiltersState();
+        renderData();
+    };
+
+    filtersContainer.appendChild(allBtn);
     filtersContainer.appendChild(buildingsBtn);
     filtersContainer.appendChild(landsBtn);
 
@@ -3910,8 +3907,11 @@ function updatePropertyTypeFiltersState() {
     if (buildingsBtn) {
         // تحديث زر المباني
         const isActive = currentPropertyTypeFilter === 'buildings';
-        buildingsBtn.style.background = isActive ? '#007bff' : 'white';
-        buildingsBtn.style.color = isActive ? 'white' : '#007bff';
+        if (isActive) {
+            buildingsBtn.classList.add('active');
+        } else {
+            buildingsBtn.classList.remove('active');
+        }
         console.log('🏢 تم تحديث زر المباني:', isActive ? 'نشط' : 'غير نشط');
     } else {
         console.warn('⚠️ زر المباني غير موجود');
@@ -3920,8 +3920,11 @@ function updatePropertyTypeFiltersState() {
     if (landsBtn) {
         // تحديث زر الأراضي
         const isActive = currentPropertyTypeFilter === 'lands';
-        landsBtn.style.background = isActive ? '#28a745' : 'white';
-        landsBtn.style.color = isActive ? 'white' : '#28a745';
+        if (isActive) {
+            landsBtn.classList.add('active');
+        } else {
+            landsBtn.classList.remove('active');
+        }
         console.log('🏔️ تم تحديث زر الأراضي:', isActive ? 'نشط' : 'غير نشط');
     } else {
         console.warn('⚠️ زر الأراضي غير موجود');
@@ -4398,6 +4401,7 @@ function testPropertyTypeSynonyms() {
         // اختبار المرادفات
         { original: 'محل', synonyms: ['المحلات', 'محلات'] },
         { original: 'مستودع', synonyms: ['مستودعات', 'المستودعات'] },
+        { original: 'استراحة', synonyms: ['استراحة', 'استراحه'] },
         { original: 'شقة', synonyms: ['الشقق', 'شقق'] },
         { original: 'مصنع', synonyms: ['مصانع', 'المصانع'] },
         { original: 'فلة', synonyms: ['الفلل', 'فلل', 'فيلا', 'فيلات'] },
@@ -5942,6 +5946,9 @@ function selectProperty(propertyName) {
     }
 
     // تحديث تمييز العقار في القائمة الجانبية
+    // التأكد من أن قائمة العقارات تعكس المدينة الحالية فقط
+    console.log(`🔄 تحديث قائمة العقارات للمدينة: ${currentCountry || 'الكل'}`);
+    console.log(`📊 الفلاتر الحالية: المدينة=${currentCountry}, العقار=${currentProperty}, النوع=${currentPropertyTypeFilter}`);
     initPropertyList(currentCountry);
 
     // استعادة حالة البحث بعد تحديث القائمة
@@ -6474,9 +6481,27 @@ function renderData() {
   
   // تصفية البيانات حسب المدينة
   if (currentCountry) {
+    const beforeCount = filteredData.length;
     filteredData = filteredData.filter(property => property.المدينة === currentCountry);
+    console.log(`🏙️ فلترة المدينة "${currentCountry}": ${beforeCount} → ${filteredData.length} وحدة`);
   }
-  
+
+  // تصفية البيانات حسب نوع العقار (مباني/أراضي)
+  if (currentPropertyTypeFilter) {
+    filteredData = filteredData.filter(property => {
+      const propertyType = property['نوع العقار'];
+      const isLandType = propertyType === 'أرض' || propertyType === 'حوش';
+
+      if (currentPropertyTypeFilter === 'lands') {
+        return isLandType;
+      } else if (currentPropertyTypeFilter === 'buildings') {
+        return !isLandType;
+      }
+      return true;
+    });
+    console.log(`🏗️ تم تطبيق فلتر ${currentPropertyTypeFilter === 'buildings' ? 'المباني' : 'الأراضي'} - النتائج: ${filteredData.length} وحدة`);
+  }
+
   // تصفية البيانات حسب العقار
   if (currentProperty) {
     filteredData = filteredData.filter(property => property['اسم العقار'] === currentProperty);
@@ -10447,8 +10472,8 @@ function showAttachmentsBuildingsModal(city) {
 
     console.log(`📊 إجمالي العقارات في ${city}:`, allPropertyNames.length);
 
-    // استخدام نفس منطق فلترة المباني من النظام الأساسي
-    const buildingProperties = filterPropertiesByTypeLogic(allPropertyNames, 'buildings');
+    // استخدام نفس منطق فلترة المباني من النظام الأساسي (مع تحديد المدينة)
+    const buildingProperties = filterPropertiesByTypeLogic(allPropertyNames, 'buildings', city);
 
     console.log(`🏗️ المباني المفلترة في ${city}:`, buildingProperties.length);
     console.log('📋 قائمة المباني:', buildingProperties);
@@ -10529,8 +10554,8 @@ function showAttachmentsLandsModal(city) {
 
     console.log(`📊 إجمالي العقارات في ${city}:`, allPropertyNames.length);
 
-    // استخدام نفس منطق فلترة الأراضي من النظام الأساسي
-    const landProperties = filterPropertiesByTypeLogic(allPropertyNames, 'lands');
+    // استخدام نفس منطق فلترة الأراضي من النظام الأساسي (مع تحديد المدينة)
+    const landProperties = filterPropertiesByTypeLogic(allPropertyNames, 'lands', city);
 
     console.log(`🗺️ الأراضي المفلترة في ${city}:`, landProperties.length);
     console.log('📋 قائمة الأراضي:', landProperties);
@@ -22412,6 +22437,8 @@ function showMultiUnitEditModal(relatedUnits, primaryUnit) {
                                     <select name="نوع العقار" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                         <option value="">-- اختر نوع العقار --</option>
                                         <option value="مستودع" ${primaryUnit['نوع العقار'] === 'مستودع' ? 'selected' : ''}>مستودع</option>
+                                        <option value="بيت" ${primaryUnit['نوع العقار'] === 'بيت' ? 'selected' : ''}>بيت</option>
+                                        <option value="استراحة" ${primaryUnit['نوع العقار'] === 'استراحة' ? 'selected' : ''}>استراحة</option>
                                         <option value="مصنع" ${primaryUnit['نوع العقار'] === 'مصنع' ? 'selected' : ''}>مصنع</option>
                                         <option value="شقة" ${primaryUnit['نوع العقار'] === 'شقة' ? 'selected' : ''}>شقة</option>
                                         <option value="غرفة" ${primaryUnit['نوع العقار'] === 'غرفة' ? 'selected' : ''}>غرفة</option>
@@ -25096,6 +25123,8 @@ function showSingleUnitEditModal(property, contractNumber, propertyName, unitNum
                                     <select name="نوع العقار" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                         <option value="">-- اختر نوع العقار --</option>
                                         <option value="مستودع" ${property['نوع العقار'] === 'مستودع' ? 'selected' : ''}>مستودع</option>
+                                        <option value="بيت" ${property['نوع العقار'] === 'بيت' ? 'selected' : ''}>بيت</option>
+                                        <option value="استراحة" ${property['نوع العقار'] === 'استراحة' ? 'selected' : ''}>استراحة</option>
                                         <option value="مصنع" ${property['نوع العقار'] === 'مصنع' ? 'selected' : ''}>مصنع</option>
                                         <option value="شقة" ${property['نوع العقار'] === 'شقة' ? 'selected' : ''}>شقة</option>
                                         <option value="غرفة" ${property['نوع العقار'] === 'غرفة' ? 'selected' : ''}>غرفة</option>
@@ -25531,6 +25560,15 @@ async function savePropertyEdit(event) {
 
     const form = event.target;
     const formData = new FormData(form);
+
+    // 🔄 حفظ حالة الفلاتر الحالية قبل التحديث
+    const savedFilters = {
+        currentCountry: currentCountry,
+        currentProperty: currentProperty,
+        currentPropertyTypeFilter: currentPropertyTypeFilter,
+        filterStatus: filterStatus
+    };
+    console.log('💾 حفظ حالة الفلاتر قبل التحديث:', savedFilters);
 
     // التحقق من نوع العملية
     const operationType = formData.get('operationType');
@@ -26078,9 +26116,66 @@ async function savePropertyEdit(event) {
                 alert(result.message);
 
                 // تحديث إضافي (بدون شاشة التحميل الرئيسية)
-                console.log('🔄 تحديث إضافي...');
-                renderData();
-                updateTotalStats();
+                console.log('🔄 تحديث إضافي مع الاحتفاظ بالفلاتر...');
+
+                // 🔄 استعادة الفلاتر المحفوظة
+                if (savedFilters) {
+                    console.log('🔄 استعادة الفلاتر المحفوظة:', savedFilters);
+
+                    // استعادة المدينة
+                    if (savedFilters.currentCountry) {
+                        currentCountry = savedFilters.currentCountry;
+                    }
+
+                    // استعادة فلتر نوع العقار (مباني/أراضي)
+                    if (savedFilters.currentPropertyTypeFilter) {
+                        currentPropertyTypeFilter = savedFilters.currentPropertyTypeFilter;
+                        console.log(`🏗️ استعادة فلتر نوع العقار: ${currentPropertyTypeFilter}`);
+                    }
+
+                    // استعادة فلتر الحالة
+                    if (savedFilters.filterStatus) {
+                        filterStatus = savedFilters.filterStatus;
+                    }
+
+                    // 🎯 تحديد السلوك حسب الحالة
+                    if (savedFilters.currentPropertyTypeFilter && !savedFilters.currentProperty) {
+                        // الحالة 1: عرض جميع وحدات النوع في المدينة (مثل: أراضي الرياض)
+                        currentProperty = null; // لا يوجد عقار محدد
+                        // ✅ التأكد من الاحتفاظ بفلتر المدينة
+                        console.log(`🔄 عرض جميع وحدات ${currentPropertyTypeFilter === 'buildings' ? 'المباني' : 'الأراضي'} في ${currentCountry} فقط`);
+                        console.log(`🏙️ المدينة النشطة: ${currentCountry}`);
+                        console.log(`🏗️ نوع العقار النشط: ${currentPropertyTypeFilter}`);
+                    } else if (savedFilters.currentProperty) {
+                        // الحالة 2: عقار محدد مفتوح (مثل: عقار الصحراء)
+                        currentProperty = savedFilters.currentProperty;
+                        console.log(`🎯 العقار ${currentProperty} يبقى مفتوح مع وحداته في ${currentCountry}`);
+                    }
+
+                    // فلتر نوع العقار يبقى نشط في كلا الحالتين
+                    if (savedFilters.currentPropertyTypeFilter) {
+                        console.log(`✅ فلتر ${currentPropertyTypeFilter === 'buildings' ? 'المباني' : 'الأراضي'} يبقى نشط للمدينة ${currentCountry}`);
+                    }
+
+                    console.log('✅ تم استعادة الفلاتر بنجاح');
+                }
+
+                // 🔄 تحديث قائمة العقارات أولاً لتظهر عقارات المدينة النشطة فقط
+                console.log(`🏙️ تحديث قائمة العقارات للمدينة الحالية: ${currentCountry || 'الكل'}`);
+                initPropertyList(currentCountry);
+
+                // تأخير صغير لضمان تحديث قائمة العقارات قبل عرض البيانات
+                setTimeout(() => {
+                    renderData();
+                    updateTotalStats();
+
+                    // تحديث حالة أزرار الفلاتر
+                    updatePropertyTypeFiltersState();
+                    updateActiveFiltersDisplay();
+
+                    // حفظ الحالة النهائية
+                    saveAppState();
+                }, 50);
 
                 window.lastSyncResult = null;
             }
@@ -31768,7 +31863,7 @@ function showPropertyTypeFilter() {
         return;
     }
 
-    const propertyTypes = ['مستودع', 'مصنع', 'شقة', 'غرفة', 'معرض', 'محل', 'حوش', 'مزرعة', 'فلة', 'ورشة', 'أرض', 'عمارة', 'مكتب'];
+    const propertyTypes = ['مستودع', 'مصنع', 'شقة', 'غرفة', 'معرض', 'محل', 'حوش', 'مزرعة', 'فلة', 'ورشة', 'أرض', 'عمارة', 'مكتب','استراحة','بيت'];
     let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
         <div class="modal-box property-type-filter-modal" style="max-width: 600px; max-height: 80vh; position: relative;">
             <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -52384,10 +52479,10 @@ function showMobilePropertiesModal() {
     // ترتيب العقارات
     propertyNames.sort();
 
-    // تطبيق فلتر نوع العقار إذا كان نشطاً
+    // تطبيق فلتر نوع العقار إذا كان نشطاً (مع مراعاة المدينة)
     let displayedPropertyNames = propertyNames;
     if (currentPropertyTypeFilter) {
-        displayedPropertyNames = filterPropertiesByTypeLogic(propertyNames, currentPropertyTypeFilter);
+        displayedPropertyNames = filterPropertiesByTypeLogic(propertyNames, currentPropertyTypeFilter, currentCountry);
     }
 
     // إنشاء HTML للنافذة
