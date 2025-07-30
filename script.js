@@ -1673,52 +1673,25 @@ function restoreAppState() {
             return false;
         }
 
-        // إذا كانت إعادة تحميل، مسح مربع البحث أيضاً
-        console.log('🔄 إعادة تحميل - مسح مربع البحث');
+        // إذا كانت إعادة تحميل، مسح مربع البحث والعودة إلى "الكل"
+        console.log('🔄 إعادة تحميل - مسح مربع البحث والعودة إلى "الكل"');
         clearSearchInput();
 
-        // إذا كانت إعادة تحميل، حاول استعادة الحالة
-        const savedState = localStorage.getItem(STATE_STORAGE_KEY);
-        if (!savedState) {
-            console.log('📝 لا توجد حالة محفوظة للاستعادة');
-            markSessionStart();
-            return false;
-        }
+        // عند إعادة التحميل، العودة إلى "الكل" بدلاً من استعادة الحالة
+        console.log('🏠 إعادة تحميل - العودة إلى عرض جميع المدن');
 
-        const state = JSON.parse(savedState);
+        // إعادة تعيين جميع الفلاتر إلى القيم الافتراضية
+        currentView = 'cards';
+        currentCountry = null;
+        currentProperty = null;
+        filterStatus = null;
+        currentPropertyTypeFilter = null;
 
-        // التحقق من أن الحالة ليست قديمة جداً (أكثر من 24 ساعة)
-        const maxAge = 24 * 60 * 60 * 1000; // 24 ساعة
-        if (Date.now() - state.timestamp > maxAge) {
-            console.log('⏰ الحالة المحفوظة قديمة، سيتم تجاهلها');
-            localStorage.removeItem(STATE_STORAGE_KEY);
-            markSessionStart();
-            return false;
-        }
+        // مسح أي حالة محفوظة
+        localStorage.removeItem(STATE_STORAGE_KEY);
+        markSessionStart();
 
-        console.log('🔄 استعادة حالة التطبيق من إعادة التحميل:', state);
-
-        // استعادة المتغيرات العامة
-        currentView = state.currentView || 'cards';
-        currentCountry = state.currentCountry;
-        currentProperty = state.currentProperty;
-        filterStatus = state.filterStatus;
-        currentPropertyTypeFilter = state.currentPropertyTypeFilter;
-
-        console.log('📊 تم استعادة الحالة:', {
-            currentView,
-            currentCountry,
-            currentProperty,
-            filterStatus,
-            currentPropertyTypeFilter
-        });
-
-        // تطبيق الحالة المستعادة على الواجهة
-        setTimeout(() => {
-            applyRestoredState(state);
-        }, 100);
-
-        return state;
+        return false;
     } catch (error) {
         console.warn('⚠️ فشل في استعادة حالة التطبيق:', error);
         localStorage.removeItem(STATE_STORAGE_KEY);
@@ -4694,7 +4667,7 @@ function showAllSynonyms() {
 🏷️ أنواع العقود:
    • ضريبي: ضريبية، مع ضريبة، بضريبة
    • سكني: سكنية، سكن
-   • تجاري: تجارية، تجارى
+   • راكض: غير محدد، لم يحدد بعد
 
 💡 مثال: يمكنك البحث عن "محل" أو "المحلات" أو "محلات" وستحصل على نفس النتائج
     `);
@@ -6813,7 +6786,16 @@ function renderData() {
   
   // تصفية البيانات حسب نوع العقد
   if (contractTypeFilter) {
-    filteredData = filteredData.filter(property => property['نوع العقد'] === contractTypeFilter);
+    if (contractTypeFilter === 'راكض') {
+      // فلتر "راكض" يعني العقود غير المحددة (ليست سكني ولا ضريبي)
+      filteredData = filteredData.filter(property => {
+        const contractType = property['نوع العقد'];
+        return !contractType || (contractType !== 'سكني' && contractType !== 'ضريبي');
+      });
+    } else {
+      // الفلاتر العادية (سكني أو ضريبي)
+      filteredData = filteredData.filter(property => property['نوع العقد'] === contractTypeFilter);
+    }
   }
 
   // تصفية البيانات حسب نوع العقار
@@ -6933,6 +6915,7 @@ function calculateCategoryStats(data, isLandCategory) {
     let rentedUnits = 0;
     let commercialUnits = 0; // الوحدات الضريبية
     let residentialUnits = 0; // الوحدات السكنية
+    let pendingUnits = 0; // الوحدات الراكضة (غير محددة)
 
     // تجميع الوحدات الفريدة
     const uniqueUnits = new Set();
@@ -6954,12 +6937,15 @@ function calculateCategoryStats(data, isLandCategory) {
             uniqueUnits.add(unitKey);
         }
 
-        // حساب نوع العقد (ضريبي أو سكني)
+        // حساب نوع العقد (ضريبي، سكني، أو راكض)
         const contractType = property['نوع العقد'];
         if (contractType === 'ضريبي') {
             commercialUnits++;
         } else if (contractType === 'سكني') {
             residentialUnits++;
+        } else {
+            // إذا لم يكن ضريبي أو سكني، فهو راكض (غير محدد)
+            pendingUnits++;
         }
 
         // حساب الوحدات الفارغة
@@ -6985,7 +6971,8 @@ function calculateCategoryStats(data, isLandCategory) {
         tenants,
         rentedUnits,
         commercialUnits,
-        residentialUnits
+        residentialUnits,
+        pendingUnits
     };
 }
 
@@ -7146,6 +7133,13 @@ function renderTotals(data) {
                             <td class="lands-value">${landStats.residentialUnits}</td>
                             <td class="total-value">${buildingStats.residentialUnits + landStats.residentialUnits}</td>
                         </tr>
+                        ${(buildingStats.pendingUnits + landStats.pendingUnits) > 0 ? `
+                        <tr>
+                            <td class="metric-label">الوحدات الراكضة</td>
+                            <td class="buildings-value">${buildingStats.pendingUnits}</td>
+                            <td class="lands-value">${landStats.pendingUnits}</td>
+                            <td class="total-value">${buildingStats.pendingUnits + landStats.pendingUnits}</td>
+                        </tr>` : ''}
                     </tbody>
                 </table>
             </div>
@@ -7469,6 +7463,13 @@ function renderMobileTotals(data) {
                             <td class="lands-value">${landStats.residentialUnits}</td>
                             <td class="total-value">${buildingStats.residentialUnits + landStats.residentialUnits}</td>
                         </tr>
+                        ${(buildingStats.pendingUnits + landStats.pendingUnits) > 0 ? `
+                        <tr>
+                            <td class="metric-label">الوحدات الراكضة</td>
+                            <td class="buildings-value">${buildingStats.pendingUnits}</td>
+                            <td class="lands-value">${landStats.pendingUnits}</td>
+                            <td class="total-value">${buildingStats.pendingUnits + landStats.pendingUnits}</td>
+                        </tr>` : ''}
                     </tbody>
                 </table>
             </div>
@@ -9100,7 +9101,7 @@ function showContractTypeFilter() {
         return;
     }
 
-    const contractTypes = ['ضريبي', 'سكني'];
+    const contractTypes = ['ضريبي', 'سكني', 'راكض'];
     let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
         <div class="modal-box contract-type-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
             <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -22729,7 +22730,7 @@ function showMultiUnitEditModal(relatedUnits, primaryUnit) {
                                     <select name="نوع العقد">
                                         <option value="سكني" ${primaryUnit['نوع العقد'] === 'سكني' ? 'selected' : ''}>سكني</option>
                                         <option value="ضريبي" ${primaryUnit['نوع العقد'] === 'ضريبي' ? 'selected' : ''}>ضريبي</option>
-                                        <option value="تجاري" ${primaryUnit['نوع العقد'] === 'تجاري' ? 'selected' : ''}>تجاري</option>
+                                        <option value="راكض" ${primaryUnit['نوع العقد'] === 'راكض' ? 'selected' : ''}>راكض</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -24538,7 +24539,7 @@ function generateFullUnitEditForm(unit, unitIndex) {
                             <select name="نوع العقد">
                                 <option value="سكني" ${unit['نوع العقد'] === 'سكني' ? 'selected' : ''}>سكني</option>
                                 <option value="ضريبي" ${unit['نوع العقد'] === 'ضريبي' ? 'selected' : ''}>ضريبي</option>
-                                <option value="تجاري" ${unit['نوع العقد'] === 'تجاري' ? 'selected' : ''}>تجاري</option>
+                                <option value="راكض" ${unit['نوع العقد'] === 'راكض' ? 'selected' : ''}>راكض</option>
                             </select>
                         </div>
                     </div>
@@ -24705,7 +24706,7 @@ function generateSingleUnitEditForm(unit, unitIndex) {
                         <select name="نوع العقد">
                             <option value="سكني" ${unit['نوع العقد'] === 'سكني' ? 'selected' : ''}>سكني</option>
                             <option value="ضريبي" ${unit['نوع العقد'] === 'ضريبي' ? 'selected' : ''}>ضريبي</option>
-                            <option value="تجاري" ${unit['نوع العقد'] === 'تجاري' ? 'selected' : ''}>تجاري</option>
+                            <option value="راكض" ${unit['نوع العقد'] === 'راكض' ? 'selected' : ''}>راكض</option>
                         </select>
                     </div>
                 </div>
@@ -25415,7 +25416,7 @@ function showSingleUnitEditModal(property, contractNumber, propertyName, unitNum
                                     <select name="نوع العقد">
                                         <option value="سكني" ${property['نوع العقد'] === 'سكني' ? 'selected' : ''}>سكني</option>
                                         <option value="ضريبي" ${property['نوع العقد'] === 'ضريبي' ? 'selected' : ''}>ضريبي</option>
-                                        <option value="تجاري" ${property['نوع العقد'] === 'تجاري' ? 'selected' : ''}>تجاري</option>
+                                        <option value="راكض" ${property['نوع العقد'] === 'راكض' ? 'selected' : ''}>راكض</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -42965,7 +42966,7 @@ async function testPropertySavingSolution() {
                 'رقم العقد': 'SAVE_C001',
                 'قيمة  الايجار ': 4000,
                 'الاجمالى': 48000,
-                'نوع العقد': 'تجاري'
+                'نوع العقد': 'راكض'
             };
 
             const saveResult = await savePropertiesDirectlyToSupabase([testPropertyForSave]);

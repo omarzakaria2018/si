@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إظهار الوحدات الراكضة حسب الحاجة</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .test-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .test-section:last-child {
+            border-bottom: none;
+        }
+
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logic-explanation {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .logic-explanation h4 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+
+        .scenarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .scenario-card {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .scenario-card.show {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .scenario-card.hide {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .scenario-card h4 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .scenario-card.show h4 {
+            color: #155724;
+        }
+
+        .scenario-card.hide h4 {
+            color: #721c24;
+        }
+
+        .scenario-card .description {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .scenario-card.show .description {
+            color: #155724;
+        }
+
+        .scenario-card.hide .description {
+            color: #721c24;
+        }
+
+        .stats-table-demo {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .stats-table-demo table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .stats-table-demo th,
+        .stats-table-demo td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stats-table-demo th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .stats-table-demo .pending-row {
+            background: #fff3cd;
+            color: #856404;
+            font-weight: bold;
+        }
+
+        .code-example {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .highlight.condition {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .test-steps {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .test-steps h4 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .test-steps ol {
+            margin: 0;
+            padding-right: 20px;
+        }
+
+        .test-steps li {
+            margin-bottom: 10px;
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .expected-result {
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .expected-result.show {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .expected-result.hide {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.4);
+        }
+
+        .test-button.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .test-button.warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        @media (max-width: 768px) {
+            .scenarios-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-eye-slash"></i> إظهار الوحدات الراكضة حسب الحاجة</h1>
+            <p>صف "الوحدات الراكضة" يظهر فقط عند وجود وحدات راكضة فعلاً</p>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-lightbulb"></i> المنطق الجديد</h3>
+            
+            <div class="logic-explanation">
+                <h4>🎯 الهدف:</h4>
+                <p>تحسين عرض الإحصائيات بحيث يظهر صف "الوحدات الراكضة" فقط عندما تكون هناك وحدات راكضة فعلاً، وإخفاؤه عندما لا توجد وحدات راكضة.</p>
+                
+                <div style="margin-top: 15px;">
+                    <strong>الشرط المطبق:</strong>
+                    <div class="code-example">
+<span class="highlight condition">${(buildingStats.pendingUnits + landStats.pendingUnits) > 0 ? `</span>
+<tr>
+    <td class="metric-label">الوحدات الراكضة</td>
+    <td class="buildings-value">${buildingStats.pendingUnits}</td>
+    <td class="lands-value">${landStats.pendingUnits}</td>
+    <td class="total-value">${buildingStats.pendingUnits + landStats.pendingUnits}</td>
+</tr>
+<span class="highlight condition">` : ''}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-list-alt"></i> السيناريوهات المختلفة</h3>
+            
+            <div class="scenarios-grid">
+                <div class="scenario-card show">
+                    <h4><i class="fas fa-check-circle"></i> السيناريو الأول: يظهر الصف</h4>
+                    <div class="description">
+                        عندما توجد وحدات راكضة (مباني: 3، أراضي: 2، المجموع: 5)
+                    </div>
+                    
+                    <div class="stats-table-demo">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>المؤشر</th>
+                                    <th>المباني</th>
+                                    <th>الأراضي</th>
+                                    <th>المجموع</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>إجمالي الوحدات</td>
+                                    <td>25</td>
+                                    <td>15</td>
+                                    <td>40</td>
+                                </tr>
+                                <tr>
+                                    <td>الوحدات الضريبية</td>
+                                    <td>8</td>
+                                    <td>5</td>
+                                    <td>13</td>
+                                </tr>
+                                <tr>
+                                    <td>الوحدات السكنية</td>
+                                    <td>14</td>
+                                    <td>8</td>
+                                    <td>22</td>
+                                </tr>
+                                <tr class="pending-row">
+                                    <td>الوحدات الراكضة</td>
+                                    <td>3</td>
+                                    <td>2</td>
+                                    <td>5</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="expected-result show">✅ النتيجة: يظهر صف الوحدات الراكضة</div>
+                </div>
+
+                <div class="scenario-card hide">
+                    <h4><i class="fas fa-times-circle"></i> السيناريو الثاني: لا يظهر الصف</h4>
+                    <div class="description">
+                        عندما لا توجد وحدات راكضة (مباني: 0، أراضي: 0، المجموع: 0)
+                    </div>
+                    
+                    <div class="stats-table-demo">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>المؤشر</th>
+                                    <th>المباني</th>
+                                    <th>الأراضي</th>
+                                    <th>المجموع</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>إجمالي الوحدات</td>
+                                    <td>25</td>
+                                    <td>15</td>
+                                    <td>40</td>
+                                </tr>
+                                <tr>
+                                    <td>الوحدات الضريبية</td>
+                                    <td>10</td>
+                                    <td>7</td>
+                                    <td>17</td>
+                                </tr>
+                                <tr>
+                                    <td>الوحدات السكنية</td>
+                                    <td>15</td>
+                                    <td>8</td>
+                                    <td>23</td>
+                                </tr>
+                                <!-- لا يظهر صف الوحدات الراكضة -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="expected-result hide">❌ النتيجة: لا يظهر صف الوحدات الراكضة</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-code"></i> التغييرات التقنية</h3>
+            
+            <h4>الكود المطبق في الشاشات الكبيرة والجوال:</h4>
+            <div class="code-example">
+<span class="highlight">// بدلاً من إضافة الصف دائماً</span>
+&lt;tr&gt;
+    &lt;td class="metric-label"&gt;الوحدات الراكضة&lt;/td&gt;
+    &lt;td class="buildings-value"&gt;${buildingStats.pendingUnits}&lt;/td&gt;
+    &lt;td class="lands-value"&gt;${landStats.pendingUnits}&lt;/td&gt;
+    &lt;td class="total-value"&gt;${buildingStats.pendingUnits + landStats.pendingUnits}&lt;/td&gt;
+&lt;/tr&gt;
+
+<span class="highlight condition">// أصبح الكود يتحقق من الشرط أولاً</span>
+<span class="highlight condition">${(buildingStats.pendingUnits + landStats.pendingUnits) > 0 ? `</span>
+&lt;tr&gt;
+    &lt;td class="metric-label"&gt;الوحدات الراكضة&lt;/td&gt;
+    &lt;td class="buildings-value"&gt;${buildingStats.pendingUnits}&lt;/td&gt;
+    &lt;td class="lands-value"&gt;${landStats.pendingUnits}&lt;/td&gt;
+    &lt;td class="total-value"&gt;${buildingStats.pendingUnits + landStats.pendingUnits}&lt;/td&gt;
+&lt;/tr&gt;
+<span class="highlight condition">` : ''}</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+            
+            <div class="test-steps">
+                <h4>🧪 سيناريوهات الاختبار:</h4>
+                
+                <ol>
+                    <li><strong>اختبار مع وجود وحدات راكضة</strong>
+                        <ul style="margin-top: 10px; padding-right: 20px;">
+                            <li>تأكد من وجود عقود بنوع "راكض" أو عقود فارغة النوع</li>
+                            <li>افتح صفحة الإحصائيات</li>
+                            <li class="expected-result show">✅ المتوقع: ظهور صف "الوحدات الراكضة" مع الأرقام الصحيحة</li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>اختبار بدون وحدات راكضة</strong>
+                        <ul style="margin-top: 10px; padding-right: 20px;">
+                            <li>تأكد من أن جميع العقود إما "سكني" أو "ضريبي"</li>
+                            <li>افتح صفحة الإحصائيات</li>
+                            <li class="expected-result hide">❌ المتوقع: عدم ظهور صف "الوحدات الراكضة" نهائياً</li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>اختبار التبديل بين الحالتين</strong>
+                        <ul style="margin-top: 10px; padding-right: 20px;">
+                            <li>غير نوع عقد من "راكض" إلى "سكني"</li>
+                            <li>راقب تغيير الإحصائيات</li>
+                            <li class="expected-result show">✅ المتوقع: اختفاء الصف عند وصول العدد للصفر</li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>اختبار في الجوال والشاشات الكبيرة</strong>
+                        <ul style="margin-top: 10px; padding-right: 20px;">
+                            <li>جرب نفس الاختبارات في الجوال</li>
+                            <li>جرب في الشاشات الكبيرة</li>
+                            <li class="expected-result show">✅ المتوقع: نفس السلوك في جميع الشاشات</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+            <button class="test-button" onclick="openMainApp()">
+                <i class="fas fa-external-link-alt"></i> فتح التطبيق للاختبار
+            </button>
+            <button class="test-button success" onclick="showTestGuide()">
+                <i class="fas fa-book"></i> دليل الاختبار التفصيلي
+            </button>
+            <button class="test-button warning" onclick="showTroubleshooting()">
+                <i class="fas fa-bug"></i> استكشاف الأخطاء
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+
+        function showTestGuide() {
+            alert(`📋 دليل الاختبار التفصيلي:
+
+🔍 للتحقق من وجود وحدات راكضة:
+1. افتح فلتر نوع العقد
+2. انقر على "راكض"
+3. تحقق من عدد النتائج
+
+📊 لاختبار الإحصائيات:
+1. اذهب لصفحة الإحصائيات
+2. ابحث عن جدول "المباني والأراضي"
+3. تحقق من وجود/عدم وجود صف "الوحدات الراكضة"
+
+✏️ لتغيير حالة العقود:
+1. افتح تحرير أي بطاقة
+2. غير نوع العقد من/إلى "راكض"
+3. احفظ التغييرات
+4. تحقق من تحديث الإحصائيات
+
+📱 للاختبار في الجوال:
+1. صغر النافذة أو افتح على الجوال
+2. اذهب للإحصائيات
+3. تحقق من نفس السلوك
+
+💡 نصائح:
+• استخدم Developer Console لمراقبة القيم
+• جرب مع بيانات مختلفة
+• تأكد من إعادة تحميل الصفحة بعد التغييرات`);
+        }
+
+        function showTroubleshooting() {
+            alert(`🔧 استكشاف الأخطاء:
+
+❌ الصف يظهر حتى لو لم توجد وحدات راكضة:
+• تحقق من الشرط: (buildingStats.pendingUnits + landStats.pendingUnits) > 0
+• تأكد من تطبيق التحديث في الكود
+• راجع قيم pendingUnits في console
+
+❌ الصف لا يظهر حتى لو وجدت وحدات راكضة:
+• تحقق من حساب pendingUnits في calculateCategoryStats
+• تأكد من منطق تصنيف العقود الراكضة
+• راجع البيانات المُرسلة للدالة
+
+❌ الأرقام غير صحيحة:
+• تحقق من منطق الفلترة للعقود الراكضة
+• تأكد من شرط (!contractType || ...)
+• راجع البيانات الأصلية
+
+❌ السلوك مختلف بين الجوال والشاشات الكبيرة:
+• تحقق من تطبيق نفس الشرط في المكانين
+• تأكد من استخدام نفس المتغيرات
+• راجع دالتي عرض الإحصائيات
+
+💡 للتشخيص:
+• افتح Developer Console
+• ابحث عن قيم buildingStats.pendingUnits
+• تحقق من قيم landStats.pendingUnits
+• راقب تحديث DOM عند التغيير`);
+        }
+    </script>
+</body>
+</html>

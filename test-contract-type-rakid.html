@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار إضافة نوع العقد "راكض"</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6f42c1, #e83e8c);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .test-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .test-section:last-child {
+            border-bottom: none;
+        }
+
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .changes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .change-card {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .change-card:hover {
+            border-color: #6f42c1;
+            box-shadow: 0 4px 12px rgba(111, 66, 193, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .change-card h4 {
+            color: #6f42c1;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .change-card .description {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .before, .after {
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .before {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .after {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .contract-types-demo {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .contract-types-demo h4 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+
+        .contract-type-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .contract-type-btn {
+            padding: 10px 20px;
+            border: 2px solid;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .contract-type-btn.residential {
+            border-color: #28a745;
+            color: #28a745;
+        }
+
+        .contract-type-btn.commercial {
+            border-color: #007bff;
+            color: #007bff;
+        }
+
+        .contract-type-btn.pending {
+            border-color: #6f42c1;
+            color: #6f42c1;
+        }
+
+        .contract-type-btn.active {
+            color: white;
+        }
+
+        .contract-type-btn.residential.active {
+            background: #28a745;
+        }
+
+        .contract-type-btn.commercial.active {
+            background: #007bff;
+        }
+
+        .contract-type-btn.pending.active {
+            background: #6f42c1;
+        }
+
+        .test-steps {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .test-steps h4 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .test-steps ol {
+            margin: 0;
+            padding-right: 20px;
+        }
+
+        .test-steps li {
+            margin-bottom: 10px;
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .expected-result {
+            background: #d4edda;
+            color: #155724;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .code-example {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .highlight.added {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #6f42c1, #e83e8c);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(111, 66, 193, 0.4);
+        }
+
+        .test-button.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .test-button.warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+        }
+
+        .meaning-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .meaning-box h4 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+
+        .meaning-box .definition {
+            font-size: 1.1rem;
+            color: #0066cc;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .meaning-box .explanation {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .changes-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+            
+            .contract-type-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-file-contract"></i> إضافة نوع العقد "راكض"</h1>
+            <p>تغيير "تجاري" إلى "راكض" وإضافة فلتر جديد لنوع العقد</p>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-lightbulb"></i> معنى "راكض"</h3>
+            
+            <div class="meaning-box">
+                <h4>🎯 تعريف "راكض":</h4>
+                <div class="definition">العقود التي لم يُحدد نوعها بعد</div>
+                <div class="explanation">
+                    "راكض" يعني أن نوع العقد <strong>لم يُحدد بعد</strong> - أي العقود التي لا تحتوي على "سكني" أو "ضريبي" في حقل نوع العقد (فارغة أو قيم أخرى).
+                    <br><br>
+                    <strong>أمثلة على العقود الراكضة:</strong>
+                    <ul style="margin-top: 10px; padding-right: 20px;">
+                        <li>العقود التي حقل "نوع العقد" فيها فارغ</li>
+                        <li>العقود التي تحتوي على قيم أخرى غير "سكني" أو "ضريبي"</li>
+                        <li>العقود الجديدة التي لم يتم تصنيفها بعد</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-exchange-alt"></i> التغييرات المطبقة</h3>
+            
+            <div class="changes-grid">
+                <div class="change-card">
+                    <h4><i class="fas fa-edit"></i> نوافذ التحرير</h4>
+                    <div class="description">
+                        تم تغيير خيار "تجاري" إلى "راكض" في جميع نوافذ تحرير البطاقات.
+                    </div>
+                    <div class="before-after">
+                        <div class="before">قبل: تجاري</div>
+                        <div class="after">بعد: راكض</div>
+                    </div>
+                </div>
+
+                <div class="change-card">
+                    <h4><i class="fas fa-filter"></i> فلتر نوع العقد</h4>
+                    <div class="description">
+                        تم إضافة "راكض" كخيار ثالث في فلتر نوع العقد في جميع الشاشات.
+                    </div>
+                    <div class="before-after">
+                        <div class="before">ضريبي، سكني</div>
+                        <div class="after">ضريبي، سكني، راكض</div>
+                    </div>
+                </div>
+
+                <div class="change-card">
+                    <h4><i class="fas fa-search"></i> منطق الفلترة</h4>
+                    <div class="description">
+                        تم تحديث منطق الفلترة ليتعامل مع "راكض" كعقود غير محددة.
+                    </div>
+                    <div class="before-after">
+                        <div class="before">فلترة مباشرة</div>
+                        <div class="after">فلترة ذكية للعقود غير المحددة</div>
+                    </div>
+                </div>
+
+                <div class="change-card">
+                    <h4><i class="fas fa-chart-bar"></i> الإحصائيات</h4>
+                    <div class="description">
+                        تم إضافة "الوحدات الراكضة" في جداول الإحصائيات.
+                    </div>
+                    <div class="before-after">
+                        <div class="before">ضريبية، سكنية</div>
+                        <div class="after">ضريبية، سكنية، راكضة</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-code"></i> التغييرات التقنية</h3>
+            
+            <h4>1. إضافة "راكض" لقائمة أنواع العقود:</h4>
+            <div class="code-example">
+<span class="highlight">// في دالة showContractTypeFilter</span>
+<span class="highlight added">const contractTypes = ['ضريبي', 'سكني', 'راكض'];</span>
+            </div>
+
+            <h4>2. تحديث منطق الفلترة:</h4>
+            <div class="code-example">
+<span class="highlight">// في دالة renderData</span>
+if (contractTypeFilter === 'راكض') {
+    // فلتر "راكض" يعني العقود غير المحددة (ليست سكني ولا ضريبي)
+    filteredData = filteredData.filter(property => {
+        const contractType = property['نوع العقد'];
+        return !contractType || (contractType !== 'سكني' && contractType !== 'ضريبي');
+    });
+} else {
+    // الفلاتر العادية (سكني أو ضريبي)
+    filteredData = filteredData.filter(property => property['نوع العقد'] === contractTypeFilter);
+}
+            </div>
+
+            <h4>3. تحديث نوافذ التحرير:</h4>
+            <div class="code-example">
+<span class="highlight">// في جميع نوافذ التحرير</span>
+&lt;option value="سكني"&gt;سكني&lt;/option&gt;
+&lt;option value="ضريبي"&gt;ضريبي&lt;/option&gt;
+<span class="highlight added">&lt;option value="راكض"&gt;راكض&lt;/option&gt;</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-play"></i> محاكاة فلتر نوع العقد</h3>
+            
+            <div class="contract-types-demo">
+                <h4>جرب فلتر نوع العقد:</h4>
+                
+                <div class="contract-type-buttons">
+                    <button class="contract-type-btn residential" onclick="selectContractType('residential', this)">
+                        <i class="fas fa-home"></i> سكني
+                    </button>
+                    <button class="contract-type-btn commercial" onclick="selectContractType('commercial', this)">
+                        <i class="fas fa-building"></i> ضريبي
+                    </button>
+                    <button class="contract-type-btn pending" onclick="selectContractType('pending', this)">
+                        <i class="fas fa-question-circle"></i> راكض
+                    </button>
+                </div>
+                
+                <div id="filterResult" style="margin-top: 15px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #dee2e6;">
+                    انقر على أحد الأزرار لرؤية نتيجة الفلتر
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-clipboard-check"></i> خطوات الاختبار</h3>
+            
+            <div class="test-steps">
+                <h4>🧪 سيناريو الاختبار الشامل:</h4>
+                
+                <ol>
+                    <li><strong>اختبار فلتر نوع العقد</strong>
+                        <div class="expected-result">✅ المتوقع: ظهور ثلاثة خيارات (ضريبي، سكني، راكض)</div>
+                    </li>
+                    
+                    <li><strong>اختبار فلتر "راكض"</strong>
+                        <div class="expected-result">✅ المتوقع: عرض العقود غير المحددة فقط</div>
+                    </li>
+                    
+                    <li><strong>اختبار تحرير البطاقة</strong>
+                        <div class="expected-result">✅ المتوقع: ظهور "راكض" بدلاً من "تجاري" في القائمة</div>
+                    </li>
+                    
+                    <li><strong>اختبار الإحصائيات</strong>
+                        <div class="expected-result">✅ المتوقع: ظهور "الوحدات الراكضة" في الجداول</div>
+                    </li>
+                    
+                    <li><strong>اختبار الفلاتر النشطة</strong>
+                        <div class="expected-result">✅ المتوقع: ظهور "نوع العقد: راكض" عند التطبيق</div>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3><i class="fas fa-tools"></i> أدوات الاختبار</h3>
+            <button class="test-button" onclick="openMainApp()">
+                <i class="fas fa-external-link-alt"></i> فتح التطبيق للاختبار
+            </button>
+            <button class="test-button success" onclick="showTestGuide()">
+                <i class="fas fa-book"></i> دليل الاختبار
+            </button>
+            <button class="test-button warning" onclick="showTroubleshooting()">
+                <i class="fas fa-bug"></i> استكشاف الأخطاء
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function selectContractType(type, button) {
+            // إزالة التنشيط من جميع الأزرار
+            document.querySelectorAll('.contract-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // تنشيط الزر المحدد
+            button.classList.add('active');
+            
+            // عرض النتيجة
+            const resultDiv = document.getElementById('filterResult');
+            let message = '';
+            
+            switch(type) {
+                case 'residential':
+                    message = '🏠 <strong>فلتر سكني:</strong> عرض العقود التي نوعها "سكني" فقط';
+                    break;
+                case 'commercial':
+                    message = '🏢 <strong>فلتر ضريبي:</strong> عرض العقود التي نوعها "ضريبي" فقط';
+                    break;
+                case 'pending':
+                    message = '❓ <strong>فلتر راكض:</strong> عرض العقود غير المحددة (ليست سكني ولا ضريبي)';
+                    break;
+            }
+            
+            resultDiv.innerHTML = message;
+        }
+
+        function openMainApp() {
+            window.open('index.html', '_blank');
+        }
+
+        function showTestGuide() {
+            alert(`📋 دليل الاختبار:
+
+🔍 اختبار فلتر نوع العقد:
+1. انقر على زر "فلتر نوع العقد"
+2. تحقق من ظهور ثلاثة خيارات: ضريبي، سكني، راكض
+3. جرب كل خيار وتحقق من النتائج
+
+✏️ اختبار تحرير البطاقة:
+1. انقر على "تحرير" لأي بطاقة
+2. ابحث عن قائمة "نوع العقد"
+3. تحقق من ظهور "راكض" بدلاً من "تجاري"
+
+📊 اختبار الإحصائيات:
+1. تحقق من جدول الإحصائيات
+2. ابحث عن صف "الوحدات الراكضة"
+3. تحقق من الأرقام الصحيحة
+
+🎯 اختبار الفلاتر النشطة:
+1. طبق فلتر "راكض"
+2. تحقق من ظهور "نوع العقد: راكض" في الفلاتر النشطة
+3. جرب إزالة الفلتر`);
+        }
+
+        function showTroubleshooting() {
+            alert(`🔧 استكشاف الأخطاء:
+
+❌ لا يظهر خيار "راكض" في الفلتر:
+• تحقق من تحديث قائمة contractTypes
+• تأكد من إعادة تحميل الصفحة
+• راجع console للأخطاء
+
+❌ فلتر "راكض" لا يعمل بشكل صحيح:
+• تحقق من منطق الفلترة الجديد
+• تأكد من شرط (!contractType || ...)
+• راجع البيانات المعروضة
+
+❌ لا يظهر "راكض" في نافذة التحرير:
+• تحقق من تحديث جميع نوافذ التحرير
+• تأكد من تغيير "تجاري" إلى "راكض"
+• راجع HTML المُولد
+
+❌ الإحصائيات لا تظهر الوحدات الراكضة:
+• تحقق من إضافة pendingUnits
+• تأكد من تحديث منطق الحساب
+• راجع دالة calculateCategoryStats
+
+💡 للتشخيص:
+• افتح Developer Console
+• ابحث عن رسائل الخطأ
+• تحقق من قيم contractTypeFilter
+• استخدم Inspector لفحص العناصر`);
+        }
+    </script>
+</body>
+</html>
