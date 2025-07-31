@@ -4,6 +4,127 @@ let currentView = 'cards';
 let currentCountry = null;
 let currentProperty = null;
 let filterStatus = null;
+let unitsTypeFilter = null; // فلتر نوع الوحدات: 'all', 'multiple', 'single'
+
+// ===== فلتر المترابطة - نفس منطق فلتر حالة الوحدة =====
+
+// عرض فلتر المترابطة (نسخة من showStatusFilter)
+function showUnitsTypeFilterModal() {
+    const filterTypes = ['الكل', 'متعددة', 'مفردة'];
+    let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
+        <div class="modal-box units-type-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <i class="fas fa-layer-group" style="color: #17a2b8;"></i>
+                فلتر المترابطة
+                <span class="badge" style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">${filterTypes.length}</span>
+            </h3>
+            <div class="units-type-filter" style="max-height: 400px; overflow-y: auto; border: 1px solid #2b6cacff; border-radius: 8px; padding: 10px;">`;
+
+    // إضافة خيار "الكل"
+    const isAllActive = unitsTypeFilter === null || unitsTypeFilter === 'all';
+    html += `
+        <button onclick="if(unitsTypeFilter) { toggleUnitsTypeFilter('all'); } closeUnitsTypeFilterModal();"
+                class="units-type-btn ${isAllActive ? 'active' : ''}"
+                style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                       transition: all 0.3s ease; border: 1px solid #e9ecef;
+                       background: ${isAllActive ? '#17a2b8' : 'white'}; color: ${isAllActive ? 'white' : '#495057'};
+                       display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-weight: 500; font-size: 2.1rem;">الكل</span>
+            ${isAllActive ? '<i class="fas fa-check" style="color: white;"></i>' : '<i class="fas fa-list" style="color: #17a2b8;"></i>'}
+        </button>
+    `;
+
+    // إضافة باقي الخيارات
+    const filterOptions = [
+        { key: 'multiple', label: 'متعددة', icon: 'fas fa-layer-group', color: '#28a745' },
+        { key: 'single', label: 'مفردة', icon: 'fas fa-square', color: '#6c757d' }
+    ];
+
+    filterOptions.forEach(option => {
+        const isActive = unitsTypeFilter === option.key;
+        html += `
+            <button onclick="toggleUnitsTypeFilter('${option.key}'); closeUnitsTypeFilterModal();"
+                    class="units-type-btn ${isActive ? 'active' : ''}"
+                    style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; cursor: pointer;
+                           transition: all 0.3s ease; border: 1px solid #e9ecef;
+                           background: ${isActive ? option.color : 'white'}; color: ${isActive ? 'white' : '#495057'};
+                           display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 500; font-size: 2.1rem;">${option.label}</span>
+                ${isActive ? '<i class="fas fa-check" style="color: white;"></i>' : `<i class="${option.icon}" style="color: ${option.color};"></i>`}
+            </button>
+        `;
+    });
+
+    html += `
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeUnitsTypeFilterModal();" class="modal-action-btn close-btn units-type-filter-close-btn"
+                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+
+    // إضافة حدث إغلاق للمودال
+    setTimeout(() => {
+        const modalOverlay = document.querySelector('.modal-overlay:last-child');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    console.log('🔴 تم النقر خارج نافذة فلتر المترابطة - إغلاق');
+                    closeUnitsTypeFilterModal();
+                }
+            });
+            console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة فلتر المترابطة');
+        }
+    }, 100);
+}
+
+// دالة إغلاق نافذة فلتر المترابطة
+function closeUnitsTypeFilterModal() {
+    console.log('🔴 إغلاق نافذة فلتر المترابطة...');
+    const modal = document.querySelector('.units-type-filter-modal');
+    if (modal) {
+        const modalOverlay = modal.closest('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.remove();
+            console.log('✅ تم إغلاق نافذة فلتر المترابطة');
+        }
+    }
+}
+
+// تبديل فلتر المترابطة
+function toggleUnitsTypeFilter(filterType) {
+    console.log(`🔧 تطبيق فلتر المترابطة: ${filterType}`);
+
+    // حفظ نوع الفلتر
+    if (filterType === 'all') {
+        unitsTypeFilter = null;
+    } else {
+        unitsTypeFilter = filterType;
+    }
+
+    // تطبيق الفلتر وإعادة عرض البيانات
+    renderData();
+
+    // تحديث الفلاتر النشطة
+    updateActiveFiltersDisplay();
+
+    // حفظ حالة التطبيق
+    saveAppState();
+
+    // إظهار رسالة نجاح
+    const messages = {
+        'all': 'تم عرض جميع الوحدات',
+        'multiple': 'تم عرض الوحدات المترابطة المتعددة فقط',
+        'single': 'تم عرض الوحدات المترابطة المفردة فقط'
+    };
+
+    console.log(`✅ ${messages[filterType] || 'تم تطبيق الفلتر'}`);
+}
 
 // متغيرات الفلاتر النشطة
 let activeFilters = {
@@ -94,6 +215,19 @@ function updateActiveFiltersDisplay() {
             type: 'propertyTypeFilter',
             label: `النوع: ${typeLabels[currentPropertyTypeFilter] || currentPropertyTypeFilter}`,
             value: currentPropertyTypeFilter
+        });
+    }
+
+    // إضافة فلتر المترابطة
+    if (unitsTypeFilter && unitsTypeFilter !== 'all' && unitsTypeFilter !== null) {
+        const unitsLabels = {
+            'multiple': 'مترابطة متعددة',
+            'single': 'مترابطة مفردة'
+        };
+        filters.push({
+            type: 'unitsType',
+            label: `المترابطة: ${unitsLabels[unitsTypeFilter] || unitsTypeFilter}`,
+            value: unitsTypeFilter
         });
     }
 
@@ -533,6 +667,13 @@ function removeFilter(type, value) {
             updatePropertyTypeFiltersState();
             // إعادة تحديث قائمة العقارات
             initPropertyList(currentCountry);
+            break;
+
+        case 'unitsType':
+            // إزالة فلتر المترابطة
+            console.log('🔗 إزالة فلتر المترابطة...');
+            unitsTypeFilter = null;
+            updateUnitsTypeFilterState();
             break;
     }
 
@@ -1027,6 +1168,9 @@ function clearAllFilters() {
     currentProperty = null;
     filterStatus = null;
     currentPropertyTypeFilter = null; // إضافة مسح فلتر المباني/الأراضي
+    if (typeof unitsTypeFilter !== 'undefined') {
+        unitsTypeFilter = null; // إضافة مسح فلتر نوع الوحدات
+    }
 
     // إعادة تعيين الفلاتر النشطة
     activeFilters = {
@@ -2750,6 +2894,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize data loading (Supabase or JSON fallback)
     console.log('🚀 بدء تحميل البيانات...');
 
+    // إضافة تحميل مباشر للبيانات من JSON إذا لم تكن موجودة
+    if (!properties || properties.length === 0) {
+        console.log('🔄 تحميل البيانات من data.json...');
+        fetch('data.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(`✅ تم تحميل ${data.length} عقار من data.json`);
+                properties = data;
+
+                // تهيئة التطبيق بعد تحميل البيانات
+                setTimeout(() => {
+                    initializeApp();
+                    renderData();
+                }, 100);
+            })
+            .catch(error => {
+                console.error('❌ خطأ في تحميل البيانات من data.json:', error);
+
+                // إنشاء بيانات تجريبية كحل أخير
+                createSampleData();
+                setTimeout(() => {
+                    initializeApp();
+                    renderData();
+                }, 100);
+            });
+    }
+
     // فحص البيانات للتأكد من الحفظ الدائم
     setTimeout(() => {
         verifyDataPersistence();
@@ -4376,8 +4552,11 @@ function searchInPropertyData(property, searchTerm) {
     // النظام القديم كبديل
     const normalizedSearchTerm = normalizeArabicText(searchTerm);
 
-    // البحث الخاص: إذا كان المصطلح "متعدد"، ابحث عن الوحدات المتعددة
-    if (normalizedSearchTerm === 'متعدد') {
+    // البحث الخاص: إذا كان المصطلح يتعلق بالوحدات المتعددة
+    const multiUnitsKeywords = ['متعدد', 'متعددة', 'متعدده', 'وحدات', 'الوحدات'];
+    const isMultiUnitsSearch = multiUnitsKeywords.some(keyword => normalizedSearchTerm.includes(keyword));
+
+    if (isMultiUnitsSearch) {
         // البحث عن الوحدات التي لها نفس رقم العقد ونفس اسم العقار (الوحدات المربوطة)
         const contractNumber = property['رقم العقد'];
         const propertyName = property['اسم العقار'];
@@ -4391,7 +4570,7 @@ function searchInPropertyData(property, searchTerm) {
 
             // إذا كان هناك أكثر من وحدة واحدة، فهذه وحدات متعددة
             if (relatedUnits.length > 1) {
-                console.log(`🔍 وجد وحدات متعددة: ${relatedUnits.length} وحدات في العقد ${contractNumber}`);
+                console.log(`🔍 وجد وحدات متعددة: ${relatedUnits.length} وحدات في العقد ${contractNumber} (البحث: "${normalizedSearchTerm}")`);
                 return true;
             }
         }
@@ -5053,6 +5232,63 @@ function detectPropertyTypeKeyword(searchTerm) {
     return null;
 }
 
+// دالة للكشف عن كلمة "وحدات" وتطبيق فلتر خاص
+function detectUnitsKeyword(searchTerm) {
+    if (!searchTerm || searchTerm.trim() === '') return false;
+
+    const normalizedTerm = normalizeArabicTextAdvanced ? normalizeArabicTextAdvanced(searchTerm.trim()) : searchTerm.trim().toLowerCase();
+    console.log('🔍 فحص كلمة البحث للوحدات:', searchTerm, '-> مُطبع:', normalizedTerm);
+
+    // البحث عن كلمات تدل على الوحدات المتعددة (فقط الكلمات الصريحة للفلتر الخاص)
+    const unitsKeywords = [
+        'وحدات',
+        'الوحدات',
+        'وحده',
+        'الوحده',
+        'متعددة الوحدات',
+        'متعدد الوحدات',
+        'متعدده الوحدات'
+    ];
+    const isUnitsKeyword = unitsKeywords.some(keyword => normalizedTerm === keyword || normalizedTerm.includes(keyword));
+
+    console.log('🔍 هل هي كلمة وحدات للفلتر الخاص؟', isUnitsKeyword, '(البحث:', normalizedTerm, ')');
+
+    // إذا كان البحث فقط "متعدد" أو "متعددة"، لا تطبق الفلتر الخاص، دع البحث العادي يتولى الأمر
+    if (normalizedTerm === 'متعدد' || normalizedTerm === 'متعددة' || normalizedTerm === 'متعدده') {
+        console.log('🔍 كلمة "متعدد" - سيتم التعامل معها في البحث العادي');
+        return false;
+    }
+
+    return isUnitsKeyword;
+}
+
+// دالة لتطبيق فلتر البحث عن الوحدات المرتبطة
+function applyUnitsFilter(searchTerm) {
+    console.log('🔗 تطبيق فلتر البحث عن الوحدات المرتبطة');
+    console.log('🔗 مصطلح البحث:', searchTerm);
+
+    // تعيين حالة البحث الخاصة للوحدات
+    searchState.global = 'units_filter';
+    searchState.isSearchActive = true;
+    searchState.unitsFilter = true;
+
+    console.log('🔗 تم تعيين searchState.unitsFilter = true');
+
+    // تطبيق الفلتر
+    renderData();
+
+    // إظهار رسالة توضيحية
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput && typeof showSearchIndicator === 'function') {
+        showSearchIndicator(searchInput, 'عرض العقارات متعددة الوحدات فقط', 'success');
+    }
+
+    // حفظ الحالة
+    saveAppState();
+
+    return true;
+}
+
 // دالة لتطبيق بحث نشط عام (فعال + على وشك) باستخدام البحث المتقدم
 function applyActiveGeneralSearch(originalSearchTerm) {
     console.log('🎯 تطبيق بحث نشط عام (فعال + على وشك) باستخدام البحث المتقدم');
@@ -5182,7 +5418,10 @@ function performGlobalSearch() {
             // ثانياً: إذا لم يتم تطبيق فلتر حالة، محاولة اكتشاف وتطبيق فلتر نوع العقار
             const propertyTypeFilterApplied = !statusFilterApplied ? detectAndApplyPropertyTypeFilter(searchTerm) : false;
 
-            if (statusFilterApplied || propertyTypeFilterApplied) {
+            // ثالثاً: إذا لم يتم تطبيق أي فلتر، محاولة اكتشاف كلمة "وحدات"
+            const unitsFilterApplied = (!statusFilterApplied && !propertyTypeFilterApplied && detectUnitsKeyword(searchTerm)) ? applyUnitsFilter(searchTerm) : false;
+
+            if (statusFilterApplied || propertyTypeFilterApplied || unitsFilterApplied) {
                 // إذا تم تطبيق أي فلتر، فقد تم التعامل مع البحث بالفعل
                 // لا نحتاج لفعل شيء هنا
             } else {
@@ -5241,6 +5480,7 @@ function clearGlobalSearch() {
     searchState.global = '';
     searchState.isSearchActive = false;
     searchState.internalAdvancedSearch = ''; // مسح البحث الداخلي المتقدم
+    searchState.unitsFilter = false; // مسح فلتر الوحدات
 
     // إعادة تعيين متغير تتبع فلتر الحالة من البحث
     statusFilterAppliedFromSearch = false;
@@ -5475,6 +5715,7 @@ function clearGlobalSearchOnly() {
     searchState.global = '';
     searchState.isSearchActive = false;
     searchState.internalAdvancedSearch = ''; // مسح البحث الداخلي المتقدم
+    searchState.unitsFilter = false; // مسح فلتر الوحدات
 
     // إذا كان فلتر/بحث الحالة مطبقاً من البحث، قم بمسحه أيضاً
     if (statusFilterAppliedFromSearch) {
@@ -6643,6 +6884,8 @@ function renderData() {
   }
 
   let filteredData = properties;
+  console.log(`🔍 renderData: البيانات الأصلية: ${properties.length} وحدة`);
+  console.log(`🔍 renderData: فلتر نوع الوحدات: ${unitsTypeFilter}`);
 
   // فلتر التاريخ شامل جميع تواريخ البداية أو النهاية والأقساط
   if (dateFilterType && (dateFilterDay || dateFilterMonth || dateFilterYear)) {
@@ -6809,6 +7052,106 @@ function renderData() {
   // تحديث نص أزرار التصدير
   updateExportButtonsText();
 
+  // تصفية البيانات حسب فلتر الوحدات المرتبطة
+  if (searchState.unitsFilter) {
+    console.log('🔗 تطبيق فلتر الوحدات المرتبطة...');
+    console.log(`🔗 البيانات قبل الفلترة: ${filteredData.length} وحدة`);
+
+    // إنشاء خريطة للعقود التي تحتوي على وحدات متعددة
+    const contractUnitsMap = new Map();
+    filteredData.forEach(property => {
+      const contractKey = `${property['رقم العقد']}_${property['اسم العقار']}`;
+      if (!contractUnitsMap.has(contractKey)) {
+        contractUnitsMap.set(contractKey, []);
+      }
+      if (property['رقم  الوحدة ']) {
+        contractUnitsMap.get(contractKey).push(property['رقم  الوحدة ']);
+      }
+    });
+
+    // تحديد العقود التي تحتوي على وحدات متعددة
+    const multiUnitContracts = new Set();
+    contractUnitsMap.forEach((units, contractKey) => {
+      if (units.length > 1) {
+        multiUnitContracts.add(contractKey);
+        console.log(`🔗 عقد متعدد الوحدات: ${contractKey} (${units.length} وحدات)`);
+      }
+    });
+
+    // فلترة البيانات لإظهار العقود متعددة الوحدات فقط
+    filteredData = filteredData.filter(property => {
+      const contractKey = `${property['رقم العقد']}_${property['اسم العقار']}`;
+      const isMultiUnit = multiUnitContracts.has(contractKey);
+
+      // البحث أيضاً في رقم الوحدة للأنماط التقليدية
+      const unitNumber = property['رقم  الوحدة '];
+      let hasTraditionalPattern = false;
+      if (unitNumber) {
+        const unitStr = unitNumber.toString().trim();
+        // أنماط مختلفة للبحث عن الوحدات المرتبطة:
+        const hasUnitsKeyword = /وحدات|units/i.test(unitStr) && /\d/.test(unitStr);
+        const hasMultipleNumbers = (unitStr.match(/\d+/g) || []).length > 1;
+        const hasConnectedNumbers = /\d+[\+\-،,]\s*\d+/.test(unitStr);
+        const hasGroupKeywords = /مجمع|مجموعة|متعدد|عدة/i.test(unitStr);
+        hasTraditionalPattern = hasUnitsKeyword || hasMultipleNumbers || hasConnectedNumbers || hasGroupKeywords;
+      }
+
+      return isMultiUnit || hasTraditionalPattern;
+    });
+
+    console.log(`🔗 نتائج فلتر الوحدات المرتبطة: ${filteredData.length} وحدة`);
+    console.log(`🔗 عدد العقود متعددة الوحدات: ${multiUnitContracts.size}`);
+  }
+
+  // تصفية البيانات حسب فلتر المترابطة الجديد
+  if (typeof unitsTypeFilter !== 'undefined' && unitsTypeFilter && unitsTypeFilter !== 'all' && filteredData && filteredData.length > 0) {
+    console.log(`🔧 تطبيق فلتر المترابطة: ${unitsTypeFilter}`);
+    console.log(`🔧 البيانات قبل الفلترة: ${filteredData.length} وحدة`);
+
+    // إنشاء خريطة للعقود وعدد وحداتها
+    const contractUnitsMap = new Map();
+    filteredData.forEach(property => {
+      const contractKey = `${property['رقم العقد']}_${property['اسم العقار']}`;
+      if (!contractUnitsMap.has(contractKey)) {
+        contractUnitsMap.set(contractKey, []);
+      }
+      if (property['رقم  الوحدة ']) {
+        contractUnitsMap.get(contractKey).push(property['رقم  الوحدة ']);
+      }
+    });
+
+    // تطبيق الفلتر بناءً على النوع المحدد
+    filteredData = filteredData.filter(property => {
+      const contractKey = `${property['رقم العقد']}_${property['اسم العقار']}`;
+      const unitsCount = contractUnitsMap.get(contractKey)?.length || 0;
+
+      // فحص إذا كانت الوحدة فارغة (لا تحتوي على مستأجر أو مالك)
+      const isEmpty = !property['اسم المستأجر'] || !property['المالك'] ||
+                     property['اسم المستأجر'].toString().trim() === '' ||
+                     property['المالك'].toString().trim() === '';
+
+      if (unitsTypeFilter === 'multiple') {
+        // عرض الوحدات المتعددة فقط (أكثر من وحدة واحدة وليست فارغة)
+        const isMultipleAndNotEmpty = unitsCount > 1 && !isEmpty;
+        if (isMultipleAndNotEmpty) {
+          console.log(`🔧 وحدة متعددة غير فارغة: ${contractKey} (${unitsCount} وحدات)`);
+        }
+        return isMultipleAndNotEmpty;
+      } else if (unitsTypeFilter === 'single') {
+        // عرض الوحدات المفردة (وحدة واحدة فقط أو الوحدات الفارغة)
+        const isSingleOrEmpty = unitsCount === 1 || isEmpty;
+        if (isSingleOrEmpty) {
+          console.log(`🔧 وحدة مفردة أو فارغة: ${contractKey} (${unitsCount} وحدات، فارغة: ${isEmpty})`);
+        }
+        return isSingleOrEmpty;
+      }
+
+      return true; // الافتراضي: عرض الكل
+    });
+
+    console.log(`🔧 نتائج فلتر المترابطة: ${filteredData.length} وحدة`);
+  }
+
   // إضافة مؤشر العقار المحدد قبل عرض البيانات
   addSelectedPropertyIndicator();
 
@@ -6817,10 +7160,23 @@ function renderData() {
   renderMobileTotals(filteredData);
   
   // عرض البيانات حسب طريقة العرض
+  console.log(`📊 عرض البيانات: ${filteredData.length} عنصر، طريقة العرض: ${currentView || 'cards'}`);
+
   if (currentView === 'table') {
+    console.log('📋 عرض البيانات في شكل جدول');
     renderTable(filteredData);
   } else {
+    console.log('🃏 عرض البيانات في شكل بطاقات');
     renderCards(filteredData);
+  }
+
+  // التحقق من وجود البيانات المعروضة
+  const contentContainer = document.getElementById('content');
+  if (contentContainer) {
+    console.log(`📦 محتوى الحاوية: ${contentContainer.innerHTML.length} حرف`);
+    if (filteredData.length > 0 && contentContainer.innerHTML.includes('لا توجد بيانات')) {
+      console.warn('⚠️ تحذير: توجد بيانات مفلترة لكن الحاوية تعرض "لا توجد بيانات"');
+    }
   }
   
   // تحديث عدادات القائمة المتنقلة
@@ -8040,26 +8396,35 @@ function renderTable(data) {
 
 // عرض البيانات في بطاقات
 function renderCards(data) {
+    console.log(`🃏 renderCards: تم استلام ${data.length} عنصر`);
+
     const container = document.getElementById('content');
     if (data.length === 0) {
+        console.log('🃏 renderCards: لا توجد بيانات للعرض');
         container.innerHTML = '<div style="text-align: center; padding: 2rem;">لا توجد بيانات</div>';
         return;
     }
 
     // إزالة التكرار: كل بطاقة برقم العقد واسم العقار أو رقم الوحدة إذا لم يوجد عقد
     const uniqueMap = new Map();
-    data.forEach(property => {
+    data.forEach((property, index) => {
         let key = '';
         if (property['رقم العقد'] && property['اسم العقار']) {
             key = `${property['رقم العقد']}_${property['اسم العقار']}`;
         } else if (property['رقم  الوحدة ']) {
             key = property['رقم  الوحدة '];
         }
+
+        if (index < 5) { // عرض أول 5 عناصر للتشخيص
+            console.log(`🃏 العنصر ${index}: المفتاح="${key}", رقم العقد="${property['رقم العقد']}", اسم العقار="${property['اسم العقار']}", رقم الوحدة="${property['رقم  الوحدة ']}"`);
+        }
+
         if (key && !uniqueMap.has(key)) {
             uniqueMap.set(key, property);
         }
     });
     const uniqueData = Array.from(uniqueMap.values());
+    console.log(`🃏 renderCards: بعد إزالة التكرار: ${uniqueData.length} عنصر فريد`);
 
     // ترتيب البطاقات حسب الإعداد المحدد
     const sortedData = isReverseOrder ? uniqueData.reverse() : uniqueData;
@@ -8152,6 +8517,11 @@ function renderCards(data) {
                         ${badgeIcon} ${displayStatus || ''}
                     </span>
                 </div>
+                ${relatedUnits.length > 1 ? `
+                <div class="compact-row">
+                    <span class="compact-label"><i class="fas fa-layer-group"></i> المتعدد:</span>
+                    <span class="compact-value" style="color: #007bff; font-weight: 500;">متعددة الوحدات</span>
+                </div>` : ''}
             </div>
 
             <!-- التفاصيل الكاملة - تظهر في الوضع الموسع فقط -->
@@ -8170,6 +8540,11 @@ function renderCards(data) {
                     <span class="card-label">المساحة:</span>
                     <span class="card-value">${totalArea ? totalArea.toLocaleString() + ' م²' : ''}</span>
                 </div>
+                ${relatedUnits.length > 1 ? `
+                <div class="card-row">
+                    <span class="card-label"><i class="fas fa-layer-group"></i> المتعدد:</span>
+                    <span class="card-value" style="color: #007bff; font-weight: 500;">متعددة الوحدات</span>
+                </div>` : ''}
                 ${property['رقم حساب الكهرباء'] ? `
                 <div class="card-row electric-meter-row">
                     <span class="card-label"><i class="fas fa-bolt"></i> رقم حساب الكهرباء:</span>
@@ -8437,6 +8812,12 @@ function showPropertyDetails(index) {
         <span style="font-weight: 600; color: #333;">المساحة المجمعة:</span>
         <span style="color: #28a745; font-weight: 500;">${totalArea ? totalArea.toLocaleString() : '0'} م²</span>
     </div>
+    ${allUnits.length > 1 ? `
+    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+        <span style="font-weight: 600; color: #333;"><i class="fas fa-layer-group"></i> المتعدد:</span>
+        <span style="color: #007bff; font-weight: 500; background: #e3f2fd; padding: 4px 8px; border-radius: 8px;">متعدد الوحدات</span>
+    </div>
+    ` : ''}
     `;
 
     // باقي الحقول (تجاهل الحقول التي تم عرضها بالفعل)
@@ -8740,6 +9121,12 @@ function showInstallmentsDetails(contractNumber, propertyName) {
         <span class="detail-label">المساحة المجمعة:</span>
         <span class="detail-value">${totalArea ? totalArea.toLocaleString() : '0'} م²</span>
     </div>
+    ${allUnits.length > 1 ? `
+    <div class="detail-row">
+        <span class="detail-label"><i class="fas fa-layer-group"></i> المتعدد:</span>
+        <span class="detail-value" style="color: #007bff; font-weight: 500;">متعدد الوحدات</span>
+    </div>
+    ` : ''}
     `;
 
     // باقي الحقول (تم إزالة معلومات الصك من العرض العام في الجوال)
@@ -9320,12 +9707,26 @@ function showUnitDetails(unitNumber, propertyName, contractNumber = null) {
                     <h4><i class="fas fa-door-open"></i> معلومات الوحدة</h4>
                     <div class="details-grid">`;
 
+    // حساب الوحدات المرتبطة لنفس العقد
+    const relatedUnits = properties.filter(
+        p => p['رقم العقد'] === unit['رقم العقد'] && p['اسم العقار'] === unit['اسم العقار']
+    ).map(p => p['رقم  الوحدة ']).filter(Boolean);
+
     // رقم الوحدة
     html += `
         <div class="detail-row">
             <span class="detail-label"><i class="fas fa-hashtag"></i> رقم الوحدة:</span>
             <span class="detail-value">${unit['رقم  الوحدة '] || ''}</span>
         </div>`;
+
+    // إضافة معلومة متعدد الوحدات إذا كان هناك أكثر من وحدة
+    if (relatedUnits.length > 1) {
+        html += `
+        <div class="detail-row">
+            <span class="detail-label"><i class="fas fa-layer-group"></i> المتعدد:</span>
+            <span class="detail-value" style="color: #007bff; font-weight: 500;">متعدد الوحدات (${relatedUnits.length} وحدات)</span>
+        </div>`;
+    }
 
     // المساحة
     html += `
@@ -53663,5 +54064,220 @@ window.testNewDesign = function() {
     updateTotalStats();
 
     console.log('🎉 تم تطبيق التحسينات! تحقق من البطاقات الآن');
+
+// ===== فلتر نوع الوحدات - دوال إضافية =====
+
+// تحديث مؤشرات الفلتر النشط
+function updateUnitsTypeFilterIndicators() {
+    console.log('🔧 تحديث مؤشرات فلتر المترابطة...', unitsTypeFilter);
+
+    // إزالة المؤشرات القديمة
+    const existingIndicators = document.querySelectorAll('.units-type-filter-indicator');
+    console.log('🔧 إزالة المؤشرات القديمة:', existingIndicators.length);
+    existingIndicators.forEach(indicator => indicator.remove());
+
+    if (unitsTypeFilter && unitsTypeFilter !== 'all') {
+        console.log('🔧 إضافة مؤشر جديد للفلتر:', unitsTypeFilter);
+
+        // إضافة مؤشر في الفلاتر النشطة للشاشات الكبيرة
+        addUnitsTypeFilterToActiveFilters();
+
+        // إضافة مؤشر في الفلاتر النشطة للجوال
+        addUnitsTypeFilterToMobileFilters();
+
+        // إظهار قسم الفلاتر النشطة إذا كان مخفياً
+        showActiveFiltersSection();
+    }
+
+    // تحديث عرض الفلاتر النشطة
+    setTimeout(() => {
+        if (typeof updateActiveFiltersDisplay === 'function') {
+            updateActiveFiltersDisplay();
+        }
+    }, 100);
+}
+
+// إظهار قسم الفلاتر النشطة
+function showActiveFiltersSection() {
+    // إظهار قسم الفلاتر النشطة للشاشات الكبيرة
+    const activeFiltersContainer = document.getElementById('activeFiltersContainer');
+    if (activeFiltersContainer) {
+        activeFiltersContainer.style.display = 'block';
+    }
+
+    // إظهار قسم الفلاتر النشطة للجوال
+    const mobileActiveFilters = document.getElementById('mobileActiveFilters');
+    if (mobileActiveFilters) {
+        mobileActiveFilters.style.display = 'block';
+    }
+}
+
+// إضافة مؤشر الفلتر للشاشات الكبيرة
+function addUnitsTypeFilterToActiveFilters() {
+    const activeFiltersList = document.getElementById('activeFiltersList');
+    console.log('🔧 البحث عن activeFiltersList:', activeFiltersList ? 'موجود' : 'غير موجود');
+
+    if (activeFiltersList && unitsTypeFilter && unitsTypeFilter !== 'all') {
+        const filterText = getUnitsTypeFilterText(unitsTypeFilter);
+        console.log('🔧 إضافة مؤشر للشاشات الكبيرة:', filterText);
+
+        const indicator = document.createElement('div');
+        indicator.className = 'active-filter-item units-type-filter-indicator';
+        indicator.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 2px;
+            border: 1px solid #bbdefb;
+        `;
+        indicator.innerHTML = `
+            <i class="fas fa-layer-group"></i>
+            <span>${filterText}</span>
+            <button onclick="clearUnitsTypeFilter()" class="remove-filter-btn" style="
+                background: none;
+                border: none;
+                color: #1976d2;
+                cursor: pointer;
+                padding: 0;
+                margin-left: 5px;
+                font-size: 0.9rem;
+            ">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        activeFiltersList.appendChild(indicator);
+        console.log('✅ تم إضافة المؤشر للشاشات الكبيرة');
+    }
+}
+
+// إضافة مؤشر الفلتر للجوال
+function addUnitsTypeFilterToMobileFilters() {
+    const mobileFiltersList = document.getElementById('activeFiltersListMobile');
+    console.log('🔧 البحث عن activeFiltersListMobile:', mobileFiltersList ? 'موجود' : 'غير موجود');
+
+    if (mobileFiltersList && unitsTypeFilter && unitsTypeFilter !== 'all') {
+        const filterText = getUnitsTypeFilterText(unitsTypeFilter);
+        console.log('🔧 إضافة مؤشر للجوال:', filterText);
+
+        const indicator = document.createElement('div');
+        indicator.className = 'active-filter-item units-type-filter-indicator';
+        indicator.style.cssText = `
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin: 4px 0;
+            border: 1px solid #bbdefb;
+        `;
+        indicator.innerHTML = `
+            <i class="fas fa-layer-group"></i>
+            <span>${filterText}</span>
+            <button onclick="clearUnitsTypeFilter()" class="remove-filter-btn" style="
+                background: none;
+                border: none;
+                color: #1976d2;
+                cursor: pointer;
+                padding: 0;
+                margin-left: 8px;
+                font-size: 1rem;
+            ">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        mobileFiltersList.appendChild(indicator);
+        console.log('✅ تم إضافة المؤشر للجوال');
+
+        // إخفاء رسالة "لا توجد فلاتر"
+        const noFiltersMessage = document.getElementById('noFiltersMessage');
+        if (noFiltersMessage) {
+            noFiltersMessage.style.display = 'none';
+        }
+    }
+}
+
+// الحصول على نص الفلتر
+function getUnitsTypeFilterText(filterType) {
+    switch (filterType) {
+        case 'multiple':
+            return 'مترابطة متعددة';
+        case 'single':
+            return 'مترابطة مفردة';
+        default:
+            return 'جميع المترابطة';
+    }
+}
+
+// تحديث حالة فلتر المترابطة
+function updateUnitsTypeFilterState() {
+    console.log('🔧 تحديث حالة فلتر المترابطة...');
+
+    // إزالة التحديد من جميع خيارات المترابطة
+    const unitsOptions = document.querySelectorAll('.units-filter-options .filter-option');
+    unitsOptions.forEach(option => {
+        option.classList.remove('active');
+    });
+
+    // تفعيل خيار "جميع المترابطة"
+    const allOption = document.querySelector('.filter-option[onclick*="applyUnitsTypeFilter(\'all\')"]');
+    if (allOption) {
+        allOption.classList.add('active');
+    }
+
+    console.log('✅ تم تحديث حالة فلتر المترابطة');
+}
+
+// مسح فلتر المترابطة (للاستخدام المباشر)
+window.clearUnitsTypeFilter = function() {
+    console.log('🔧 مسح فلتر المترابطة...');
+    unitsTypeFilter = null;
+
+    // تحديث حالة الفلتر
+    updateUnitsTypeFilterState();
+
+    // إعادة عرض البيانات
+    if (typeof renderData === 'function') {
+        renderData();
+    }
+
+    // تحديث الفلاتر النشطة
+    if (typeof updateActiveFiltersDisplay === 'function') {
+        updateActiveFiltersDisplay();
+    }
+
+    // إظهار رسالة
+    const message = 'تم عرض جميع الوحدات المترابطة';
+    console.log(`✅ ${message}`);
+
+    if (typeof showNotification === 'function') {
+        showNotification(message, 'success');
+    }
 };
 
+// ===== فلتر نوع الوحدات - دوال إضافية =====
+
+// تحديث الخيار النشط في النافذة (مبسط)
+function updateActiveUnitsTypeOption() {
+    const options = document.querySelectorAll('.units-filter-options .filter-option');
+
+    // إزالة التحديد من جميع الخيارات
+    options.forEach(option => {
+        option.classList.remove('active');
+    });
+
+    // تحديد الخيار النشط بناءً على الفلتر الحالي
+    const activeFilter = unitsTypeFilter || 'all';
+    const activeOption = document.querySelector(`.filter-option[onclick*="applyUnitsTypeFilter('${activeFilter}')"]`);
+
+    if (activeOption) {
+        activeOption.classList.add('active');
+    }
+}}
