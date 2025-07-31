@@ -4667,7 +4667,7 @@ function showAllSynonyms() {
 🏷️ أنواع العقود:
    • ضريبي: ضريبية، مع ضريبة، بضريبة
    • سكني: سكنية، سكن
-   • راكض: غير محدد، لم يحدد بعد
+   • راكد: غير محدد، لم يحدد بعد
 
 💡 مثال: يمكنك البحث عن "محل" أو "المحلات" أو "محلات" وستحصل على نفس النتائج
     `);
@@ -6786,8 +6786,8 @@ function renderData() {
   
   // تصفية البيانات حسب نوع العقد
   if (contractTypeFilter) {
-    if (contractTypeFilter === 'راكض') {
-      // فلتر "راكض" يعني العقود غير المحددة (ليست سكني ولا ضريبي)
+    if (contractTypeFilter === 'راكد') {
+      // فلتر "راكد" يعني العقود غير المحددة (ليست سكني ولا ضريبي)
       filteredData = filteredData.filter(property => {
         const contractType = property['نوع العقد'];
         return !contractType || (contractType !== 'سكني' && contractType !== 'ضريبي');
@@ -6915,7 +6915,7 @@ function calculateCategoryStats(data, isLandCategory) {
     let rentedUnits = 0;
     let commercialUnits = 0; // الوحدات الضريبية
     let residentialUnits = 0; // الوحدات السكنية
-    let pendingUnits = 0; // الوحدات الراكضة (غير محددة)
+    let pendingUnits = 0; // الوحدات الراكدة (غير محددة)
 
     // تجميع الوحدات الفريدة
     const uniqueUnits = new Set();
@@ -6937,14 +6937,14 @@ function calculateCategoryStats(data, isLandCategory) {
             uniqueUnits.add(unitKey);
         }
 
-        // حساب نوع العقد (ضريبي، سكني، أو راكض)
+        // حساب نوع العقد (ضريبي، سكني، أو راكد)
         const contractType = property['نوع العقد'];
         if (contractType === 'ضريبي') {
             commercialUnits++;
         } else if (contractType === 'سكني') {
             residentialUnits++;
         } else {
-            // إذا لم يكن ضريبي أو سكني، فهو راكض (غير محدد)
+            // إذا لم يكن ضريبي أو سكني، فهو راكد (غير محدد)
             pendingUnits++;
         }
 
@@ -7135,7 +7135,7 @@ function renderTotals(data) {
                         </tr>
                         ${(buildingStats.pendingUnits + landStats.pendingUnits) > 0 ? `
                         <tr>
-                            <td class="metric-label">الوحدات الراكضة</td>
+                            <td class="metric-label">الوحدات الراكدة</td>
                             <td class="buildings-value">${buildingStats.pendingUnits}</td>
                             <td class="lands-value">${landStats.pendingUnits}</td>
                             <td class="total-value">${buildingStats.pendingUnits + landStats.pendingUnits}</td>
@@ -7465,7 +7465,7 @@ function renderMobileTotals(data) {
                         </tr>
                         ${(buildingStats.pendingUnits + landStats.pendingUnits) > 0 ? `
                         <tr>
-                            <td class="metric-label">الوحدات الراكضة</td>
+                            <td class="metric-label">الوحدات الراكدة</td>
                             <td class="buildings-value">${buildingStats.pendingUnits}</td>
                             <td class="lands-value">${landStats.pendingUnits}</td>
                             <td class="total-value">${buildingStats.pendingUnits + landStats.pendingUnits}</td>
@@ -9101,7 +9101,7 @@ function showContractTypeFilter() {
         return;
     }
 
-    const contractTypes = ['ضريبي', 'سكني', 'راكض'];
+    const contractTypes = ['ضريبي', 'سكني', 'راكد'];
     let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
         <div class="modal-box contract-type-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
             <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -22730,7 +22730,7 @@ function showMultiUnitEditModal(relatedUnits, primaryUnit) {
                                     <select name="نوع العقد">
                                         <option value="سكني" ${primaryUnit['نوع العقد'] === 'سكني' ? 'selected' : ''}>سكني</option>
                                         <option value="ضريبي" ${primaryUnit['نوع العقد'] === 'ضريبي' ? 'selected' : ''}>ضريبي</option>
-                                        <option value="راكض" ${primaryUnit['نوع العقد'] === 'راكض' ? 'selected' : ''}>راكض</option>
+                                        <option value="راكد" ${primaryUnit['نوع العقد'] === 'راكد' ? 'selected' : ''}>راكد</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -24539,7 +24539,7 @@ function generateFullUnitEditForm(unit, unitIndex) {
                             <select name="نوع العقد">
                                 <option value="سكني" ${unit['نوع العقد'] === 'سكني' ? 'selected' : ''}>سكني</option>
                                 <option value="ضريبي" ${unit['نوع العقد'] === 'ضريبي' ? 'selected' : ''}>ضريبي</option>
-                                <option value="راكض" ${unit['نوع العقد'] === 'راكض' ? 'selected' : ''}>راكض</option>
+                                <option value="راكد" ${unit['نوع العقد'] === 'راكد' ? 'selected' : ''}>راكد</option>
                             </select>
                         </div>
                     </div>
@@ -24706,7 +24706,7 @@ function generateSingleUnitEditForm(unit, unitIndex) {
                         <select name="نوع العقد">
                             <option value="سكني" ${unit['نوع العقد'] === 'سكني' ? 'selected' : ''}>سكني</option>
                             <option value="ضريبي" ${unit['نوع العقد'] === 'ضريبي' ? 'selected' : ''}>ضريبي</option>
-                            <option value="راكض" ${unit['نوع العقد'] === 'راكض' ? 'selected' : ''}>راكض</option>
+                            <option value="راكد" ${unit['نوع العقد'] === 'راكد' ? 'selected' : ''}>راكد</option>
                         </select>
                     </div>
                 </div>
@@ -25416,7 +25416,7 @@ function showSingleUnitEditModal(property, contractNumber, propertyName, unitNum
                                     <select name="نوع العقد">
                                         <option value="سكني" ${property['نوع العقد'] === 'سكني' ? 'selected' : ''}>سكني</option>
                                         <option value="ضريبي" ${property['نوع العقد'] === 'ضريبي' ? 'selected' : ''}>ضريبي</option>
-                                        <option value="راكض" ${property['نوع العقد'] === 'راكض' ? 'selected' : ''}>راكض</option>
+                                        <option value="راكد" ${property['نوع العقد'] === 'راكد' ? 'selected' : ''}>راكد</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -42966,7 +42966,7 @@ async function testPropertySavingSolution() {
                 'رقم العقد': 'SAVE_C001',
                 'قيمة  الايجار ': 4000,
                 'الاجمالى': 48000,
-                'نوع العقد': 'راكض'
+                'نوع العقد': 'راكد'
             };
 
             const saveResult = await savePropertiesDirectlyToSupabase([testPropertyForSave]);
