@@ -30167,3 +30167,8 @@ body.limited-user .restricted-dropdown-item::before {
   }
 }
 
+.metric-label {
+  
+  color: #8B0000;
+
+}

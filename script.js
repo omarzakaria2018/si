@@ -7452,7 +7452,7 @@ function renderTotals(data) {
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="metric-label">عدد الوحدات</td>
+                          <td class="metric-label" style="color: #d70606;font weight: bold;font-size: 1rem;">عدد الوحدات</td>
                             <td class="buildings-value">${buildingStats.totalUnits}</td>
                             <td class="lands-value">${landStats.totalUnits}</td>
                             <td class="total-value">${buildingStats.totalUnits + landStats.totalUnits}</td>
@@ -7782,7 +7782,7 @@ function renderMobileTotals(data) {
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="metric-label">عدد الوحدات</td>
+                            <td class="metric-label" style="color: #d70606;font weight: bold;font-size: .8rem;">عدد الوحدات</td>
                             <td class="buildings-value">${buildingStats.totalUnits}</td>
                             <td class="lands-value">${landStats.totalUnits}</td>
                             <td class="total-value">${buildingStats.totalUnits + landStats.totalUnits}</td>
