@@ -18373,14 +18373,14 @@ textarea.mobile-friendly:focus {
 
 .sidebar-item i {
   color: white;
-  font-size: 26px;
+  font-size: 33px;
   min-width: 30px;
   text-align: center;
 }
 
 .sidebar-text {
   color: white;
-  font-size: 14px;
+  font-size: 18px;
   margin-right: 12px;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -19999,6 +19999,15 @@ textarea.mobile-friendly:focus {
 .limited-user .settings-btn,
 .limited-user .header-dropdown:has(.settings-btn) {
   display: none !important;
+}
+
+/* السماح بزر مسح الفلاتر للمستخدم محدود الصلاحية */
+.limited-user .clear-all-filters-btn {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 .limited-user .card-actions .edit-btn,

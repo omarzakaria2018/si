@@ -264,6 +264,49 @@ function updateActiveFiltersDisplay() {
         });
     }
 
+    // إضافة فلتر الشهر المتقدم
+    if (window.monthFilterActive && window.monthFilterType) {
+        let filterLabel = `فلتر الشهر (${window.monthFilterType === 'start' ? 'البداية + الأقساط' : 'النهاية + نهاية القسط'})`;
+
+        const filterParts = [];
+        if (window.monthFilterDays && window.monthFilterDays.length > 0) {
+            if (window.monthFilterDays.length <= 3) {
+                filterParts.push(`أيام: ${window.monthFilterDays.join(', ')}`);
+            } else {
+                filterParts.push(`${window.monthFilterDays.length} أيام`);
+            }
+        }
+
+        if (window.monthFilterMonths && window.monthFilterMonths.length > 0) {
+            const monthNames = {1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل', 5: 'مايو', 6: 'يونيو',
+                             7: 'يوليو', 8: 'أغسطس', 9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر'};
+            if (window.monthFilterMonths.length <= 3) {
+                const monthLabels = window.monthFilterMonths.map(m => monthNames[m]).join(', ');
+                filterParts.push(`شهور: ${monthLabels}`);
+            } else {
+                filterParts.push(`${window.monthFilterMonths.length} شهور`);
+            }
+        }
+
+        if (window.monthFilterYears && window.monthFilterYears.length > 0) {
+            if (window.monthFilterYears.length <= 3) {
+                filterParts.push(`سنوات: ${window.monthFilterYears.join(', ')}`);
+            } else {
+                filterParts.push(`${window.monthFilterYears.length} سنوات`);
+            }
+        }
+
+        if (filterParts.length > 0) {
+            filterLabel += ` - ${filterParts.join(' | ')}`;
+        }
+
+        filters.push({
+            type: 'monthFilterAdvanced',
+            label: filterLabel,
+            value: 'advanced'
+        });
+    }
+
     if (activeFilters.multiProperty && activeFilters.multiProperty.length > 0) {
         filters.push({
             type: 'multiProperty',
@@ -674,6 +717,17 @@ function removeFilter(type, value) {
             console.log('🔗 إزالة فلتر المترابطة...');
             unitsTypeFilter = null;
             updateUnitsTypeFilterState();
+            break;
+
+        case 'monthFilterAdvanced':
+            // إزالة فلتر الشهر المتقدم
+            console.log('📅 إزالة فلتر الشهر المتقدم...');
+            window.monthFilterType = null;
+            window.monthFilterDays = [];
+            window.monthFilterMonths = [];
+            window.monthFilterYears = [];
+            window.monthFilterActive = false;
+            showToast('✅ تم إزالة فلتر الشهر المتقدم', 'info');
             break;
     }
 
@@ -1171,6 +1225,14 @@ function clearAllFilters() {
     if (typeof unitsTypeFilter !== 'undefined') {
         unitsTypeFilter = null; // إضافة مسح فلتر نوع الوحدات
     }
+
+    // مسح فلتر الشهر المتقدم
+    window.monthFilterType = null;
+    window.monthFilterDays = [];
+    window.monthFilterMonths = [];
+    window.monthFilterYears = [];
+    window.monthFilterActive = false;
+    console.log('📅 تم مسح فلتر الشهر المتقدم');
 
     // إعادة تعيين الفلاتر النشطة
     activeFilters = {
@@ -6926,7 +6988,200 @@ function renderData() {
       });
     });
   }
-  
+
+  // فلتر الشهر المتقدم
+  if (window.monthFilterActive && window.monthFilterType) {
+    const beforeCount = filteredData.length;
+    console.log(`📅 بدء تطبيق فلتر الشهر المتقدم:`, {
+      type: window.monthFilterType,
+      days: window.monthFilterDays,
+      months: window.monthFilterMonths,
+      years: window.monthFilterYears,
+      totalProperties: beforeCount
+    });
+
+    // دالة مساعدة للحصول على الأرقام العربية
+    function getArabicNumber(num) {
+      const arabicNumbers = {
+        1: 'الاول', 2: 'الثاني', 3: 'الثالث', 4: 'الرابع', 5: 'الخامس',
+        6: 'السادس', 7: 'السابع', 8: 'الثامن', 9: 'التاسع', 10: 'العاشر'
+      };
+      return arabicNumbers[num] || num.toString();
+    }
+
+    filteredData = filteredData.filter(property => {
+      // جمع جميع التواريخ المطلوبة حسب نوع الفلتر
+      let datesToCheck = [];
+      let dateFields = [];
+
+      if (window.monthFilterType === 'start') {
+        // تاريخ البداية + جميع تواريخ الأقساط
+        const startDateFields = ['تاريخ البداية', 'تاريخ بداية العقد', 'start_date'];
+
+        // إضافة تاريخ البداية
+        for (const field of startDateFields) {
+          if (property[field]) {
+            datesToCheck.push(property[field]);
+            dateFields.push(field);
+            break;
+          }
+        }
+
+        // إضافة جميع تواريخ الأقساط (1-10)
+        for (let i = 1; i <= 10; i++) {
+          const installmentFields = [
+            `تاريخ القسط ${getArabicNumber(i)}`,
+            `تاريخ القسط الـ${i}`,
+            `تاريخ القسط ${i}`,
+            `installment_${i}_date`
+          ];
+
+          for (const field of installmentFields) {
+            if (property[field]) {
+              datesToCheck.push(property[field]);
+              dateFields.push(field);
+              break;
+            }
+          }
+        }
+
+      } else {
+        // تاريخ النهاية + تاريخ نهاية القسط
+        const endDateFields = ['تاريخ النهاية', 'تاريخ نهاية العقد', 'end_date'];
+
+        // إضافة تاريخ النهاية
+        for (const field of endDateFields) {
+          if (property[field]) {
+            datesToCheck.push(property[field]);
+            dateFields.push(field);
+            break;
+          }
+        }
+
+        // إضافة تاريخ نهاية القسط
+        const endInstallmentFields = ['تاريخ نهاية القسط', 'installment_end_date'];
+        for (const field of endInstallmentFields) {
+          if (property[field]) {
+            datesToCheck.push(property[field]);
+            dateFields.push(field);
+            break;
+          }
+        }
+      }
+
+      if (datesToCheck.length === 0) {
+        console.log(`⚠️ لا توجد تواريخ ${window.monthFilterType === 'start' ? 'بداية/أقساط' : 'نهاية'} للوحدة:`, property['رقم  الوحدة ']);
+        return false;
+      }
+
+      // فحص جميع التواريخ المجمعة
+      let hasMatch = false;
+      let matchedDates = [];
+
+      for (let i = 0; i < datesToCheck.length; i++) {
+        const dateValue = datesToCheck[i];
+        const dateField = dateFields[i];
+
+        // تحسين معالجة التاريخ
+        let date;
+        if (typeof dateValue === 'string') {
+          // معالجة التواريخ النصية
+          date = parseDate(dateValue);
+        } else {
+          date = new Date(dateValue);
+        }
+
+        if (!date || isNaN(date.getTime())) {
+          console.log(`❌ تاريخ غير صالح في الحقل "${dateField}":`, dateValue, 'للوحدة:', property['رقم  الوحدة ']);
+          continue; // تجاهل التاريخ التالف والانتقال للتالي
+        }
+
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+
+        const dayMatch = !window.monthFilterDays || window.monthFilterDays.length === 0 || window.monthFilterDays.includes(day);
+        const monthMatch = !window.monthFilterMonths || window.monthFilterMonths.length === 0 || window.monthFilterMonths.includes(month);
+        const yearMatch = !window.monthFilterYears || window.monthFilterYears.length === 0 || window.monthFilterYears.includes(year);
+
+        const dateMatches = dayMatch && monthMatch && yearMatch;
+
+        if (dateMatches) {
+          hasMatch = true;
+          matchedDates.push({
+            field: dateField,
+            date: `${day}/${month}/${year}`
+          });
+          console.log(`✅ تطابق: الوحدة ${property['رقم  الوحدة ']} - الحقل: ${dateField} - التاريخ: ${day}/${month}/${year}`);
+        }
+      }
+
+      return hasMatch;
+    });
+
+    console.log(`📅 نتيجة فلتر الشهر المتقدم (${window.monthFilterType === 'start' ? 'البداية + الأقساط' : 'النهاية + نهاية القسط'}): ${beforeCount} → ${filteredData.length} وحدة`);
+
+    // إضافة تسجيل لعينة من البيانات المفلترة
+    if (filteredData.length > 0) {
+      console.log('📋 عينة من النتائج المفلترة:', filteredData.slice(0, 3).map(p => {
+        // جمع جميع التواريخ المطابقة
+        let matchedDates = [];
+
+        if (window.monthFilterType === 'start') {
+          // تاريخ البداية
+          const startFields = ['تاريخ البداية', 'تاريخ بداية العقد', 'start_date'];
+          for (const field of startFields) {
+            if (p[field]) {
+              matchedDates.push({field: field, value: p[field]});
+              break;
+            }
+          }
+
+          // تواريخ الأقساط
+          for (let i = 1; i <= 10; i++) {
+            const installmentFields = [
+              `تاريخ القسط ${getArabicNumber(i)}`,
+              `تاريخ القسط الـ${i}`,
+              `تاريخ القسط ${i}`,
+              `installment_${i}_date`
+            ];
+
+            for (const field of installmentFields) {
+              if (p[field]) {
+                matchedDates.push({field: field, value: p[field]});
+                break;
+              }
+            }
+          }
+        } else {
+          // تاريخ النهاية
+          const endFields = ['تاريخ النهاية', 'تاريخ نهاية العقد', 'end_date'];
+          for (const field of endFields) {
+            if (p[field]) {
+              matchedDates.push({field: field, value: p[field]});
+              break;
+            }
+          }
+
+          // تاريخ نهاية القسط
+          const endInstallmentFields = ['تاريخ نهاية القسط', 'installment_end_date'];
+          for (const field of endInstallmentFields) {
+            if (p[field]) {
+              matchedDates.push({field: field, value: p[field]});
+              break;
+            }
+          }
+        }
+
+        return {
+          unit: p['رقم  الوحدة '],
+          property: p['اسم العقار'],
+          matchedDates: matchedDates
+        };
+      }));
+    }
+  }
+
   // تصفية البيانات حسب المدينة
   if (currentCountry) {
     const beforeCount = filteredData.length;
@@ -9335,7 +9590,7 @@ function toggleModal(modalCheckFunction, modalOpenFunction) {
     }
 }
 
-// عرض فلتر الشهر مع آلية التبديل
+// عرض فلتر الشهر مع تشيك مارك للاختيار المتعدد
 function showMonthFilterModal() {
   // التحقق من وجود نافذة مفتوحة وإغلاقها إذا كانت موجودة
   const existingModal = document.querySelector('.modal-overlay');
@@ -9344,87 +9599,1174 @@ function showMonthFilterModal() {
     return;
   }
 
-  let html = `<div class="modal-overlay" style="display:flex; z-index: 10000;">
-        <div class="modal-box month-filter-modal" style="max-width: 500px; max-height: 80vh; position: relative;">
-            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                <i class="fas fa-calendar-alt" style="color: #007bff;"></i>
-                فلتر الشهر
-                <span class="badge" style="background: #007bff; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">تاريخ</span>
-            </h3>
-            <div class="date-filter-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 15px;">
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <label style="font-weight: 600; color: #495057;">نوع التاريخ:</label>
-                    <select id="filterTypeModal" class="date-filter-select" style="padding: 10px; border: 1px solid #e9ecef; border-radius: 6px; font-size: 1rem;">
+  let html = `
+    <style>
+      .dropdown-header:hover {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1) !important;
+        transform: translateY(-1px);
+      }
+
+      .dropdown-item:hover {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
+        transform: scale(1.02) !important;
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2) !important;
+        border-color: #007bff !important;
+      }
+
+      .dropdown-item input:checked + span {
+        font-weight: 700;
+      }
+
+      .dropdown-content {
+        animation: slideDown 0.3s ease-out;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .btn-apply:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4) !important;
+      }
+
+      .btn-clear:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4) !important;
+      }
+
+      .btn-close:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4) !important;
+      }
+
+      .filter-section {
+        animation: fadeInUp 0.4s ease-out;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* تأثيرات التشيك مارك */
+      .dropdown-item input[type="checkbox"] {
+        position: relative;
+      }
+
+      .dropdown-item input[type="checkbox"]:checked {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border-color: #007bff;
+      }
+
+      /* تأثير النبضة للعناصر المحددة */
+      .dropdown-item input[type="checkbox"]:checked + span {
+        animation: pulse 0.3s ease-out;
+      }
+
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+
+      /* تنسيق متجاوب للجوال */
+      @media (max-width: 768px) {
+        .month-filter-modal {
+          max-width: 95vw !important;
+          max-height: 90vh !important;
+          margin: 10px !important;
+        }
+
+        .advanced-date-filter-container {
+          padding: 15px !important;
+        }
+
+        .filter-section {
+          margin-bottom: 20px !important;
+        }
+
+        .filter-section label {
+          font-size: 0.9rem !important;
+          margin-bottom: 8px !important;
+        }
+
+        .dropdown-header {
+          padding: 12px 15px !important;
+          font-size: 0.9rem !important;
+        }
+
+        .dropdown-content {
+          max-height: 200px !important;
+        }
+
+        .dropdown-content > div {
+          padding: 12px !important;
+        }
+
+        .dropdown-item {
+          padding: 6px 10px !important;
+          font-size: 0.85rem !important;
+        }
+
+        .filter-actions {
+          flex-direction: column !important;
+          gap: 10px !important;
+          margin-top: 20px !important;
+          padding-top: 20px !important;
+        }
+
+        .filter-actions button {
+          max-width: none !important;
+          width: 100% !important;
+          padding: 14px 20px !important;
+          font-size: 0.95rem !important;
+        }
+
+        /* تحسين الشبكة للجوال */
+        .dropdown-content .grid-container {
+          grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)) !important;
+          gap: 6px !important;
+        }
+
+        /* تحسين أزرار التأكيد */
+        .dropdown-content button {
+          padding: 8px 15px !important;
+          font-size: 0.85rem !important;
+        }
+
+        /* تحسين النصوص */
+        .filter-section label i {
+          margin-left: 6px !important;
+        }
+
+        /* تحسين القوائم المنسدلة */
+        .dropdown-header i {
+          font-size: 0.8rem !important;
+        }
+
+        /* تحسين التباعد */
+        .modal-header {
+          padding: 15px !important;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .month-filter-modal {
+          max-width: 98vw !important;
+          margin: 5px !important;
+          border-radius: 12px !important;
+        }
+
+        .modal-header {
+          padding: 12px !important;
+        }
+
+        .modal-header h3 {
+          font-size: 1.1rem !important;
+          gap: 8px !important;
+        }
+
+        .modal-header h3 span:last-child {
+          display: none !important;
+        }
+
+        .modal-header p {
+          font-size: 0.8rem !important;
+          margin: 6px 0 0 0 !important;
+        }
+
+        .advanced-date-filter-container {
+          padding: 12px !important;
+        }
+
+        .filter-section {
+          margin-bottom: 15px !important;
+        }
+
+        .filter-section label {
+          font-size: 0.85rem !important;
+          margin-bottom: 6px !important;
+        }
+
+        .dropdown-header {
+          padding: 10px 12px !important;
+          font-size: 0.85rem !important;
+          border-radius: 8px !important;
+        }
+
+        .dropdown-content {
+          border-radius: 0 0 8px 8px !important;
+          max-height: 180px !important;
+        }
+
+        .dropdown-content > div {
+          padding: 10px !important;
+        }
+
+        .dropdown-content .grid-container {
+          grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)) !important;
+          gap: 4px !important;
+          margin-bottom: 12px !important;
+        }
+
+        .dropdown-item {
+          padding: 5px 8px !important;
+          font-size: 0.75rem !important;
+          border-radius: 4px !important;
+        }
+
+        .dropdown-item input {
+          transform: scale(1) !important;
+        }
+
+        .dropdown-content button {
+          padding: 6px 12px !important;
+          font-size: 0.8rem !important;
+          border-radius: 6px !important;
+        }
+
+        .filter-actions {
+          margin-top: 15px !important;
+          padding-top: 15px !important;
+        }
+
+        .filter-actions button {
+          padding: 12px 16px !important;
+          font-size: 0.9rem !important;
+          border-radius: 8px !important;
+        }
+
+        .filter-actions button span {
+          display: none !important;
+        }
+
+        .filter-actions button i {
+          margin-left: 0 !important;
+        }
+      }
+
+      /* تحسين اللمس للجوال */
+      @media (hover: none) and (pointer: coarse) {
+        .dropdown-item {
+          min-height: 44px !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+
+        .dropdown-header {
+          min-height: 48px !important;
+        }
+
+        .filter-actions button {
+          min-height: 48px !important;
+        }
+
+        .dropdown-content button {
+          min-height: 44px !important;
+        }
+      }
+    </style>
+
+    <div class="modal-overlay" style="display:flex; z-index: 10000; backdrop-filter: blur(5px); background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box;">
+        <div class="modal-box month-filter-modal" style="max-width: 600px; max-height: 85vh; width: 100%; position: relative; background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; display: flex; flex-direction: column;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; color: white; text-align: center; flex-shrink: 0;">
+                <h3 style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.3rem; font-weight: 700; flex-wrap: wrap;">
+                    <i class="fas fa-calendar-alt" style="font-size: 1.5rem;"></i>
+                    <span>فلتر الشهر المتقدم</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">تاريخ</span>
+                </h3>
+                <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 0.9rem;">اختر التواريخ المطلوبة بدقة</p>
+            </div>
+
+            <div class="advanced-date-filter-container" style="background: #f8f9fa; border-radius: 12px; padding: 25px; flex: 1; overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;">
+
+                <!-- نوع التاريخ -->
+                <div class="filter-section" style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 700; color: #2c3e50; margin-bottom: 10px; font-size: 1rem;">
+                        <i class="fas fa-calendar-check" style="color: #007bff; margin-left: 8px;"></i>
+                        نوع التاريخ:
+                    </label>
+                    <select id="filterTypeModal" style="width: 100%; padding: 14px 18px; border: 2px solid #e9ecef; border-radius: 10px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         <option value="">اختر نوع التاريخ</option>
-                        <option value="start">تاريخ البداية</option>
-                        <option value="end">تاريخ النهاية</option>
+                        <option value="start">📅 تاريخ البداية + تواريخ الأقساط</option>
+                        <option value="end">📅 تاريخ النهاية + تاريخ نهاية القسط</option>
                     </select>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <label style="font-weight: 600; color: #495057;">اليوم:</label>
-                    <select id="filterDayModal" class="date-filter-select" style="padding: 10px; border: 1px solid #e9ecef; border-radius: 6px; font-size: 1rem;">
-                        <option value="">اختر اليوم</option>
-                        ${Array.from({length: 31}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}
-                    </select>
+                <!-- الأيام -->
+                <div class="filter-section" style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 700; color: #2c3e50; margin-bottom: 10px; font-size: 1rem;">
+                        <i class="fas fa-calendar-day" style="color: #28a745; margin-left: 8px;"></i>
+                        اليوم (يمكن اختيار عدة أيام):
+                    </label>
+                    <div class="dropdown-container" style="position: relative;">
+                        <div class="dropdown-header" onclick="toggleDropdown('daysDropdown')" style="width: 100%; padding: 14px 18px; border: 2px solid #e9ecef; border-radius: 10px; background: white; cursor: pointer; display: flex; justify-content: between; align-items: center; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <span id="daysSelected" style="color: #6c757d;">اختر الأيام...</span>
+                            <i class="fas fa-chevron-down" style="color: #6c757d; transition: transform 0.3s ease;"></i>
+                        </div>
+                        <div id="daysDropdown" class="dropdown-content" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e9ecef; border-top: none; border-radius: 0 0 10px 10px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                            <div style="padding: 15px;">
+                                <label class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: all 0.2s ease; font-weight: 600; background: #007bff; color: white; margin-bottom: 10px;">
+                                    <input type="checkbox" id="selectAllDays" onchange="toggleAllDays()" style="margin: 0; transform: scale(1.2);">
+                                    <span>تحديد الكل</span>
+                                </label>
+                                <div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; margin-bottom: 15px;">
+                                    ${generateDayDropdownItems()}
+                                </div>
+                                <div style="text-align: center; border-top: 1px solid #e9ecef; padding-top: 15px;">
+                                    <button onclick="confirmDaysSelection()" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; padding: 10px 25px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 3px 12px rgba(40, 167, 69, 0.4);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 20px rgba(40, 167, 69, 0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 12px rgba(40, 167, 69, 0.4)'">
+                                        <i class="fas fa-check" style="margin-left: 8px; font-size: 1.1rem;"></i>
+                                        <span style="font-weight: 700;">تم اختيار الأيام</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <label style="font-weight: 600; color: #495057;">الشهر:</label>
-                    <select id="filterMonthModal" class="date-filter-select" style="padding: 10px; border: 1px solid #e9ecef; border-radius: 6px; font-size: 1rem;">
-                        <option value="">اختر الشهر</option>
-                        ${['يناير','فبراير','مارس','إبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
-                          .map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}
-                    </select>
+                <!-- الشهور -->
+                <div class="filter-section" style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 700; color: #2c3e50; margin-bottom: 10px; font-size: 1rem;">
+                        <i class="fas fa-calendar-alt" style="color: #ffc107; margin-left: 8px;"></i>
+                        الشهر (يمكن اختيار عدة شهور):
+                    </label>
+                    <div class="dropdown-container" style="position: relative;">
+                        <div class="dropdown-header" onclick="toggleDropdown('monthsDropdown')" style="width: 100%; padding: 14px 18px; border: 2px solid #e9ecef; border-radius: 10px; background: white; cursor: pointer; display: flex; justify-content: between; align-items: center; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <span id="monthsSelected" style="color: #6c757d;">اختر الشهور...</span>
+                            <i class="fas fa-chevron-down" style="color: #6c757d; transition: transform 0.3s ease;"></i>
+                        </div>
+                        <div id="monthsDropdown" class="dropdown-content" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e9ecef; border-top: none; border-radius: 0 0 10px 10px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                            <div style="padding: 15px;">
+                                <label class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: all 0.2s ease; font-weight: 600; background: #ffc107; color: #212529; margin-bottom: 10px;">
+                                    <input type="checkbox" id="selectAllMonths" onchange="toggleAllMonths()" style="margin: 0; transform: scale(1.2);">
+                                    <span>تحديد الكل</span>
+                                </label>
+                                <div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-bottom: 15px;">
+                                    ${generateMonthDropdownItems()}
+                                </div>
+                                <div style="text-align: center; border-top: 1px solid #e9ecef; padding-top: 15px;">
+                                    <button onclick="confirmMonthsSelection()" style="background: linear-gradient(135deg, #ffc107, #e0a800); color: #212529; border: none; padding: 10px 25px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 3px 12px rgba(255, 193, 7, 0.4);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 20px rgba(255, 193, 7, 0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 12px rgba(255, 193, 7, 0.4)'">
+                                        <i class="fas fa-check" style="margin-left: 8px; font-size: 1.1rem;"></i>
+                                        <span style="font-weight: 700;">تم اختيار الشهور</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <label style="font-weight: 600; color: #495057;">السنة:</label>
-                    <select id="filterYearModal" class="date-filter-select" style="padding: 10px; border: 1px solid #e9ecef; border-radius: 6px; font-size: 1rem;">
-                        <option value="">اختر السنة</option>
-                        ${Array.from({length: 81}, (_, i) => `<option value="${2020+i}">${2020+i}</option>`).join('')}
-                    </select>
+                <!-- السنوات -->
+                <div class="filter-section" style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 700; color: #2c3e50; margin-bottom: 10px; font-size: 1rem;">
+                        <i class="fas fa-calendar" style="color: #dc3545; margin-left: 8px;"></i>
+                        السنة (يمكن اختيار عدة سنوات):
+                    </label>
+                    <div class="dropdown-container" style="position: relative;">
+                        <div class="dropdown-header" onclick="toggleDropdown('yearsDropdown')" style="width: 100%; padding: 14px 18px; border: 2px solid #e9ecef; border-radius: 10px; background: white; cursor: pointer; display: flex; justify-content: between; align-items: center; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <span id="yearsSelected" style="color: #6c757d;">اختر السنوات...</span>
+                            <i class="fas fa-chevron-down" style="color: #6c757d; transition: transform 0.3s ease;"></i>
+                        </div>
+                        <div id="yearsDropdown" class="dropdown-content" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e9ecef; border-top: none; border-radius: 0 0 10px 10px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                            <div style="padding: 15px;">
+                                <label class="dropdown-item" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: all 0.2s ease; font-weight: 600; background: #dc3545; color: white; margin-bottom: 10px;">
+                                    <input type="checkbox" id="selectAllYears" onchange="toggleAllYears()" style="margin: 0; transform: scale(1.2);">
+                                    <span>تحديد الكل</span>
+                                </label>
+                                <div class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-bottom: 15px;">
+                                    ${generateYearDropdownItems()}
+                                </div>
+                                <div style="text-align: center; border-top: 1px solid #e9ecef; padding-top: 25px;">
+                                    <button onclick="confirmYearsSelectionWithEffect(this)" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 18px 25px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 3px 12px rgba(220, 53, 69, 0.4); position: relative; overflow: hidden;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 20px rgba(220, 53, 69, 0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 12px rgba(220, 53, 69, 0.4)'">
+                                        <i class="fas fa-check" style="margin-left: 8px; font-size: 1.1rem;"></i>
+                                        <span style="font-weight: 700;">تم اختيار السنوات</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
-                    <button onclick="applyMonthFilterModal()" class="apply-filter-btn" style="flex: 1; background: linear-gradient(135deg, #007bff, #0056b3); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="fas fa-check"></i> تطبيق
+                <!-- أزرار التحكم -->
+                <div class="filter-actions" style="display: flex; gap: 15px; margin-top: 30px; padding-top: 25px; border-top: 2px solid #e9ecef; justify-content: center;">
+                    <button onclick="applyMonthFilterModal()" class="btn-apply" style="flex: 1; max-width: 200px; background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; padding: 16px 24px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
+                        <i class="fas fa-check-circle"></i>
+                        <span>تطبيق الفلتر</span>
                     </button>
-                    <button onclick="clearMonthFilterModal()" class="clear-filter-btn" style="flex: 1; background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="fas fa-times"></i> مسح
+                    <button onclick="clearMonthFilterModal()" class="btn-clear" style="flex: 1; max-width: 180px; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 16px 24px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);">
+                        <i class="fas fa-eraser"></i>
+                        <span>مسح الفلتر</span>
+                    </button>
+                    <button onclick="closeMonthFilterModal();" class="btn-close" style="flex: 1; max-width: 150px; background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 16px 24px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);">
+                        <i class="fas fa-times-circle"></i>
+                        <span>إغلاق</span>
                     </button>
                 </div>
-            </div>
-            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
-                <button onclick="closeMonthFilterModal();" class="modal-action-btn close-btn month-filter-close-btn" id="monthFilterCloseBtn"
-                        style="flex: 1; background: linear-gradient(135deg, #6c757d, #495057); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fas fa-times"></i> إغلاق
-                </button>
-            </div>
+
         </div>
     </div>`;
 
   document.body.insertAdjacentHTML('beforeend', html);
 
-  // تعبئة القيم الحالية إذا كانت موجودة
-  document.getElementById('filterTypeModal').value = dateFilterType;
-  document.getElementById('filterDayModal').value = dateFilterDay;
-  document.getElementById('filterMonthModal').value = dateFilterMonth;
-  document.getElementById('filterYearModal').value = dateFilterYear;
-
-  // إضافة حدث إغلاق للمودال
+  // إضافة مستمع للإغلاق عند النقر خارج النافذة
   setTimeout(() => {
-      const modalOverlay = document.querySelector('.modal-overlay:last-child');
-      if (modalOverlay) {
-          modalOverlay.addEventListener('click', function(e) {
-              if (e.target === this) {
-                  console.log('🔴 تم النقر خارج نافذة فلتر الشهر - إغلاق');
+      const overlay = document.querySelector('.modal-overlay');
+      if (overlay) {
+          overlay.addEventListener('click', function(e) {
+              if (e.target === overlay) {
                   closeMonthFilterModal();
               }
           });
           console.log('✅ تم ربط الإغلاق عند النقر خارج نافذة فلتر الشهر');
       }
+
+      // استعادة التحديدات السابقة
+      restorePreviousSelections();
+
+      // إضافة مستمع لإغلاق القوائم المنسدلة عند النقر خارجها (للجوال)
+      document.addEventListener('touchstart', function(e) {
+        const dropdowns = ['daysDropdown', 'monthsDropdown', 'yearsDropdown'];
+        dropdowns.forEach(dropdownId => {
+          const dropdown = document.getElementById(dropdownId);
+          const header = document.querySelector(`[onclick*="${dropdownId}"]`);
+
+          if (dropdown && dropdown.style.display === 'block') {
+            if (!dropdown.contains(e.target) && !header.contains(e.target)) {
+              dropdown.style.display = 'none';
+            }
+          }
+        });
+      });
   }, 100);
+
+  console.log('✅ تم فتح فلتر الشهر مع التشيك مارك');
+}
+
+// استعادة التحديدات السابقة
+function restorePreviousSelections() {
+  console.log('🔄 استعادة التحديدات السابقة...');
+
+  // استعادة نوع التاريخ
+  if (window.monthFilterType) {
+    const filterTypeSelect = document.getElementById('filterTypeModal');
+    if (filterTypeSelect) {
+      filterTypeSelect.value = window.monthFilterType;
+      console.log('📅 تم استعادة نوع التاريخ:', window.monthFilterType);
+    }
+  }
+
+  // استعادة تحديد الأيام
+  if (window.monthFilterDays && window.monthFilterDays.length > 0) {
+    window.monthFilterDays.forEach(day => {
+      const checkbox = document.querySelector(`input[name="filterDay"][value="${day}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+        const label = checkbox.closest('.dropdown-item');
+        if (label) {
+          label.style.background = 'linear-gradient(135deg, #007bff, #0056b3)';
+          label.style.color = 'white';
+          label.style.borderColor = '#007bff';
+          label.style.transform = 'scale(1.02)';
+        }
+      }
+    });
+    updateDropdownSelection('days');
+    console.log('📅 تم استعادة الأيام:', window.monthFilterDays);
+  }
+
+  // استعادة تحديد الشهور
+  if (window.monthFilterMonths && window.monthFilterMonths.length > 0) {
+    window.monthFilterMonths.forEach(month => {
+      const checkbox = document.querySelector(`input[name="filterMonth"][value="${month}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+        const label = checkbox.closest('.dropdown-item');
+        if (label) {
+          label.style.background = 'linear-gradient(135deg, #ffc107, #e0a800)';
+          label.style.color = '#212529';
+          label.style.borderColor = '#ffc107';
+          label.style.transform = 'scale(1.02)';
+        }
+      }
+    });
+    updateDropdownSelection('months');
+    console.log('📅 تم استعادة الشهور:', window.monthFilterMonths);
+  }
+
+  // استعادة تحديد السنوات
+  if (window.monthFilterYears && window.monthFilterYears.length > 0) {
+    window.monthFilterYears.forEach(year => {
+      const checkbox = document.querySelector(`input[name="filterYear"][value="${year}"]`);
+      if (checkbox) {
+        checkbox.checked = true;
+        const label = checkbox.closest('.dropdown-item');
+        if (label) {
+          label.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+          label.style.color = 'white';
+          label.style.borderColor = '#dc3545';
+          label.style.transform = 'scale(1.02)';
+        }
+      }
+    });
+    updateDropdownSelection('years');
+    console.log('📅 تم استعادة السنوات:', window.monthFilterYears);
+  }
+
+  console.log('✅ تم استعادة جميع التحديدات السابقة');
+}
+
+// دوال إنشاء عناصر القوائم المنسدلة
+function generateDayDropdownItems() {
+  let html = '';
+  for (let day = 1; day <= 31; day++) {
+    html += `
+      <label class="dropdown-item" onclick="updateDropdownSelection('days')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: all 0.2s ease; font-weight: 500; background: #f8f9fa; border: 1px solid #e9ecef;">
+        <input type="checkbox" value="${day}" name="filterDay" style="margin: 0; transform: scale(1.1); accent-color: #007bff;">
+        <span style="font-size: 0.9rem;">${day}</span>
+      </label>
+    `;
+  }
+  return html;
+}
+
+function generateMonthDropdownItems() {
+  const months = [
+    {value: 1, name: 'يناير'}, {value: 2, name: 'فبراير'}, {value: 3, name: 'مارس'},
+    {value: 4, name: 'أبريل'}, {value: 5, name: 'مايو'}, {value: 6, name: 'يونيو'},
+    {value: 7, name: 'يوليو'}, {value: 8, name: 'أغسطس'}, {value: 9, name: 'سبتمبر'},
+    {value: 10, name: 'أكتوبر'}, {value: 11, name: 'نوفمبر'}, {value: 12, name: 'ديسمبر'}
+  ];
+
+  let html = '';
+  months.forEach(month => {
+    html += `
+      <label class="dropdown-item" onclick="updateDropdownSelection('months')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: all 0.2s ease; font-weight: 500; background: #f8f9fa; border: 1px solid #e9ecef;">
+        <input type="checkbox" value="${month.value}" name="filterMonth" style="margin: 0; transform: scale(1.1); accent-color: #ffc107;">
+        <span style="font-size: 0.85rem;">${month.name}</span>
+      </label>
+    `;
+  });
+  return html;
+}
+
+function generateYearDropdownItems() {
+  const currentYear = new Date().getFullYear();
+  let html = '';
+
+  for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+    html += `
+      <label class="dropdown-item" onclick="updateDropdownSelection('years')" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: all 0.2s ease; font-weight: 500; background: #f8f9fa; border: 1px solid #e9ecef;">
+        <input type="checkbox" value="${year}" name="filterYear" style="margin: 0; transform: scale(1.1); accent-color: #dc3545;">
+        <span style="font-size: 0.9rem;">${year}</span>
+      </label>
+    `;
+  }
+  return html;
+}
+
+// دوال التحكم في التشيك مارك
+function updateDaySelection() {
+  const allCheckbox = document.querySelector('input[name="filterDay"][value=""]');
+  const dayCheckboxes = document.querySelectorAll('input[name="filterDay"]:not([value=""])');
+
+  if (allCheckbox && allCheckbox.checked) {
+    // إذا تم تحديد "الكل"، تحديد جميع الأيام
+    dayCheckboxes.forEach(cb => cb.checked = true);
+  } else {
+    // إذا تم إلغاء تحديد "الكل"، إلغاء تحديد جميع الأيام
+    if (allCheckbox && !allCheckbox.checked) {
+      const checkedDays = Array.from(dayCheckboxes).filter(cb => cb.checked);
+      if (checkedDays.length === 0) {
+        dayCheckboxes.forEach(cb => cb.checked = false);
+      }
+    }
+  }
+}
+
+function updateMonthSelection() {
+  const allCheckbox = document.querySelector('input[name="filterMonth"][value=""]');
+  const monthCheckboxes = document.querySelectorAll('input[name="filterMonth"]:not([value=""])');
+
+  if (allCheckbox && allCheckbox.checked) {
+    monthCheckboxes.forEach(cb => cb.checked = true);
+  } else {
+    if (allCheckbox && !allCheckbox.checked) {
+      const checkedMonths = Array.from(monthCheckboxes).filter(cb => cb.checked);
+      if (checkedMonths.length === 0) {
+        monthCheckboxes.forEach(cb => cb.checked = false);
+      }
+    }
+  }
+}
+
+function updateYearSelection() {
+  const allCheckbox = document.querySelector('input[name="filterYear"][value=""]');
+  const yearCheckboxes = document.querySelectorAll('input[name="filterYear"]:not([value=""])');
+
+  if (allCheckbox && allCheckbox.checked) {
+    yearCheckboxes.forEach(cb => cb.checked = true);
+  } else {
+    if (allCheckbox && !allCheckbox.checked) {
+      const checkedYears = Array.from(yearCheckboxes).filter(cb => cb.checked);
+      if (checkedYears.length === 0) {
+        yearCheckboxes.forEach(cb => cb.checked = false);
+      }
+    }
+  }
+}
+
+// دوال التحكم في القوائم المنسدلة
+function toggleDropdown(dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+  const header = dropdown.previousElementSibling;
+  const icon = header.querySelector('.fas');
+
+  // إغلاق جميع القوائم الأخرى
+  document.querySelectorAll('.dropdown-content').forEach(dd => {
+    if (dd.id !== dropdownId) {
+      dd.style.display = 'none';
+      const otherIcon = dd.previousElementSibling.querySelector('.fas');
+      if (otherIcon) {
+        otherIcon.style.transform = 'rotate(0deg)';
+      }
+    }
+  });
+
+  // تبديل القائمة الحالية
+  if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+    dropdown.style.display = 'block';
+    icon.style.transform = 'rotate(180deg)';
+    header.style.borderColor = '#007bff';
+    header.style.boxShadow = '0 0 0 3px rgba(0, 123, 255, 0.1)';
+  } else {
+    dropdown.style.display = 'none';
+    icon.style.transform = 'rotate(0deg)';
+    header.style.borderColor = '#e9ecef';
+    header.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+  }
+}
+
+function updateDropdownSelection(type) {
+  setTimeout(() => {
+    let selectedItems = [];
+    let displayText = '';
+    let spanId = '';
+
+    if (type === 'days') {
+      selectedItems = Array.from(document.querySelectorAll('input[name="filterDay"]:checked')).map(cb => cb.value);
+      spanId = 'daysSelected';
+
+      // حفظ التحديدات في المتغيرات العامة
+      window.tempDaysSelection = selectedItems.map(item => parseInt(item));
+
+      displayText = selectedItems.length > 0 ?
+        (selectedItems.length === 1 ? `اليوم ${selectedItems[0]}` : `${selectedItems.length} أيام محددة`) :
+        'اختر الأيام...';
+    } else if (type === 'months') {
+      const monthNames = {
+        1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
+        5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
+        9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر'
+      };
+      selectedItems = Array.from(document.querySelectorAll('input[name="filterMonth"]:checked')).map(cb => cb.value);
+      spanId = 'monthsSelected';
+
+      // حفظ التحديدات في المتغيرات العامة
+      window.tempMonthsSelection = selectedItems.map(item => parseInt(item));
+
+      displayText = selectedItems.length > 0 ?
+        (selectedItems.length === 1 ? monthNames[selectedItems[0]] : `${selectedItems.length} شهور محددة`) :
+        'اختر الشهور...';
+    } else if (type === 'years') {
+      selectedItems = Array.from(document.querySelectorAll('input[name="filterYear"]:checked')).map(cb => cb.value);
+      spanId = 'yearsSelected';
+
+      // حفظ التحديدات في المتغيرات العامة
+      window.tempYearsSelection = selectedItems.map(item => parseInt(item));
+
+      displayText = selectedItems.length > 0 ?
+        (selectedItems.length === 1 ? selectedItems[0] : `${selectedItems.length} سنوات محددة`) :
+        'اختر السنوات...';
+    }
+
+    const span = document.getElementById(spanId);
+    if (span) {
+      span.textContent = displayText;
+      span.style.color = selectedItems.length > 0 ? '#495057' : '#6c757d';
+      span.style.fontWeight = selectedItems.length > 0 ? '600' : '400';
+    }
+
+    console.log(`📝 تم تحديث تحديد ${type}:`, selectedItems);
+  }, 10);
+}
+
+// إغلاق القوائم عند النقر خارجها
+document.addEventListener('click', function(event) {
+  if (!event.target.closest('.dropdown-container')) {
+    document.querySelectorAll('.dropdown-content').forEach(dropdown => {
+      dropdown.style.display = 'none';
+      const icon = dropdown.previousElementSibling.querySelector('.fas');
+      const header = dropdown.previousElementSibling;
+      if (icon) {
+        icon.style.transform = 'rotate(0deg)';
+      }
+      if (header) {
+        header.style.borderColor = '#e9ecef';
+        header.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+      }
+    });
+  }
+});
+
+// دوال التأكيد للقوائم المنسدلة
+function confirmDaysSelection() {
+  // التحقق من اختيار نوع التاريخ أولاً
+  const filterType = document.getElementById('filterTypeModal').value;
+  if (!filterType) {
+    showToast('⚠️ يرجى اختيار نوع التاريخ أولاً', 'warning');
+    return;
+  }
+
+  updateDropdownSelection('days');
+  toggleDropdown('daysDropdown');
+  showToast('✅ تم تأكيد اختيار الأيام', 'success');
+}
+
+function confirmMonthsSelection() {
+  // التحقق من اختيار نوع التاريخ أولاً
+  const filterType = document.getElementById('filterTypeModal').value;
+  if (!filterType) {
+    showToast('⚠️ يرجى اختيار نوع التاريخ أولاً', 'warning');
+    return;
+  }
+
+  updateDropdownSelection('months');
+  toggleDropdown('monthsDropdown');
+  showToast('✅ تم تأكيد اختيار الشهور', 'success');
+}
+
+function confirmYearsSelection() {
+  // التحقق من اختيار نوع التاريخ أولاً
+  const filterType = document.getElementById('filterTypeModal').value;
+  if (!filterType) {
+    showToast('⚠️ يرجى اختيار نوع التاريخ أولاً', 'warning');
+    return;
+  }
+
+  updateDropdownSelection('years');
+  toggleDropdown('yearsDropdown');
+  showToast('✅ تم تأكيد اختيار السنوات', 'success');
+}
+
+// دالة تأكيد اختيار السنوات مع تأثير بصري
+function confirmYearsSelectionWithEffect(button) {
+  // إضافة تأثير النقر
+  button.style.transform = 'scale(0.95)';
+  button.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+
+  // تغيير النص مؤقتاً
+  const originalContent = button.innerHTML;
+  button.innerHTML = `
+    <i class="fas fa-spinner fa-spin" style="margin-left: 8px; font-size: 1.1rem;"></i>
+    <span style="font-weight: 700;">جاري التأكيد...</span>
+  `;
+
+  // تنفيذ التأكيد بعد تأخير قصير
+  setTimeout(() => {
+    confirmYearsSelection();
+
+    // إعادة التأثير الأصلي
+    button.style.transform = 'scale(1)';
+    button.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+    button.innerHTML = originalContent;
+  }, 500);
+}
+
+// دوال التحكم في "الكل" المحسنة
+function toggleAllDays() {
+  const selectAllCheckbox = document.getElementById('selectAllDays');
+  const dayCheckboxes = document.querySelectorAll('input[name="filterDay"]');
+
+  dayCheckboxes.forEach(checkbox => {
+    checkbox.checked = selectAllCheckbox.checked;
+    // إضافة تأثير بصري
+    const label = checkbox.closest('.dropdown-item');
+    if (label) {
+      if (checkbox.checked) {
+        label.style.background = 'linear-gradient(135deg, #007bff, #0056b3)';
+        label.style.color = 'white';
+        label.style.borderColor = '#007bff';
+        label.style.transform = 'scale(1.02)';
+      } else {
+        label.style.background = '#f8f9fa';
+        label.style.color = '#495057';
+        label.style.borderColor = '#e9ecef';
+        label.style.transform = 'scale(1)';
+      }
+    }
+  });
+
+  updateDropdownSelection('days');
+}
+
+function toggleAllMonths() {
+  const selectAllCheckbox = document.getElementById('selectAllMonths');
+  const monthCheckboxes = document.querySelectorAll('input[name="filterMonth"]');
+
+  monthCheckboxes.forEach(checkbox => {
+    checkbox.checked = selectAllCheckbox.checked;
+    // إضافة تأثير بصري
+    const label = checkbox.closest('.dropdown-item');
+    if (label) {
+      if (checkbox.checked) {
+        label.style.background = 'linear-gradient(135deg, #ffc107, #e0a800)';
+        label.style.color = '#212529';
+        label.style.borderColor = '#ffc107';
+        label.style.transform = 'scale(1.02)';
+      } else {
+        label.style.background = '#f8f9fa';
+        label.style.color = '#495057';
+        label.style.borderColor = '#e9ecef';
+        label.style.transform = 'scale(1)';
+      }
+    }
+  });
+
+  updateDropdownSelection('months');
+}
+
+function toggleAllYears() {
+  const selectAllCheckbox = document.getElementById('selectAllYears');
+  const yearCheckboxes = document.querySelectorAll('input[name="filterYear"]');
+
+  yearCheckboxes.forEach(checkbox => {
+    checkbox.checked = selectAllCheckbox.checked;
+    // إضافة تأثير بصري
+    const label = checkbox.closest('.dropdown-item');
+    if (label) {
+      if (checkbox.checked) {
+        label.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+        label.style.color = 'white';
+        label.style.borderColor = '#dc3545';
+        label.style.transform = 'scale(1.02)';
+      } else {
+        label.style.background = '#f8f9fa';
+        label.style.color = '#495057';
+        label.style.borderColor = '#e9ecef';
+        label.style.transform = 'scale(1)';
+      }
+    }
+  });
+
+  updateDropdownSelection('years');
+}
+
+// تطبيق فلتر الشهر
+function applyMonthFilter() {
+  const filterType = document.getElementById('filterTypeModal').value;
+  const selectedDays = Array.from(document.querySelectorAll('input[name="filterDay"]:checked:not([value=""])')).map(cb => parseInt(cb.value));
+  const selectedMonths = Array.from(document.querySelectorAll('input[name="filterMonth"]:checked:not([value=""])')).map(cb => parseInt(cb.value));
+  const selectedYears = Array.from(document.querySelectorAll('input[name="filterYear"]:checked:not([value=""])')).map(cb => parseInt(cb.value));
+
+  if (!filterType) {
+    alert('يرجى اختيار نوع التاريخ');
+    return;
+  }
+
+  if (selectedDays.length === 0 && selectedMonths.length === 0 && selectedYears.length === 0) {
+    alert('يرجى تحديد على الأقل يوم أو شهر أو سنة واحدة');
+    return;
+  }
+
+  // تطبيق الفلتر
+  const filteredProperties = properties.filter(property => {
+    const dateField = filterType === 'start' ? 'تاريخ بداية العقد' : 'تاريخ نهاية العقد';
+    const dateValue = property[dateField];
+
+    if (!dateValue) return false;
+
+    const date = new Date(dateValue);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+
+    const dayMatch = selectedDays.length === 0 || selectedDays.includes(day);
+    const monthMatch = selectedMonths.length === 0 || selectedMonths.includes(month);
+    const yearMatch = selectedYears.length === 0 || selectedYears.includes(year);
+
+    return dayMatch && monthMatch && yearMatch;
+  });
+
+  // عرض النتائج
+  displayProperties(filteredProperties);
+  closeMonthFilterModal();
+
+  const totalSelected = selectedDays.length + selectedMonths.length + selectedYears.length;
+  showToast(`✅ تم تطبيق فلتر الشهر (${filteredProperties.length} نتيجة)`, 'success');
+
+  console.log('✅ تم تطبيق فلتر الشهر:', {
+    type: filterType,
+    days: selectedDays,
+    months: selectedMonths,
+    years: selectedYears,
+    results: filteredProperties.length
+  });
+}
+
+// مسح فلتر الشهر
+function clearMonthFilter() {
+  displayProperties(properties);
+  closeMonthFilterModal();
+  showToast('✅ تم مسح فلتر الشهر', 'info');
+  console.log('✅ تم مسح فلتر الشهر');
+}
+
+// إغلاق نافذة فلتر الشهر
+function closeMonthFilterModal() {
+  const modal = document.querySelector('.modal-overlay');
+  if (modal) {
+    modal.remove();
+    console.log('✅ تم إغلاق نافذة فلتر الشهر');
+  }
+}
+
+
+
+
+
+// دوال التحكم في التحديد
+function selectAllDays() {
+  const checkboxes = document.querySelectorAll('.days-grid input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = true);
+  updateDaysCount();
+  updateFilterPreview();
+}
+
+function clearAllDays() {
+  const checkboxes = document.querySelectorAll('.days-grid input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = false);
+  updateDaysCount();
+  updateFilterPreview();
+}
+
+function selectAllMonths() {
+  const checkboxes = document.querySelectorAll('.months-grid input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = true);
+  updateMonthsCount();
+  updateFilterPreview();
+}
+
+function clearAllMonths() {
+  const checkboxes = document.querySelectorAll('.months-grid input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = false);
+  updateMonthsCount();
+  updateFilterPreview();
+}
+
+function selectAllYears() {
+  const checkboxes = document.querySelectorAll('.years-grid input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = true);
+  updateYearsCount();
+  updateFilterPreview();
+}
+
+function clearAllYears() {
+  const checkboxes = document.querySelectorAll('.years-grid input[type="checkbox"]');
+  checkboxes.forEach(cb => cb.checked = false);
+  updateYearsCount();
+  updateFilterPreview();
+}
+
+// دوال تحديث العدادات
+function updateDaysCount() {
+  const selected = document.querySelectorAll('.days-grid input[type="checkbox"]:checked').length;
+  document.getElementById('selectedDaysCount').textContent = selected;
+}
+
+function updateMonthsCount() {
+  const selected = document.querySelectorAll('.months-grid input[type="checkbox"]:checked').length;
+  document.getElementById('selectedMonthsCount').textContent = selected;
+}
+
+function updateYearsCount() {
+  const selected = document.querySelectorAll('.years-grid input[type="checkbox"]:checked').length;
+  document.getElementById('selectedYearsCount').textContent = selected;
+}
+
+// تحديث معاينة الفلتر
+function updateFilterPreview() {
+  const selectedDays = Array.from(document.querySelectorAll('.days-grid input[type="checkbox"]:checked')).map(cb => cb.value);
+  const selectedMonths = Array.from(document.querySelectorAll('.months-grid input[type="checkbox"]:checked')).map(cb => cb.value);
+  const selectedYears = Array.from(document.querySelectorAll('.years-grid input[type="checkbox"]:checked')).map(cb => cb.value);
+
+  const monthNames = {
+    1: 'يناير', 2: 'فبراير', 3: 'مارس', 4: 'أبريل',
+    5: 'مايو', 6: 'يونيو', 7: 'يوليو', 8: 'أغسطس',
+    9: 'سبتمبر', 10: 'أكتوبر', 11: 'نوفمبر', 12: 'ديسمبر'
+  };
+
+  let preview = '';
+
+  if (selectedDays.length > 0) {
+    preview += `<strong>الأيام:</strong> ${selectedDays.join(', ')}<br>`;
+  }
+
+  if (selectedMonths.length > 0) {
+    const monthsText = selectedMonths.map(m => monthNames[m]).join(', ');
+    preview += `<strong>الشهور:</strong> ${monthsText}<br>`;
+  }
+
+  if (selectedYears.length > 0) {
+    preview += `<strong>السنوات:</strong> ${selectedYears.join(', ')}<br>`;
+  }
+
+  if (preview === '') {
+    preview = 'لم يتم تحديد أي فلتر بعد';
+  }
+
+  document.getElementById('filterPreview').innerHTML = preview;
+}
+
+// دوال التحكم في النافذة
+function setupAdvancedDateFilterEvents() {
+  // إضافة مستمع للإغلاق عند النقر خارج النافذة
+  const overlay = document.querySelector('.modal-overlay');
+  if (overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) {
+        closeAdvancedDateFilterModal();
+      }
+    });
+  }
+
+  // تحديث العدادات الأولية
+  updateDaysCount();
+  updateMonthsCount();
+  updateYearsCount();
+  updateFilterPreview();
+}
+
+function closeAdvancedDateFilterModal() {
+  const modal = document.querySelector('.modal-overlay');
+  if (modal) {
+    modal.remove();
+    console.log('✅ تم إغلاق فلتر التاريخ المتقدم');
+  }
+}
+
+// تطبيق الفلتر المتقدم
+function applyAdvancedDateFilter() {
+  const selectedDays = Array.from(document.querySelectorAll('.days-grid input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+  const selectedMonths = Array.from(document.querySelectorAll('.months-grid input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+  const selectedYears = Array.from(document.querySelectorAll('.years-grid input[type="checkbox"]:checked')).map(cb => parseInt(cb.value));
+
+  if (selectedDays.length === 0 && selectedMonths.length === 0 && selectedYears.length === 0) {
+    alert('يرجى تحديد على الأقل يوم أو شهر أو سنة واحدة');
+    return;
+  }
+
+  // حفظ الفلتر المطبق
+  window.currentAdvancedDateFilter = {
+    days: selectedDays,
+    months: selectedMonths,
+    years: selectedYears
+  };
+
+  // تطبيق الفلتر على البيانات
+  filterPropertiesByAdvancedDate(selectedDays, selectedMonths, selectedYears);
+
+  // إغلاق النافذة
+  closeAdvancedDateFilterModal();
+
+  // إظهار رسالة نجاح
+  const totalSelected = selectedDays.length + selectedMonths.length + selectedYears.length;
+  showToast(`✅ تم تطبيق فلتر التاريخ المتقدم (${totalSelected} عنصر محدد)`, 'success');
+
+  console.log('✅ تم تطبيق فلتر التاريخ المتقدم:', {
+    days: selectedDays,
+    months: selectedMonths,
+    years: selectedYears
+  });
+}
+
+// مسح الفلتر المتقدم
+function clearAdvancedDateFilter() {
+  // مسح الفلتر المحفوظ
+  window.currentAdvancedDateFilter = null;
+
+  // إعادة عرض جميع البيانات
+  displayProperties(properties);
+
+  // إغلاق النافذة
+  closeAdvancedDateFilterModal();
+
+  // إظهار رسالة
+  showToast('✅ تم مسح فلتر التاريخ المتقدم', 'info');
+
+  console.log('✅ تم مسح فلتر التاريخ المتقدم');
+}
+
+// تطبيق الفلتر على البيانات
+function filterPropertiesByAdvancedDate(days, months, years) {
+  const filteredProperties = properties.filter(property => {
+    const startDate = property['تاريخ بداية العقد'];
+    const endDate = property['تاريخ نهاية العقد'];
+
+    let matchesFilter = false;
+
+    // فحص تاريخ البداية
+    if (startDate) {
+      const date = new Date(startDate);
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+
+      const dayMatch = days.length === 0 || days.includes(day);
+      const monthMatch = months.length === 0 || months.includes(month);
+      const yearMatch = years.length === 0 || years.includes(year);
+
+      if (dayMatch && monthMatch && yearMatch) {
+        matchesFilter = true;
+      }
+    }
+
+    // فحص تاريخ النهاية
+    if (!matchesFilter && endDate) {
+      const date = new Date(endDate);
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+
+      const dayMatch = days.length === 0 || days.includes(day);
+      const monthMatch = months.length === 0 || months.includes(month);
+      const yearMatch = years.length === 0 || years.includes(year);
+
+      if (dayMatch && monthMatch && yearMatch) {
+        matchesFilter = true;
+      }
+    }
+
+    return matchesFilter;
+  });
+
+  // عرض النتائج المفلترة
+  displayProperties(filteredProperties);
+
+  console.log(`🔍 تم العثور على ${filteredProperties.length} عقار يطابق فلتر التاريخ المتقدم`);
 }
 
 // دالة إغلاق نافذة فلتر الشهر
@@ -9440,51 +10782,228 @@ function closeMonthFilterModal() {
     }
 }
 
+// تطبيق فلتر الشهر
 function applyMonthFilterModal() {
-  dateFilterType = document.getElementById('filterTypeModal').value;
-  dateFilterDay = document.getElementById('filterDayModal').value;
-  dateFilterMonth = document.getElementById('filterMonthModal').value;
-  dateFilterYear = document.getElementById('filterYearModal').value;
+  try {
+    const filterType = document.getElementById('filterTypeModal').value;
+    // استخدام التحديدات المحفوظة أو الحصول عليها من التشيك مارك
+    const selectedDays = window.tempDaysSelection || Array.from(document.querySelectorAll('input[name="filterDay"]:checked')).map(cb => parseInt(cb.value));
+    const selectedMonths = window.tempMonthsSelection || Array.from(document.querySelectorAll('input[name="filterMonth"]:checked')).map(cb => parseInt(cb.value));
+    const selectedYears = window.tempYearsSelection || Array.from(document.querySelectorAll('input[name="filterYear"]:checked')).map(cb => parseInt(cb.value));
 
-  // تحديث activeFilters للفلاتر النشطة
-  if (dateFilterMonth && dateFilterYear) {
-    activeFilters.monthFilter = `${dateFilterMonth}/${dateFilterYear}`;
-  } else if (dateFilterMonth) {
-    activeFilters.monthFilter = `شهر ${dateFilterMonth}`;
-  } else if (dateFilterYear) {
-    activeFilters.monthFilter = `سنة ${dateFilterYear}`;
-  } else {
-    activeFilters.monthFilter = '';
+    console.log('🔍 بيانات فلتر الشهر:', {
+      filterType,
+      selectedDays,
+      selectedMonths,
+      selectedYears
+    });
+
+    if (!filterType) {
+      showToast('⚠️ يرجى اختيار نوع التاريخ', 'warning');
+      return;
+    }
+
+    if (selectedDays.length === 0 && selectedMonths.length === 0 && selectedYears.length === 0) {
+      showToast('⚠️ يرجى اختيار على الأقل يوم أو شهر أو سنة', 'warning');
+      return;
+    }
+
+    // التأكد من وجود البيانات
+    if (!properties || properties.length === 0) {
+      showToast('⚠️ لا توجد بيانات للفلترة', 'warning');
+      return;
+    }
+
+    // حفظ الفلتر في المتغيرات العامة (نفس طريقة الفلاتر الأخرى)
+    window.monthFilterType = filterType;
+    window.monthFilterDays = selectedDays;
+    window.monthFilterMonths = selectedMonths;
+    window.monthFilterYears = selectedYears;
+    window.monthFilterActive = true;
+
+    console.log('💾 تم حفظ فلتر الشهر في المتغيرات العامة:', {
+      type: filterType,
+      days: selectedDays,
+      months: selectedMonths,
+      years: selectedYears,
+      active: true
+    });
+
+    // تسجيل عينة من البيانات للتشخيص
+    if (properties && properties.length > 0) {
+      const sampleProperty = properties[0];
+      console.log('📋 عينة من البيانات للتشخيص:', {
+        totalProperties: properties.length,
+        sampleUnit: sampleProperty['رقم  الوحدة '],
+        sampleProperty: sampleProperty['اسم العقار'],
+        filterType: filterType,
+        availableFields: Object.keys(sampleProperty).filter(key => key.includes('تاريخ')),
+        startDates: {
+          'تاريخ البداية': sampleProperty['تاريخ البداية'],
+          'تاريخ القسط الاول': sampleProperty['تاريخ القسط الاول'],
+          'تاريخ القسط الثاني': sampleProperty['تاريخ القسط الثاني']
+        },
+        endDates: {
+          'تاريخ النهاية': sampleProperty['تاريخ النهاية'],
+          'تاريخ نهاية القسط': sampleProperty['تاريخ نهاية القسط']
+        }
+      });
+    }
+
+    // إغلاق النافذة
+    closeMonthFilterModal();
+
+    // تطبيق الفلتر باستخدام renderData (نفس طريقة الفلاتر الأخرى)
+    if (typeof renderData === 'function') {
+      console.log('📊 تطبيق فلتر الشهر باستخدام renderData...');
+      renderData();
+    } else {
+      console.error('❌ دالة renderData غير موجودة');
+      showToast('❌ خطأ في تطبيق الفلتر', 'error');
+      return;
+    }
+
+    // تحديث عرض الفلاتر النشطة
+    if (typeof updateActiveFiltersDisplay === 'function') {
+      updateActiveFiltersDisplay();
+    }
+
+    // عرض رسالة النجاح
+    setTimeout(() => {
+      // حساب عدد النتائج بعد تطبيق الفلتر
+      const visibleCards = document.querySelectorAll('.property-card:not([style*="display: none"])');
+      const resultCount = visibleCards.length;
+
+      const resultMessage = resultCount > 0
+        ? `✅ تم تطبيق فلتر الشهر (${resultCount} نتيجة)`
+        : '⚠️ لا توجد نتائج تطابق معايير البحث';
+
+      const messageType = resultCount > 0 ? 'success' : 'warning';
+      showToast(resultMessage, messageType);
+
+      console.log('✅ تم تطبيق فلتر الشهر بنجاح:', {
+        filterType,
+        selectedDays,
+        selectedMonths,
+        selectedYears,
+        results: resultCount
+      });
+    }, 100);
+
+  } catch (error) {
+    console.error('❌ خطأ في تطبيق فلتر الشهر:', error);
+    showToast('❌ حدث خطأ أثناء تطبيق الفلتر', 'error');
   }
-
-  closeMonthFilterModal();
-  renderData();
-
-  // تحديث عرض الفلاتر النشطة
-  updateActiveFiltersDisplay();
-
-  // تحديث حالة أزرار الفلاتر
-  updateAllFilterButtonsState();
 }
 
+// مسح فلتر الشهر
 function clearMonthFilterModal() {
-  dateFilterType = '';
-  dateFilterDay = '';
-  dateFilterMonth = '';
-  dateFilterYear = '';
+  try {
+    // مسح جميع التحديدات في النافذة
+    document.getElementById('filterTypeModal').value = '';
 
-  // مسح فلتر الشهر من activeFilters
-  activeFilters.monthFilter = '';
+    // مسح تحديد الأيام
+    document.querySelectorAll('input[name="filterDay"]').forEach(cb => {
+      cb.checked = false;
+      const label = cb.closest('.dropdown-item');
+      if (label) {
+        label.style.background = '#f8f9fa';
+        label.style.color = '#495057';
+        label.style.borderColor = '#e9ecef';
+        label.style.transform = 'scale(1)';
+      }
+    });
 
-  closeMonthFilterModal();
-  renderData();
+    // مسح تحديد الشهور
+    document.querySelectorAll('input[name="filterMonth"]').forEach(cb => {
+      cb.checked = false;
+      const label = cb.closest('.dropdown-item');
+      if (label) {
+        label.style.background = '#f8f9fa';
+        label.style.color = '#495057';
+        label.style.borderColor = '#e9ecef';
+        label.style.transform = 'scale(1)';
+      }
+    });
 
-  // تحديث عرض الفلاتر النشطة
-  updateActiveFiltersDisplay();
+    // مسح تحديد السنوات
+    document.querySelectorAll('input[name="filterYear"]').forEach(cb => {
+      cb.checked = false;
+      const label = cb.closest('.dropdown-item');
+      if (label) {
+        label.style.background = '#f8f9fa';
+        label.style.color = '#495057';
+        label.style.borderColor = '#e9ecef';
+        label.style.transform = 'scale(1)';
+      }
+    });
 
-  // تحديث حالة أزرار الفلاتر
-  updateAllFilterButtonsState();
+    // مسح تحديد "الكل"
+    const selectAllDays = document.getElementById('selectAllDays');
+    const selectAllMonths = document.getElementById('selectAllMonths');
+    const selectAllYears = document.getElementById('selectAllYears');
+
+    if (selectAllDays) selectAllDays.checked = false;
+    if (selectAllMonths) selectAllMonths.checked = false;
+    if (selectAllYears) selectAllYears.checked = false;
+
+    // تحديث نصوص القوائم المنسدلة
+    const daysSelected = document.getElementById('daysSelected');
+    const monthsSelected = document.getElementById('monthsSelected');
+    const yearsSelected = document.getElementById('yearsSelected');
+
+    if (daysSelected) {
+      daysSelected.textContent = 'اختر الأيام...';
+      daysSelected.style.color = '#6c757d';
+      daysSelected.style.fontWeight = '400';
+    }
+
+    if (monthsSelected) {
+      monthsSelected.textContent = 'اختر الشهور...';
+      monthsSelected.style.color = '#6c757d';
+      monthsSelected.style.fontWeight = '400';
+    }
+
+    if (yearsSelected) {
+      yearsSelected.textContent = 'اختر السنوات...';
+      yearsSelected.style.color = '#6c757d';
+      yearsSelected.style.fontWeight = '400';
+    }
+
+    // مسح فلتر الشهر من المتغيرات العامة
+    window.monthFilterType = null;
+    window.monthFilterDays = [];
+    window.monthFilterMonths = [];
+    window.monthFilterYears = [];
+    window.monthFilterActive = false;
+
+    console.log('🗑️ تم مسح فلتر الشهر من المتغيرات العامة');
+
+    // إغلاق النافذة
+    closeMonthFilterModal();
+
+    // إعادة عرض البيانات باستخدام renderData
+    if (typeof renderData === 'function') {
+      console.log('📊 إعادة عرض البيانات بدون فلتر الشهر...');
+      renderData();
+    }
+
+    // تحديث عرض الفلاتر النشطة
+    if (typeof updateActiveFiltersDisplay === 'function') {
+      updateActiveFiltersDisplay();
+    }
+
+    // عرض رسالة النجاح
+    showToast('✅ تم مسح فلتر الشهر وعرض جميع البيانات', 'info');
+
+    console.log('✅ تم مسح فلتر الشهر بنجاح');
+
+  } catch (error) {
+    console.error('❌ خطأ في مسح فلتر الشهر:', error);
+    showToast('❌ حدث خطأ أثناء مسح الفلتر', 'error');
+  }
 }
+
 // نافذة فلتر نوع العقد مع آلية التبديل
 function showContractTypeFilter() {
     // التحقق من وجود نافذة مفتوحة وإغلاقها إذا كانت موجودة
@@ -46871,6 +48390,7 @@ function initializePermissionSystem() {
                 setTimeout(() => {
                     addLogoutButton();
                     updateMobileUserSection();
+                    updateSidebarUsername();
                     console.log('🔑 إضافة زر تسجيل الخروج من initializePermissionSystem');
                 }, 300);
 
@@ -46981,6 +48501,7 @@ function handleLogin(event) {
         setTimeout(() => {
             updateMobileUserSection();
             addLogoutButton();
+            updateSidebarUsername();
             console.log('🔑 إضافة زر تسجيل الخروج من handleLogin');
         }, 100);
 
@@ -48289,6 +49810,9 @@ function updateMobileUserSection() {
 
         // تحديث معلومات المستخدم
         mobileUserName.textContent = users[currentUser].fullName;
+
+        // تحديث اسم المستخدم في السايد بار
+        updateSidebarUsername();
 
         // تحديد دور المستخدم
         let roleText = '';
@@ -54459,6 +55983,15 @@ if (typeof setCurrentUser === 'function') {
         originalSetCurrentUser(user);
         updateSidebarForUser();
     };
+}
+
+// تحديث اسم المستخدم في السايد بار
+function updateSidebarUsername() {
+    const sidebarUsername = document.getElementById('sidebarUsername');
+    if (sidebarUsername && currentUser && users[currentUser]) {
+        sidebarUsername.textContent = users[currentUser].fullName;
+        console.log('✅ تم تحديث اسم المستخدم في السايد بار:', users[currentUser].fullName);
+    }
 }
 
 // تحديث مؤشرات الفلاتر النشطة في السايد بار
