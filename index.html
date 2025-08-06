@@ -10,15 +10,132 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- السايد بار الجديد للشاشات الكبيرة -->
+  <div class="desktop-sidebar" id="desktopSidebar">
+    <div class="sidebar-toggle" id="sidebarToggle">
+      <i class="fas fa-chevron-right" id="sidebarToggleIcon"></i>
+    </div>
+
+    <div class="sidebar-content">
+      <!-- الفلاتر -->
+      <div class="sidebar-section">
+        <div class="sidebar-item" onclick="showMonthFilterModal()" title="فلتر الشهر">
+          <i class="fas fa-calendar-alt"></i>
+          <span class="sidebar-text">فلتر الشهر</span>
+        </div>
+
+        <div class="sidebar-item" onclick="showUnitsTypeFilterModal()" title="الوحدات المترابطة">
+          <i class="fas fa-layer-group"></i>
+          <span class="sidebar-text">الوحدات المترابطة</span>
+        </div>
+
+        <div class="sidebar-item" onclick="showMultiPropertyCityFilter()" title="فلتر عقارات متعدد">
+          <i class="fas fa-building"></i>
+          <span class="sidebar-text">فلتر عقارات متعدد</span>
+        </div>
+
+        <div class="sidebar-item" onclick="showContractTypeFilterFromDropdown()" title="نوع العقد">
+          <i class="fas fa-file-contract"></i>
+          <span class="sidebar-text">نوع العقد</span>
+        </div>
+
+        <div class="sidebar-item" onclick="showPropertyTypeFilterFromDropdown()" title="نوع العقار">
+          <i class="fas fa-tag"></i>
+          <span class="sidebar-text">نوع العقار</span>
+        </div>
+
+        <div class="sidebar-item" onclick="showOwnerFilter()" title="فلتر المالك">
+          <i class="fas fa-user"></i>
+          <span class="sidebar-text">فلتر المالك</span>
+        </div>
+
+        <div class="sidebar-item" onclick="showStatusFilter()" title="حالة الوحدة">
+          <i class="fas fa-info-circle"></i>
+          <span class="sidebar-text">حالة الوحدة</span>
+        </div>
+      </div>
+
+      <!-- المرفقات والإدارة -->
+      <div class="sidebar-section">
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-item" onclick="showAttachmentsManager()" title="إدارة المرفقات">
+          <i class="fas fa-folder-open"></i>
+          <span class="sidebar-text">إدارة المرفقات</span>
+        </div>
+
+        <div class="sidebar-item" onclick="createSampleTrackingDataAndShow()" title="سجل التتبع">
+          <i class="fas fa-clipboard-list"></i>
+          <span class="sidebar-text">سجل التتبع</span>
+        </div>
+
+        <!-- حذف بيانات وحدة - عمر ومحمد فقط -->
+        <div class="sidebar-item admin-only-omar-mohammed" onclick="showUnitDataClearModal()" title="حذف بيانات وحدة" style="display: none;">
+          <i class="fas fa-trash-alt"></i>
+          <span class="sidebar-text">حذف بيانات وحدة</span>
+        </div>
+
+        <!-- ربط وحدات حقيقية -->
+        <div class="sidebar-item" onclick="showRealUnitLinkingModal()" title="ربط وحدات حقيقية">
+          <i class="fas fa-link"></i>
+          <span class="sidebar-text">ربط وحدات حقيقية</span>
+        </div>
+
+        <!-- إدارة العقارات - للمدراء فقط -->
+        <div class="sidebar-item admin-only-feature" onclick="showPropertyManager()" title="إدارة العقارات" style="display: none;">
+          <i class="fas fa-building-user"></i>
+          <span class="sidebar-text">إدارة العقارات</span>
+        </div>
+
+        <!-- تحرير أسماء العقارات - لعمر فقط -->
+        <div class="sidebar-item admin-only-omar" onclick="showPropertyNameEditOptions()" title="تحرير أسماء العقارات" style="display: none;">
+          <i class="fas fa-edit"></i>
+          <span class="sidebar-text">تحرير أسماء العقارات</span>
+        </div>
+      </div>
+
+      <!-- العرض والتصدير -->
+      <div class="sidebar-section">
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-item" onclick="toggleView('table')" title="عرض جدول">
+          <i class="fas fa-table"></i>
+          <span class="sidebar-text">عرض جدول</span>
+        </div>
+
+        <div class="sidebar-item" onclick="toggleView('cards')" title="عرض بطاقات">
+          <i class="fas fa-th-large"></i>
+          <span class="sidebar-text">عرض بطاقات</span>
+        </div>
+
+        <div class="sidebar-item excel-export-btn" onclick="exportToExcel()" title="تصدير Excel">
+          <i class="fas fa-file-excel excel-icon"></i>
+          <span class="sidebar-text">تصدير Excel</span>
+        </div>
+      </div>
+
+      <!-- تسجيل الخروج -->
+      <div class="sidebar-section">
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-item logout-item" onclick="logout()" title="تسجيل الخروج">
+          <i class="fas fa-sign-out-alt"></i>
+          <span class="sidebar-text">تسجيل الخروج</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <header>
     <div class="header-row">
       <div class="mobile-header-buttons">
         <button class="mobile-menu-btn" id="mobileMenuBtn">
           <i class="fas fa-bars"></i>
         </button>
-        <button class="mobile-filters-btn" id="mobileFiltersBtn" onclick="toggleMobileFilters()">
+        <!-- زر الفلاتر النشطة للشاشات الصغيرة -->
+        <button class="mobile-filters-btn" id="mobileFiltersBtn" onclick="showMobileFilters()" style="display: none;">
           <i class="fas fa-filter"></i>
-          <span class="filter-count" id="mobileFilterCount" style="display: none;">0</span>
+          <span class="mobile-filter-count" id="mobileFilterCount">0</span>
         </button>
       </div>
       <div class="header-section header-countries">
@@ -31,131 +148,12 @@
         <h1><i class="fas fa-building" style="margin-left: 10px; color: #007bff;"></i>شركة السنيدي العقارية</h1>
       </div>
       <div class="header-section header-actions">
-        <!-- أزرار الهيدر الجديدة للشاشات الكبيرة -->
-        <div class="desktop-header-buttons hideable-header-btn">
-          <!-- زر الفلاتر والمرفقات -->
-          <div class="header-dropdown">
-            <button class="header-main-btn dropdown-toggle filters-btn" onclick="toggleHeaderDropdown('filters')">
-              <i class="fas fa-filter"></i>
-              الفلاتر والمرفقات
-              <i class="fas fa-chevron-down dropdown-arrow"></i>
-            </button>
-            <div class="dropdown-menu" id="filtersDropdown">
-              <!-- فلتر الشهر -->
-              <div class="dropdown-item" onclick="showMonthFilterModal(); closeAllDropdowns();">
-                <i class="fas fa-calendar-alt"></i>
-                فلتر الشهر
-              </div>
-
-              <!-- فلتر المترابطة -->
-              <div class="dropdown-item" onclick="showUnitsTypeFilterModal(); closeAllDropdowns();">
-                <i class="fas fa-layer-group"></i>
-                الوحدات المترابطة
-              </div>
-
-              <!-- فلتر عقارات متعدد -->
-              <div class="dropdown-item" onclick="showMultiPropertyCityFilter(); closeAllDropdowns();">
-                <i class="fas fa-building"></i>
-                فلتر عقارات متعدد
-              </div>
-
-              <!-- نوع العقد -->
-              <div class="dropdown-item" onclick="showContractTypeFilterFromDropdown(); closeAllDropdowns();">
-                <i class="fas fa-file-contract"></i>
-                نوع العقد
-              </div>
-
-              <!-- نوع العقار -->
-              <div class="dropdown-item" onclick="showPropertyTypeFilterFromDropdown(); closeAllDropdowns();">
-                <i class="fas fa-tag"></i>
-                نوع العقار
-              </div>
-
-              <div class="dropdown-divider"></div>
-
-              <!-- سجل التتبع -->
-              <div class="dropdown-item" onclick="createSampleTrackingDataAndShow(); closeAllDropdowns();">
-                <i class="fas fa-clipboard-list"></i>
-                سجل التتبع
-              </div>
-
-              <!-- فلتر الحالة -->
-              <div class="dropdown-item" onclick="showStatusFilterFromDropdown(); closeAllDropdowns();">
-                <i class="fas fa-info-circle"></i>
-                فلتر الحالة
-              </div>
-
-              <!-- فلتر المالك -->
-              <div class="dropdown-item" onclick="showOwnerFilterFromDropdown(); closeAllDropdowns();">
-                <i class="fas fa-user"></i>
-                فلتر المالك
-              </div>
-
-              <div class="dropdown-divider"></div>
-
-              <!-- حذف بيانات وحدة - عمر ومحمد فقط -->
-              <div class="dropdown-item admin-only-omar-mohammed" onclick="showUnitDataClearModal(); closeAllDropdowns();">
-                <i class="fas fa-trash-alt"></i>
-                حذف بيانات وحدة
-              </div>
-
-              <!-- إدارة المرفقات -->
-              <div class="dropdown-item" onclick="showAttachmentsManagerFromDropdown(); closeAllDropdowns();">
-                <i class="fas fa-paperclip"></i>
-                إدارة المرفقات
-              </div>
-
-              <div class="dropdown-divider"></div>
-
-              <!-- ربط وحدات حقيقية -->
-              <div class="dropdown-item" onclick="showRealUnitLinkingModal(); closeAllDropdowns();">
-                <i class="fas fa-link"></i>
-                ربط وحدات حقيقية
-              </div>
-            </div>
-          </div>
-
-          <!-- زر العرض والتصدير -->
-          <div class="header-dropdown">
-            <button class="header-main-btn dropdown-toggle display-btn" onclick="toggleHeaderDropdown('display')">
-              <i class="fas fa-eye"></i>
-              العرض والتصدير
-              <i class="fas fa-chevron-down dropdown-arrow"></i>
-            </button>
-            <div class="dropdown-menu" id="displayDropdown">
-              <div class="dropdown-item" onclick="toggleView('table'); closeAllDropdowns();">
-                <i class="fas fa-table"></i>
-                جدول
-              </div>
-              <div class="dropdown-item" onclick="toggleView('cards'); closeAllDropdowns();">
-                <i class="fas fa-th-large"></i>
-                بطاقة
-              </div>
-              <div class="dropdown-divider"></div>
-              <div class="dropdown-item" onclick="exportToExcel(); closeAllDropdowns();">
-                <i class="fas fa-file-excel"></i>
-                تصدير Excel
-              </div>
-            </div>
-          </div>
-
-          <!-- زر إدارة العقارات -->
-          <button class="header-main-btn management-btn admin-only-feature" onclick="showPropertyManagerFromDropdown()">
-            <i class="fas fa-cogs"></i>
-            إدارة العقارات
-          </button>
-
-          <!-- زر تحرير أسماء العقارات (عمر فقط) -->
-          <button class="header-main-btn edit-property-name-btn admin-only-omar" onclick="showPropertyNameEditOptions()" title="تحرير أسماء العقارات (عمر فقط)">
-            <i class="fas fa-edit"></i>
-          </button>
+        <!-- تم نقل جميع الفلاتر والمرفقات والعرض والتصدير وإدارة العقارات إلى السايد بار -->
 
           <!-- زر الإعدادات -->
           <div class="header-dropdown admin-only-omar">
-            <button class="header-main-btn dropdown-toggle settings-btn" onclick="toggleHeaderDropdown('settings')">
+            <button class="header-main-btn dropdown-toggle settings-btn settings-icon-only" onclick="toggleHeaderDropdown('settings')" title="الإعدادات">
               <i class="fas fa-cog"></i>
-              الإعدادات
-              <i class="fas fa-chevron-down dropdown-arrow"></i>
             </button>
             <div class="dropdown-menu" id="settingsDropdown">
               <div class="dropdown-item" onclick="showDateUpdateModal(); closeAllDropdowns();">
@@ -186,59 +184,6 @@
                 <i class="fas fa-calculator"></i>
                 إصلاح الإحصائيات
               </div>
-              <div class="dropdown-item" onclick="runAllLinkingTests(); closeAllDropdowns();">
-                <i class="fas fa-flask"></i>
-                اختبار شامل للربط
-              </div>
-              <div class="dropdown-item" onclick="comprehensiveUnitLinkingTest(); closeAllDropdowns();">
-                <i class="fas fa-link"></i>
-                اختبار ربط متقدم
-              </div>
-              <div class="dropdown-item" onclick="quickUILinkingTest(); closeAllDropdowns();">
-                <i class="fas fa-mouse-pointer"></i>
-                اختبار ربط الواجهة
-              </div>
-              <div class="dropdown-item" onclick="diagnoseLinkingIssues(); closeAllDropdowns();">
-                <i class="fas fa-stethoscope"></i>
-                تشخيص مشاكل الربط
-              </div>
-
-              <div class="dropdown-item" onclick="checkLinkingStatus(); closeAllDropdowns();">
-                <i class="fas fa-search"></i>
-                فحص حالة الربط
-              </div>
-              <div class="dropdown-item" onclick="testUnitDataClearing(); closeAllDropdowns();">
-                <i class="fas fa-trash-alt"></i>
-                اختبار إفراغ البيانات
-              </div>
-              <div class="dropdown-item" onclick="testUnitDataClearing(); closeAllDropdowns();">
-                <i class="fas fa-trash-alt"></i>
-                اختبار إفراغ البيانات
-              </div>
-              <div class="dropdown-item" onclick="testUnitUnlinkingAndClearing(); closeAllDropdowns();">
-                <i class="fas fa-unlink"></i>
-                اختبار فصل وإفراغ الوحدات
-              </div>
-              <div class="dropdown-item" onclick="testSimpleLinkingInterface(); closeAllDropdowns();">
-                <i class="fas fa-check-circle"></i>
-                اختبار الواجهة المبسطة
-              </div>
-              <div class="dropdown-item" onclick="testImprovedLinkUnitToGroup(); closeAllDropdowns();">
-                <i class="fas fa-wrench"></i>
-                اختبار الربط المحسن
-              </div>
-              <div class="dropdown-item" onclick="directLinkingTest(); closeAllDropdowns();">
-                <i class="fas fa-rocket"></i>
-                اختبار مباشر سريع
-              </div>
-              <div class="dropdown-item" onclick="testLinking(); closeAllDropdowns();">
-                <i class="fas fa-cog"></i>
-                اختبار ربط بسيط
-              </div>
-              <div class="dropdown-item" onclick="showUnitLinkingGuide(); closeAllDropdowns();">
-                <i class="fas fa-question-circle"></i>
-                دليل ربط الوحدات
-              </div>
               <div class="dropdown-divider"></div>
               <div class="dropdown-item" onclick="updateSupabaseData(); closeAllDropdowns();">
                 <i class="fas fa-cloud-upload-alt"></i>
@@ -246,50 +191,16 @@
               </div>
             </div>
           </div>
+
+          <!-- زر تسجيل الخروج -->
+          <button class="header-main-btn logout-btn" onclick="logout()" title="تسجيل الخروج">
+            <i class="fas fa-sign-out-alt"></i>
+            خروج
+          </button>
+        </div>
         </div>
 
-        <!-- أزرار الهيدر القديمة للجوال -->
-        <div class="mobile-header-buttons">
-          <div class="view-toggle hideable-header-btn">
-            <button id="table-btn" onclick="toggleView('table')"><i class="fas fa-table"></i> جدول</button>
-            <button id="cards-btn" onclick="toggleView('cards')"><i class="fas fa-th-large"></i> بطاقات</button>
-          </div>
-
-          <button id="exportExcel" class="export-btn hideable-header-btn" onclick="exportToExcel()">
-            <i class="fas fa-file-excel"></i> تصدير Excel
-          </button>
-          <button id="contractTypeFilterBtn" class="export-btn hideable-header-btn" style="background:linear-gradient(to left,#1abc9c,#f8a51b);margin-right:8px;">
-            <i class="fas fa-filter"></i> نوع العقد
-          </button>
-          <button id="monthFilterBtn" class="export-btn hideable-header-btn" style="background:linear-gradient(to left,#2a4b9b,#1abc9c);margin-right:8px;">
-            <i class="fas fa-calendar-alt"></i> فلتر الشهر
-          </button>
-          <button id="multiPropertyFilterBtn" class="export-btn hideable-header-btn" style="background:linear-gradient(to left,#f8a51b,#2a4b9b);margin-right:8px;">
-            <i class="fas fa-layer-group"></i> فلتر عقارات متعدد
-          </button>
-          <button id="attachmentsManagerBtn" class="export-btn hideable-header-btn" style="background:linear-gradient(to left,#1e88e5,#0d47a1);margin-right:8px;">
-            <i class="fas fa-folder-open"></i> إدارة المرفقات
-          </button>
-          <!-- الأزرار المخفية - غير مطلوبة -->
-          <button id="propertyManagerBtn" class="export-btn hideable-header-btn admin-only-feature" style="display: none;">
-            <i class="fas fa-building"></i> إدارة العقارات
-          </button>
-
-          <button class="export-btn hideable-header-btn admin-only-omar edit-property-name-btn-mobile" onclick="showPropertyNameEditOptions()" title="تحرير أسماء العقارات (عمر فقط)" style="display: none;">
-            <i class="fas fa-edit"></i>
-          </button>
-
-          <button id="changeTrackingBtn" class="export-btn hideable-header-btn" onclick="createSampleTrackingDataAndShow()" style="display: none;">
-            <i class="fas fa-history"></i> سجل التتبع
-          </button>
-
-          <button id="dataImportBtn" class="export-btn hideable-header-btn" onclick="showDataImportModal()" style="display: none;">
-            <i class="fas fa-file-import"></i> استيراد البيانات
-          </button>
-
-          <button id="cleanStorageBtn" class="export-btn hideable-header-btn" onclick="showStorageCleanupModal()" style="display: none;">
-            <i class="fas fa-broom"></i> تنظيف التخزين
-          </button>
+        <!-- تم نقل جميع أزرار الهيدر إلى السايد بار -->
 
           <button id="updateDatesBtn" class="export-btn hideable-header-btn admin-only-feature" onclick="showDateUpdateModal()" style="display: none;">
             <i class="fas fa-calendar-alt"></i> تحديث التواريخ
@@ -378,7 +289,7 @@
           <button id="mobile-property-btn"><i class="fas fa-building"></i> العقارات <span class="badge" id="propertyCount"></span></button>
         </li>
         <li>
-          <button id="mobile-filter-btn"><i class="fas fa-filter"></i> حالة الوحده <span class="badge" id="filterCount"></span></button>
+          <button id="mobile-filter-btn"><i class="fas fa-filter"></i> حالة الوحدة <span class="badge" id="filterCount"></span></button>
           <ul class="dropdown-sub" id="mobile-filter-list"></ul>
         </li>
         <li>
@@ -745,7 +656,38 @@
     </div>
   </div>
 
+  <!-- تضمين مكتبة Supabase -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
+  <!-- تضمين ملفات JavaScript -->
+  <script src="supabase-config.js"></script>
+  <script src="script.js"></script>
+
+  <!-- إضافة تحميل البيانات بشكل صريح -->
+  <script>
+    // التأكد من تحميل البيانات عند تحميل الصفحة
+    window.addEventListener('load', function() {
+      console.log('🔄 التحقق من تحميل البيانات...');
+
+      // تأخير قصير للتأكد من تحميل جميع الوظائف
+      setTimeout(() => {
+        // تهيئة Supabase إذا كان متوفراً
+        if (typeof initSupabase === 'function') {
+          initSupabase();
+        }
+
+        // التحقق من وجود البيانات وتحميلها إذا لزم الأمر
+        if (!window.properties || window.properties.length === 0) {
+          console.log('⚠️ لا توجد بيانات، محاولة التحميل...');
+
+          // استدعاء وظيفة التهيئة الأصلية
+          if (typeof initializeApp === 'function') {
+            initializeApp();
+          }
+        }
+      }, 1000);
+    });
+  </script>
 
 </body>
 </html>

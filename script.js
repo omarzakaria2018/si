@@ -1618,6 +1618,10 @@ function openMobileFilters() {
     }
 }
 
+function showMobileFilters() {
+    openMobileFilters();
+}
+
 function closeMobileFilters() {
     const modal = document.getElementById('mobileFiltersModal');
     if (modal) {
@@ -2541,7 +2545,8 @@ function showCrystalLoading() {
                     <div class="limited-loading-icon">
                         <div class="limited-spinner"></div>
                     </div>
-                    <h3 class="limited-loading-title">جاري تحميل المحتوى</h3>
+                    <h3 class="limited-loading-title">  جاري تحميل المحتوى</h3>
+                    <p class="limited-loading-subtitle">فى حالة استخدام كمبيوتر اضبط زوم المتصفح من67% الى 80%</p>
                     <div class="limited-progress-text" id="limitedProgressText">0%</div>
                 </div>
             </div>
@@ -2557,6 +2562,7 @@ function showCrystalLoading() {
                         <div class="simple-spinner"></div>
                     </div>
                     <h3 class="simple-loading-title">جاري تحميل المحتوى</h3>
+                     <p class="limited-loading-subtitle">فى حالة استخدام كمبيوتر اضبط زوم المتصفح من67% الى 80%</p>
                     <div class="simple-progress-text" id="simpleProgressText">0%</div>
                 </div>
             </div>
@@ -7271,7 +7277,7 @@ function calculateCategoryStats(data, isLandCategory) {
     let rentedUnits = 0;
     let commercialUnits = 0; // الوحدات الضريبية
     let residentialUnits = 0; // الوحدات السكنية
-    let pendingUnits = 0; // الوحدات الراكدة (غير محددة)
+    let pendingUnits = 0; // ارض فضاء (غير محددة)
 
     // تجميع الوحدات الفريدة
     const uniqueUnits = new Set();
@@ -7491,7 +7497,7 @@ function renderTotals(data) {
                         </tr>
                         ${(buildingStats.pendingUnits + landStats.pendingUnits) > 0 ? `
                         <tr>
-                            <td class="metric-label">الوحدات الراكدة</td>
+                            <td class="metric-label">ارض فضاء</td>
                             <td class="buildings-value">${buildingStats.pendingUnits}</td>
                             <td class="lands-value">${landStats.pendingUnits}</td>
                             <td class="total-value">${buildingStats.pendingUnits + landStats.pendingUnits}</td>
@@ -7821,7 +7827,7 @@ function renderMobileTotals(data) {
                         </tr>
                         ${(buildingStats.pendingUnits + landStats.pendingUnits) > 0 ? `
                         <tr>
-                            <td class="metric-label">الوحدات الراكدة</td>
+                            <td class="metric-label">ارض فضاء</td>
                             <td class="buildings-value">${buildingStats.pendingUnits}</td>
                             <td class="lands-value">${landStats.pendingUnits}</td>
                             <td class="total-value">${buildingStats.pendingUnits + landStats.pendingUnits}</td>
@@ -54281,3 +54287,235 @@ function updateActiveUnitsTypeOption() {
         activeOption.classList.add('active');
     }
 }}
+
+// ===== وظائف السايد بار الجديد =====
+
+// تهيئة السايد بار عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSidebar();
+});
+
+// تهيئة السايد بار عند تحميل النافذة أيضاً (للتأكد)
+window.addEventListener('load', function() {
+    setTimeout(initializeSidebar, 500);
+});
+
+// تهيئة السايد بار
+function initializeSidebar() {
+    const sidebar = document.getElementById('desktopSidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+
+    if (!sidebar || !sidebarToggle) return;
+
+    // إضافة مستمع النقر لزر التبديل
+    sidebarToggle.addEventListener('click', toggleSidebar);
+
+    // إضافة مستمع النقر على أيقونات الفلاتر لتوسيع السايد بار
+    const sidebarItems = sidebar.querySelectorAll('.sidebar-item');
+    sidebarItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            // إذا كان السايد بار مطوي، قم بتوسيعه أولاً
+            if (!sidebar.classList.contains('expanded')) {
+                expandSidebar();
+                e.preventDefault(); // منع تنفيذ الوظيفة حتى يتم التوسيع
+                return;
+            }
+        });
+    });
+
+    // تحديث عرض العناصر حسب الصلاحيات
+    updateSidebarPermissions();
+
+    // استعادة حالة السايد بار المحفوظة
+    restoreSidebarState();
+
+    // تهيئة السكرول بار
+    initializeSidebarScrollbar();
+}
+
+// تبديل حالة السايد بار
+function toggleSidebar() {
+    const sidebar = document.getElementById('desktopSidebar');
+    const body = document.body;
+
+    if (sidebar.classList.contains('expanded')) {
+        collapseSidebar();
+    } else {
+        expandSidebar();
+    }
+}
+
+// توسيع السايد بار
+function expandSidebar() {
+    const sidebar = document.getElementById('desktopSidebar');
+    const body = document.body;
+
+    sidebar.classList.add('expanded');
+    body.classList.add('sidebar-expanded');
+
+    // حفظ الحالة
+    localStorage.setItem('sidebarExpanded', 'true');
+}
+
+// طي السايد بار
+function collapseSidebar() {
+    const sidebar = document.getElementById('desktopSidebar');
+    const body = document.body;
+
+    sidebar.classList.remove('expanded');
+    body.classList.remove('sidebar-expanded');
+
+    // حفظ الحالة
+    localStorage.setItem('sidebarExpanded', 'false');
+}
+
+// استعادة حالة السايد بار المحفوظة
+function restoreSidebarState() {
+    const isExpanded = localStorage.getItem('sidebarExpanded') === 'true';
+    if (isExpanded) {
+        expandSidebar();
+    }
+}
+
+// إدارة السكرول بار في السايد بار
+function initializeSidebarScrollbar() {
+    const sidebarContent = document.querySelector('.desktop-sidebar .sidebar-content');
+
+    if (!sidebarContent) return;
+
+    let scrollTimeout;
+
+    // إضافة مستمع للسكرول
+    sidebarContent.addEventListener('scroll', function() {
+        // إضافة كلاس عند السكرول
+        sidebarContent.classList.add('scrolling');
+
+        // إزالة الكلاس بعد توقف السكرول
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            sidebarContent.classList.remove('scrolling');
+        }, 1000); // إخفاء السكرول بار بعد ثانية من توقف السكرول
+    });
+
+    // إضافة مستمع للماوس للإظهار عند الهوفر
+    sidebarContent.addEventListener('mouseenter', function() {
+        sidebarContent.classList.add('scrolling');
+    });
+
+    sidebarContent.addEventListener('mouseleave', function() {
+        // إزالة الكلاس بعد مغادرة الماوس إذا لم يكن هناك سكرول نشط
+        setTimeout(() => {
+            if (!sidebarContent.matches(':hover')) {
+                sidebarContent.classList.remove('scrolling');
+            }
+        }, 500);
+    });
+}
+
+// تحديث عرض العناصر حسب الصلاحيات
+function updateSidebarPermissions() {
+    const currentUser = getCurrentUser();
+
+    // عناصر المدراء فقط
+    const adminOnlyItems = document.querySelectorAll('.sidebar-item.admin-only-feature');
+    adminOnlyItems.forEach(item => {
+        if (currentUser === '1234' || currentUser === '5678') {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // عناصر عمر فقط
+    const omarOnlyItems = document.querySelectorAll('.sidebar-item.admin-only-omar');
+    omarOnlyItems.forEach(item => {
+        if (currentUser === '1234') {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // عناصر عمر ومحمد فقط
+    const omarMohammedItems = document.querySelectorAll('.sidebar-item.admin-only-omar-mohammed');
+    omarMohammedItems.forEach(item => {
+        if (currentUser === '1234' || currentUser === '5678') {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// تحديث السايد بار عند تغيير المستخدم
+function updateSidebarForUser() {
+    updateSidebarPermissions();
+}
+
+// إضافة مستمع لتحديث السايد بار عند تغيير المستخدم
+if (typeof setCurrentUser === 'function') {
+    const originalSetCurrentUser = setCurrentUser;
+    setCurrentUser = function(user) {
+        originalSetCurrentUser(user);
+        updateSidebarForUser();
+    };
+}
+
+// تحديث مؤشرات الفلاتر النشطة في السايد بار
+function updateSidebarFilterIndicators() {
+    // إزالة جميع المؤشرات الموجودة
+    const existingIndicators = document.querySelectorAll('.sidebar-filter-indicator');
+    existingIndicators.forEach(indicator => indicator.remove());
+
+    // إضافة مؤشرات للفلاتر النشطة
+    const activeFilters = [];
+
+    if (currentCountry) activeFilters.push('country');
+    if (currentProperty) activeFilters.push('property');
+    if (filterStatus) activeFilters.push('status');
+    if (unitsTypeFilter && unitsTypeFilter !== 'all') activeFilters.push('unitsType');
+    if (window.contractTypeFilter) activeFilters.push('contractType');
+    if (window.propertyTypeFilter) activeFilters.push('propertyType');
+    if (window.currentOwnerFilter) activeFilters.push('owner');
+
+    // إضافة مؤشرات بصرية
+    activeFilters.forEach(filterType => {
+        let selector = '';
+        switch(filterType) {
+            case 'status':
+                selector = '.sidebar-item[onclick*="showStatusFilter"]';
+                break;
+            case 'unitsType':
+                selector = '.sidebar-item[onclick*="showUnitsTypeFilterModal"]';
+                break;
+            case 'contractType':
+                selector = '.sidebar-item[onclick*="showContractTypeFilterFromDropdown"]';
+                break;
+            case 'propertyType':
+                selector = '.sidebar-item[onclick*="showPropertyTypeFilterFromDropdown"]';
+                break;
+            case 'owner':
+                selector = '.sidebar-item[onclick*="showOwnerFilter"]';
+                break;
+        }
+
+        if (selector) {
+            const item = document.querySelector(selector);
+            if (item) {
+                const indicator = document.createElement('div');
+                indicator.className = 'sidebar-filter-indicator';
+                indicator.innerHTML = '<i class="fas fa-circle"></i>';
+                item.appendChild(indicator);
+            }
+        }
+    });
+}
+
+// استدعاء تحديث المؤشرات عند تغيير الفلاتر
+const originalRenderData = window.renderData;
+if (originalRenderData) {
+    window.renderData = function() {
+        originalRenderData();
+        setTimeout(updateSidebarFilterIndicators, 100);
+    };
+}

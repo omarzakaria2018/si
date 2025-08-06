@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار السايد بار الجديد للشاشات الكبيرة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #095176 0%, #0d7aa7 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .test-section h3 {
+            color: #095176;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #095176 0%, #0d7aa7 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(9, 81, 118, 0.3);
+        }
+
+        .test-button:active {
+            transform: translateY(0);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 500;
+            display: none;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .features-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .features-list h4 {
+            color: #095176;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .features-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+
+        .features-list li i {
+            color: #28a745;
+            width: 20px;
+        }
+
+        .sidebar-demo {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 2px solid #095176;
+        }
+
+        .sidebar-demo h4 {
+            color: #095176;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .demo-sidebar {
+            width: 60px;
+            height: 400px;
+            background: #095176a8;
+            border-radius: 10px;
+            margin: 0 auto;
+            position: relative;
+            transition: width 0.3s ease;
+            overflow: hidden;
+        }
+
+        .demo-sidebar.expanded {
+            width: 280px;
+        }
+
+        .demo-toggle {
+            position: absolute;
+            top: 20px;
+            right: 15px;
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .demo-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .demo-toggle i {
+            color: white;
+            font-size: 14px;
+            transition: transform 0.3s ease;
+        }
+
+        .demo-sidebar.expanded .demo-toggle i {
+            transform: rotate(180deg);
+        }
+
+        .demo-items {
+            padding-top: 70px;
+            padding: 70px 8px 8px 8px;
+        }
+
+        .demo-item {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 12px;
+            margin: 2px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .demo-sidebar:not(.expanded) .demo-item {
+            justify-content: center;
+            padding: 12px 0;
+        }
+
+        .demo-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .demo-item i {
+            color: white;
+            font-size: 18px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .demo-text {
+            color: white;
+            font-size: 14px;
+            margin-right: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-weight: 500;
+            display: none; /* مخفي في الوضع العادي */
+        }
+
+        .demo-sidebar.expanded .demo-text {
+            opacity: 1;
+            display: inline; /* يظهر عند التوسيع */
+        }
+
+        /* تحسين أيقونة Excel */
+        .excel-demo-icon {
+            color: #1d6f42 !important; /* لون Excel الأخضر */
+            font-size: 18px !important;
+        }
+
+        .demo-item:hover .excel-demo-icon {
+            color: #0f5132 !important; /* لون أخضر أغمق عند الهوفر */
+        }
+
+        .demo-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 10px 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container { margin: 10px; border-radius: 10px; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 1.8rem; }
+            .content { padding: 20px; }
+            .demo-sidebar { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-sidebar"></i> السايد بار الجديد للشاشات الكبيرة</h1>
+            <p>اختبار وعرض السايد بار الجديد مع جميع الفلاتر والوظائف</p>
+        </div>
+
+        <div class="content">
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> الميزات الجديدة</h3>
+                
+                <div class="features-list">
+                    <h4>✨ ما تم إضافته:</h4>
+                    <ul>
+                        <li><i class="fas fa-plus-circle"></i> سايد بار ثابت في الجانب الأيسر للشاشات الكبيرة</li>
+                        <li><i class="fas fa-expand-arrows-alt"></i> إمكانية التوسيع والانكماش بنقرة واحدة</li>
+                        <li><i class="fas fa-eye-slash"></i> إخفاء النصوص في الوضع العادي وإظهار الأيقونات فقط</li>
+                        <li><i class="fas fa-filter"></i> جميع الفلاتر متاحة بسهولة (فلتر الشهر، المترابطة، نوع العقد، الحالة، إلخ)</li>
+                        <li><i class="fas fa-folder-open"></i> إدارة المرفقات وسجل التتبع</li>
+                        <li><i class="fas fa-eye"></i> خيارات العرض والتصدير</li>
+                        <li><i class="fas fa-city"></i> الهيدر نظيف - أزرار المدن واسم الشركة فقط</li>
+                        <li><i class="fas fa-file-excel"></i> زر Excel يتبع منطق السايد بار - أيقونة فقط في الوضع المطوي</li>
+                        <li><i class="fas fa-eye-slash"></i> نص "تصدير Excel" مخفي في الوضع العادي</li>
+                        <li><i class="fas fa-expand"></i> النص يظهر عند توسيع السايد بار</li>
+                        <li><i class="fas fa-ban"></i> حذف التمرير الجانبي من السايد بار</li>
+                        <li><i class="fas fa-trash"></i> حذف جميع الأزرار الإضافية من الهيدر</li>
+                        <li><i class="fas fa-user-shield"></i> عرض العناصر حسب صلاحيات المستخدم</li>
+                        <li><i class="fas fa-circle"></i> مؤشرات بصرية للفلاتر النشطة</li>
+                        <li><i class="fas fa-palette"></i> تصميم جميل مع خلفية شفافة</li>
+                        <li><i class="fas fa-mobile-alt"></i> مخفي تلقائياً في الشاشات الصغيرة</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-desktop"></i> معاينة السايد بار</h3>
+                
+                <div class="sidebar-demo">
+                    <h4>انقر على السهم لتوسيع/طي السايد بار</h4>
+                    
+                    <div class="demo-sidebar" id="demoSidebar">
+                        <div class="demo-toggle" onclick="toggleDemoSidebar()">
+                            <i class="fas fa-chevron-right" id="demoToggleIcon"></i>
+                        </div>
+                        
+                        <div class="demo-items">
+                            <div class="demo-item">
+                                <i class="fas fa-calendar-alt" style="color: #28a745;"></i>
+                                <span class="demo-text">فلتر الشهر</span>
+                            </div>
+                            <div class="demo-item">
+                                <i class="fas fa-layer-group" style="color: #17a2b8;"></i>
+                                <span class="demo-text">الوحدات المترابطة</span>
+                            </div>
+                            <div class="demo-item">
+                                <i class="fas fa-building" style="color: #6f42c1;"></i>
+                                <span class="demo-text">فلتر عقارات متعدد</span>
+                            </div>
+                            <div class="demo-item">
+                                <i class="fas fa-file-contract" style="color: #fd7e14;"></i>
+                                <span class="demo-text">نوع العقد</span>
+                            </div>
+                            <div class="demo-item">
+                                <i class="fas fa-user" style="color: #20c997;"></i>
+                                <span class="demo-text">فلتر المالك</span>
+                            </div>
+                            <div class="demo-item">
+                                <i class="fas fa-info-circle" style="color: #ffc107;"></i>
+                                <span class="demo-text">حالة الوحدة</span>
+                            </div>
+                            
+                            <div class="demo-divider"></div>
+                            
+                            <div class="demo-item">
+                                <i class="fas fa-folder-open" style="color: #007bff;"></i>
+                                <span class="demo-text">إدارة المرفقات</span>
+                            </div>
+                            <div class="demo-item">
+                                <i class="fas fa-table"></i>
+                                <span class="demo-text">عرض جدول</span>
+                            </div>
+                            <div class="demo-item">
+                                <i class="fas fa-file-excel excel-demo-icon"></i>
+                                <span class="demo-text">تصدير Excel</span>
+                            </div>
+                            
+                            <div class="demo-divider"></div>
+                            
+                            <div class="demo-item" style="background: rgba(220, 53, 69, 0.3);">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span class="demo-text">تسجيل الخروج</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-vial"></i> اختبار التطبيق</h3>
+                <p>اختبر السايد بار الجديد في التطبيق الرئيسي:</p>
+                
+                <button class="test-button" onclick="openMainApp()">
+                    <i class="fas fa-external-link-alt"></i> فتح التطبيق الرئيسي
+                </button>
+                
+                <div class="status" id="testStatus"></div>
+                
+                <div class="features-list">
+                    <h4>📋 خطوات الاختبار:</h4>
+                    <ul>
+                        <li><i class="fas fa-arrow-right"></i> افتح التطبيق في شاشة كبيرة (أكبر من 768px)</li>
+                        <li><i class="fas fa-arrow-right"></i> ستجد السايد بار في الجانب الأيسر</li>
+                        <li><i class="fas fa-arrow-right"></i> انقر على السهم لتوسيع السايد بار</li>
+                        <li><i class="fas fa-arrow-right"></i> جرب النقر على أي فلتر لفتحه</li>
+                        <li><i class="fas fa-arrow-right"></i> لاحظ المؤشرات الخضراء للفلاتر النشطة</li>
+                        <li><i class="fas fa-arrow-right"></i> جرب تصغير الشاشة - السايد بار سيختفي تلقائياً</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTestStatus(message, type = 'info') {
+            const status = document.getElementById('testStatus');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+
+        function toggleDemoSidebar() {
+            const sidebar = document.getElementById('demoSidebar');
+            const icon = document.getElementById('demoToggleIcon');
+            
+            sidebar.classList.toggle('expanded');
+            
+            if (sidebar.classList.contains('expanded')) {
+                showTestStatus('🎉 تم توسيع السايد بار - يمكنك الآن رؤية النصوص', 'success');
+            } else {
+                showTestStatus('📱 تم طي السايد بار - الآن يظهر الأيقونات فقط', 'info');
+            }
+        }
+
+        function openMainApp() {
+            showTestStatus('🌐 فتح التطبيق الرئيسي...', 'info');
+            window.open('index.html', '_blank');
+            showTestStatus('✅ تم فتح التطبيق - تأكد من أن الشاشة كبيرة لرؤية السايد بار', 'success');
+        }
+
+        // عرض رسالة ترحيب
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                showTestStatus('🎯 مرحباً! جرب النقر على السهم في المعاينة أعلاه', 'info');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

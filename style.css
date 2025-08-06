@@ -32,13 +32,18 @@ body {
 
 /* Header Styles */
 header {
-  background: linear-gradient(to left, #2a4b9b, #3a5db0);
+  background: linear-gradient(to left, #ffffff, #eaf1ff);
   color: white;
   padding: 1rem;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 1000;
+  left: 0;
+  width: 100vw;
+  height: 80px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
 }
 
 .header-row {
@@ -62,7 +67,7 @@ header {
   justify-content: center;
   width: auto;
   height: auto;
- color: #f7f7f5;
+ color: #ff9100;
     font-weight: 900;
   white-space: nowrap;
 }
@@ -2228,7 +2233,7 @@ main {
     margin-left: 20px !important;
     padding: 1rem !important;
     min-height: calc(100vh - 140px) !important;
-    width: calc(100vw - 320px) !important;
+    width: calc(100vw - 400px) !important;
     box-sizing: border-box !important;
   }
 
@@ -2271,7 +2276,7 @@ main {
   /* تحسينات sidebar العقارات للشاشات الكبيرة */
   aside#sidebar {
     position: fixed !important;
-    top: 83px !important;
+    top: 79px !important;
     right: 0 !important;
     width: 320px !important;
     height: calc(100vh - 70px) !important;
@@ -2290,16 +2295,16 @@ main {
   aside#sidebar .sidebar-header {
     flex-shrink: 0 !important;
     padding: 10px !important;
-    background: linear-gradient(135deg, #007bff, #0056b3) !important;
-    color: white !important;
+    background: linear-gradient(135deg, #f3f3f3, #e9f1fa) !important;
+    color: #2187ed  !important;
     border-bottom: none !important;
     box-shadow: 0 2px 10px rgba(0, 123, 255, 0.2) !important;
   }
 
   aside#sidebar .sidebar-header h3 {
-    color: white !important;
+    color: #24a1ef !important;
     margin: 0 !important;
-    font-size: 1.3rem !important;
+    font-size: 1.5rem !important;
     font-weight: 600 !important;
     text-align: center !important;
   }
@@ -5868,12 +5873,12 @@ button {
 
 /* Country Buttons Styles */
 #countryButtons button {
-  background: linear-gradient(to left, #3a5db0, #2a4b9b);
-  color: white;
+    /* background: linear-gradient(to left, #809ad700, #2a4b9b73); */
+    color: #039ee2;
     margin: 3px 3px 0;
     padding: 8px 15px;
     border-radius: 9px;
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     font-weight: 800;
     transition: all 0.3s ease;
     white-space: nowrap;
@@ -5890,7 +5895,7 @@ button {
 }
 
 #countryButtons button.active {
-  background: linear-gradient(to left, #f8a51b, #f39c12);
+  background: linear-gradient(to left, #f8a51b78, #ffbb4e73);
   box-shadow: 0 4px 8px rgba(248,165,27,0.3);
 }
 
@@ -6608,7 +6613,7 @@ footer {
 }
 
   .header-title h1 {
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     width: auto;
     height: auto;
   }
@@ -14394,7 +14399,7 @@ a[href^="http"] {
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: white;
+    background: #095176a8;
     font-family: 'Cairo', 'Tajawal', 'Segoe UI', Arial, sans-serif;
 }
 
@@ -18261,6 +18266,580 @@ textarea.mobile-friendly:focus {
         flex-direction: column;
         padding: 20px;
     }
+}
+
+/* ===== السايد بار الجديد للشاشات الكبيرة ===== */
+.desktop-sidebar {
+  position: fixed;
+  top: 80px; /* أسفل الهيدر مباشرة */
+  left: 0;
+  height: calc(100vh - 80px); /* ارتفاع مخصوم منه ارتفاع الهيدر */
+  width: 60px;
+  background: #095176a8;
+  backdrop-filter: blur(10px);
+  z-index: 998; /* أقل من الهيدر */
+  transition: width 0.3s ease;
+  overflow: hidden;
+  display: none; /* مخفي في الشاشات الصغيرة */
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.desktop-sidebar.expanded {
+  width: 280px;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 20px;
+  right: 15px;
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.sidebar-toggle i {
+  color: white;
+  font-size: 14px;
+  transition: transform 0.3s ease;
+}
+
+.desktop-sidebar.expanded .sidebar-toggle i {
+  transform: rotate(180deg);
+}
+
+.sidebar-content {
+  padding-top: 53px; /* تقليل المسافة العلوية لأن السايد بار أسفل الهيدر */
+  height: 100%;
+  overflow-y: auto; /* إضافة سكرول عمودي عند الحاجة */
+  overflow-x: hidden; /* إخفاء السكرول الأفقي */
+}
+
+.sidebar-section {
+  margin-bottom: 5px; /* تقليل المسافات لتوفير مساحة */
+}
+
+/* تحسين توزيع المحتوى في السايد بار */
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.sidebar-section:last-child {
+  margin-top: auto; /* دفع زر تسجيل الخروج للأسفل */
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  border-radius: 8px;
+  margin: 2px ;
+  position: relative;
+}
+
+/* في الحالة المطوية، توسيط الأيقونة */
+.desktop-sidebar:not(.expanded) .sidebar-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(-3px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-item:active {
+  transform: translateX(-1px);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sidebar-item i {
+  color: white;
+  font-size: 26px;
+  min-width: 30px;
+  text-align: center;
+}
+
+.sidebar-text {
+  color: white;
+  font-size: 14px;
+  margin-right: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-weight: 500;
+  display: none; /* مخفي في الوضع العادي */
+}
+
+.desktop-sidebar.expanded .sidebar-text {
+  opacity: 1;
+  display: inline; /* يظهر عند التوسيع */
+}
+
+/* تحسين أيقونة Excel - تكون بيضاء مثل باقي الأيقونات */
+.excel-icon {
+  color: white !important; /* لون أبيض مثل باقي الأيقونات */
+  font-size: 18px !important;
+}
+
+.excel-export-btn:hover .excel-icon {
+  color: #f0f0f0 !important; /* لون أبيض فاتح عند الهوفر */
+}
+
+/* التأكد من أن نص Excel يتبع نفس منطق باقي النصوص */
+.excel-export-btn .sidebar-text {
+  color: white;
+  font-size: 14px;
+  margin-right: 12px;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease;
+  font-weight: 500;
+  display: none !important; /* مخفي في الوضع العادي */
+  visibility: hidden !important;
+}
+
+.desktop-sidebar.expanded .excel-export-btn .sidebar-text {
+  opacity: 1 !important;
+  display: inline !important; /* يظهر عند التوسيع */
+  visibility: visible !important;
+}
+
+/* تأكيد إخفاء نص Excel في الوضع المطوي */
+.desktop-sidebar:not(.expanded) .excel-export-btn .sidebar-text {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* إخفاء زر Excel بالكامل في الوضع العادي */
+.excel-export-btn {
+  display: none !important; /* مخفي بالكامل في الوضع العادي */
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 15px;
+  color: white;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border-radius: 8px;
+  margin: 5px 10px;
+}
+
+/* إظهار زر Excel فقط في الوضع الموسع */
+.desktop-sidebar.expanded .excel-export-btn {
+  display: flex !important; /* يظهر فقط عند التوسيع */
+}
+
+.excel-export-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 10px 15px;
+}
+
+.logout-item {
+  background: rgba(220, 53, 69, 0.3);
+  border: 1px solid rgba(220, 53, 69, 0.5);
+}
+
+.logout-item:hover {
+  background: rgba(220, 53, 69, 0.5);
+  transform: translateX(-3px);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* تأثيرات خاصة للعناصر المختلفة */
+.sidebar-item[onclick*="showMonthFilterModal"] i {
+  color: #28a745;
+}
+
+.sidebar-item[onclick*="showUnitsTypeFilterModal"] i {
+  color: #17a2b8;
+}
+
+.sidebar-item[onclick*="showMultiPropertyCityFilter"] i {
+  color: #b087f9;
+}
+
+.sidebar-item[onclick*="showContractTypeFilterFromDropdown"] i {
+  color: #fd7e14;
+}
+
+.sidebar-item[onclick*="showPropertyTypeFilterFromDropdown"] i {
+  color: #e83e8c;
+}
+
+.sidebar-item[onclick*="showOwnerFilter"] i {
+  color: #20c997;
+}
+
+.sidebar-item[onclick*="showStatusFilter"] i {
+  color: #ffc107;
+}
+
+.sidebar-item[onclick*="showAttachmentsManager"] i {
+  color: #007bff;
+}
+
+.sidebar-item[onclick*="exportToExcel"] i {
+  color: #198754;
+}
+
+/* تأثير النبض للعناصر المهمة */
+.sidebar-item[onclick*="logout"] {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+/* مؤشرات الفلاتر النشطة */
+.sidebar-filter-indicator {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 8px;
+  height: 8px;
+  background: #28a745;
+  border-radius: 50%;
+  animation: pulse-green 1.5s infinite;
+}
+
+.sidebar-filter-indicator i {
+  font-size: 8px;
+  color: #28a745;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* تحسين موضع المؤشر */
+.sidebar-item {
+  position: relative;
+}
+
+/* تصميم السكرول بار المخصص للسايد بار */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px; /* عرض صغير للسكرول بار */
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1); /* خلفية شفافة */
+  border-radius: 3px;
+  margin: 10px 0; /* مسافة من الأعلى والأسفل */
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3); /* لون السكرول بار */
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5); /* لون أفتح عند الهوفر */
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.7); /* لون أكثر وضوحاً عند الضغط */
+}
+
+/* للمتصفحات التي تدعم scrollbar-width */
+.sidebar-content {
+  scrollbar-width: thin; /* سكرول بار رفيع */
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1); /* لون السكرول والخلفية */
+}
+
+/* إخفاء السكرول بار في الوضع المطوي لتوفير مساحة أكبر */
+.desktop-sidebar:not(.expanded) .sidebar-content::-webkit-scrollbar {
+  width: 3px; /* عرض أصغر في الوضع المطوي */
+}
+
+.desktop-sidebar:not(.expanded) .sidebar-content::-webkit-scrollbar-track {
+  background: transparent; /* خلفية شفافة في الوضع المطوي */
+}
+
+.desktop-sidebar:not(.expanded) .sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2); /* لون أخف في الوضع المطوي */
+}
+
+/* تحسين السكرول في الوضع الموسع */
+.desktop-sidebar.expanded .sidebar-content::-webkit-scrollbar {
+  width: 8px; /* عرض أكبر في الوضع الموسع */
+}
+
+.desktop-sidebar.expanded .sidebar-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.15); /* خلفية أوضح في الوضع الموسع */
+  border-radius: 4px;
+}
+
+.desktop-sidebar.expanded .sidebar-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4); /* لون أوضح في الوضع الموسع */
+  border-radius: 4px;
+}
+
+/* تأثير السكرول السلس */
+.sidebar-content {
+  scroll-behavior: smooth; /* سكرول سلس */
+}
+
+/* إخفاء السكرول بار عندما لا يكون هناك محتوى قابل للسكرول */
+.sidebar-content::-webkit-scrollbar {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-content:hover::-webkit-scrollbar,
+.sidebar-content.scrolling::-webkit-scrollbar {
+  opacity: 1; /* إظهار السكرول بار عند الهوفر أو السكرول */
+}
+
+/* تحسين ظهور السكرول بار في الوضع الموسع */
+.desktop-sidebar.expanded .sidebar-content::-webkit-scrollbar {
+  opacity: 0.7; /* إظهار خفيف في الوضع الموسع */
+}
+
+.desktop-sidebar.expanded .sidebar-content:hover::-webkit-scrollbar,
+.desktop-sidebar.expanded .sidebar-content.scrolling::-webkit-scrollbar {
+  opacity: 1; /* إظهار كامل عند الهوفر أو السكرول في الوضع الموسع */
+}
+
+/* إظهار السايد بار في الشاشات الكبيرة فقط */
+@media (min-width: 769px) {
+  .desktop-sidebar {
+    display: block;
+  }
+
+  /* إصلاح تخطيط المحتوى الرئيسي */
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* الهيدر يأخذ عرض الشاشة كاملاً */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 80px;
+    z-index: 999;
+  }
+
+  /* المحتوى الرئيسي يبدأ أسفل الهيدر ويترك مساحة للسايد بار */
+  main {
+    margin-top: 80px; /* مساحة للهيدر */
+    margin-left: 60px; /* مساحة للسايد بار */
+    width: calc(100vw - 60px); /* عرض الشاشة مخصوماً منه عرض السايد بار */
+    min-height: calc(100vh - 80px);
+    transition: all 0.3s ease;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  body.sidebar-expanded main {
+    margin-left: 280px; /* مساحة للسايد بار الموسع */
+    width: calc(100vw - 280px); /* عرض الشاشة مخصوماً منه عرض السايد بار الموسع */
+  }
+
+  /* تعديل عناصر أخرى لتتناسب مع السايد بار */
+  .mobile-bottom-nav {
+    margin-left: 60px; /* مساحة للسايد بار */
+    width: calc(100vw - 60px); /* عرض مخصوم منه السايد بار */
+    transition: all 0.3s ease;
+  }
+
+  body.sidebar-expanded .mobile-bottom-nav {
+    margin-left: 280px; /* مساحة للسايد بار الموسع */
+    width: calc(100vw - 280px); /* عرض مخصوم منه السايد بار الموسع */
+  }
+
+  /* تعديل عرض العناصر الرئيسية */
+  .header-row {
+    width: 100%;
+  }
+
+  /* تعديل عرض المحتوى الداخلي */
+  #content {
+    width: 100%;
+    max-width: none;
+  }
+
+  /* تحسين عرض البطاقات */
+  .cards-container {
+    width: 100%;
+    max-width: none;
+    padding: 0 20px;
+  }
+
+  /* تحسين عرض الجداول */
+  .table-container {
+    width: 100%;
+    max-width: none;
+    overflow-x: auto;
+  }
+
+  /* تحسين عرض الإحصائيات */
+  #totalContainer {
+    width: 100%;
+    max-width: none;
+    margin: 20px;
+  }
+
+  /* تحسين عرض الفلاتر النشطة */
+  .active-filters-desktop {
+    width: 100%;
+    max-width: none;
+    margin: 0 20px;
+  }
+}
+
+/* إخفاء السايد بار في الشاشات الصغيرة */
+@media (max-width: 768px) {
+  .desktop-sidebar {
+    display: none !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 80px !important;
+    z-index: 999 !important;
+  }
+
+  main {
+    margin-top: 80px !important;
+    margin-left: 0 !important;
+    width: 100vw !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+  }
+
+  .header-row {
+    width: 100% !important;
+  }
+}
+
+/* تصميم زر الإعدادات كأيقونة فقط */
+.settings-icon-only {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.3s ease !important;
+}
+
+.settings-icon-only:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: rotate(90deg) !important;
+}
+
+.settings-icon-only i {
+  font-size: 16px !important;
+  color: white !important;
+}
+
+/* إخفاء أزرار الهيدر الأخرى عدا أزرار المدن والإعدادات - للشاشات الكبيرة فقط */
+@media (min-width: 769px) {
+  .logout-btn,
+  #updateDatesBtn,
+  #fixStatisticsBtn,
+  #developerModeBtn,
+  .header-filters,
+  .date-filter-container {
+    display: none !important;
+  }
+}
+
+/* إخفاء نفس الأزرار في الشاشات الصغيرة أيضاً */
+@media (max-width: 768px) {
+  .logout-btn,
+  #updateDatesBtn,
+  #fixStatisticsBtn,
+  #developerModeBtn,
+  .header-filters,
+  .date-filter-container {
+    display: none !important;
+  }
+
+  /* السماح بظهور زر الفلاتر النشطة في الشاشات الصغيرة */
+  .mobile-header-buttons .mobile-filters-btn.has-filters,
+  .mobile-header-buttons #mobileFiltersBtn.has-filters {
+    display: flex !important;
+  }
+}
+
+/* زر تسجيل الخروج في الهيدر */
+.logout-btn {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+  color: white !important;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex; /* يظهر في الشاشات الصغيرة */
+  align-items: center;
+  gap: 8px;
+}
+
+/* إخفاء زر تسجيل الخروج في الشاشات الكبيرة فقط */
+@media (min-width: 769px) {
+  .logout-btn {
+    display: none !important;
+  }
+}
+
+.logout-btn:hover {
+  background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
 }
 
 /* ===== أزرار الهيدر الجديدة للشاشات الكبيرة ===== */
