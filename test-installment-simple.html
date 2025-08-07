@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار البحث بكلمة "قسط"</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+            direction: rtl;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.success {
+            background: #28a745;
+        }
+        .test-button.success:hover {
+            background: #218838;
+        }
+        .results {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .example {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #bee5eb;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #e83e8c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 اختبار البحث الذكي بكلمة "قسط"</h1>
+            <p>اختبار الميزة الجديدة التي تحاكي اختيار "تاريخ البداية + تواريخ الأقساط"</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 الهدف من الاختبار</h3>
+            <p>عندما تكتب <code>قسط</code> في البحث، يجب أن يقوم النظام بـ:</p>
+            <ul>
+                <li>✅ تفعيل فلتر "تاريخ البداية + تواريخ الأقساط"</li>
+                <li>✅ عرض جميع العقارات مع تطبيق هذا الفلتر</li>
+                <li>✅ حفظ إعدادات الفلتر في <code>window.smartInstallmentFilter</code></li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبار البحث البسيط</h3>
+            <div class="example">
+                <h4>المثال الأساسي:</h4>
+                <input type="text" class="search-input" value="قسط" readonly>
+                <button class="test-button" onclick="testSimpleSearch()">
+                    🔍 اختبار البحث بكلمة "قسط"
+                </button>
+                <p><strong>النتيجة المتوقعة:</strong> تفعيل فلتر الأقساط على جميع البيانات</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 اختبار البحث المتقدم</h3>
+            <div class="example">
+                <h4>مثال بالتواريخ:</h4>
+                <input type="text" class="search-input" value="قسط//01/01/2024+31/12/2024" readonly>
+                <button class="test-button" onclick="testAdvancedSearch()">
+                    🔍 اختبار البحث بالتواريخ
+                </button>
+                <p><strong>النتيجة المتوقعة:</strong> فلترة حسب تواريخ الأقساط في 2024</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>✏️ اختبار مخصص</h3>
+            <input type="text" class="search-input" id="customInput" placeholder="اكتب بحثك هنا (مثل: قسط)">
+            <button class="test-button success" onclick="testCustom()">
+                🚀 اختبار مخصص
+            </button>
+            <button class="test-button" onclick="clearResults()">
+                🧹 مسح النتائج
+            </button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 معلومات الفلتر المطبق</h3>
+            <button class="test-button" onclick="checkFilterStatus()">
+                🔍 فحص حالة الفلتر
+            </button>
+            <button class="test-button" onclick="clearFilter()">
+                ❌ مسح الفلتر
+            </button>
+        </div>
+
+        <div class="results" id="results">
+            <div>📋 نتائج الاختبار ستظهر هنا...</div>
+        </div>
+    </div>
+
+    <!-- تضمين نظام البحث المتقدم -->
+    <script src="advanced-search-system.js"></script>
+    
+    <script>
+        // بيانات تجريبية للاختبار
+        const testData = [
+            {
+                'رقم  الوحدة ': 'UNIT_001',
+                'اسم العقار': 'مجمع السلام',
+                'اسم المستأجر': 'أحمد محمد',
+                'تاريخ البداية': '01/01/2024',
+                'تاريخ القسط الاول': '01/01/2024',
+                'تاريخ القسط الثاني': '01/07/2024'
+            },
+            {
+                'رقم  الوحدة ': 'UNIT_002',
+                'اسم العقار': 'برج النور',
+                'اسم المستأجر': 'فاطمة علي',
+                'تاريخ البداية': '15/01/2024',
+                'تاريخ القسط الاول': '15/01/2024',
+                'تاريخ القسط الثاني': '15/06/2024'
+            },
+            {
+                'رقم  الوحدة ': 'UNIT_003',
+                'اسم العقار': 'مستودعات الشرق',
+                'اسم المستأجر': 'محمد سالم',
+                'تاريخ البداية': '01/06/2024',
+                'تاريخ القسط الاول': '01/06/2024',
+                'تاريخ القسط الثاني': '01/12/2024'
+            },
+            {
+                'رقم  الوحدة ': 'UNIT_004',
+                'اسم العقار': 'مجمع التجارة',
+                'اسم المستأجر': 'سارة أحمد',
+                'تاريخ البداية': '15/01/2024',
+                'تاريخ القسط الاول': '15/01/2024',
+                'تاريخ القسط الثاني': '15/07/2024'
+            },
+            {
+                'رقم  الوحدة ': 'UNIT_005',
+                'اسم العقار': 'أبراج المستقبل',
+                'اسم المستأجر': 'خالد محمود',
+                'تاريخ البداية': '01/03/2025',
+                'تاريخ القسط الاول': '01/03/2025',
+                'تاريخ القسط الثاني': '01/09/2025'
+            }
+        ];
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#74c0fc',
+                success: '#51cf66',
+                error: '#ff6b6b',
+                warning: '#ffd43b'
+            };
+            
+            results.innerHTML += `<div style="color: ${colors[type]}; margin: 3px 0;">[${timestamp}] ${message}</div>`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function testSimpleSearch() {
+            log('🔍 اختبار البحث البسيط بكلمة "قسط"...', 'info');
+            
+            try {
+                if (typeof performAdvancedSearch === 'function') {
+                    const results = performAdvancedSearch('قسط', testData);
+                    
+                    log(`✅ تم تنفيذ البحث بنجاح`, 'success');
+                    log(`📊 عدد النتائج: ${results ? results.length : 'غير محدد'}`, 'info');
+                    
+                    // فحص الفلتر المطبق
+                    if (window.smartInstallmentFilter) {
+                        log(`🔧 تم تطبيق فلتر: ${window.smartInstallmentFilter.dateType}`, 'success');
+                        log(`📋 نوع الفلتر: ${window.smartInstallmentFilter.type}`, 'info');
+                    } else {
+                        log('⚠️ لم يتم تطبيق أي فلتر', 'warning');
+                    }
+                    
+                } else {
+                    log('❌ دالة performAdvancedSearch غير متوفرة', 'error');
+                }
+            } catch (error) {
+                log(`❌ خطأ في الاختبار: ${error.message}`, 'error');
+            }
+        }
+
+        function testAdvancedSearch() {
+            log('🔍 اختبار البحث المتقدم بالتواريخ...', 'info');
+
+            try {
+                const query = 'قسط//01/01/2024+31/12/2024';
+                const results = performAdvancedSearch(query, testData);
+
+                log(`✅ تم تنفيذ البحث المتقدم بنجاح`, 'success');
+                log(`📊 عدد النتائج: ${results ? results.length : 'غير محدد'}`, 'info');
+
+                if (window.smartInstallmentFilter) {
+                    log(`🔧 تم تطبيق فلتر: ${window.smartInstallmentFilter.dateType}`, 'success');
+                    log(`📅 من: ${window.smartInstallmentFilter.startDate} إلى: ${window.smartInstallmentFilter.endDate}`, 'info');
+                }
+
+            } catch (error) {
+                log(`❌ خطأ في الاختبار: ${error.message}`, 'error');
+            }
+        }
+
+        function testCustom() {
+            const input = document.getElementById('customInput');
+            const query = input.value.trim();
+            
+            if (!query) {
+                log('⚠️ يرجى إدخال نص البحث', 'warning');
+                return;
+            }
+            
+            log(`🔍 اختبار مخصص: "${query}"`, 'info');
+            
+            try {
+                const results = performAdvancedSearch(query, testData);
+                
+                log(`✅ تم تنفيذ البحث المخصص`, 'success');
+                log(`📊 عدد النتائج: ${results ? results.length : 'غير محدد'}`, 'info');
+                
+                if (window.smartInstallmentFilter) {
+                    log(`🔧 فلتر مطبق: ${JSON.stringify(window.smartInstallmentFilter)}`, 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ خطأ في الاختبار: ${error.message}`, 'error');
+            }
+        }
+
+        function checkFilterStatus() {
+            log('🔍 فحص حالة الفلتر...', 'info');
+            
+            if (window.smartInstallmentFilter) {
+                log('✅ يوجد فلتر مطبق:', 'success');
+                log(`   النوع: ${window.smartInstallmentFilter.type}`, 'info');
+                log(`   نوع التاريخ: ${window.smartInstallmentFilter.dateType}`, 'info');
+                
+                if (window.smartInstallmentFilter.startDate) {
+                    log(`   من: ${window.smartInstallmentFilter.startDate}`, 'info');
+                    log(`   إلى: ${window.smartInstallmentFilter.endDate}`, 'info');
+                }
+            } else {
+                log('ℹ️ لا يوجد فلتر مطبق حالياً', 'warning');
+            }
+        }
+
+        function clearFilter() {
+            log('🧹 مسح الفلتر...', 'info');
+            window.smartInstallmentFilter = null;
+            log('✅ تم مسح الفلتر', 'success');
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '<div>📋 نتائج الاختبار ستظهر هنا...</div>';
+        }
+
+        // اختبار تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            log('🚀 تم تحميل صفحة الاختبار', 'success');
+            log('💡 جرب الأزرار أعلاه لاختبار الميزة', 'info');
+            log(`📊 تم تحميل ${testData.length} عقار تجريبي`, 'info');
+            
+            // فحص توفر الدالة
+            if (typeof performAdvancedSearch === 'function') {
+                log('✅ دالة performAdvancedSearch متوفرة', 'success');
+            } else {
+                log('❌ دالة performAdvancedSearch غير متوفرة', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

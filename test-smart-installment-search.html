@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار البحث الذكي للأقساط والتواريخ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+
+        .test-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .search-demo {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 2px solid #e9ecef;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .test-button:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .test-button.success {
+            background: #28a745;
+        }
+
+        .test-button.success:hover {
+            background: #218838;
+        }
+
+        .results-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .example-box {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .example-box h4 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+
+        .code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #e83e8c;
+            border: 1px solid #dee2e6;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-list li i {
+            color: #667eea;
+            margin-left: 10px;
+            width: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-calendar-check"></i> البحث الذكي للأقساط والتواريخ</h1>
+            <p>ميزة جديدة تحاكي فتح فلتر الشهر واختيار "البداية + الأقساط" تلقائياً</p>
+        </div>
+
+        <div class="content">
+            <div class="test-section">
+                <h3><i class="fas fa-star"></i> الميزة الجديدة</h3>
+                
+                <div class="status info">
+                    <h4>🎯 كيف تعمل الميزة:</h4>
+                    <p>عندما تكتب <code>قسط</code> في البحث، يقوم النظام تلقائياً بـ:</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-calendar-alt"></i> فتح فلتر التاريخ (محاكاة)</li>
+                        <li><i class="fas fa-check-circle"></i> اختيار نوع التاريخ: "تاريخ البداية + تواريخ الأقساط"</li>
+                        <li><i class="fas fa-filter"></i> تطبيق الفلتر على جميع العقارات</li>
+                        <li><i class="fas fa-eye"></i> عرض العقارات حسب فلتر الأقساط</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-keyboard"></i> أمثلة للتجربة</h3>
+                
+                <div class="example-box">
+                    <h4>🎯 مثال 1: البحث البسيط بكلمة "قسط"</h4>
+                    <div class="search-demo">
+                        <input type="text" class="search-input" value="قسط" readonly>
+                        <button class="test-button" onclick="testSearch('قسط')">
+                            <i class="fas fa-search"></i> اختبار البحث
+                        </button>
+                    </div>
+                    <p><strong>النتيجة:</strong> سيفعل فلتر "تاريخ البداية + تواريخ الأقساط" ويعرض جميع العقارات</p>
+                </div>
+
+                <div class="example-box">
+                    <h4>📅 مثال 2: البحث المتقدم بالتواريخ</h4>
+                    <div class="search-demo">
+                        <input type="text" class="search-input" value="قسط//01/01/2024+31/12/2024" readonly>
+                        <button class="test-button" onclick="testSearch('قسط//01/01/2024+31/12/2024')">
+                            <i class="fas fa-search"></i> اختبار البحث
+                        </button>
+                    </div>
+                    <p><strong>النتيجة:</strong> سيعرض العقارات التي لها أقساط في سنة 2024</p>
+                </div>
+
+                <div class="example-box">
+                    <h4>📅 مثال 3: البحث في فترة محددة</h4>
+                    <div class="search-demo">
+                        <input type="text" class="search-input" value="قسط//01/06/2024+30/06/2024" readonly>
+                        <button class="test-button" onclick="testSearch('قسط//01/06/2024+30/06/2024')">
+                            <i class="fas fa-search"></i> اختبار البحث
+                        </button>
+                    </div>
+                    <p><strong>النتيجة:</strong> سيعرض العقارات التي لها أقساط في يونيو 2024</p>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-edit"></i> اختبار مخصص</h3>
+                
+                <div class="search-demo">
+                    <input type="text" class="search-input" id="customSearch" placeholder="اكتب بحثك المخصص (مثل: قسط أو قسط//15/01/2024+15/12/2024)">
+                    <button class="test-button success" onclick="testCustomSearch()">
+                        <i class="fas fa-rocket"></i> اختبار البحث المخصص
+                    </button>
+                    <button class="test-button" onclick="clearResults()">
+                        <i class="fas fa-eraser"></i> مسح النتائج
+                    </button>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3><i class="fas fa-info-circle"></i> التفاصيل التقنية</h3>
+                
+                <div class="status success">
+                    <h4>✅ الحقول المدعومة:</h4>
+                    <p>يبحث النظام في جميع حقول التواريخ التالية:</p>
+                    <ul style="margin-top: 10px; padding-right: 20px;">
+                        <li>تاريخ القسط الأول إلى العاشر</li>
+                        <li>تاريخ نهاية القسط</li>
+                        <li>تاريخ البداية</li>
+                        <li>تاريخ النهاية</li>
+                    </ul>
+                </div>
+
+                <div class="status warning">
+                    <h4>⚠️ صيغ التاريخ المدعومة:</h4>
+                    <ul style="margin-top: 10px; padding-right: 20px;">
+                        <li><code>dd/mm/yyyy</code> (مثل: 15/03/2024)</li>
+                        <li><code>yyyy-mm-dd</code> (مثل: 2024-03-15)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="results-container" id="resultsContainer">
+                <div>📋 نتائج الاختبار ستظهر هنا...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تضمين الملفات المطلوبة -->
+    <script src="advanced-search-system.js"></script>
+    
+    <script>
+        // بيانات تجريبية للاختبار
+        const testData = [
+            {
+                'رقم  الوحدة ': 'UNIT_001',
+                'اسم العقار': 'مجمع السلام',
+                'المدينة': 'الرياض',
+                'اسم المستأجر': 'أحمد محمد',
+                'تاريخ البداية': '01/01/2024',
+                'تاريخ النهاية': '31/12/2024',
+                'تاريخ القسط الاول': '01/01/2024',
+                'تاريخ القسط الثاني': '01/07/2024',
+                'تاريخ نهاية القسط': '01/07/2024'
+            },
+            {
+                'رقم  الوحدة ': 'UNIT_002',
+                'اسم العقار': 'برج النور',
+                'المدينة': 'جدة',
+                'اسم المستأجر': 'فاطمة علي',
+                'تاريخ البداية': '15/06/2024',
+                'تاريخ النهاية': '14/06/2025',
+                'تاريخ القسط الاول': '15/06/2024',
+                'تاريخ القسط الثاني': '15/12/2024',
+                'تاريخ نهاية القسط': '15/12/2024'
+            },
+            {
+                'رقم  الوحدة ': 'UNIT_003',
+                'اسم العقار': 'مستودعات الشرق',
+                'المدينة': 'الدمام',
+                'اسم المستأجر': 'محمد سالم',
+                'تاريخ البداية': '01/03/2025',
+                'تاريخ النهاية': '28/02/2026',
+                'تاريخ القسط الاول': '01/03/2025',
+                'تاريخ القسط الثاني': '01/09/2025',
+                'تاريخ نهاية القسط': '01/09/2025'
+            }
+        ];
+
+        function log(message, type = 'info') {
+            const container = document.getElementById('resultsContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : type === 'warning' ? '#ffd43b' : '#74c0fc';
+            
+            container.innerHTML += `<div style="color: ${color}; margin: 5px 0;">[${timestamp}] ${message}</div>`;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function testSearch(query) {
+            log(`🔍 اختبار البحث: "${query}"`, 'info');
+            
+            try {
+                if (typeof performAdvancedSearch === 'function') {
+                    const results = performAdvancedSearch(query, testData);
+                    
+                    log(`✅ تم العثور على ${results.length} نتيجة`, 'success');
+                    
+                    if (results.length > 0) {
+                        log('📋 النتائج:', 'info');
+                        results.forEach((item, index) => {
+                            log(`   ${index + 1}. ${item['اسم العقار']} - ${item['رقم  الوحدة ']} - ${item['اسم المستأجر']}`, 'success');
+                        });
+                    } else {
+                        log('ℹ️ لا توجد نتائج تطابق البحث', 'warning');
+                    }
+                    
+                    // عرض معلومات الفلتر المطبق
+                    if (window.smartInstallmentFilter) {
+                        log(`🔧 تم تطبيق فلتر ذكي: ${window.smartInstallmentFilter.dateType}`, 'info');
+                        log(`📅 من: ${window.smartInstallmentFilter.startDate} إلى: ${window.smartInstallmentFilter.endDate}`, 'info');
+                    }
+                    
+                } else {
+                    log('❌ دالة performAdvancedSearch غير متوفرة', 'error');
+                }
+            } catch (error) {
+                log(`❌ خطأ في البحث: ${error.message}`, 'error');
+            }
+        }
+
+        function testCustomSearch() {
+            const customInput = document.getElementById('customSearch');
+            const query = customInput.value.trim();
+            
+            if (!query) {
+                log('⚠️ يرجى إدخال نص البحث', 'warning');
+                return;
+            }
+            
+            testSearch(query);
+        }
+
+        function clearResults() {
+            document.getElementById('resultsContainer').innerHTML = '<div>📋 نتائج الاختبار ستظهر هنا...</div>';
+        }
+
+        // اختبار تلقائي عند تحميل الصفحة
+        window.addEventListener('load', () => {
+            log('🚀 تم تحميل صفحة اختبار البحث الذكي للأقساط', 'success');
+            log('💡 جرب الأمثلة أعلاه أو اكتب بحثك المخصص', 'info');
+            log(`📊 تم تحميل ${testData.length} عقار تجريبي للاختبار`, 'info');
+        });
+    </script>
+</body>
+</html>

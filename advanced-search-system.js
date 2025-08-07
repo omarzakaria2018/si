@@ -512,6 +512,12 @@ function performAdvancedSearch(searchQuery, data) {
     const query = searchQuery.trim();
     console.log(`🚀 بدء البحث المتقدم: "${query}"`);
 
+    // فحص البحث الذكي للأقساط
+    const installmentSearchResult = processInstallmentSearch(query, data);
+    if (installmentSearchResult) {
+        return installmentSearchResult;
+    }
+
     // تحديد نوع البحث وتنفيذه
     let results;
 
@@ -557,6 +563,183 @@ function performAdvancedSearch(searchQuery, data) {
     }
 
     return results;
+}
+
+// دالة البحث الذكي للأقساط
+function processInstallmentSearch(query, data) {
+    const trimmedQuery = query.trim().toLowerCase();
+
+    // فحص البحث البسيط بكلمة "قسط"
+    if (trimmedQuery === 'قسط') {
+        console.log('🎯 البحث الذكي: تفعيل فلتر "تاريخ البداية + تواريخ الأقساط"');
+
+        // تطبيق فلتر نوع التاريخ تلقائياً
+        applyInstallmentTypeFilter();
+
+        // إرجاع جميع البيانات مع تطبيق الفلتر
+        console.log(`✅ تم تفعيل فلتر الأقساط على ${data.length} عقار`);
+        return data;
+    }
+
+    // فحص النمط المتقدم: قسط//تاريخ1+تاريخ2 (للاستخدام المستقبلي)
+    const installmentDatePattern = /^قسط\/\/(.+)\+(.+)$/;
+    const dateMatch = query.match(installmentDatePattern);
+
+    if (dateMatch) {
+        const startDate = dateMatch[1].trim();
+        const endDate = dateMatch[2].trim();
+
+        console.log(`🎯 البحث الذكي للأقساط بالتواريخ: من ${startDate} إلى ${endDate}`);
+
+        // تطبيق فلتر التاريخ تلقائياً
+        applyInstallmentDateFilter(startDate, endDate);
+
+        // فلترة البيانات حسب تواريخ الأقساط
+        const results = data.filter(property => {
+            return matchesInstallmentDateRange(property, startDate, endDate);
+        });
+
+        console.log(`✅ نتائج البحث الذكي للأقساط بالتواريخ: ${results.length} عقار`);
+        return results;
+    }
+
+    return null; // ليس بحث أقساط
+}
+
+// دالة فحص تطابق العقار مع نطاق تواريخ الأقساط
+function matchesInstallmentDateRange(property, startDate, endDate) {
+    try {
+        const start = parseSearchDate(startDate);
+        const end = parseSearchDate(endDate);
+
+        if (!start || !end) {
+            console.warn(`⚠️ تواريخ غير صالحة: ${startDate} أو ${endDate}`);
+            return false;
+        }
+
+        // البحث في جميع تواريخ الأقساط
+        const installmentDateFields = [
+            'تاريخ القسط الاول',
+            'تاريخ القسط الثاني',
+            'تاريخ القسط الثالث',
+            'تاريخ القسط الرابع',
+            'تاريخ القسط الخامس',
+            'تاريخ القسط السادس',
+            'تاريخ القسط السابع',
+            'تاريخ القسط الثامن',
+            'تاريخ القسط التاسع',
+            'تاريخ القسط العاشر',
+            'تاريخ نهاية القسط',
+            'تاريخ البداية',
+            'تاريخ النهاية'
+        ];
+
+        for (const field of installmentDateFields) {
+            const dateValue = property[field];
+            if (dateValue) {
+                const propertyDate = parseSearchDate(dateValue);
+                if (propertyDate && propertyDate >= start && propertyDate <= end) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+
+    } catch (error) {
+        console.error('❌ خطأ في فحص تطابق التاريخ:', error);
+        return false;
+    }
+}
+
+// دالة تحليل التاريخ من البحث
+function parseSearchDate(dateStr) {
+    if (!dateStr) return null;
+
+    try {
+        // دعم صيغ مختلفة للتاريخ
+        let cleanDate = dateStr.toString().trim();
+
+        // إذا كان بصيغة dd/mm/yyyy
+        if (cleanDate.includes('/')) {
+            const parts = cleanDate.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0]);
+                const month = parseInt(parts[1]) - 1; // JavaScript months are 0-based
+                const year = parseInt(parts[2]);
+                return new Date(year, month, day);
+            }
+        }
+
+        // إذا كان بصيغة yyyy-mm-dd
+        if (cleanDate.includes('-')) {
+            return new Date(cleanDate);
+        }
+
+        // محاولة تحليل مباشر
+        const date = new Date(cleanDate);
+        return isNaN(date.getTime()) ? null : date;
+
+    } catch (error) {
+        console.error('❌ خطأ في تحليل التاريخ:', dateStr, error);
+        return null;
+    }
+}
+
+// دالة تطبيق فلتر نوع التاريخ (محاكاة اختيار "تاريخ البداية + تواريخ الأقساط")
+function applyInstallmentTypeFilter() {
+    console.log('🔧 تطبيق فلتر نوع التاريخ: "تاريخ البداية + تواريخ الأقساط"');
+
+    try {
+        // محاكاة اختيار نوع التاريخ من فلتر التاريخ
+        const filterData = {
+            type: 'installment_type',
+            dateType: 'تاريخ البداية + تواريخ الأقساط',
+            active: true
+        };
+
+        // حفظ بيانات الفلتر للاستخدام لاحقاً
+        window.smartInstallmentFilter = filterData;
+
+        // تطبيق الفلتر على واجهة المستخدم إذا كانت متوفرة
+        if (typeof applyDateTypeFilter === 'function') {
+            applyDateTypeFilter('تاريخ البداية + تواريخ الأقساط');
+        }
+
+        console.log('✅ تم تفعيل فلتر "تاريخ البداية + تواريخ الأقساط"');
+
+    } catch (error) {
+        console.error('❌ خطأ في تطبيق فلتر نوع التاريخ:', error);
+    }
+}
+
+// دالة تطبيق فلتر التاريخ تلقائياً (محاكاة فتح فلتر الشهر)
+function applyInstallmentDateFilter(startDate, endDate) {
+    console.log(`🔧 تطبيق فلتر التاريخ تلقائياً: ${startDate} - ${endDate}`);
+
+    try {
+        // محاكاة فتح فلتر الشهر
+        if (typeof showMonthFilterModal === 'function') {
+            // لا نفتح النافذة فعلياً، فقط نطبق الفلتر
+            console.log('📅 محاكاة فتح فلتر الشهر...');
+        }
+
+        // تطبيق الفلتر على النظام
+        const filterData = {
+            type: 'installment_range', // نوع جديد للبحث الذكي
+            startDate: startDate,
+            endDate: endDate,
+            dateType: 'تاريخ البداية + تواريخ الأقساط' // محاكاة اختيار نوع التاريخ
+        };
+
+        // حفظ بيانات الفلتر للاستخدام لاحقاً
+        window.smartInstallmentFilter = filterData;
+
+        console.log('✅ تم تطبيق فلتر التاريخ الذكي');
+
+    } catch (error) {
+        console.error('❌ خطأ في تطبيق فلتر التاريخ:', error);
+    }
 }
 
 // دالة البحث مع الاستبعاد المتقدم

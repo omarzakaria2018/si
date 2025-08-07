@@ -2918,8 +2918,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // إظهار شاشة التحميل البلورية
-    showCrystalLoading();
+    // إظهار شاشة التحميل البلورية - تم تعطيلها
+    // showCrystalLoading();
 
     // مسح حقول البحث عند تحميل الصفحة
     setTimeout(() => {
@@ -2956,43 +2956,259 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 100);
 
-    // استعادة البيانات من localStorage إذا كانت متوفرة
-    restoreDataFromLocalStorage();
+    // فحص ما إذا كان هذا أول فتح في اليوم
+    const today = new Date().toDateString();
+    const lastOpenDate = localStorage.getItem('lastOpenDate');
+    const isFirstOpenToday = lastOpenDate !== today;
 
-    // Initialize data loading (Supabase or JSON fallback)
-    console.log('🚀 بدء تحميل البيانات...');
-
-    // إضافة تحميل مباشر للبيانات من JSON إذا لم تكن موجودة
-    if (!properties || properties.length === 0) {
-        console.log('🔄 تحميل البيانات من data.json...');
-        fetch('data.json')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log(`✅ تم تحميل ${data.length} عقار من data.json`);
-                properties = data;
-
-                // تهيئة التطبيق بعد تحميل البيانات
-                setTimeout(() => {
-                    initializeApp();
-                    renderData();
-                }, 100);
-            })
-            .catch(error => {
-                console.error('❌ خطأ في تحميل البيانات من data.json:', error);
-
-                // إنشاء بيانات تجريبية كحل أخير
-                createSampleData();
-                setTimeout(() => {
-                    initializeApp();
-                    renderData();
-                }, 100);
-            });
+    if (isFirstOpenToday) {
+        console.log('🌅 أول فتح للتطبيق اليوم - عرض شاشة التحميل');
+        // حفظ تاريخ اليوم
+        localStorage.setItem('lastOpenDate', today);
+        // إظهار شاشة التحميل
+        showCrystalLoading();
+    } else {
+        console.log('🔄 ليس أول فتح اليوم - تخطي شاشة التحميل');
     }
+
+    // إضافة إشعار منبثق لتحميل المحتوى
+    console.log('🚀 محاولة عرض إشعار التحميل...');
+    showContentLoadingNotification();
+
+    // اختبار الإشعار بعد ثانيتين
+    setTimeout(() => {
+        const testNotification = document.getElementById('contentLoadingNotification');
+        if (testNotification) {
+            console.log('✅ الإشعار موجود في الصفحة');
+        } else {
+            console.error('❌ الإشعار غير موجود - هناك مشكلة');
+        }
+    }, 2000);
+
+    // نظام مزامنة ذكي: عرض فوري + تحديث شامل في الخلفية
+    console.log('🚀 بدء النظام الذكي للمزامنة...');
+
+    // الخطوة 1: تحميل البيانات المحلية فوراً للعرض السريع
+    console.log('⚡ تحميل البيانات المحلية للعرض الفوري...');
+    const localData = localStorage.getItem('properties');
+    let hasLocalData = false;
+    let localDataTimestamp = localStorage.getItem('dataTimestamp');
+
+    if (localData) {
+        try {
+            const parsedData = JSON.parse(localData);
+            if (Array.isArray(parsedData) && parsedData.length > 0) {
+                properties = parsedData;
+                hasLocalData = true;
+                console.log(`✅ تم تحميل ${properties.length} عقار من البيانات المحلية للعرض الفوري`);
+                console.log(`📅 آخر تحديث للبيانات المحلية: ${localDataTimestamp ? new Date(parseInt(localDataTimestamp)).toLocaleString('ar-SA') : 'غير معروف'}`);
+
+                // عرض البيانات المحلية فوراً
+                setTimeout(() => {
+                    initializeApp();
+                    renderData();
+                    window.dataLoadingCompleted = true;
+                    console.log('⚡ تم عرض البيانات المحلية فوراً - بدون انتظار!');
+
+                    // إخفاء شاشة التحميل إذا كانت ظاهرة (أول فتح اليوم)
+                    if (isFirstOpenToday) {
+                        setTimeout(() => {
+                            hideCrystalLoading();
+                            console.log('🔮 تم إخفاء شاشة التحميل بعد عرض البيانات المحلية');
+                        }, 1000); // انتظار ثانية واحدة لإظهار شاشة التحميل
+                    } else {
+                        // إخفاء مؤشرات التحميل في حقول البحث
+                        hideSearchLoadingIndicators();
+                    }
+
+                    // إخفاء إشعار تحميل المحتوى المنبثق بعد 8 ثوانٍ
+                    hideContentLoadingNotification(8000);
+
+                    // المزامنة في الخلفية بصمت
+                }, 50);
+            }
+        } catch (e) {
+            console.warn('⚠️ خطأ في تحليل البيانات المحلية:', e);
+        }
+    }
+
+    // الخطوة 2: المزامنة الشاملة في الخلفية (دائماً)
+    console.log('🔄 بدء المزامنة الشاملة في الخلفية...');
+
+    // دالة للمزامنة الذكية مع مقارنة البيانات
+    const performSmartSync = (newData, source) => {
+        console.log(`🔄 مزامنة ذكية من ${source}...`);
+
+        if (!newData || newData.length === 0) {
+            console.warn(`⚠️ لا توجد بيانات من ${source}`);
+            return;
+        }
+
+        // حفظ البيانات الجديدة محلياً دائماً (لضمان التحديث)
+        localStorage.setItem('properties', JSON.stringify(newData));
+        localStorage.setItem('dataTimestamp', Date.now().toString());
+        console.log(`💾 تم حفظ ${newData.length} عقار محلياً من ${source}`);
+
+        // مقارنة البيانات لتحديد نوع التحديث المطلوب
+        let updateType = 'none';
+        let changesCount = 0;
+
+        if (!hasLocalData) {
+            updateType = 'full';
+            changesCount = newData.length;
+            console.log(`🆕 تحديث كامل: ${changesCount} عقار جديد`);
+        } else {
+            // مقارنة تفصيلية للبيانات
+            const oldDataMap = new Map(properties.map(p => [`${p['اسم العقار']}-${p['رقم  الوحدة ']}`, JSON.stringify(p)]));
+            const newDataMap = new Map(newData.map(p => [`${p['اسم العقار']}-${p['رقم  الوحدة ']}`, JSON.stringify(p)]));
+
+            // حساب التغييرات
+            const added = [...newDataMap.keys()].filter(key => !oldDataMap.has(key));
+            const modified = [...newDataMap.keys()].filter(key =>
+                oldDataMap.has(key) && oldDataMap.get(key) !== newDataMap.get(key)
+            );
+            const removed = [...oldDataMap.keys()].filter(key => !newDataMap.has(key));
+
+            changesCount = added.length + modified.length + removed.length;
+
+            if (changesCount > 0) {
+                updateType = 'partial';
+                console.log(`🔄 تحديث جزئي: ${added.length} جديد، ${modified.length} معدل، ${removed.length} محذوف`);
+            } else {
+                updateType = 'none';
+                console.log(`✅ البيانات محدثة بالفعل من ${source}`);
+            }
+        }
+
+        // تطبيق التحديث حسب النوع
+        if (updateType !== 'none') {
+            properties = newData;
+
+            // معالجة البيانات
+            if (typeof fixCorruptedDates === 'function') {
+                fixCorruptedDates();
+            }
+            if (typeof recalculateAllTotals === 'function') {
+                recalculateAllTotals();
+            }
+
+            // تحديث الواجهة بناءً على نوع التحديث
+            if (updateType === 'full' || changesCount > 10) {
+                // تحديث كامل للواجهة
+                setTimeout(() => {
+                    initializeApp();
+                    renderData();
+
+                    // إخفاء شاشة التحميل إذا كانت ظاهرة
+                    if (isFirstOpenToday) {
+                        hideCrystalLoading();
+                        console.log('🔮 تم إخفاء شاشة التحميل بعد التحديث الكامل');
+                    } else {
+                        // إخفاء مؤشرات التحميل في حقول البحث
+                        hideSearchLoadingIndicators();
+                    }
+
+                    // إخفاء إشعار تحميل المحتوى المنبثق بعد 6 ثوانٍ
+                    hideContentLoadingNotification(6000);
+
+                    console.log(`✅ تحديث كامل مكتمل من ${source} (${changesCount} عنصر)`);
+                }, 100);
+            } else {
+                // تحديث صامت للواجهة (للتغييرات الصغيرة)
+                setTimeout(() => {
+                    renderData(); // تحديث العرض فقط بدون إعادة تهيئة كاملة
+
+                    // إخفاء شاشة التحميل إذا كانت ظاهرة
+                    if (isFirstOpenToday) {
+                        hideCrystalLoading();
+                        console.log('🔮 تم إخفاء شاشة التحميل بعد التحديث الصامت');
+                    } else {
+                        // إخفاء مؤشرات التحميل في حقول البحث
+                        hideSearchLoadingIndicators();
+                    }
+
+                    // إخفاء إشعار تحميل المحتوى المنبثق بعد 6 ثوانٍ
+                    hideContentLoadingNotification(6000);
+
+                    console.log(`✅ تحديث صامت مكتمل من ${source} (${changesCount} عنصر)`);
+                }, 100);
+            }
+
+            // تهيئة الأنظمة الإضافية
+            setTimeout(() => {
+                if (typeof initializeHeaderButtons === 'function') {
+                    initializeHeaderButtons();
+                }
+                if (typeof initializeAttachmentsSystem === 'function') {
+                    initializeAttachmentsSystem();
+                }
+                if (typeof updateMobilePropertyName === 'function') {
+                    updateMobilePropertyName();
+                }
+            }, 200);
+        } else {
+            console.log(`✅ البيانات محدثة بالفعل من ${source}`);
+        }
+    };
+
+    // محاولة المزامنة مع Supabase أولاً
+    initializeDataLoading()
+        .then(() => {
+            if (properties && properties.length > 0) {
+                performSmartSync(properties, 'Supabase');
+            } else {
+                console.warn('⚠️ لا توجد بيانات من Supabase');
+                throw new Error('No data from Supabase');
+            }
+        })
+        .catch(error => {
+            console.warn('⚠️ فشل تحميل من Supabase، محاولة JSON...', error);
+
+            // البديل: تحميل من JSON
+            fetch('data.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(`✅ تم تحميل ${data.length} عقار من data.json`);
+                    performSmartSync(data, 'JSON');
+                })
+                .catch(jsonError => {
+                    console.warn('⚠️ فشل تحميل من JSON أيضاً:', jsonError);
+                    hideSyncIndicator();
+
+                    // إذا لم تكن هناك بيانات محلية، إنشاء بيانات تجريبية
+                    if (!hasLocalData) {
+                        console.log('🔧 إنشاء بيانات تجريبية...');
+                        createSampleData();
+                        setTimeout(() => {
+                            initializeApp();
+                            renderData();
+                            window.dataLoadingCompleted = true;
+
+                            // إخفاء شاشة التحميل إذا كانت ظاهرة
+                            if (isFirstOpenToday) {
+                                hideCrystalLoading();
+                                console.log('🔮 تم إخفاء شاشة التحميل بعد عرض البيانات التجريبية');
+                            } else {
+                                // إخفاء مؤشرات التحميل في حقول البحث
+                                hideSearchLoadingIndicators();
+                            }
+
+                            // إخفاء إشعار تحميل المحتوى المنبثق بعد 6 ثوانٍ
+                            hideContentLoadingNotification(6000);
+
+                            // تم تحميل البيانات التجريبية بصمت
+                            console.log('🎉 تم عرض البيانات التجريبية');
+                        }, 100);
+                    } else {
+                        console.log('⚠️ فشل في المزامنة - تم الاعتماد على البيانات المحلية');
+                    }
+                });
+        });
 
     // فحص البيانات للتأكد من الحفظ الدائم
     setTimeout(() => {
@@ -3049,71 +3265,80 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     }, 1000);
 
-    initializeDataLoading()
-        .then(() => {
-            console.log(`✅ تم تحميل ${properties ? properties.length : 0} عقار`);
+    // تم نقل تحميل البيانات إلى الأعلى لضمان تحميل البيانات الحديثة دائماً
 
-            // إصلاح التواريخ المحفوظة بشكل خاطئ
-            fixCorruptedDates();
+    // تم إزالة دوال إشعارات المزامنة - النظام يعمل بصمت
 
-            // اختبار معالجة التواريخ
-            testDateHandling();
+    // دوال مؤشرات التحميل في حقول البحث
+    function showSearchLoadingIndicators() {
+        console.log('🔄 عرض مؤشرات التحميل في حقول البحث...');
 
-            // إعادة حساب الإجماليات الفارغة
-            recalculateAllTotals();
+        // قائمة حقول البحث في التطبيق
+        const searchFields = [
+            { id: 'globalSearch', placeholder: 'برجاء الانتظار جاري التحميل...' },
+            { id: 'propertySearch', placeholder: 'برجاء الانتظار جاري التحميل...' }
+        ];
 
-            initializeApp();
+        searchFields.forEach(field => {
+            const searchInput = document.getElementById(field.id);
+            if (searchInput) {
+                // حفظ النص الأصلي
+                searchInput.dataset.originalPlaceholder = searchInput.placeholder;
 
-            // تهيئة أزرار الهيدر
-            setTimeout(() => {
-                initializeHeaderButtons();
-            }, 100);
+                // تعيين مؤشر التحميل
+                searchInput.placeholder = field.placeholder;
+                searchInput.disabled = true;
+                searchInput.style.cssText += `
+                    background: linear-gradient(90deg, #f8f9fa 25%, #e9ecef 50%, #f8f9fa 75%);
+                    background-size: 200% 100%;
+                    animation: searchLoading 1.5s ease-in-out infinite;
+                    color: #6c757d;
+                    cursor: not-allowed;
+                `;
 
-            // Initialize Supabase attachments system
-            initializeAttachmentsSystem();
-
-            // تحديث عرض اسم العقار في الجوالات
-            setTimeout(() => {
-                updateMobilePropertyName();
-            }, 500);
-
-            console.log('🎉 تم تهيئة التطبيق بنجاح');
-            console.log('💰 ميزة الإجمالي الدائم مفعلة: المبلغ المكتوب يدوياً لن يتم تغييره أبداً');
-            console.log('⚡ التحديث الفوري مفعل: الإجمالي يظهر فوراً بدون reload');
-            console.log('🎨 تم تمييز اسم المستأجر بتصميم متجاوب (أصغر في الحاسوب + أكبر في الهاتف)');
-            console.log('🗑️ تم حذف وصف الإجمالي المزعج');
-            console.log('🧪 لاختبار الميزة: testPermanentTotal() أو testInstantUpdate()');
-        })
-        .catch(error => {
-            console.error('❌ خطأ في تحميل البيانات:', error);
-
-            // Fallback to JSON if everything fails
-            console.log('🔄 محاولة تحميل البيانات من JSON...');
-            fetch('data.json')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log(`✅ تم تحميل ${data.length} عقار من JSON`);
-                    properties = data;
-                    recalculateAllTotals();
-                    initializeApp();
-                    setTimeout(() => {
-                        initializeHeaderButtons();
-                    }, 100);
-                })
-                .catch(jsonError => {
-                    console.error('❌ خطأ في تحميل البيانات من JSON:', jsonError);
-
-                    // إنشاء بيانات تجريبية إذا فشل كل شيء
-                    console.log('🔧 إنشاء بيانات تجريبية...');
-                    createSampleData();
-                    initializeApp();
-                });
+                console.log(`✅ تم تفعيل مؤشر التحميل لحقل: ${field.id}`);
+            }
         });
+
+        // إضافة CSS للتحريك إذا لم يكن موجوداً
+        if (!document.getElementById('searchLoadingCSS')) {
+            const style = document.createElement('style');
+            style.id = 'searchLoadingCSS';
+            style.textContent = `
+                @keyframes searchLoading {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // إخفاء مؤشرات التحميل بعد 90 ثانية (3x)
+        setTimeout(() => {
+            hideSearchLoadingIndicators();
+        }, 90000);
+    }
+
+    function hideSearchLoadingIndicators() {
+        console.log('✅ إخفاء مؤشرات التحميل من حقول البحث...');
+
+        const searchFields = ['globalSearch', 'propertySearch'];
+
+        searchFields.forEach(fieldId => {
+            const searchInput = document.getElementById(fieldId);
+            if (searchInput && searchInput.dataset.originalPlaceholder) {
+                // استعادة النص الأصلي
+                searchInput.placeholder = searchInput.dataset.originalPlaceholder;
+                searchInput.disabled = false;
+                searchInput.style.cssText = searchInput.style.cssText.replace(/background:.*?;|animation:.*?;|color:.*?;|cursor:.*?;/g, '');
+
+                // إزالة البيانات المؤقتة
+                delete searchInput.dataset.originalPlaceholder;
+
+                console.log(`✅ تم إخفاء مؤشر التحميل من حقل: ${fieldId}`);
+            }
+        });
+    }
 });
 
 // إنشاء بيانات تجريبية في حالة فشل تحميل البيانات
@@ -3635,27 +3860,14 @@ function initializeApp() {
     // تحميل إعداد الترتيب
     loadSortOrderSetting();
 
-    // التحقق من وجود البيانات
+    // التحقق من وجود البيانات - تم تعديل الأولوية لضمان تحميل البيانات الحديثة
     if (!properties || properties.length === 0) {
         console.warn('⚠️ لا توجد بيانات للعرض في initializeApp');
+        console.log('🔄 سيتم تحميل البيانات الحديثة من المصادر الخارجية...');
 
-        // محاولة تحميل البيانات من localStorage
-        const localData = localStorage.getItem('properties');
-        if (localData) {
-            try {
-                properties = JSON.parse(localData);
-                console.log(`✅ تم تحميل ${properties.length} عقار من localStorage`);
-            } catch (e) {
-                console.error('❌ خطأ في تحليل بيانات localStorage:', e);
-                properties = [];
-            }
-        }
-
-        // إذا لم تكن هناك بيانات، إنشاء بيانات تجريبية
-        if (!properties || properties.length === 0) {
-            console.log('🔧 إنشاء بيانات تجريبية...');
-            createSampleData();
-        }
+        // لا نحمل من localStorage هنا - سيتم التحميل من المصادر الحديثة في DOMContentLoaded
+        // هذا يضمن عرض البيانات الحديثة دائماً
+        properties = [];
     }
 
     console.log(`📊 عدد العقارات المتاحة: ${properties ? properties.length : 0}`);
@@ -6932,24 +7144,65 @@ function clearDateFilter() {
 
 // تعديل دالة تصفية البيانات
 function renderData() {
-  // التحقق من وجود البيانات
+  // التحقق من وجود البيانات مع تحسين للتحميل الذكي
   if (!properties || properties.length === 0) {
     console.warn('⚠️ لا توجد بيانات للعرض');
     const container = document.getElementById('content');
     if (container) {
-      container.innerHTML = `
-        <div style="text-align: center; padding: 3rem; color: #666;">
-          <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; color: #f39c12;"></i>
-          <h3>لا توجد بيانات للعرض</h3>
-          <p>يرجى التحقق من اتصال الإنترنت أو إعادة تحميل الصفحة</p>
-          <button onclick="location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 1rem;">
-            إعادة تحميل الصفحة
-          </button>
-        </div>
-      `;
+      // فحص ما إذا كان التطبيق في مرحلة التحميل الأولي
+      const isInitialLoad = !window.dataLoadingCompleted;
+
+      if (isInitialLoad) {
+        // عرض مؤشر تحميل بسيط بدلاً من رسالة "لا توجد بيانات"
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3rem; color: #666;">
+            <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem;"></div>
+            <h3>جاري تحميل البيانات...</h3>
+            <p>يرجى الانتظار قليلاً</p>
+            <style>
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            </style>
+          </div>
+        `;
+
+        // تعيين مهلة زمنية للتحقق من اكتمال التحميل
+        setTimeout(() => {
+          if (!properties || properties.length === 0) {
+            // إذا لم تُحمل البيانات بعد 10 ثوانٍ، عرض رسالة الخطأ
+            container.innerHTML = `
+              <div style="text-align: center; padding: 3rem; color: #666;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; color: #f39c12;"></i>
+                <h3>لا توجد بيانات للعرض</h3>
+                <p>يرجى التحقق من اتصال الإنترنت أو إعادة تحميل الصفحة</p>
+                <button onclick="location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 1rem;">
+                  إعادة تحميل الصفحة
+                </button>
+              </div>
+            `;
+          }
+        }, 10000);
+      } else {
+        // إذا اكتمل التحميل ولا توجد بيانات، عرض رسالة الخطأ
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3rem; color: #666;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem; color: #f39c12;"></i>
+            <h3>لا توجد بيانات للعرض</h3>
+            <p>يرجى التحقق من اتصال الإنترنت أو إعادة تحميل الصفحة</p>
+            <button onclick="location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 1rem;">
+              إعادة تحميل الصفحة
+            </button>
+          </div>
+        `;
+      }
     }
     return;
   }
+
+  // تعيين علامة اكتمال التحميل
+  window.dataLoadingCompleted = true;
 
   let filteredData = properties;
   console.log(`🔍 renderData: البيانات الأصلية: ${properties.length} وحدة`);
@@ -9993,7 +10246,7 @@ function showMonthFilterModal() {
                                 <div style="text-align: center; border-top: 1px solid #e9ecef; padding-top: 25px;">
                                     <button onclick="confirmYearsSelectionWithEffect(this)" style="background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 18px 25px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 3px 12px rgba(220, 53, 69, 0.4); position: relative; overflow: hidden;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 5px 20px rgba(220, 53, 69, 0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 12px rgba(220, 53, 69, 0.4)'">
                                         <i class="fas fa-check" style="margin-left: 8px; font-size: 1.1rem;"></i>
-                                        <span style="font-weight: 700;">تم اختيار السنوات</span>
+                                       
                                     </button>
                                 </div>
                             </div>
@@ -10002,7 +10255,7 @@ function showMonthFilterModal() {
                 </div>
 
                 <!-- أزرار التحكم -->
-                <div class="filter-actions" style="display: flex; gap: 15px; margin-top: 30px; padding-top: 25px; border-top: 2px solid #e9ecef; justify-content: center;">
+                <div class="filter-actions" style="display: flex; gap: 15px; margin-top: 130px; padding-top: 25px; border-top: 2px solid #e9ecef; justify-content: center;">
                     <button onclick="applyMonthFilterModal()" class="btn-apply" style="flex: 1; max-width: 200px; background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; padding: 16px 24px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
                         <i class="fas fa-check-circle"></i>
                         <span>تطبيق الفلتر</span>
@@ -10013,9 +10266,81 @@ function showMonthFilterModal() {
                     </button>
                     <button onclick="closeMonthFilterModal();" class="btn-close" style="flex: 1; max-width: 150px; background: linear-gradient(135deg, #dc3545, #c82333); color: white; border: none; padding: 16px 24px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);">
                         <i class="fas fa-times-circle"></i>
-                        <span>إغلاق</span>
+                      
                     </button>
                 </div>
+
+                <style>
+                    /* تخطيط الأزرار للجوال */
+                    @media (max-width: 768px) {
+                        .filter-actions {
+                            gap: 8px !important;
+                            flex-wrap: nowrap !important;
+                            padding: 15px 10px !important;
+                        }
+
+                        .filter-actions .btn-apply,
+                        .filter-actions .btn-clear,
+                        .filter-actions .btn-close {
+                            flex: 1 !important;
+                            min-width: 0 !important;
+                            max-width: none !important;
+                            padding: 12px 8px !important;
+                            font-size: 0.85rem !important;
+                            gap: 5px !important;
+                        }
+
+                        .filter-actions .btn-apply span,
+                        .filter-actions .btn-clear span,
+                        .filter-actions .btn-close span {
+                            display: none;
+                        }
+
+                        .filter-actions .btn-apply i,
+                        .filter-actions .btn-clear i,
+                        .filter-actions .btn-close i {
+                            font-size: 1.2rem;
+                        }
+
+                        /* إضافة تلميحات للأيقونات */
+                        .filter-actions .btn-apply::after {
+                            content: "تطبيق";
+                            position: absolute;
+                            bottom: -25px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            font-size: 0.7rem;
+                            color: #666;
+                            white-space: nowrap;
+                        }
+
+                        .filter-actions .btn-clear::after {
+                            content: "مسح";
+                            position: absolute;
+                            bottom: -25px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            font-size: 0.7rem;
+                            color: #666;
+                            white-space: nowrap;
+                        }
+
+                        .filter-actions .btn-close::after {
+                            content: "إغلاق";
+                            position: absolute;
+                            bottom: -25px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            font-size: 0.7rem;
+                            color: #666;
+                            white-space: nowrap;
+                        }
+
+                        .filter-actions button {
+                            position: relative;
+                        }
+                    }
+                </style>
 
         </div>
     </div>`;
@@ -14456,6 +14781,9 @@ async function handleFilesEnhanced(files, city, propertyName, notes = '') {
     if (cloudUploads > 0) {
         console.log(`🔄 تم رفع ${cloudUploads} ملف للسحابة - سيتم تحديث جميع الأجهزة المتصلة`);
         showConnectionNotification(`تم مزامنة ${cloudUploads} ملف عبر الأجهزة`, 'success');
+
+        // إخفاء إشعار تحميل المحتوى المنبثق بعد 3 ثوانٍ
+        hideContentLoadingNotification(3000);
     }
 }
 
@@ -15202,6 +15530,9 @@ async function syncLocalAttachment(propertyKey, fileName) {
                 console.log(`✅ تم مزامنة ${fileName} مع السحابة`);
                 showConnectionNotification(`تم مزامنة ${fileName} مع السحابة`, 'success');
 
+                // إخفاء إشعار تحميل المحتوى المنبثق بعد 3 ثوانٍ
+                hideContentLoadingNotification(3000);
+
                 // Remove from local storage
                 const updatedLocal = localAttachments.filter(att => att.name !== fileName);
                 window.attachments[propertyKey] = updatedLocal;
@@ -15348,6 +15679,9 @@ async function performInitialization() {
             if (subscription) {
                 console.log('🔔 تم تفعيل المزامنة الفورية');
                 showConnectionNotification('المزامنة الفورية نشطة', 'success');
+
+                // إخفاء إشعار تحميل المحتوى المنبثق بعد 5 ثوانٍ
+                hideContentLoadingNotification(5000);
             }
         }
 
@@ -15373,6 +15707,9 @@ async function performInitialization() {
                     if (window.debugMode) {
                         console.log('✅ تم مزامنة المرفقات المحلية');
                         showConnectionNotification('تم مزامنة المرفقات المحلية', 'success');
+
+                        // إخفاء إشعار تحميل المحتوى المنبثق بعد 3 ثوانٍ
+                        hideContentLoadingNotification(3000);
                     }
                 } catch (error) {
                     if (window.debugMode) {
@@ -48463,9 +48800,9 @@ function handleLogin(event) {
         // إخفاء نافذة تسجيل الدخول
         hideLoginModal();
 
-        // إظهار شاشة التحميل البلورية بعد تسجيل الدخول
-        console.log('🔮 إظهار شاشة التحميل بعد تسجيل الدخول الناجح');
-        showCrystalLoading();
+        // إظهار شاشة التحميل البلورية بعد تسجيل الدخول - تم تعطيلها
+        console.log('🔮 تم تعطيل شاشة التحميل بعد تسجيل الدخول');
+        // showCrystalLoading();
 
         // للمستخدمين محدودي الصلاحية: السماح بعرض شاشة التحميل الهادئة
         if (users[username].role === 'limited') {
@@ -56051,4 +56388,120 @@ if (originalRenderData) {
         originalRenderData();
         setTimeout(updateSidebarFilterIndicators, 100);
     };
+}
+
+// تم حذف دوال رسالة التحميل أسفل زر البحث - تم استبدالها بإشعار في يسار الهيدر
+
+// دالة إشعار تحميل المحتوى الصغير في يسار الهيدر
+function showContentLoadingNotification() {
+    try {
+        console.log('🔄 عرض إشعار تحميل المحتوى...');
+
+        // التحقق من وجود إشعار سابق وحذفه
+        const existingNotification = document.getElementById('contentLoadingNotification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        // إنشاء إشعار صغير في يسار الهيدر
+        const notification = document.createElement('div');
+        notification.id = 'contentLoadingNotification';
+        notification.style.cssText = `
+            position: fixed !important;
+            top: 15px !important;
+            left: 20px !important;
+            background: #17a2b8 !important;
+            color: white !important;
+            padding: 8px 12px !important;
+            border-radius: 6px !important;
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            z-index: 99999 !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            opacity: 0 !important;
+            transform: translateX(-100%) !important;
+            transition: all 0.3s ease-out !important;
+            max-width: 180px !important;
+            font-family: Arial, sans-serif !important;
+        `;
+
+        notification.innerHTML = `
+            <span style="display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid white; border-radius: 50%; animation: spin 1s linear infinite;"></span>
+            جاري تحميل المحتوى
+        `;
+
+        // إضافة CSS للدوران إذا لم يكن موجوداً
+        if (!document.getElementById('loadingSpinCSS')) {
+            const style = document.createElement('style');
+            style.id = 'loadingSpinCSS';
+            style.textContent = `
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(notification);
+        console.log('📍 تم إضافة الإشعار إلى الصفحة');
+
+        // تأثير الظهور السلس من اليسار
+        setTimeout(() => {
+            if (notification && notification.parentNode) {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+                console.log('✨ تم تطبيق تأثير الظهور');
+            }
+        }, 100);
+
+        // إخفاء تلقائي بعد 40 ثانية
+        window.contentLoadingTimeout = setTimeout(() => {
+            hideContentLoadingNotification();
+        }, 40000);
+
+        console.log('✅ تم عرض إشعار تحميل المحتوى في يسار الهيدر');
+
+    } catch (error) {
+        console.error('❌ خطأ في عرض إشعار التحميل:', error);
+    }
+}
+
+function hideContentLoadingNotification(delay = 0) {
+    try {
+        console.log(`✅ إخفاء إشعار تحميل المحتوى بعد ${delay}ms...`);
+
+        // إلغاء المؤقت التلقائي إذا كان موجوداً
+        if (window.contentLoadingTimeout) {
+            clearTimeout(window.contentLoadingTimeout);
+            window.contentLoadingTimeout = null;
+        }
+
+        setTimeout(() => {
+            const notification = document.getElementById('contentLoadingNotification');
+            if (notification && notification.parentNode) {
+                // تأثير الاختفاء السلس إلى اليسار
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(-100%)';
+
+                // إزالة العنصر بعد انتهاء التأثير
+                setTimeout(() => {
+                    if (notification && notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                        console.log('🗑️ تم حذف الإشعار من الصفحة');
+                    }
+                }, 300);
+
+                console.log('✅ تم إخفاء إشعار تحميل المحتوى بسلاسة');
+            } else {
+                console.log('ℹ️ لا يوجد إشعار تحميل لإخفائه');
+            }
+        }, delay);
+
+    } catch (error) {
+        console.error('❌ خطأ في إخفاء إشعار التحميل:', error);
+    }
 }
